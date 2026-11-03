@@ -1,0 +1,911 @@
+# Module 38 – Chatbot Analytics, Notifications & Customer Care Service Desk
+
+This module extends the HI-TECH College chatbot with measurable service performance and support operations.
+
+It introduces:
+
+1. Conversation and escalation analytics.
+2. Unanswered-question reporting.
+3. Departmental workload and resolution-time reporting.
+4. Support ticket assignment and status history.
+5. Email notifications for new escalations and ticket updates.
+6. An administrator dashboard with real API-driven figures.
+
+Important: The analytics below use stored chatbot conversations and escalation records. They do not generate sample statistics. Email delivery requires a configured SMTP provider.
+
+## 1. Database changes
+
+Add this model to `apps/api/prisma/schema.prisma`:
+
+```
+
+model ChatbotEscalationHistory {
+  id            String   @id @default(uuid())
+  escalationId  String
+  institutionId String
+  fromStatus    ChatbotEscalationStatus?
+  toStatus      ChatbotEscalationStatus
+  note          String?
+  changedById   String?
+  createdAt     DateTime @default(now())
+
+  escalation ChatbotEscalation @relation(
+    fields: [escalationId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([institutionId, createdAt])
+  @@index([escalationId, createdAt])
+  @@index([changedById])
+}
+
+```
+
+Add this relation inside your existing `ChatbotEscalation` model:
+
+```
+history ChatbotEscalationHistory[]
+```
+
+The resulting relationship allows the college to retain a record of ticket assignment, resolution, rejection and reopening.
+
+Run:
+
+```
+cd apps/api
+npx prisma format
+npx prisma migrate dev --name chatbot_escalation_history
+npx prisma generate
+```
+
+## 2. Chatbot analytics API
+
+Create `apps/api/src/routes/chatbotAnalytics.ts`.
+
+This endpoint returns actual counts, status distribution, category totals, daily conversation totals and resolution durations. It requires authenticated administrators and institution scoping.
+
+```
+
+import { Router } from "express";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN", "ADMIN"));
+
+function getInstitutionId(req: any): string {
+  const institutionId = req.user?.institutionId;
+  if (!institutionId) {
+    throw new Error("Authenticated user has no institution scope.");
+  }
+  return institutionId;
+}
+
+function dateRange(value: unknown, fallbackDays: number) {
+  const end = new Date();
+  const days = Number(value);
+
+  const validDays =
+    Number.isInteger(days) && days >= 1 && days <= 365
+      ? days
+      : fallbackDays;
+
+  const start = new Date(end);
+  start.setDate(start.getDate() - validDays);
+
+  return { start, end, days: validDays };
+}
+
+router.get("/", async (req, res) => {
+  try {
+    const institutionId = getInstitutionId(req);
+    const { start, end, days } = dateRange(req.query.days, 30);
+
+    const [
+      totalConversations,
+      openConversations,
+      totalEscalations,
+      pendingEscalations,
+      assignedEscalations,
+      resolvedEscalations,
+      rejectedEscalations,
+      articlesPublished,
+      articlesDraft,
+      articlesArchived,
+      escalationCategories,
+      conversations,
+      resolvedHistory,
+      fallbackMessages,
+    ] = await Promise.all([
+      prisma.chatbotConversation.count({
+        where: { institutionId, createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotConversation.count({
+        where: { institutionId, status: "OPEN", createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotEscalation.count({
+        where: { institutionId, createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotEscalation.count({
+        where: { institutionId, status: "PENDING", createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotEscalation.count({
+        where: { institutionId, status: "ASSIGNED", createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotEscalation.count({
+        where: { institutionId, status: "RESOLVED", createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotEscalation.count({
+        where: { institutionId, status: "REJECTED", createdAt: { gte: start, lte: end } },
+      }),
+      prisma.chatbotKnowledgeArticle.count({
+        where: { institutionId, status: "PUBLISHED" },
+      }),
+      prisma.chatbotKnowledgeArticle.count({
+        where: { institutionId, status: "DRAFT" },
+      }),
+      prisma.chatbotKnowledgeArticle.count({
+        where: { institutionId, status: "ARCHIVED" },
+      }),
+      prisma.chatbotEscalation.groupBy({
+        by: ["department"],
+        where: { institutionId, createdAt: { gte: start, lte: end } },
+        _count: { _all: true },
+        orderBy: { _count: { department: "desc" } },
+      }),
+      prisma.chatbotConversation.findMany({
+        where: { institutionId, createdAt: { gte: start, lte: end } },
+        select: { createdAt: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.chatbotEscalationHistory.findMany({
+        where: {
+          institutionId,
+          toStatus: "RESOLVED",
+          createdAt: { gte: start, lte: end },
+        },
+        select: {
+          escalation: { select: { createdAt: true } },
+          createdAt: true,
+        },
+      }),
+      prisma.chatbotMessage.count({
+        where: {
+          role: "ASSISTANT",
+          source: "fallback",
+          conversation: { institutionId, createdAt: { gte: start, lte: end } },
+        },
+      }),
+    ]);
+
+    const dailyMap = new Map<string, number>();
+
+    for (const conversation of conversations) {
+      const day = conversation.createdAt.toISOString().slice(0, 10);
+      dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
+    }
+
+    const dailyConversations = Array.from(dailyMap, ([date, count]) => ({
+      date,
+      count,
+    }));
+
+    const resolutionMinutes = resolvedHistory
+      .map((item) =>
+        (item.createdAt.getTime() - item.escalation.createdAt.getTime()) / 60000
+      )
+      .filter((value) => Number.isFinite(value) && value >= 0);
+
+    const averageResolutionMinutes =
+      resolutionMinutes.length > 0
+        ? Math.round(
+            resolutionMinutes.reduce((sum, value) => sum + value, 0) /
+              resolutionMinutes.length
+          )
+        : null;
+
+    res.json({
+      period: { days, start, end },
+      conversations: {
+        total: totalConversations,
+        open: openConversations,
+        daily: dailyConversations,
+      },
+      escalations: {
+        total: totalEscalations,
+        pending: pendingEscalations,
+        assigned: assignedEscalations,
+        resolved: resolvedEscalations,
+        rejected: rejectedEscalations,
+        byDepartment: escalationCategories.map((item) => ({
+          department: item.department,
+          count: item._count._all,
+        })),
+        averageResolutionMinutes,
+      },
+      knowledgeBase: {
+        published: articlesPublished,
+        drafts: articlesDraft,
+        archived: articlesArchived,
+      },
+      unanswered: {
+        fallbackResponses: fallbackMessages,
+      },
+    });
+  } catch (error) {
+    console.error("Chatbot analytics error:", error);
+    res.status(500).json({ message: "Unable to load chatbot analytics." });
+  }
+});
+
+export default router;
+
+```
+
+Mount it in your Express application:
+
+```
+import chatbotAnalyticsRoutes from "./routes/chatbotAnalytics";
+
+app.use("/api/chatbot-admin/analytics", chatbotAnalyticsRoutes);
+```
+
+Important integration checks:
+
+- This assumes your Prisma client is imported from `../lib/prisma`. Use your existing Prisma client path if different.
+- `req.user.institutionId` and the role middleware must match your authentication implementation.
+- The `fallback` source value must be added to the public chatbot response logic in the next section. Otherwise the unanswered count will remain zero.
+- The average resolution calculation currently measures from ticket creation to its first recorded `RESOLVED` transition. It is not an SLA-adjusted business-hours calculation.
+
+## 3. Record escalation history
+
+In your existing `PATCH /escalations/:id` handler in `chatbotAdmin.ts`, record the status change in the same database transaction as the ticket update.
+
+Use this pattern after validating the request and loading the institution-scoped escalation:
+
+```
+
+const { status, resolution } = req.body;
+
+const allowedStatuses = [
+  "PENDING",
+  "ASSIGNED",
+  "RESOLVED",
+  "REJECTED",
+];
+
+if (status && !allowedStatuses.includes(status)) {
+  return res.status(400).json({ message: "Invalid escalation status." });
+}
+
+if (
+  resolution !== undefined &&
+  (typeof resolution !== "string" || resolution.length > 5000)
+) {
+  return res.status(400).json({ message: "Invalid resolution notes." });
+}
+
+const current = await prisma.chatbotEscalation.findFirst({
+  where: {
+    id: req.params.id,
+    institutionId: req.user.institutionId,
+  },
+});
+
+if (!current) {
+  return res.status(404).json({ message: "Support request not found." });
+}
+
+const nextStatus = status ?? current.status;
+
+const updated = await prisma.$transaction(async (tx) => {
+  const ticket = await tx.chatbotEscalation.update({
+    where: { id: current.id },
+    data: {
+      ...(status ? { status: nextStatus } : {}),
+      ...(resolution !== undefined ? { resolution } : {}),
+      ...(nextStatus === "ASSIGNED"
+        ? { assignedToId: req.user.id }
+        : {}),
+    },
+  });
+
+  if (status && status !== current.status) {
+    await tx.chatbotEscalationHistory.create({
+      data: {
+        escalationId: current.id,
+        institutionId: req.user.institutionId,
+        fromStatus: current.status,
+        toStatus: nextStatus,
+        note: resolution ?? null,
+        changedById: req.user.id,
+      },
+    });
+  }
+
+  return ticket;
+});
+
+return res.json({ escalation: updated });
+
+```
+
+This is a replacement pattern for the relevant section of your existing handler, not a second route to register. Keep the existing role checks and validation. Also ensure your authorization policy prevents unauthorized staff from assigning, rejecting or resolving tickets.
+
+## 4. Record unanswered chatbot responses
+
+In `apps/api/src/routes/collegeChatbot.ts`, make the response source explicit.
+
+Use these source values consistently:
+
+- `knowledge` – answer generated from approved knowledge.
+- `ai` – answer generated by the configured AI provider using approved knowledge.
+- `fallback` – no suitable approved answer was available.
+
+For example, in the existing message handler:
+
+```
+let answer = fallbackAnswer;
+let answerSource = "fallback";
+
+if (knowledge.length > 0) {
+  const aiAnswer = await generateChatbotAnswer({ messages });
+
+  if (aiAnswer) {
+    answer = aiAnswer;
+    answerSource = "ai";
+  } else {
+    answer = buildKnowledgeAnswer(knowledge);
+    answerSource = "knowledge";
+  }
+}
+
+await prisma.chatbotMessage.create({
+  data: {
+    conversationId: conversation.id,
+    role: "ASSISTANT",
+    content: answer,
+    source: answerSource,
+  },
+});
+```
+
+`fallbackAnswer` and `buildKnowledgeAnswer` above represent the corresponding response-building logic in your existing Module 36 handler. Reuse that logic rather than introducing undefined functions.
+
+The analytics endpoint can now count fallback responses reliably.
+
+## 5. Email notification service
+
+Install Nodemailer in the API project:
+
+```
+cd apps/api
+npm install nodemailer
+npm install -D @types/nodemailer
+```
+
+Add these environment variables to `apps/api/.env`:
+
+```
+CHATBOT_EMAIL_ENABLED=false
+CHATBOT_EMAIL_HOST=
+CHATBOT_EMAIL_PORT=587
+CHATBOT_EMAIL_SECURE=false
+CHATBOT_EMAIL_USER=
+CHATBOT_EMAIL_PASSWORD=
+CHATBOT_EMAIL_FROM=
+CHATBOT_SUPPORT_EMAIL=
+```
+
+Create `apps/api/src/services/chatbotNotifications.ts`:
+
+```
+
+import nodemailer from "nodemailer";
+
+const enabled = process.env.CHATBOT_EMAIL_ENABLED === "true";
+
+const transporter = enabled
+  ? nodemailer.createTransport({
+      host: process.env.CHATBOT_EMAIL_HOST,
+      port: Number(process.env.CHATBOT_EMAIL_PORT || 587),
+      secure: process.env.CHATBOT_EMAIL_SECURE === "true",
+      auth: {
+        user: process.env.CHATBOT_EMAIL_USER,
+        pass: process.env.CHATBOT_EMAIL_PASSWORD,
+      },
+    })
+  : null;
+
+const from = process.env.CHATBOT_EMAIL_FROM;
+const supportEmail = process.env.CHATBOT_SUPPORT_EMAIL;
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    const replacements: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+
+    return replacements[character];
+  });
+}
+
+export async function sendNewEscalationNotification(input: {
+  ticketId: string;
+  subject: string;
+  department: string;
+  description: string;
+}) {
+  if (!enabled || !transporter || !from || !supportEmail) {
+    return { sent: false, reason: "Email notifications are not configured." };
+  }
+
+  await transporter.sendMail({
+    from,
+    to: supportEmail,
+    subject: `New chatbot support request: ${input.subject}`,
+    text: [
+      "A new website chatbot support request has been submitted.",
+      `Ticket: ${input.ticketId}`,
+      `Department: ${input.department}`,
+      `Subject: ${input.subject}`,
+      "",
+      input.description,
+    ].join("\n"),
+    html: `
+      <h2>New chatbot support request</h2>
+      <p><strong>Ticket:</strong> ${escapeHtml(input.ticketId)}</p>
+      <p><strong>Department:</strong> ${escapeHtml(input.department)}</p>
+      <p><strong>Subject:</strong> ${escapeHtml(input.subject)}</p>
+      <p><strong>Description:</strong></p>
+      <p>${escapeHtml(input.description).replace(/\n/g, "<br>")}</p>
+    `,
+  });
+
+  return { sent: true };
+}
+
+export async function sendTicketStatusNotification(input: {
+  recipient: string;
+  ticketId: string;
+  subject: string;
+  status: string;
+  resolution?: string | null;
+}) {
+  if (!enabled || !transporter || !from) {
+    return { sent: false, reason: "Email notifications are not configured." };
+  }
+
+  await transporter.sendMail({
+    from,
+    to: input.recipient,
+    subject: `HI-TECH College support request update: ${input.subject}`,
+    text: [
+      `Your support request (${input.ticketId}) has been updated.`,
+      `Status: ${input.status}`,
+      input.resolution ? `Update: ${input.resolution}` : "",
+    ].filter(Boolean).join("\n"),
+    html: `
+      <h2>Support request update</h2>
+      <p>Your request <strong>${escapeHtml(input.ticketId)}</strong> has been updated.</p>
+      <p><strong>Status:</strong> ${escapeHtml(input.status)}</p>
+      ${
+        input.resolution
+          ? `<p><strong>Update:</strong> ${escapeHtml(input.resolution)}</p>`
+          : ""
+      }
+    `,
+  });
+
+  return { sent: true };
+}
+
+```
+
+Call `sendNewEscalationNotification()` after a new escalation has been saved in the existing public escalation endpoint.
+
+Call `sendTicketStatusNotification()` after an administrator changes the status of a ticket, using the visitor's stored email address only when the visitor has supplied it.
+
+Notification safety: Email failure must not undo a successfully saved ticket. Wrap notification calls in `try/catch`, log the failure without logging credentials or sensitive message contents, and consider a background job/outbox for reliable delivery. Do not send internal notes or full transcripts to visitors.
+
+## 6. Analytics dashboard page
+
+Create `apps/web/src/pages/admin/ChatbotAnalyticsPage.tsx`.
+
+```
+
+import { useEffect, useState } from "react";
+import "./chatbot-admin.css";
+
+type Analytics = {
+  period: { days: number; start: string; end: string };
+  conversations: {
+    total: number;
+    open: number;
+    daily: { date: string; count: number }[];
+  };
+  escalations: {
+    total: number;
+    pending: number;
+    assigned: number;
+    resolved: number;
+    rejected: number;
+    byDepartment: { department: string; count: number }[];
+    averageResolutionMinutes: number | null;
+  };
+  knowledgeBase: {
+    published: number;
+    drafts: number;
+    archived: number;
+  };
+  unanswered: {
+    fallbackResponses: number;
+  };
+};
+
+export default function ChatbotAnalyticsPage() {
+  const [days, setDays] = useState(30);
+  const [data, setData] = useState<Analytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  async function loadAnalytics(period = days) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/chatbot-admin/analytics?days=${period}`,
+        { credentials: "include" }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to load analytics.");
+      }
+
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analytics request failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAnalytics(days);
+  }, [days]);
+
+  const metricCards = data
+    ? [
+        { label: "Conversations", value: data.conversations.total },
+        { label: "Open conversations", value: data.conversations.open },
+        { label: "Support requests", value: data.escalations.total },
+        { label: "Pending requests", value: data.escalations.pending },
+        { label: "Resolved requests", value: data.escalations.resolved },
+        { label: "Unanswered responses", value: data.unanswered.fallbackResponses },
+      ]
+    : [];
+
+  return (
+    <div className="chatbot-admin-page">
+      <header className="chatbot-admin-heading">
+        <div>
+          <span className="chatbot-admin-eyebrow">SERVICE PERFORMANCE</span>
+          <h1>Chatbot Analytics</h1>
+          <p>Monitor website chatbot activity and customer-care performance.</p>
+        </div>
+
+        <select
+          aria-label="Analytics reporting period"
+          value={days}
+          onChange={(event) => setDays(Number(event.target.value))}
+        >
+          <option value={7}>Last 7 days</option>
+          <option value={30}>Last 30 days</option>
+          <option value={90}>Last 90 days</option>
+          <option value={180}>Last 180 days</option>
+          <option value={365}>Last 365 days</option>
+        </select>
+      </header>
+
+      {error && <div className="chatbot-alert chatbot-alert-error">{error}</div>}
+
+      {loading ? (
+        <div className="chatbot-admin-panel chatbot-empty-state">Loading analytics...</div>
+      ) : !data ? (
+        <div className="chatbot-admin-panel chatbot-empty-state">No analytics data is available.</div>
+      ) : (
+        <>
+          <section className="chatbot-analytics-grid">
+            {metricCards.map((metric) => (
+              <article className="chatbot-analytics-card" key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{metric.value.toLocaleString()}</strong>
+              </article>
+            ))}
+          </section>
+
+          <section className="chatbot-analytics-columns">
+            <article className="chatbot-admin-panel">
+              <h2>Support request status</h2>
+              {[
+                ["Pending", data.escalations.pending],
+                ["Assigned", data.escalations.assigned],
+                ["Resolved", data.escalations.resolved],
+                ["Rejected", data.escalations.rejected],
+              ].map(([label, count]) => {
+                const total = data.escalations.total;
+                const percentage =
+                  total > 0 ? Math.round((Number(count) / total) * 100) : 0;
+
+                return (
+                  <div className="chatbot-analytics-bar-row" key={String(label)}>
+                    <div>
+                      <span>{label}</span>
+                      <strong>{count}</strong>
+                    </div>
+                    <div className="chatbot-analytics-track">
+                      <div style={{ width: `${percentage}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </article>
+
+            <article className="chatbot-admin-panel">
+              <h2>Knowledge base</h2>
+              <div className="chatbot-knowledge-metrics">
+                <div><span>Published</span><strong>{data.knowledgeBase.published}</strong></div>
+                <div><span>Drafts</span><strong>{data.knowledgeBase.drafts}</strong></div>
+                <div><span>Archived</span><strong>{data.knowledgeBase.archived}</strong></div>
+              </div>
+              <div className="chatbot-resolution-metric">
+                <span>Average resolution time</span>
+                <strong>
+                  {data.escalations.averageResolutionMinutes === null
+                    ? "Not available"
+                    : `${data.escalations.averageResolutionMinutes} minutes`}
+                </strong>
+              </div>
+            </article>
+          </section>
+
+          <section className="chatbot-admin-panel">
+            <h2>Support requests by department</h2>
+            {data.escalations.byDepartment.length === 0 ? (
+              <p className="chatbot-empty-state">No escalations were recorded in this period.</p>
+            ) : (
+              <div className="chatbot-department-list">
+                {data.escalations.byDepartment.map((item) => (
+                  <div className="chatbot-department-row" key={item.department}>
+                    <span>{item.department}</span>
+                    <strong>{item.count}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="chatbot-admin-panel">
+            <h2>Daily conversations</h2>
+            {data.conversations.daily.length === 0 ? (
+              <p className="chatbot-empty-state">No conversations were recorded in this period.</p>
+            ) : (
+              <div className="chatbot-daily-list">
+                {data.conversations.daily.map((item) => (
+                  <div key={item.date} className="chatbot-daily-row">
+                    <span>{item.date}</span>
+                    <strong>{item.count}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+```
+
+Add the following styling to `apps/web/src/pages/admin/chatbot-admin.css`:
+
+```
+
+.chatbot-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.chatbot-analytics-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 19px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.chatbot-analytics-card span,
+.chatbot-knowledge-metrics span,
+.chatbot-resolution-metric span {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
+.chatbot-analytics-card strong {
+  font-size: 28px;
+}
+
+.chatbot-analytics-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.chatbot-analytics-columns h2,
+.chatbot-admin-panel > h2 {
+  margin: 0 0 18px;
+  font-size: 17px;
+}
+
+.chatbot-analytics-bar-row {
+  display: grid;
+  gap: 8px;
+  margin: 17px 0;
+}
+
+.chatbot-analytics-bar-row > div:first-child,
+.chatbot-department-row,
+.chatbot-daily-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.chatbot-analytics-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--subtle-bg, #e2e8f0);
+}
+
+.chatbot-analytics-track > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #b42332;
+}
+
+.chatbot-knowledge-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chatbot-knowledge-metrics div,
+.chatbot-resolution-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--subtle-bg, #f8fafc);
+}
+
+.chatbot-knowledge-metrics strong,
+.chatbot-resolution-metric strong {
+  font-size: 20px;
+}
+
+.chatbot-resolution-metric {
+  margin-top: 14px;
+}
+
+.chatbot-department-list,
+.chatbot-daily-list {
+  display: grid;
+  gap: 0;
+}
+
+.chatbot-department-row,
+.chatbot-daily-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+@media (max-width: 800px) {
+  .chatbot-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chatbot-analytics-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatbot-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+```
+
+Register the route:
+
+```
+import ChatbotAnalyticsPage from "./pages/admin/ChatbotAnalyticsPage";
+
+<Route
+  path="/admin/chatbot/analytics"
+  element={<ChatbotAnalyticsPage />}
+/>
+```
+
+Sidebar entry:
+
+```
+{
+  label: "Chatbot Analytics",
+  path: "/admin/chatbot/analytics",
+  icon: "chart-no-axes-combined",
+  permission: "website.manage",
+}
+```
+
+## 7. Recommended admin navigation
+
+The chatbot administration section should now contain:
+
+| Page             | Route                        | Purpose                        |
+| ---------------- | ---------------------------- | ------------------------------ |
+| Knowledge Base   | `/admin/chatbot/knowledge`   | Manage verified answers        |
+| Support Requests | `/admin/chatbot/escalations` | Manage escalated conversations |
+| Analytics        | `/admin/chatbot/analytics`   | Monitor chatbot performance    |
+
+## 8. Verification checklist
+
+Before deploying, verify:
+
+- Database migration completes.
+- Analytics only returns records belonging to the signed-in institution.
+- All figures are obtained from PostgreSQL.
+- Ticket status changes create history records.
+- Assignment records the authenticated administrator.
+- Fallback responses are stored with `source = "fallback"`.
+- Email notifications work with valid SMTP credentials.
+- Email failures do not prevent ticket creation or updates.
+- Unauthorized users cannot access analytics or transcripts.
+- The frontend builds successfully.
+
+One important improvement before production: use an email outbox and background worker rather than sending email directly inside HTTP requests. This allows failed notifications to be retried without losing support requests.
+
+## Next: Module 39 – Advanced Chatbot AI & Knowledge Intelligence
+
+The next development stage will introduce:
+
+1. Semantic knowledge search using embeddings.
+2. Retrieval-Augmented Generation (RAG).
+3. Source citations linking chatbot answers to approved college articles.
+4. Confidence scoring and automatic human escalation.
+5. Multilingual support for English and Kiswahili.
+6. Voice input and text-to-speech.
+7. Feedback ratings and answer-quality monitoring.
+8. Admin-controlled AI provider, model, prompt and usage settings.
+
+This will build on the existing chatbot instead of replacing it.

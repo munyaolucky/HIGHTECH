@@ -1,0 +1,5101 @@
+
+next
+
+Convert to PDF
+NEXT , HCA/STAFF/2026/001 REGNO SELF GENERATED ACCORD TO YEAR, TYPE, HCA
+
+Convert to PDF
+NEXT
+
+Convert to PDF
+NEXT
+MODULE 18: LECTURER / TRAINER PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Role-based portal
+
+The Lecturer / Trainer Portal is the central workspace for lecturers, trainers, instructors, practical assessors and approved teaching staff. It enables them to manage their teaching responsibilities, students, learning materials, assessments, examinations, marking, academic feedback and departmental communication.
+
+The portal must work on desktop, tablet and mobile devices.
+
+1. Lecturer dashboard
+Every lecturer receives a personalized dashboard showing only their assigned teaching responsibilities and permitted records.
+
+Dashboard components:
+
+Total assigned courses, units and classes.
+
+Total students under their teaching responsibility.
+
+Today's lessons and upcoming classes.
+
+Weekly teaching timetable.
+
+Pending attendance records.
+
+CATs and assignments awaiting marking.
+
+Upcoming examinations and practical assessments.
+
+Pending results submissions.
+
+Student questions and support requests.
+
+Pending HOD approvals.
+
+Recent announcements and notifications.
+
+Teaching workload summary.
+
+Quick access to notes, schemes of work and lesson plans.
+
+Dashboard shortcuts:
+
+Create lesson plan.
+
+Upload learning material.
+
+Record attendance.
+
+Create CAT.
+
+Create assignment.
+
+Create examination.
+
+Mark submissions.
+
+Submit results.
+
+Contact students.
+
+Request timetable adjustment.
+
+2. Lecturer profile and employment information
+The lecturer can view their approved employment and professional information.
+
+Profile fields:
+
+Full name.
+
+Profile photograph.
+
+Staff registration number.
+
+National ID or approved identification reference.
+
+Official email address.
+
+Phone number.
+
+Department.
+
+Designation.
+
+Employment type.
+
+Date of employment.
+
+Academic qualifications.
+
+Professional qualifications.
+
+Areas of specialization.
+
+Assigned campus.
+
+Employment status.
+
+Reporting HOD.
+
+Emergency contact, subject to HR permissions.
+
+Lecturers can request profile corrections. Changes to protected employment records must be approved by HR or an authorized administrator.
+
+3. Automatic staff registration number
+The lecturer portal must integrate with the central registration number generator.
+
+Example staff registration number
+
+HCA/STAFF/2026/001
+Automatically generated when an authorized staff record is created.
+Registration rules
+
+HCA: institution prefix.
+
+STAFF: staff record type.
+
+2026: registration year.
+
+001: sequential number for that year and type.
+
+Important rules:
+
+The staff registration number is generated when HR or an authorized administrator creates the staff record.
+
+The lecturer account is linked to that existing staff record.
+
+Creating a lecturer account must not generate another staff identity.
+
+The number must be unique and permanent.
+
+Cancelled numbers must not be reused.
+
+Number generation must use an atomic database transaction.
+
+Changes to numbering configuration must be audited.
+
+The lecturer can view their number but cannot edit it.
+
+4. Department and campus assignments
+Lecturers can belong to one or multiple approved departments and campuses.
+
+Features:
+
+View assigned department.
+
+View assigned campus.
+
+View HOD and department contacts.
+
+View assigned programmes.
+
+View assigned academic sections.
+
+View department announcements.
+
+View teaching responsibilities.
+
+View approved additional assignments.
+
+Request a department or campus transfer.
+
+Only authorized administrators can approve assignment changes.
+
+5. Assigned programmes, courses and units
+The portal displays the academic programmes and units assigned to each lecturer.
+
+Features:
+
+View programme name and code.
+
+View course level.
+
+View academic year and semester.
+
+View assigned units.
+
+View unit descriptions.
+
+View unit learning outcomes.
+
+View unit credit hours.
+
+View class groups.
+
+View student enrolment numbers.
+
+View teaching and assessment requirements.
+
+Download approved unit outlines.
+
+A lecturer must not access or modify units that have not been assigned to them unless they receive additional permission.
+
+6. Class and student management
+Lecturers can manage students in their assigned classes.
+
+Features:
+
+View class lists.
+
+Search students by admission number or name.
+
+View student academic profiles within permitted scope.
+
+View unit registration status.
+
+View attendance history.
+
+View CAT and assignment performance.
+
+View examination performance when authorized.
+
+View outstanding academic activities.
+
+Identify students requiring academic support.
+
+Export approved class lists.
+
+Download class registers.
+
+Student financial, medical, disciplinary and other confidential records must remain restricted.
+
+7. Lesson planning
+Lecturers can prepare and manage daily or weekly lesson plans.
+
+Lesson plan fields:
+
+Academic year.
+
+Semester.
+
+Programme.
+
+Unit.
+
+Class.
+
+Lesson date.
+
+Lesson duration.
+
+Topic.
+
+Subtopic.
+
+Learning objectives.
+
+Teaching methods.
+
+Learning activities.
+
+Teaching resources.
+
+Assessment methods.
+
+Lecturer remarks.
+
+Lesson completion status.
+
+Workflow:
+
+Lecturer creates a lesson plan.
+
+Lecturer saves it as a draft.
+
+Lecturer submits it for review if departmental approval is required.
+
+HOD reviews the plan.
+
+Lecturer updates it where necessary.
+
+The system stores the approved version and revision history.
+
+8. Schemes of work
+Features:
+
+Create schemes of work.
+
+Generate weekly teaching schedules.
+
+Map topics to learning outcomes.
+
+Set planned teaching dates.
+
+Record actual teaching dates.
+
+Record teaching progress.
+
+Identify incomplete topics.
+
+Upload supporting documents.
+
+Submit schemes for HOD approval.
+
+Track revisions.
+
+Generate semester teaching coverage reports.
+
+9. Learning materials and notes
+Lecturers can create, upload and distribute learning resources.
+
+Supported material types:
+
+PDF notes.
+
+Word documents.
+
+PowerPoint presentations.
+
+Excel workbooks.
+
+Images and diagrams.
+
+Audio lessons.
+
+Video lessons.
+
+ZIP learning packages.
+
+Programming source files.
+
+Practical exercise files.
+
+External learning links.
+
+Features:
+
+Organize resources by programme, unit and topic.
+
+Upload individual or multiple files.
+
+Create folders.
+
+Add descriptions and instructions.
+
+Publish or unpublish materials.
+
+Schedule publication.
+
+Restrict access to assigned classes.
+
+Replace outdated materials.
+
+Maintain version history.
+
+Track downloads and views.
+
+Add reading instructions.
+
+Provide accessible learning formats.
+
+10. Weekly teaching timetable
+Lecturers can access their official teaching timetable.
+
+Features:
+
+Daily timetable.
+
+Weekly timetable.
+
+Monthly calendar.
+
+Classroom allocation.
+
+Practical laboratory allocation.
+
+Online class schedule.
+
+Examination supervision schedule.
+
+Timetable change notifications.
+
+Conflict detection.
+
+Request timetable adjustments.
+
+Export timetable to PDF.
+
+Lecturers may request changes but cannot independently overwrite the approved institutional timetable.
+
+11. Classroom and laboratory management
+Features:
+
+View allocated classrooms.
+
+View available laboratories.
+
+View laboratory equipment.
+
+View computer laboratory schedules.
+
+Report faulty equipment.
+
+Request laboratory resources.
+
+Request practical examination facilities.
+
+Report internet or network problems.
+
+View laboratory usage instructions.
+
+Submit equipment maintenance requests.
+
+12. Student attendance management
+Attendance can be captured using a web portal or mobile application.
+
+Attendance statuses:
+
+Present.
+
+Absent.
+
+Late.
+
+Excused.
+
+Authorized absence.
+
+Left early.
+
+Features:
+
+Take attendance by class.
+
+Take attendance by unit.
+
+Record attendance by lesson.
+
+Import attendance from an approved register.
+
+Correct attendance with a reason.
+
+Submit attendance for verification.
+
+View attendance summaries.
+
+Identify students with low attendance.
+
+Generate attendance reports.
+
+Notify students of attendance records.
+
+Attendance corrections must preserve the original record, the editor, timestamp and reason.
+
+13. Online classes and recordings
+Features:
+
+Schedule online classes.
+
+Generate meeting links.
+
+Share class joining instructions.
+
+Upload recorded lessons.
+
+Share presentation slides.
+
+Share screen demonstrations through supported meeting services.
+
+Publish recorded lessons.
+
+Manage class discussions.
+
+Track student participation where supported.
+
+Manage class resources.
+
+Record lesson completion.
+
+Online meeting integration must use authorized institutional credentials and permissions.
+
+14. CAT management
+Lecturers can create and manage Continuous Assessment Tests.
+
+Assessment formats:
+
+Multiple-choice questions.
+
+Multiple-response questions.
+
+True or false.
+
+Short-answer questions.
+
+Fill in the blanks.
+
+Matching questions.
+
+Numerical questions.
+
+Essay questions.
+
+File-upload questions.
+
+Practical questions.
+
+Programming questions.
+
+Networking laboratory questions.
+
+Features:
+
+Create CAT.
+
+Select course and unit.
+
+Assign class groups.
+
+Set marks.
+
+Set examination duration.
+
+Set opening and closing dates.
+
+Configure attempts.
+
+Shuffle questions.
+
+Randomize answer options.
+
+Set pass marks.
+
+Configure negative marking.
+
+Configure partial marking.
+
+Add instructions.
+
+Preview assessment.
+
+Publish assessment.
+
+Monitor submissions.
+
+Extend deadlines for authorized cases.
+
+Export assessment results.
+
+15. Assignment management
+Features:
+
+Create assignments.
+
+Set assignment instructions.
+
+Set submission deadlines.
+
+Specify marks.
+
+Attach reference files.
+
+Accept document uploads.
+
+Accept programming files.
+
+Accept practical evidence.
+
+Configure individual or group submissions.
+
+View submitted work.
+
+Identify late submissions.
+
+Return assignments for correction.
+
+Provide lecturer feedback.
+
+Record marks.
+
+Publish results.
+
+The system must preserve submission versions and submission timestamps.
+
+16. Question bank
+The lecturer can create and organize reusable questions.
+
+Features:
+
+Create questions.
+
+Edit questions.
+
+Categorize by unit.
+
+Categorize by topic.
+
+Categorize by difficulty.
+
+Add diagrams and images.
+
+Add audio or video prompts.
+
+Define correct answers.
+
+Define marking instructions.
+
+Add explanations.
+
+Add references.
+
+Tag examination body requirements.
+
+Import approved question collections.
+
+Export permitted questions.
+
+Reuse questions in different assessments.
+
+Question-bank permissions must distinguish personal questions, departmental questions and institution-approved questions.
+
+17. AI-assisted assessment generation
+AI tools can help lecturers create assessments using approved learning content.
+
+Features:
+
+Generate CAT questions.
+
+Generate examination questions.
+
+Generate revision questions.
+
+Generate practical tasks.
+
+Generate marking schemes.
+
+Generate model answers.
+
+Generate rubrics.
+
+Generate question variations.
+
+Generate questions by topic.
+
+Generate questions by difficulty.
+
+Generate questions based on uploaded notes.
+
+Generate questions based on approved institutional resources.
+
+Edit generated questions before publication.
+
+Required approval process:
+
+AI-generated content must remain a draft until the lecturer reviews it. Publication must follow institutional assessment approval rules. AI must not independently publish official examinations or approve final results.
+
+18. Practical examinations
+The lecturer can create practical assessments that evaluate real skills.
+
+Examples:
+
+Microsoft Word document formatting.
+
+Microsoft Excel formulas and data analysis.
+
+Microsoft PowerPoint presentations.
+
+Database creation.
+
+Computer hardware assembly.
+
+Operating system installation.
+
+Computer troubleshooting.
+
+Networking configuration.
+
+Programming exercises.
+
+Graphic design tasks.
+
+Database programming.
+
+Features:
+
+Create practical examination instructions.
+
+Define expected outputs.
+
+Attach starter files.
+
+Configure examination duration.
+
+Assign laboratory or computer.
+
+Allocate marks by task.
+
+Upload student evidence.
+
+Review submitted work.
+
+Record practical scores.
+
+Add assessor comments.
+
+Attach marking rubrics.
+
+19. ICDL-style computer examinations
+Features:
+
+Word processing assessments.
+
+Spreadsheet assessments.
+
+Presentation assessments.
+
+Computer essentials.
+
+Online essentials.
+
+Cybersecurity tasks.
+
+Digital collaboration.
+
+File management.
+
+Practical software-operation tasks.
+
+Where supported, the platform should integrate with desktop examination clients to monitor the student's task progress and capture submitted evidence.
+
+The portal must not claim to control installed desktop software unless the relevant client application and integration have actually been implemented.
+
+20. Programming and networking laboratory assessments
+Programming assessment capabilities:
+
+C programming.
+
+Python.
+
+Java.
+
+PHP.
+
+JavaScript.
+
+HTML and CSS.
+
+SQL.
+
+Debugging exercises.
+
+Code completion.
+
+Programming projects.
+
+Networking assessment capabilities:
+
+IP addressing.
+
+Subnetting.
+
+Router configuration.
+
+Switch configuration.
+
+VLAN configuration.
+
+Routing protocols.
+
+Network troubleshooting.
+
+Packet Tracer practical exercises.
+
+Features:
+
+Assign practical tasks.
+
+Attach starter projects.
+
+Configure test cases.
+
+Collect source files.
+
+Collect screenshots and reports.
+
+Run code in an approved isolated execution environment.
+
+Record test results.
+
+Review student work.
+
+Award marks using rubrics.
+
+Code execution must use isolated sandboxes with resource limits, network restrictions and audit logs.
+
+21. Automatic marking
+Automatic marking should support objectively assessable questions.
+
+Question type
+
+Marking method
+
+Single-choice
+
+Exact answer
+
+Multiple-response
+
+Exact or partial matching
+
+True/false
+
+Exact answer
+
+Numerical
+
+Exact or tolerance range
+
+Matching
+
+Pair comparison
+
+Fill in blanks
+
+Accepted answer variants
+
+Short answer
+
+Configured matching or lecturer review
+
+Code questions
+
+Test cases and lecturer review
+
+Practical files
+
+File checks plus assessor review
+
+Features:
+
+Automatic scoring.
+
+Partial marks.
+
+Negative marking.
+
+Accepted answer variants.
+
+Configurable numerical tolerance.
+
+Marking explanations.
+
+Score recalculation with audit history.
+
+Manual review queue for uncertain answers.
+
+AI-generated scores must not be treated as final without the required human approval.
+
+22. Manual marking
+Lecturers can manually mark:
+
+Essays.
+
+Long-answer questions.
+
+Practical examinations.
+
+Programming assignments.
+
+Networking practicals.
+
+Uploaded documents.
+
+Project reports.
+
+Presentations.
+
+Oral assessments where evidence is captured.
+
+Features:
+
+Open submitted answer.
+
+Add marks.
+
+Add comments.
+
+Attach feedback.
+
+Apply marking rubrics.
+
+Save marking drafts.
+
+Submit completed marking.
+
+Return work for review where policy permits.
+
+View marking progress.
+
+23. Rubrics and marking schemes
+Features:
+
+Create marking rubrics.
+
+Define marking criteria.
+
+Set maximum marks.
+
+Define performance levels.
+
+Allocate marks per criterion.
+
+Create reusable templates.
+
+Attach rubrics to assessments.
+
+Share approved rubrics with other lecturers.
+
+Export marking schemes.
+
+Example:
+
+Criterion
+
+Maximum marks
+
+Correctness
+
+10
+
+Procedure followed
+
+5
+
+Presentation
+
+3
+
+Documentation
+
+2
+
+Total
+
+20
+
+24. Results submission
+Lecturers can submit results for authorized units and classes.
+
+Workflow:
+
+Lecturer completes assessment marking.
+
+System calculates provisional scores.
+
+Lecturer checks missing marks and anomalies.
+
+Lecturer submits results.
+
+HOD or appointed moderator reviews them.
+
+Authorized examination officer processes approval.
+
+Results are approved for publication.
+
+Students view published results through their portal.
+
+Features:
+
+Enter marks.
+
+Import marks using approved templates.
+
+Validate marks.
+
+Identify missing results.
+
+Calculate totals.
+
+Calculate percentages.
+
+Calculate grades using approved grading policies.
+
+Add lecturer remarks.
+
+Submit results.
+
+Track approval status.
+
+View moderation comments.
+
+Correct results through authorized procedures.
+
+Lecturers cannot directly change published results. Any correction must use an approved amendment workflow with a reason and full audit trail.
+
+25. Results moderation
+Features:
+
+Submit results for moderation.
+
+View moderation status.
+
+Respond to moderation comments.
+
+Correct disputed entries.
+
+Upload supporting evidence.
+
+View second-marker feedback.
+
+Resubmit corrected marks.
+
+Track approval history.
+
+The system must distinguish lecturer submission, moderator review, examination approval and official publication.
+
+26. Student feedback
+Features:
+
+Publish individual feedback.
+
+Provide assessment explanations.
+
+Add improvement recommendations.
+
+Provide class performance summaries.
+
+Identify common mistakes.
+
+Schedule feedback sessions.
+
+Respond to student academic questions.
+
+Track feedback delivery.
+
+Lecturers should not expose one student's confidential marks to another student.
+
+27. Student academic support
+Features:
+
+Identify students with low marks.
+
+Identify students with poor attendance.
+
+Record academic intervention recommendations.
+
+Schedule consultation sessions.
+
+Provide revision materials.
+
+Record academic progress.
+
+Refer students to authorized support departments.
+
+Track follow-up actions.
+
+Sensitive counselling or medical information must remain outside the lecturer's ordinary access unless a specific, authorized process grants it.
+
+28. Lecturer workload management
+Features:
+
+View assigned teaching hours.
+
+View allocated units.
+
+View class sizes.
+
+View practical supervision hours.
+
+View examination invigilation duties.
+
+View project supervision duties.
+
+Request workload adjustments.
+
+Submit workload reports.
+
+View HOD workload approvals.
+
+29. Lecturer performance reports
+Lecturers can view permitted performance indicators, such as:
+
+Lesson completion.
+
+Scheme-of-work progress.
+
+Attendance submission rate.
+
+Assessment marking completion.
+
+Results submission timeliness.
+
+Student feedback summaries.
+
+Professional development participation.
+
+Performance indicators must be contextualized and must not be treated as a complete measure of teaching quality on their own.
+
+30. Department communication
+Features:
+
+Department announcements.
+
+HOD messages.
+
+Staff discussions.
+
+Academic meeting notices.
+
+Timetable notices.
+
+Examination notices.
+
+Department document sharing.
+
+Approved departmental discussion groups.
+
+31. Announcements and notifications
+Notification channels:
+
+In-app notifications.
+
+Email.
+
+SMS through approved provider.
+
+Push notifications on mobile.
+
+Examples:
+
+New teaching assignment.
+
+Timetable change.
+
+Upcoming examination.
+
+Assignment deadline.
+
+HOD approval request.
+
+Results moderation feedback.
+
+New department announcement.
+
+Users must be able to configure non-essential notification preferences.
+
+32. Document centre
+Lecturers can access and manage documents according to permissions.
+
+Documents include:
+
+Employment documents.
+
+Teaching schedules.
+
+Lesson plans.
+
+Schemes of work.
+
+Unit outlines.
+
+Assessment documents.
+
+Marking schemes.
+
+Department circulars.
+
+Meeting minutes.
+
+Professional development certificates.
+
+Confidential employment documents remain controlled by HR permissions.
+
+33. Research and project supervision
+Features:
+
+View assigned student projects.
+
+Approve project topics where authorized.
+
+Assign project milestones.
+
+Review project proposals.
+
+Add comments.
+
+Upload feedback.
+
+Track submission progress.
+
+Schedule supervision sessions.
+
+Record supervision meetings.
+
+Submit final assessment recommendations.
+
+34. Professional development
+Features:
+
+View available staff training.
+
+Register for approved workshops.
+
+Access training materials.
+
+Upload professional certificates.
+
+Track training attendance.
+
+View completed courses.
+
+Request training approval.
+
+Generate professional development reports.
+
+35. Leave and availability requests
+Features:
+
+Submit leave requests.
+
+Submit absence notifications.
+
+Request timetable coverage.
+
+Declare teaching availability.
+
+Request class rescheduling.
+
+View leave request status.
+
+View approved leave dates.
+
+Leave approval remains under HR and the institution's approved management workflow.
+
+36. Mobile teaching tools
+The mobile lecturer portal should support:
+
+View timetable.
+
+Take attendance.
+
+View assigned classes.
+
+Upload notes.
+
+Send announcements.
+
+Respond to student questions.
+
+Review assignments.
+
+Enter marks.
+
+Receive notifications.
+
+Access approved documents.
+
+Request timetable changes.
+
+Offline attendance or marking drafts may be supported, but synchronization must detect conflicts and retain audit information.
+
+37. Lecturer portal navigation
+Recommended sidebar:
+
+HI-TECH COLLEGE
+
+Lecturer Portal
+Dashboard
+
+My Profile
+
+My Department
+
+My Courses & Units
+
+My Classes & Students
+
+Timetable
+
+Lesson Plans
+
+Schemes of Work
+
+Learning Materials
+
+Attendance
+
+Online Classes
+
+CATs & Assignments
+
+Question Bank
+
+AI Assessment Assistant
+
+Practical Examinations
+
+Programming & Networking Labs
+
+Automatic Marking
+
+Manual Marking
+
+Results Submission
+
+Moderation
+
+Student Feedback
+
+Performance Reports
+
+Document Centre
+
+Project Supervision
+
+Professional Development
+
+Leave & Availability
+
+Notifications
+
+Settings
+
+38. Database design
+Recommended core Prisma models and relationships:
+
+Model
+
+Purpose
+
+Staff
+
+Central staff identity and registration number
+
+LecturerProfile
+
+Lecturer-specific professional profile
+
+LecturerDepartment
+
+Department assignments
+
+LecturerCampus
+
+Campus assignments
+
+TeachingAssignment
+
+Assigned courses, units and classes
+
+LessonPlan
+
+Daily and weekly lesson plans
+
+SchemeOfWork
+
+Semester teaching plan
+
+LearningMaterial
+
+Uploaded learning resources
+
+TimetableEntry
+
+Approved timetable records
+
+ClassAttendance
+
+Class attendance sessions
+
+AttendanceRecord
+
+Individual attendance entries
+
+OnlineClass
+
+Online lesson schedule
+
+Assessment
+
+CATs, assignments and examinations
+
+QuestionBankItem
+
+Reusable questions
+
+AssessmentQuestion
+
+Assessment-question relationships
+
+AssessmentSubmission
+
+Student submissions
+
+AssessmentMark
+
+Assessment marks
+
+MarkingRubric
+
+Marking criteria
+
+RubricCriterion
+
+Individual rubric criteria
+
+ResultSubmission
+
+Lecturer result submissions
+
+ResultModeration
+
+Moderation history
+
+StudentFeedback
+
+Individual academic feedback
+
+ProjectSupervision
+
+Student project assignments
+
+LecturerWorkload
+
+Workload records
+
+StaffTraining
+
+Professional development
+
+LecturerLeaveRequest
+
+Leave and availability requests
+
+LecturerNotification
+
+Lecturer notifications
+
+AuditLog
+
+Security and activity history
+
+Critical relationship: LecturerProfile.staffId must reference the existing Staff.id. The staff registration number belongs to the staff record, not the lecturer profile.
+
+39. Backend API structure
+Recommended Express API endpoints:
+
+/api/lecturer/dashboard
+/api/lecturer/profile
+/api/lecturer/departments
+/api/lecturer/campuses
+/api/lecturer/assignments
+/api/lecturer/courses
+/api/lecturer/classes
+/api/lecturer/students
+
+/api/lecturer/lesson-plans
+/api/lecturer/schemes-of-work
+/api/lecturer/materials
+/api/lecturer/timetable
+
+/api/lecturer/attendance
+/api/lecturer/online-classes
+
+/api/lecturer/assessments
+/api/lecturer/assignments-management
+/api/lecturer/question-bank
+/api/lecturer/ai-assessments
+
+/api/lecturer/practical-exams
+/api/lecturer/lab-assessments
+/api/lecturer/submissions
+/api/lecturer/automatic-marking
+/api/lecturer/manual-marking
+/api/lecturer/rubrics
+
+/api/lecturer/results
+/api/lecturer/results/submit
+/api/lecturer/results/moderation
+/api/lecturer/feedback
+
+/api/lecturer/workload
+/api/lecturer/performance
+/api/lecturer/project-supervision
+/api/lecturer/professional-development
+/api/lecturer/leave-requests
+
+/api/lecturer/announcements
+/api/lecturer/documents
+/api/lecturer/notifications
+Every endpoint must validate the authenticated user's identity, institution, campus, assigned department, teaching assignment and specific permission. The frontend hiding a button is not an authorization control.
+
+40. Frontend project structure
+Recommended React structure:
+
+src/
+└── modules/
+    └── lecturer/
+        ├── pages/
+        │   ├── LecturerDashboard.tsx
+        │   ├── LecturerProfile.tsx
+        │   ├── MyDepartments.tsx
+        │   ├── MyCourses.tsx
+        │   ├── MyClasses.tsx
+        │   ├── MyStudents.tsx
+        │   ├── Timetable.tsx
+        │   ├── LessonPlans.tsx
+        │   ├── SchemesOfWork.tsx
+        │   ├── LearningMaterials.tsx
+        │   ├── Attendance.tsx
+        │   ├── OnlineClasses.tsx
+        │   ├── Assessments.tsx
+        │   ├── QuestionBank.tsx
+        │   ├── AIAssessment.tsx
+        │   ├── PracticalExams.tsx
+        │   ├── LabAssessments.tsx
+        │   ├── MarkingCentre.tsx
+        │   ├── ResultsSubmission.tsx
+        │   ├── Moderation.tsx
+        │   ├── StudentFeedback.tsx
+        │   ├── Workload.tsx
+        │   └── LecturerReports.tsx
+        ├── components/
+        │   ├── LecturerSidebar.tsx
+        │   ├── LecturerHeader.tsx
+        │   ├── TeachingAssignmentCard.tsx
+        │   ├── AttendanceRegister.tsx
+        │   ├── AssessmentBuilder.tsx
+        │   ├── MarkingWorkspace.tsx
+        │   └── ResultsApprovalStatus.tsx
+        ├── services/
+        │   ├── lecturerApi.ts
+        │   ├── assessmentApi.ts
+        │   ├── attendanceApi.ts
+        │   └── resultsApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+41. Security and access control
+The lecturer role must have the following restrictions:
+
+Cannot create or delete institutional staff identities.
+
+Cannot change their own staff registration number.
+
+Cannot assign themselves courses or classes.
+
+Cannot approve their own results where independent approval is required.
+
+Cannot publish official examination results without authorization.
+
+Cannot access other departments' restricted records without permission.
+
+Cannot change approved timetables directly.
+
+Cannot access confidential HR, finance or counselling records by default.
+
+Cannot view another student's private assessment feedback.
+
+Cannot execute untrusted student code on the main application server.
+
+All assessment, marking, result and attendance changes must be auditable.
+
+42. Acceptance criteria
+The Lecturer Portal should only be considered implemented when:
+
+Lecturer login and role-based access work.
+
+Lecturer accounts link to existing staff records.
+
+Staff registration numbers display correctly.
+
+Department and campus restrictions are enforced by the backend.
+
+Teaching assignments are visible and accurate.
+
+Lecturers can create lesson plans and schemes of work.
+
+Learning materials can be uploaded and accessed by assigned students.
+
+Attendance can be recorded and audited.
+
+CATs and assignments can be created and submitted.
+
+Question banks can be managed.
+
+Assessment marking works for supported question types.
+
+Practical and programming submissions are securely handled.
+
+Results can be submitted and moderated.
+
+Published results are protected from unauthorized editing.
+
+Student feedback remains private.
+
+Notifications work through configured channels.
+
+Mobile layouts and essential workflows function.
+
+Automated tests cover role restrictions and critical workflows.
+
+43. Module 18 implementation deliverables
+The implementation package should contain:
+
+Lecturer dashboard UI.
+
+Lecturer profile and staff identity integration.
+
+Lecturer sidebar and navigation.
+
+Department and campus assignment services.
+
+Teaching assignment management.
+
+Lesson planning and schemes of work.
+
+Learning material management.
+
+Timetable integration.
+
+Attendance module.
+
+Online class integration.
+
+Assessment and question bank module.
+
+AI assessment drafting service.
+
+Practical and laboratory assessment module.
+
+Automatic and manual marking.
+
+Rubrics and marking schemes.
+
+Results submission and moderation.
+
+Student feedback.
+
+Workload and performance reporting.
+
+Professional development and leave requests.
+
+API validation and authorization.
+
+Prisma migrations.
+
+Automated tests and audit logging.
+
+This is the implementation specification, not a claim that these features have already been coded or tested in the existing repository.
+
+NEXT: MODULE 19 — REGISTRAR PORTAL
+The Registrar Portal will manage the official academic records of the college, from student admission and registration to examination records, transcripts, graduation and certification.
+
+It will include:
+
+Registrar dashboard.
+
+Student admission records.
+
+Student registration and enrolment.
+
+Automatic student registration numbers (HCA/STU/YYYY/NNN).
+
+Student academic profiles.
+
+Programme and course registration.
+
+Unit registration.
+
+Semester and academic-year management.
+
+Student progression and deferment.
+
+Transfers and readmissions.
+
+Examination registration.
+
+Examination timetables.
+
+Examination attendance.
+
+Results processing.
+
+Results approval and publication.
+
+Academic transcripts.
+
+Transcript issuance register.
+
+Certificates and certification.
+
+Graduation clearance.
+
+Graduation lists.
+
+Academic records verification.
+
+Student completion and graduation eligibility.
+
+KNEC, KASNEB, TVET, NITA and other examination-body records.
+
+Student academic appeals.
+
+Academic document management.
+
+Academic statistics and reports.
+
+Student records audit trail.
+
+Registrar approvals and workflow.
+
+Student portal synchronization.
+
+Secure academic records archive.
+
+
+Convert to PDF
+NEXT
+MODULE 19: REGISTRAR PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Academic records management
+
+The Registrar Portal is the official academic records management system for HI-TECH College. It controls student registration, course enrolment, academic progression, examination registration, results processing, transcripts, certificates, graduation and academic records verification.
+
+The Registrar is responsible for maintaining the integrity, accuracy and traceability of students' academic records.
+
+The portal must integrate with the Admissions, Student, Lecturer, Examination, Finance, Library and Principal portals.
+
+1. Registrar dashboard
+The dashboard provides a summary of academic operations across authorized campuses.
+
+Dashboard statistics:
+
+Total registered students.
+
+Newly admitted students.
+
+Students awaiting registration.
+
+Students with incomplete academic records.
+
+Active students.
+
+Deferred students.
+
+Suspended students.
+
+Graduated students.
+
+Students awaiting course registration.
+
+Students awaiting examination registration.
+
+Pending examination results.
+
+Results awaiting approval.
+
+Transcript requests.
+
+Certificate requests.
+
+Graduation clearance requests.
+
+Academic appeals.
+
+Pending registrar approvals.
+
+Dashboard shortcuts:
+
+Register student.
+
+Search student.
+
+Register units.
+
+Manage semester.
+
+Process results.
+
+Issue transcript.
+
+Verify certificate.
+
+Prepare graduation list.
+
+Generate academic report.
+
+2. Student admission records
+The Registrar receives approved student admissions from the Admissions Office.
+
+Features:
+
+View approved applications.
+
+Review admission documents.
+
+Verify admission requirements.
+
+Confirm programme allocation.
+
+Confirm campus allocation.
+
+Verify entry qualifications.
+
+Confirm intake and academic year.
+
+Accept or return incomplete records.
+
+Convert approved applications into student records.
+
+Generate admission letters.
+
+Track admission status.
+
+Admission statuses:
+
+Status
+
+Meaning
+
+Submitted
+
+Application received
+
+Under review
+
+Admission verification in progress
+
+Approved
+
+Admission approved
+
+Rejected
+
+Admission declined
+
+Accepted
+
+Applicant accepted offer
+
+Registered
+
+Student registration completed
+
+Deferred
+
+Admission postponed
+
+Withdrawn
+
+Applicant withdrew
+
+The Registrar must not bypass mandatory admission approval workflows.
+
+3. Student registration and enrolment
+This module creates and maintains official student academic identities.
+
+Features:
+
+Register newly admitted students.
+
+Confirm admission details.
+
+Assign academic programme.
+
+Assign department.
+
+Assign campus.
+
+Assign academic year.
+
+Assign intake.
+
+Assign semester.
+
+Record study mode.
+
+Record student category.
+
+Record admission date.
+
+Record expected completion date.
+
+Generate student registration number.
+
+Activate student academic profile.
+
+Print registration confirmation.
+
+Generate student registration reports.
+
+Automatic student registration number
+Example student registration number
+
+HCA/STU/2026/001
+Generated by the central registration number service.
+HCA — institution prefix.
+
+STU — student record type.
+
+2026 — registration year.
+
+001 — sequential number.
+
+Rules:
+
+A student number is generated only when an authorized registration workflow creates the official student record.
+
+The number is unique within its configured institution, type and year sequence.
+
+It cannot be edited by the student or ordinary portal users.
+
+It must never be reassigned to another student.
+
+The number must remain unchanged during transfers between classes or semesters within the same student identity.
+
+Re-admission must link to the existing student record when policy requires it, not create an accidental duplicate.
+
+Generation must be transaction-safe and protected against concurrent registration requests.
+
+All registration number configuration and issuance must be auditable.
+
+4. Student academic profile
+The Registrar can access the official academic record of each student within their authorized institutional scope.
+
+Profile sections:
+
+A. Personal information
+
+Student name.
+
+Student registration number.
+
+Admission number.
+
+Date of birth.
+
+Gender, where required by institutional policy.
+
+Contact details.
+
+Address.
+
+Emergency contact.
+
+B. Admission information
+
+Application reference.
+
+Admission date.
+
+Entry qualification.
+
+Admission category.
+
+Intake.
+
+Admission letter.
+
+Supporting documents.
+
+C. Academic information
+
+Department.
+
+Programme.
+
+Course code.
+
+Campus.
+
+Study mode.
+
+Academic year.
+
+Semester.
+
+Registered units.
+
+Academic status.
+
+Progression history.
+
+Examination history.
+
+Results.
+
+Transcript history.
+
+Graduation status.
+
+D. Account information
+
+Student portal account status.
+
+First-login status.
+
+Password-change status.
+
+Profile completion status.
+
+Account activation and suspension history.
+
+Changes to protected identity information should follow a verification and approval workflow.
+
+5. Programme and course registration
+Features:
+
+Register students into approved programmes.
+
+Transfer students between programmes.
+
+Change specialization where permitted.
+
+Record programme commencement date.
+
+Record programme duration.
+
+Record programme completion requirements.
+
+Configure academic progression rules.
+
+Manage programme registration status.
+
+View programme enrolment statistics.
+
+Programme changes must preserve the student's previous academic history.
+
+6. Unit registration
+The Registrar manages student registration into individual course units.
+
+Features:
+
+Register units by semester.
+
+Register compulsory units.
+
+Register elective units.
+
+Register repeat units.
+
+Register supplementary units.
+
+Register carry-over units.
+
+Validate prerequisites.
+
+Validate programme structure.
+
+Validate unit availability.
+
+Prevent duplicate registration.
+
+Prevent invalid unit combinations.
+
+Import approved student-unit registrations.
+
+Export registration lists.
+
+Generate unit registration slips.
+
+Registration validation should check:
+
+The student is active.
+
+The programme is valid.
+
+The semester is open.
+
+The unit belongs to the programme or is approved as an elective.
+
+Prerequisites have been satisfied.
+
+The student has not already registered for the same unit.
+
+The student is within the permitted credit load.
+
+Financial eligibility may be checked where institutional policy requires it, but the Registrar should not receive unrestricted access to detailed financial transactions.
+
+7. Academic year and semester management
+Features:
+
+Create academic years.
+
+Create semesters.
+
+Set semester opening dates.
+
+Set semester closing dates.
+
+Configure registration periods.
+
+Configure examination periods.
+
+Set results submission deadlines.
+
+Set graduation eligibility dates.
+
+Open and close student registration.
+
+Configure semester progression.
+
+Manage academic calendar exceptions.
+
+Archive completed academic periods.
+
+Academic period changes must not silently modify historical results or registration records.
+
+8. Student academic status
+The Registrar manages formal student academic status changes.
+
+Supported statuses:
+
+Applicant.
+
+Admitted.
+
+Registered.
+
+Active.
+
+Deferred.
+
+Suspended.
+
+Withdrawn.
+
+Discontinued.
+
+Completed.
+
+Graduated.
+
+Transferred.
+
+Deceased, where institutionally required.
+
+Features:
+
+Change student status.
+
+Record effective date.
+
+Enter reason.
+
+Upload supporting documents.
+
+Request approval.
+
+Maintain status history.
+
+Generate status reports.
+
+Notify relevant departments.
+
+Status changes must be permission-controlled and preserve previous status records.
+
+9. Deferment and resumption
+Features:
+
+Receive deferment requests.
+
+Review supporting documents.
+
+Record deferment reason.
+
+Set deferment start date.
+
+Set expected return date.
+
+Route for approval.
+
+Update academic status.
+
+Suspend future unit registration where appropriate.
+
+Process student resumption.
+
+Restore eligible academic registration.
+
+Generate deferment reports.
+
+Resumption must retain previous unit results, academic history and registration number.
+
+10. Transfers and readmissions
+Internal transfers:
+
+Campus transfer.
+
+Programme transfer.
+
+Department transfer.
+
+Class transfer.
+
+Study mode change.
+
+External transfers and readmissions:
+
+Record previous institution.
+
+Capture transfer documents.
+
+Record previous qualification.
+
+Evaluate credit transfer.
+
+Record approved exemptions.
+
+Link transferred units.
+
+Process readmission.
+
+Preserve historical academic records.
+
+Credit transfers and exemptions must have documented approval by authorized academic personnel.
+
+11. Examination registration
+The Registrar coordinates formal examination registration.
+
+Features:
+
+View eligible students.
+
+Register students for examinations.
+
+Validate unit registration.
+
+Check examination eligibility.
+
+Configure examination body.
+
+Assign examination series.
+
+Record examination centre.
+
+Record candidate number where applicable.
+
+Generate examination registration lists.
+
+Export candidate lists.
+
+Track examination registration status.
+
+Manage registration corrections.
+
+The system must distinguish internal college examinations from external examination-body registrations.
+
+12. Examination body management
+The platform must support configurable examination bodies.
+
+Examples:
+
+KNEC.
+
+KASNEB.
+
+TVET-related examination arrangements.
+
+NITA.
+
+Other institution-approved examining bodies.
+
+Features:
+
+Create examination body.
+
+Edit examination body details.
+
+Configure examination categories.
+
+Configure examination series.
+
+Configure registration deadlines.
+
+Configure examination requirements.
+
+Map programmes to examination bodies.
+
+Map units to examination papers.
+
+Record external candidate identifiers.
+
+Import candidate registration confirmations.
+
+Track examination-body submissions.
+
+Archive examination-body correspondence.
+
+The examination-body catalogue must be configurable by authorized administrators rather than hard-coded into the application.
+
+13. Examination timetable management
+Features:
+
+View approved examination timetable.
+
+Coordinate examination periods.
+
+View examination dates.
+
+View examination rooms.
+
+View examination sessions.
+
+View examination duration.
+
+View assigned examination bodies.
+
+Review examination clashes.
+
+Publish approved timetable.
+
+Notify students and lecturers.
+
+Record approved timetable changes.
+
+The Registrar may coordinate examination schedules, but final scheduling authority must follow the institution's configured examination governance.
+
+14. Examination attendance and candidate records
+Features:
+
+Generate examination attendance registers.
+
+View registered candidates.
+
+Record candidate attendance.
+
+Record absentees.
+
+Record late arrivals.
+
+Record approved special arrangements.
+
+Record examination incident reports.
+
+Upload supporting documentation.
+
+Generate examination attendance reports.
+
+Reconcile candidate registration with attendance.
+
+Sensitive disciplinary investigations must be restricted to authorized officers.
+
+15. Examination results processing
+The Registrar coordinates the official results processing lifecycle.
+
+Features:
+
+Receive lecturer-submitted results.
+
+View pending results.
+
+Check missing marks.
+
+Check incomplete units.
+
+Check duplicate results.
+
+Check marks outside permitted ranges.
+
+View moderation status.
+
+Verify approval status.
+
+Prepare results for examination board review.
+
+Record board decisions.
+
+Process approved amendments.
+
+Prepare final results publication.
+
+Results workflow:
+
+Lecturer submits provisional results
+
+HOD / Moderator reviews results
+
+Examination Board approval
+
+Registrar processes approved results
+
+Final stage
+Authorized results publication
+
+The Registrar must not silently alter lecturer marks or bypass the examination board's approval process.
+
+16. Grading and academic progression
+Features:
+
+Configure approved grading scales.
+
+Map marks to grades.
+
+Calculate unit grades.
+
+Calculate semester performance.
+
+Calculate cumulative performance where applicable.
+
+Identify failed units.
+
+Identify repeat units.
+
+Identify supplementary examinations.
+
+Identify carry-over units.
+
+Check progression eligibility.
+
+Check programme completion eligibility.
+
+Generate academic standing reports.
+
+Grading policies must be versioned. Historical results must retain the grading policy applicable when they were approved.
+
+17. Academic appeals and examination queries
+Features:
+
+Receive student academic appeals.
+
+Receive examination result queries.
+
+Record appeal reference.
+
+Record affected unit.
+
+Record appeal reason.
+
+Attach supporting evidence.
+
+Assign reviewer.
+
+Track investigation.
+
+Record decision.
+
+Record approved mark correction.
+
+Notify student of outcome.
+
+Preserve appeal history.
+
+The Registrar coordinates the process; the designated academic authority makes decisions according to institutional policy.
+
+18. Transcript management
+The Registrar can generate official student transcripts.
+
+Transcript information:
+
+College name and branding.
+
+Student full name.
+
+Student registration number.
+
+Programme name and code.
+
+Department.
+
+Campus.
+
+Admission date.
+
+Academic years and semesters.
+
+Registered units.
+
+Unit marks.
+
+Grades.
+
+Credits.
+
+Academic progression.
+
+Completion status.
+
+Award classification, where applicable.
+
+Authorized signature.
+
+Verification reference.
+
+Features:
+
+Generate provisional transcript.
+
+Generate official transcript.
+
+Preview transcript.
+
+Verify academic data.
+
+Request transcript approval.
+
+Approve transcript.
+
+Generate secure PDF.
+
+Issue transcript.
+
+Record recipient where applicable.
+
+Track transcript issuance.
+
+Reprint under controlled procedures.
+
+Revoke or supersede a transcript where policy allows.
+
+Maintain transcript versions.
+
+Transcript issuance register
+Every issued transcript must create a permanent issuance record.
+
+Field
+
+Example
+
+Issuance reference
+
+TRX-2026-0001
+
+Student number
+
+HCA/STU/2026/001
+
+Document type
+
+Official transcript
+
+Issue date
+
+System-generated
+
+Issued by
+
+Authorized Registrar
+
+Approval status
+
+Approved
+
+Verification code
+
+Unique secure code
+
+Document version
+
+1
+
+Status
+
+Issued
+
+The system must preserve the previous issuance record if a transcript is replaced or revoked.
+
+19. Certificate management
+Features:
+
+Identify eligible students.
+
+Validate programme completion.
+
+Validate examination results.
+
+Verify award requirements.
+
+Generate certificate numbers.
+
+Generate certificates.
+
+Submit certificates for approval.
+
+Print approved certificates.
+
+Record certificate issue date.
+
+Record collection status.
+
+Record replacement requests.
+
+Revoke invalid certificates through an authorized process.
+
+Maintain certificate verification records.
+
+Certificate number generation must use a separate central registration number type, such as:
+
+HCA/CERT/2026/001
+
+Certificate numbers must not be confused with student registration numbers.
+
+20. Certificate and transcript verification
+The platform should provide a secure verification service.
+
+Features:
+
+Verify certificate number.
+
+Verify transcript reference.
+
+Verify document authenticity.
+
+Verify document issue date.
+
+Confirm document status.
+
+Confirm award title.
+
+Confirm institution.
+
+Display only approved verification information.
+
+Record verification requests.
+
+Detect revoked or superseded documents.
+
+A public verification page must not expose student contact details, private marks or unnecessary personal information.
+
+21. Graduation clearance
+The Registrar coordinates academic clearance before graduation.
+
+Clearance departments may include:
+
+Registrar.
+
+Finance.
+
+Library.
+
+Examination Office.
+
+Department.
+
+Administration.
+
+Features:
+
+Identify expected graduates.
+
+Check programme completion.
+
+Check required units.
+
+Check approved results.
+
+Check outstanding academic requirements.
+
+Request departmental clearance.
+
+Track clearance decisions.
+
+Identify outstanding requirements.
+
+Generate graduation eligibility reports.
+
+Approve academic clearance.
+
+Financial clearance should be represented as an authorized clearance outcome. The Registrar should not automatically gain access to confidential finance transactions.
+
+22. Graduation management
+Features:
+
+Create graduation ceremony.
+
+Configure graduation year.
+
+Create graduation cohort.
+
+Generate eligible graduate list.
+
+Review award classifications.
+
+Approve graduation list.
+
+Generate graduation programme.
+
+Generate graduation invitation letters.
+
+Record attendance.
+
+Record award collection.
+
+Record certificate collection.
+
+Archive graduation records.
+
+Generate graduation statistics.
+
+Graduation approval must follow the institution's official academic governance.
+
+23. Student academic records archive
+Features:
+
+Archive completed academic years.
+
+Archive semester records.
+
+Archive examination records.
+
+Archive transcripts.
+
+Archive certificate records.
+
+Archive graduation records.
+
+Search historical records.
+
+Retrieve archived documents.
+
+Track archive access.
+
+Preserve document versions.
+
+Apply retention policies.
+
+Archived academic records must remain protected against unauthorized alteration or deletion.
+
+24. Student academic documents
+The Registrar can manage official academic documents.
+
+Examples:
+
+Admission letters.
+
+Registration confirmation letters.
+
+Examination cards.
+
+Academic progress letters.
+
+Deferment letters.
+
+Resumption letters.
+
+Transfer letters.
+
+Completion letters.
+
+Transcripts.
+
+Certificates.
+
+Graduation letters.
+
+Academic recommendation letters, where authorized.
+
+Document templates must be centrally controlled and versioned.
+
+25. Student portal integration
+Students should be able to access approved academic information through their own portal.
+
+Student-visible information:
+
+Registration number.
+
+Programme and campus.
+
+Semester registration.
+
+Registered units.
+
+Examination timetable.
+
+Examination registration status.
+
+Published results.
+
+Academic progression.
+
+Transcript request status.
+
+Certificate status.
+
+Graduation clearance status.
+
+Official academic documents.
+
+Students must not see provisional results unless the institution explicitly permits this.
+
+26. Registrar reporting and analytics
+Reports include:
+
+Student registration report.
+
+Admission conversion report.
+
+Programme enrolment report.
+
+Campus enrolment report.
+
+Unit registration report.
+
+Semester registration report.
+
+Student progression report.
+
+Deferment report.
+
+Transfer report.
+
+Examination registration report.
+
+Examination attendance report.
+
+Results processing report.
+
+Missing marks report.
+
+Academic appeals report.
+
+Transcript issuance report.
+
+Certificate issuance report.
+
+Graduation eligibility report.
+
+Graduate statistics.
+
+Academic records amendment report.
+
+Report access must follow campus, department and institutional permissions.
+
+27. Registrar approval centre
+One central workspace for approval requests.
+
+Approval categories:
+
+Student registration exceptions.
+
+Programme transfers.
+
+Unit registration exceptions.
+
+Deferment.
+
+Resumption.
+
+Credit transfer.
+
+Examination registration corrections.
+
+Results amendments.
+
+Transcript issuance.
+
+Certificate issuance.
+
+Graduation clearance.
+
+Academic record corrections.
+
+Each approval must record:
+
+Requesting user.
+
+Request date.
+
+Request reason.
+
+Supporting evidence.
+
+Assigned reviewer.
+
+Decision.
+
+Decision date.
+
+Comments.
+
+Audit reference.
+
+28. Academic records security
+Required controls:
+
+Role-based access control.
+
+Institution and campus data isolation.
+
+Department-level restrictions where required.
+
+Multi-factor authentication for privileged accounts.
+
+Secure document storage.
+
+Encryption in transit and at rest.
+
+Audit logs for academic record changes.
+
+Approval requirements for sensitive corrections.
+
+Versioned transcripts and certificates.
+
+Controlled exports.
+
+Session management.
+
+Backup and recovery.
+
+Protection against unauthorized bulk downloads.
+
+Restricted access to confidential student information.
+
+Retention and archival policies.
+
+The Registrar must not be able to erase audit history or silently change published academic records.
+
+29. Registrar portal navigation
+Recommended sidebar structure:
+
+HI-TECH COLLEGE
+
+Registrar Portal
+Dashboard
+
+Student Records
+
+Admissions
+
+Student Registration
+
+Programmes & Courses
+
+Unit Registration
+
+Academic Years & Semesters
+
+Student Academic Status
+
+Transfers & Readmissions
+
+Examination Registration
+
+Examination Bodies
+
+Examination Timetables
+
+Examination Attendance
+
+Results Processing
+
+Grading & Progression
+
+Academic Appeals
+
+Transcripts
+
+Certificates
+
+Document Verification
+
+Graduation Management
+
+Academic Records Archive
+
+Academic Documents
+
+Approval Centre
+
+Reports & Analytics
+
+Notifications
+
+Settings
+
+30. Database design
+Recommended Prisma models:
+
+Model
+
+Purpose
+
+Student
+
+Official student identity
+
+StudentAdmission
+
+Admission history
+
+StudentAcademicProfile
+
+Academic profile
+
+StudentProgramme
+
+Programme enrolment
+
+StudentUnitRegistration
+
+Unit registration
+
+AcademicYear
+
+Academic year configuration
+
+Semester
+
+Semester configuration
+
+StudentStatusHistory
+
+Status changes
+
+StudentDeferment
+
+Deferment records
+
+StudentTransfer
+
+Transfer records
+
+CreditTransfer
+
+Credit transfer decisions
+
+ExaminationBody
+
+Examination organizations
+
+ExaminationSeries
+
+Examination series
+
+ExaminationRegistration
+
+Candidate registration
+
+ExaminationAttendance
+
+Examination attendance
+
+ResultRecord
+
+Approved unit results
+
+ResultAmendment
+
+Authorized result corrections
+
+AcademicAppeal
+
+Academic appeal history
+
+Transcript
+
+Transcript documents
+
+TranscriptIssuance
+
+Transcript issuance register
+
+Certificate
+
+Certificate records
+
+CertificateIssuance
+
+Certificate issuance history
+
+DocumentVerification
+
+Verification requests
+
+GraduationCohort
+
+Graduation group
+
+GraduationEligibility
+
+Graduate eligibility checks
+
+GraduationClearance
+
+Clearance records
+
+AcademicDocument
+
+Official academic documents
+
+RegistrarApproval
+
+Approval workflow
+
+AcademicArchive
+
+Archived academic records
+
+AuditLog
+
+Permanent activity history
+
+The central RegistrationNumber service must be reused for student and certificate numbering. Do not implement independent number generators inside the Registrar module.
+
+31. Backend API structure
+Recommended Express endpoints:
+
+/api/registrar/dashboard
+
+/api/registrar/admissions
+/api/registrar/students
+/api/registrar/students/:id
+/api/registrar/students/register
+/api/registrar/students/:id/status
+/api/registrar/students/:id/history
+
+/api/registrar/programmes
+/api/registrar/student-programmes
+/api/registrar/unit-registration
+/api/registrar/academic-years
+/api/registrar/semesters
+
+/api/registrar/deferments
+/api/registrar/resumptions
+/api/registrar/transfers
+/api/registrar/credit-transfers
+/api/registrar/readmissions
+
+/api/registrar/examination-bodies
+/api/registrar/examination-series
+/api/registrar/examination-registration
+/api/registrar/examination-attendance
+/api/registrar/examination-timetables
+
+/api/registrar/results
+/api/registrar/results/validation
+/api/registrar/results/approval
+/api/registrar/results/amendments
+/api/registrar/academic-appeals
+
+/api/registrar/transcripts
+/api/registrar/transcripts/issuance
+/api/registrar/certificates
+/api/registrar/certificates/issuance
+/api/registrar/document-verification
+
+/api/registrar/graduation/cohorts
+/api/registrar/graduation/eligibility
+/api/registrar/graduation/clearance
+/api/registrar/graduation/lists
+
+/api/registrar/documents
+/api/registrar/archive
+/api/registrar/approvals
+/api/registrar/reports
+/api/registrar/notifications
+All endpoints require backend permission checks and validation. Record-level authorization must prevent access to students outside the user's permitted institution or campus.
+
+32. Frontend project structure
+src/
+└── modules/
+    └── registrar/
+        ├── pages/
+        │   ├── RegistrarDashboard.tsx
+        │   ├── Admissions.tsx
+        │   ├── StudentRecords.tsx
+        │   ├── StudentRegistration.tsx
+        │   ├── StudentProfile.tsx
+        │   ├── ProgrammeRegistration.tsx
+        │   ├── UnitRegistration.tsx
+        │   ├── AcademicPeriods.tsx
+        │   ├── StudentStatus.tsx
+        │   ├── Deferments.tsx
+        │   ├── Transfers.tsx
+        │   ├── ExaminationRegistration.tsx
+        │   ├── ExaminationBodies.tsx
+        │   ├── ExaminationTimetable.tsx
+        │   ├── ExaminationAttendance.tsx
+        │   ├── ResultsProcessing.tsx
+        │   ├── ResultsAmendments.tsx
+        │   ├── AcademicAppeals.tsx
+        │   ├── TranscriptManagement.tsx
+        │   ├── TranscriptRegister.tsx
+        │   ├── CertificateManagement.tsx
+        │   ├── CertificateVerification.tsx
+        │   ├── GraduationManagement.tsx
+        │   ├── AcademicArchive.tsx
+        │   ├── AcademicDocuments.tsx
+        │   ├── ApprovalCentre.tsx
+        │   └── RegistrarReports.tsx
+        ├── components/
+        │   ├── RegistrarSidebar.tsx
+        │   ├── RegistrarHeader.tsx
+        │   ├── StudentSearch.tsx
+        │   ├── StudentRegistrationForm.tsx
+        │   ├── AcademicHistoryTimeline.tsx
+        │   ├── UnitRegistrationTable.tsx
+        │   ├── ResultsValidationTable.tsx
+        │   ├── TranscriptPreview.tsx
+        │   ├── CertificatePreview.tsx
+        │   └── GraduationClearanceCard.tsx
+        ├── services/
+        │   ├── registrarApi.ts
+        │   ├── studentRecordsApi.ts
+        │   ├── examinationApi.ts
+        │   ├── resultsApi.ts
+        │   └── documentsApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+33. Acceptance criteria
+The Registrar Portal is ready for production review only when:
+
+Student records can be created from approved admissions.
+
+Registration numbers are generated safely and uniquely.
+
+Duplicate student identities are detected.
+
+Programme and unit registration rules are enforced.
+
+Academic periods can be configured.
+
+Student status changes are recorded and auditable.
+
+Deferments, resumption and transfers follow approval workflows.
+
+Examination registration validates student eligibility.
+
+Examination bodies can be configured.
+
+Results processing preserves the approval chain.
+
+Published results cannot be silently modified.
+
+Transcript issuance creates permanent register entries.
+
+Certificate numbers are unique.
+
+Certificate and transcript verification works without exposing private records.
+
+Graduation eligibility follows configured academic rules.
+
+Academic records can be archived and retrieved.
+
+All permissions are enforced by the backend.
+
+Critical workflows have automated tests.
+
+Backup and recovery procedures are tested.
+
+34. Module 19 implementation deliverables
+The development package should include:
+
+Registrar dashboard and navigation.
+
+Student record management.
+
+Student registration number integration.
+
+Admission-to-registration workflow.
+
+Programme and unit registration.
+
+Academic year and semester configuration.
+
+Deferment, transfer and readmission management.
+
+Examination registration and examination-body configuration.
+
+Results processing and amendment workflows.
+
+Transcript generation and issuance register.
+
+Certificate management and verification.
+
+Graduation eligibility and clearance.
+
+Academic document centre.
+
+Academic records archive.
+
+Reports and analytics.
+
+Approval workflows.
+
+Prisma migrations.
+
+API validation and role permissions.
+
+Audit logging and automated tests.
+
+This is a complete module specification, not a claim that the module has already been implemented or tested in the repository.
+
+NEXT: MODULE 20 — FINANCE OFFICER / ACCOUNTS PORTAL
+The next module will cover the financial operations of HI-TECH College:
+
+Finance dashboard.
+
+Student fee structures.
+
+Programme and course fees.
+
+Semester billing.
+
+Student invoices.
+
+Fee statements.
+
+M-Pesa Daraja integration.
+
+Bank payments.
+
+Cash and manual payment recording.
+
+Payment reconciliation.
+
+Receipts and receipt verification.
+
+Credit notes and refunds.
+
+Scholarships and bursaries.
+
+Discounts and approved waivers.
+
+Student balances and arrears.
+
+Payment plans and instalments.
+
+Examination and certification fees.
+
+Library and other service charges.
+
+Supplier invoices.
+
+Accounts payable.
+
+Procurement financial approvals.
+
+Petty cash.
+
+Cashbook.
+
+General ledger.
+
+Income and expenditure.
+
+Budget management.
+
+Payroll integration.
+
+Financial reports.
+
+Audit and fraud monitoring.
+
+Financial approval workflows.
+
+Student finance portal integration.
+
+Finance security and separation of duties.
+
+
+Convert to PDF
+next
+MODULE 20: FINANCE OFFICER / ACCOUNTS PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Finance and accounting
+
+The Finance Portal manages the college's financial operations, including student fees, invoicing, payments, receipts, reconciliation, refunds, supplier payments, budgeting, accounting, payroll integration and financial reporting.
+
+It must integrate with the Admissions, Registrar, Student, Examination, Library, Procurement, HR and Super Admin portals.
+
+The system must maintain accurate financial records, prevent unauthorized transactions and provide a complete audit trail.
+
+1. Finance dashboard
+The Finance Officer dashboard should display:
+
+Total billed fees.
+
+Total fees collected.
+
+Outstanding student balances.
+
+Total overdue fees.
+
+Today's collections.
+
+Monthly collections.
+
+Payments awaiting confirmation.
+
+Unallocated payments.
+
+Failed transactions.
+
+Refund requests.
+
+Pending financial approvals.
+
+Supplier invoices awaiting payment.
+
+Outstanding supplier balances.
+
+Current budget utilization.
+
+Income and expenditure summary.
+
+Cash and bank balances, according to permissions.
+
+Quick actions:
+
+Create fee structure.
+
+Generate student invoice.
+
+Record payment.
+
+Verify M-Pesa payment.
+
+Allocate payment.
+
+Generate receipt.
+
+Process refund.
+
+Create supplier invoice.
+
+Approve payment.
+
+Generate financial report.
+
+2. Finance dashboard analytics
+The portal should provide charts and summaries for:
+
+Monthly fee collections.
+
+Fees collected by campus.
+
+Collections by programme.
+
+Collections by payment method.
+
+Student fee balances.
+
+Income versus expenditure.
+
+Monthly operating expenses.
+
+Budget versus actual expenditure.
+
+Outstanding supplier invoices.
+
+Refund trends.
+
+Example collection report:
+
+Illustrative monthly fee collections
+Example figures only; actual values must come from posted finance transactions.
+
+KES 0
+KES 450K
+KES 900K
+KES 1.4M
+KES 1.8M
+Jan
+Feb
+Mar
+Apr
+May
+Jun
+Jan: Collections KES 850K
+Feb: Collections KES 1.1M
+Mar: Collections KES 980K
+Apr: Collections KES 1.4M
+May: Collections KES 1.2M
+Jun: Collections KES 1.6M
+3. Fee structure management
+The Finance Officer can configure approved student fee structures.
+
+Features:
+
+Create fee structures.
+
+Assign fee structures to programmes.
+
+Assign fees to academic years.
+
+Assign fees to semesters.
+
+Assign fees to campuses.
+
+Configure full-time and part-time fees.
+
+Configure modular course fees.
+
+Configure examination fees.
+
+Configure registration fees.
+
+Configure laboratory fees.
+
+Configure practical fees.
+
+Configure library charges.
+
+Configure student activity fees.
+
+Configure other approved service charges.
+
+Set payment deadlines.
+
+Set instalment schedules.
+
+Activate or deactivate fee structures.
+
+Maintain historical versions.
+
+Example configuration:
+
+Programme
+
+Illustrative fee
+
+ICT Modular
+
+KES 18,000 / term
+
+ICT Certificate
+
+KES 15,000 / term
+
+AI and Machine Learning
+
+KES 30,000 / term
+
+These are configurable example amounts, not automatically approved current fees.
+
+Important: Changes to fee structures must not rewrite invoices already issued. Existing invoices must retain the fee version applied when they were generated.
+
+4. Fee categories
+The system should support configurable fee categories.
+
+Examples:
+
+Admission fee.
+
+Registration fee.
+
+Tuition fee.
+
+Examination fee.
+
+Practical fee.
+
+Laboratory fee.
+
+Computer usage fee.
+
+Library fee.
+
+Student identity card fee.
+
+Certification fee.
+
+Graduation fee.
+
+Replacement document fee.
+
+Other approved charges.
+
+Each fee category should have:
+
+Unique code.
+
+Description.
+
+Amount or calculation rule.
+
+Accounting ledger mapping.
+
+Tax treatment, where applicable.
+
+Refundability rules.
+
+Effective date.
+
+Approval status.
+
+5. Student billing and invoicing
+Features:
+
+Generate invoices automatically after registration.
+
+Generate invoices manually with permission.
+
+Bill by programme.
+
+Bill by semester.
+
+Bill by academic year.
+
+Bill by unit where configured.
+
+Bill for examination registration.
+
+Bill for certification.
+
+Bill for approved additional services.
+
+Generate bulk invoices.
+
+Generate individual invoices.
+
+Download invoice PDF.
+
+Email invoice to student.
+
+Display invoice in student portal.
+
+Track invoice status.
+
+Issue supplementary invoices.
+
+Apply approved credit notes.
+
+Invoice statuses:
+
+Status
+
+Description
+
+Draft
+
+Not yet issued
+
+Issued
+
+Officially issued
+
+Partially paid
+
+Some amount received
+
+Paid
+
+Fully settled
+
+Overdue
+
+Payment deadline passed
+
+Cancelled
+
+Cancelled through authorization
+
+Credited
+
+Adjusted through credit note
+
+Issued invoices must not be silently edited. Corrections must use a controlled adjustment or credit-note workflow.
+
+6. Student fee statements
+Features:
+
+Generate student statements.
+
+Show opening balance.
+
+Show invoices.
+
+Show payments.
+
+Show credit notes.
+
+Show refunds.
+
+Show adjustments.
+
+Show closing balance.
+
+Filter by academic year.
+
+Filter by semester.
+
+Filter by transaction date.
+
+Download PDF statements.
+
+Export authorized financial records.
+
+Email statements to students.
+
+Student statements must distinguish between posted transactions and pending payment confirmations.
+
+7. M-Pesa Daraja integration
+The system should integrate with the Safaricom Daraja API for supported M-Pesa payment workflows.
+
+Features:
+
+Configure authorized Daraja credentials.
+
+Initiate STK Push.
+
+Collect student registration number or invoice reference.
+
+Send payment request.
+
+Receive payment callback.
+
+Validate callback authenticity and transaction details.
+
+Record M-Pesa receipt number.
+
+Match payment to invoice.
+
+Allocate payment.
+
+Generate receipt.
+
+Notify student.
+
+Handle failed payments.
+
+Handle timeouts.
+
+Handle duplicate callbacks.
+
+Reconcile unmatched payments.
+
+Record transaction audit history.
+
+Payment flow:
+
+Student selects M-Pesa
+
+Platform requests STK Push
+
+Student confirms payment on phone
+
+Daraja callback received and validated
+
+Payment recorded and allocated
+
+Completed
+Receipt generated and student notified
+
+Security requirements:
+
+Credentials stored in secure server-side secrets.
+
+No Daraja secret keys in React code.
+
+Validate callback fields.
+
+Use unique transaction references.
+
+Make callback processing idempotent.
+
+Never treat the student's browser response as proof of payment.
+
+Reconcile transactions against the provider's records.
+
+Prevent duplicate posting of the same payment.
+
+8. Bank payment management
+Features:
+
+Configure approved bank accounts.
+
+Record bank transfers.
+
+Import bank statements.
+
+Match bank transactions.
+
+Identify unmatched deposits.
+
+Allocate deposits to students.
+
+Record transaction references.
+
+Verify bank deposits.
+
+Generate bank reconciliation reports.
+
+Track reconciliation status.
+
+Only authorized Finance Officers should confirm manual bank payments.
+
+9. Cash and manual payment recording
+Features:
+
+Record cash payments.
+
+Record approved manual transfers.
+
+Record cheque payments where supported.
+
+Capture payer details.
+
+Capture payment date.
+
+Capture payment reference.
+
+Upload supporting evidence.
+
+Select invoice allocation.
+
+Submit for verification.
+
+Generate official receipt after posting.
+
+Manual payment entry should require appropriate permissions and independent verification for higher-risk transactions.
+
+10. Payment allocation
+Features:
+
+Allocate payment to an invoice.
+
+Allocate payment across several invoices.
+
+Support partial payments.
+
+Support overpayments.
+
+Record unallocated funds.
+
+Reallocate through approval.
+
+Track allocation history.
+
+Identify unmatched student payments.
+
+Generate allocation reports.
+
+The system must not automatically assign an ambiguous payment to the wrong student.
+
+11. Receipt management
+Features:
+
+Generate sequential receipt numbers.
+
+Generate PDF receipts.
+
+Include college details.
+
+Include student registration number.
+
+Include payer details.
+
+Include payment method.
+
+Include transaction reference.
+
+Include amount received.
+
+Include allocated invoice.
+
+Include receipt date.
+
+Include authorized cashier identity.
+
+Provide receipt verification.
+
+Reprint receipts with audit logging.
+
+Cancel invalid receipts through authorized procedures.
+
+Example:
+
+HI-TECH COLLEGE
+
+Illustrative receipt
+OFFICIAL PAYMENT RECEIPT
+RCT-2026-0001
+Student
+
+HCA/STU/2026/001
+
+Payment method
+
+M-Pesa
+
+Transaction reference
+
+ABC123XYZ
+
+Amount
+
+KES 18,000
+
+Total received
+
+KES 18,000
+Example layout and fictitious transaction details, not proof of payment.
+12. Payment plans and instalments
+Features:
+
+Create payment plans.
+
+Configure instalment amounts.
+
+Configure due dates.
+
+Assign payment plans to eligible students.
+
+Track instalment status.
+
+Record partial instalments.
+
+Generate reminders.
+
+Identify overdue instalments.
+
+Request payment plan changes.
+
+Approve or reject requests.
+
+Generate instalment reports.
+
+13. Scholarships and bursaries
+Features:
+
+Create scholarship categories.
+
+Create bursary programmes.
+
+Record sponsors.
+
+Register beneficiaries.
+
+Configure scholarship amounts.
+
+Configure percentage-based awards.
+
+Configure fixed awards.
+
+Allocate scholarships to invoices.
+
+Record sponsor contributions.
+
+Track scholarship balances.
+
+Review eligibility.
+
+Approve awards.
+
+Generate beneficiary reports.
+
+Scholarships should be recorded as distinct financial credits or sponsor-funded allocations, not as untracked changes to tuition fees.
+
+14. Discounts, waivers and financial adjustments
+Features:
+
+Configure approved discount categories.
+
+Apply authorized discounts.
+
+Record bursary adjustments.
+
+Process fee waivers.
+
+Apply approved credit notes.
+
+Record adjustment reasons.
+
+Upload supporting documents.
+
+Route adjustments for approval.
+
+Maintain original invoice values.
+
+Generate adjustment reports.
+
+A Finance Officer must not approve their own high-value financial adjustments where separation of duties is required.
+
+15. Student balances and arrears
+Features:
+
+View student balances.
+
+Identify outstanding invoices.
+
+Identify overdue fees.
+
+Generate arrears reports.
+
+Filter by programme.
+
+Filter by campus.
+
+Filter by academic year.
+
+Filter by semester.
+
+Send payment reminders.
+
+Track student payment commitments.
+
+Identify disputed balances.
+
+Generate collection reports.
+
+Financial holds or restrictions must follow approved college policy. A balance must not automatically remove a student's academic records or destroy access to legally or institutionally required information.
+
+16. Refund management
+Features:
+
+Receive refund requests.
+
+Verify original payment.
+
+Confirm refund eligibility.
+
+Record refund reason.
+
+Calculate refundable amount.
+
+Review deductions where policy allows.
+
+Attach supporting documents.
+
+Submit for approval.
+
+Process approved refund.
+
+Record refund transaction reference.
+
+Notify student.
+
+Maintain refund history.
+
+Refund workflow:
+
+Student or authorized officer submits request.
+
+Finance verifies original payment and eligibility.
+
+Finance prepares refund calculation.
+
+Independent authorized officer approves.
+
+Payment is processed through the approved method.
+
+System records the refund.
+
+Student receives notification.
+
+17. Examination and certification fees
+Features:
+
+Configure examination fees.
+
+Configure external examination registration fees.
+
+Configure certification fees.
+
+Generate examination invoices.
+
+Track examination payments.
+
+Allocate examination payments.
+
+Reconcile payments against candidate registration.
+
+Generate certification invoices.
+
+Report outstanding examination fees.
+
+Finance must integrate with the Registrar and Examination modules without directly modifying examination results or candidate academic eligibility records.
+
+18. Library and other service charges
+Features:
+
+Configure library fines where authorized.
+
+Record approved replacement charges.
+
+Configure document replacement fees.
+
+Configure identity card replacement fees.
+
+Configure approved laboratory charges.
+
+Configure other institutional service charges.
+
+Generate service invoices.
+
+Reconcile service payments.
+
+Each service charge must be linked to an approved fee category and accounting ledger.
+
+19. Supplier invoice management
+Features:
+
+Register suppliers.
+
+Record supplier invoices.
+
+Upload supplier documents.
+
+Record invoice number.
+
+Record invoice date.
+
+Record due date.
+
+Record purchase order reference.
+
+Match invoices to approved purchase orders.
+
+Validate invoice totals.
+
+Submit invoices for approval.
+
+Track invoice status.
+
+Generate accounts payable reports.
+
+20. Accounts payable
+Features:
+
+View outstanding supplier invoices.
+
+Schedule supplier payments.
+
+Prepare payment vouchers.
+
+Verify supporting documents.
+
+Approve supplier payments.
+
+Record bank payment references.
+
+Record payment dates.
+
+Track outstanding liabilities.
+
+Generate supplier statements.
+
+Reconcile supplier accounts.
+
+Supplier creation, invoice verification and payment approval should be separated where practical.
+
+21. Procurement financial approvals
+Finance should integrate with the Procurement module.
+
+Features:
+
+Review purchase requisitions.
+
+Verify budget availability.
+
+Review purchase orders.
+
+Confirm approved amounts.
+
+Review supplier quotations.
+
+Verify invoices.
+
+Approve financial commitments within assigned limits.
+
+Reject unsupported expenditure.
+
+Track procurement expenditure.
+
+Generate procurement financial reports.
+
+Finance must not independently bypass procurement approval rules.
+
+22. Petty cash management
+Features:
+
+Create petty cash accounts.
+
+Allocate petty cash floats.
+
+Record petty cash expenditure.
+
+Upload supporting receipts.
+
+Record cash advances.
+
+Record float replenishment.
+
+Reconcile petty cash.
+
+Report missing documentation.
+
+Track custodian responsibility.
+
+Generate petty cash reports.
+
+23. Cashbook management
+Features:
+
+Record cash receipts.
+
+Record cash payments.
+
+Record bank deposits.
+
+Record bank withdrawals.
+
+Track cash balances.
+
+Track bank balances.
+
+Reconcile daily cash movements.
+
+Record cashbook adjustments.
+
+Generate cashbook reports.
+
+24. General ledger
+The accounting module should support a structured chart of accounts.
+
+Features:
+
+Create accounts.
+
+Configure account codes.
+
+Categorize income accounts.
+
+Categorize expense accounts.
+
+Configure asset accounts.
+
+Configure liability accounts.
+
+Configure equity or fund accounts.
+
+Configure control accounts.
+
+Map fee categories to revenue accounts.
+
+Map expenses to ledger accounts.
+
+Post journal entries.
+
+Reverse approved journals.
+
+Generate trial balance.
+
+Generate general ledger reports.
+
+Accounting rule: Every posted financial transaction must have balanced debit and credit entries.
+
+Example:
+
+Account
+
+Debit
+
+Credit
+
+M-Pesa clearing account
+
+KES 18,000
+
+—
+
+Student fee receivable
+
+—
+
+KES 18,000
+
+Total
+
+KES 18,000
+
+KES 18,000
+
+This is an illustrative accounting entry; actual account mappings depend on the college's accounting policy.
+
+25. Income and expenditure management
+Features:
+
+Record income.
+
+Record expenditure.
+
+Categorize transactions.
+
+Link expenditure to budgets.
+
+Track recurring expenses.
+
+Track departmental expenditure.
+
+Track campus expenditure.
+
+Generate income statements.
+
+Generate expenditure statements.
+
+Generate financial summaries.
+
+26. Budget management
+Features:
+
+Create annual budgets.
+
+Create departmental budgets.
+
+Create campus budgets.
+
+Allocate budget categories.
+
+Submit budgets for approval.
+
+Approve budgets.
+
+Track commitments.
+
+Track actual expenditure.
+
+Track remaining allocations.
+
+Request budget revisions.
+
+Generate budget utilization reports.
+
+Illustrative budget versus expenditure
+Example figures only, in KES. Actual values must come from approved budgets and posted transactions.
+
+Budget
+Spent
+KES 0
+KES 400K
+KES 800K
+KES 1.2M
+KES 1.6M
+ICT
+Business
+Engineering
+Administration
+ICT: Budget KES 1.2M, Spent KES 850K
+Business: Budget KES 900K, Spent KES 670K
+Engineering: Budget KES 1.5M, Spent KES 1.1M
+Administration: Budget KES 800K, Spent KES 620K
+27. Payroll integration
+The Finance Portal should integrate with HR and Payroll.
+
+Features:
+
+Receive approved payroll summaries.
+
+View authorized payroll liabilities.
+
+Process approved salary payment batches.
+
+Reconcile payroll bank transactions.
+
+Record payroll journal entries.
+
+Generate payroll expenditure reports.
+
+Track payroll payment status.
+
+Employee salary details must be restricted to specifically authorized Finance and HR personnel. Ordinary Finance Officers should not automatically access all confidential employee records.
+
+28. Tax and statutory reporting
+The platform should support configurable statutory reporting requirements, subject to professional accounting review and applicable Kenyan regulations.
+
+Features:
+
+Configure applicable tax categories.
+
+Record tax-related transactions.
+
+Generate tax summaries.
+
+Record withholding information where applicable.
+
+Track statutory liabilities.
+
+Export supporting accounting records.
+
+Maintain tax audit evidence.
+
+Generate period-based reports.
+
+The system should not assume every educational service or transaction has the same tax treatment. Tax configuration requires confirmation by qualified finance personnel.
+
+29. Financial reports
+Reports include:
+
+Student finance
+
+Student fee statements.
+
+Outstanding balances.
+
+Arrears.
+
+Collections by programme.
+
+Collections by campus.
+
+Payment method analysis.
+
+Scholarship and bursary reports.
+
+Refund reports.
+
+Accounting
+
+Cashbook.
+
+Bank reconciliation.
+
+General ledger.
+
+Trial balance.
+
+Income and expenditure.
+
+Balance sheet.
+
+Accounts payable.
+
+Supplier statements.
+
+Management
+
+Monthly finance report.
+
+Annual financial report.
+
+Departmental budget report.
+
+Campus financial performance.
+
+Budget utilization.
+
+Revenue projections.
+
+Expenditure trends.
+
+Exports should support PDF, Excel and CSV where permitted.
+
+30. Financial approval centre
+One workspace for financial approval requests.
+
+Approval types:
+
+Fee structure changes.
+
+Invoice adjustments.
+
+Discounts.
+
+Fee waivers.
+
+Scholarships.
+
+Bursaries.
+
+Refunds.
+
+Supplier invoices.
+
+Supplier payments.
+
+Petty cash replenishment.
+
+Budget revisions.
+
+Journal entries.
+
+Write-offs.
+
+Payment reversals.
+
+Each approval must record:
+
+Requester.
+
+Amount.
+
+Financial category.
+
+Reason.
+
+Supporting documents.
+
+Approval level.
+
+Approver.
+
+Decision.
+
+Timestamp.
+
+Audit reference.
+
+Approval limits should be configurable by institution management.
+
+31. Financial audit and fraud monitoring
+Features:
+
+Monitor duplicate payment references.
+
+Detect repeated callbacks.
+
+Detect suspicious payment reversals.
+
+Identify unusual refunds.
+
+Identify manual payment patterns.
+
+Identify duplicate invoices.
+
+Flag unusual adjustments.
+
+Track failed reconciliation.
+
+Monitor excessive failed login attempts.
+
+Record sensitive financial exports.
+
+Generate audit reports.
+
+Fraud alerts should trigger investigation rather than automatically accuse a user of misconduct.
+
+32. Student finance portal integration
+Students should be able to:
+
+View fee structures.
+
+View invoices.
+
+View fee statements.
+
+View outstanding balances.
+
+View payment history.
+
+Pay using M-Pesa.
+
+View bank payment instructions.
+
+Submit payment evidence where supported.
+
+Download receipts.
+
+Request statements.
+
+Request payment plans.
+
+Apply for bursaries.
+
+Request refunds.
+
+Receive payment notifications.
+
+Students must only access their own financial accounts, except for explicitly authorized parent or sponsor access.
+
+Parent monitoring remains opt-in/opt-out according to the college's established policy. A parent must not automatically receive full financial information simply because a student has a parent contact recorded.
+
+33. Finance portal navigation
+HI-TECH COLLEGE
+
+Finance & Accounts Portal
+Dashboard
+
+Fee Structures
+
+Student Invoices
+
+Student Statements
+
+M-Pesa Payments
+
+Bank Payments
+
+Cash & Manual Payments
+
+Payment Allocation
+
+Receipts
+
+Payment Plans
+
+Scholarships & Bursaries
+
+Discounts & Waivers
+
+Arrears Management
+
+Refunds
+
+Examination Fees
+
+Service Charges
+
+Supplier Invoices
+
+Accounts Payable
+
+Procurement Finance
+
+Petty Cash
+
+Cashbook
+
+General Ledger
+
+Income & Expenditure
+
+Budget Management
+
+Payroll Integration
+
+Tax Reports
+
+Financial Reports
+
+Approval Centre
+
+Audit & Fraud Monitoring
+
+Notifications
+
+Settings
+
+34. Database design
+Recommended Prisma models:
+
+Model
+
+Purpose
+
+FeeCategory
+
+Configurable fee categories
+
+FeeStructure
+
+Programme and semester fee structures
+
+FeeStructureVersion
+
+Historical fee structure versions
+
+StudentInvoice
+
+Student billing records
+
+InvoiceLine
+
+Individual invoice charges
+
+Payment
+
+Received payments
+
+PaymentAllocation
+
+Payment-to-invoice allocation
+
+PaymentProviderTransaction
+
+M-Pesa or other provider transactions
+
+PaymentCallbackEvent
+
+Idempotent callback processing history
+
+BankAccount
+
+Institution bank accounts
+
+BankStatement
+
+Imported bank statements
+
+BankStatementLine
+
+Individual bank transactions
+
+BankReconciliation
+
+Reconciliation records
+
+Receipt
+
+Official receipts
+
+PaymentPlan
+
+Instalment arrangements
+
+PaymentPlanInstallment
+
+Individual instalments
+
+Scholarship
+
+Scholarship programmes
+
+StudentScholarship
+
+Student awards
+
+Bursary
+
+Bursary programmes
+
+FinancialAdjustment
+
+Approved adjustments
+
+CreditNote
+
+Invoice credits
+
+RefundRequest
+
+Refund applications
+
+RefundTransaction
+
+Processed refunds
+
+Supplier
+
+Supplier records
+
+SupplierInvoice
+
+Accounts payable invoices
+
+SupplierPayment
+
+Supplier payments
+
+PettyCashAccount
+
+Petty cash accounts
+
+PettyCashTransaction
+
+Petty cash movements
+
+ChartOfAccount
+
+General ledger account structure
+
+JournalEntry
+
+Accounting journal
+
+JournalLine
+
+Debit and credit lines
+
+Budget
+
+Approved budget
+
+BudgetAllocation
+
+Budget category allocations
+
+BudgetCommitment
+
+Reserved expenditure
+
+PayrollPosting
+
+Approved payroll accounting summaries
+
+FinancialApproval
+
+Financial approval workflow
+
+AuditLog
+
+Finance audit records
+
+Important database design rules:
+
+Store monetary amounts using exact decimal types, not floating-point values.
+
+Store currency explicitly, defaulting to KES where appropriate.
+
+Use immutable posted transaction records.
+
+Use reversal entries instead of deleting posted transactions.
+
+Enforce unique payment provider references.
+
+Use database transactions for payment allocation and ledger posting.
+
+Keep provider callbacks separate from verified and posted payments.
+
+Preserve fee structure versions.
+
+Maintain audit history for financial approvals and changes.
+
+35. Backend API structure
+Recommended Express API endpoints:
+
+/api/finance/dashboard
+
+/api/finance/fee-categories
+/api/finance/fee-structures
+/api/finance/fee-structures/:id/versions
+
+/api/finance/invoices
+/api/finance/invoices/:id
+/api/finance/statements
+
+/api/finance/payments
+/api/finance/payments/manual
+/api/finance/payments/allocate
+/api/finance/payments/unallocated
+/api/finance/payments/reconcile
+
+/api/finance/mpesa/stk-push
+/api/finance/mpesa/callback
+/api/finance/mpesa/transactions
+
+/api/finance/bank-accounts
+/api/finance/bank-statements
+/api/finance/bank-reconciliation
+
+/api/finance/receipts
+/api/finance/receipts/:id/verify
+
+/api/finance/payment-plans
+/api/finance/scholarships
+/api/finance/bursaries
+/api/finance/adjustments
+/api/finance/credit-notes
+/api/finance/refunds
+
+/api/finance/suppliers
+/api/finance/supplier-invoices
+/api/finance/supplier-payments
+
+/api/finance/petty-cash
+/api/finance/cashbook
+
+/api/finance/chart-of-accounts
+/api/finance/journals
+/api/finance/general-ledger
+/api/finance/trial-balance
+
+/api/finance/budgets
+/api/finance/budget-allocations
+/api/finance/budget-commitments
+
+/api/finance/payroll-postings
+/api/finance/tax-reports
+
+/api/finance/approvals
+/api/finance/reports
+/api/finance/audit
+/api/finance/notifications
+All endpoints must enforce authenticated identity, institution scope, role permissions, transaction ownership and approval limits.
+
+36. Frontend project structure
+src/
+└── modules/
+    └── finance/
+        ├── pages/
+        │   ├── FinanceDashboard.tsx
+        │   ├── FeeStructures.tsx
+        │   ├── StudentInvoices.tsx
+        │   ├── StudentStatements.tsx
+        │   ├── MpesaPayments.tsx
+        │   ├── BankPayments.tsx
+        │   ├── ManualPayments.tsx
+        │   ├── PaymentAllocation.tsx
+        │   ├── ReceiptManagement.tsx
+        │   ├── PaymentPlans.tsx
+        │   ├── Scholarships.tsx
+        │   ├── Bursaries.tsx
+        │   ├── FinancialAdjustments.tsx
+        │   ├── ArrearsManagement.tsx
+        │   ├── RefundManagement.tsx
+        │   ├── ExaminationFees.tsx
+        │   ├── ServiceCharges.tsx
+        │   ├── Suppliers.tsx
+        │   ├── SupplierInvoices.tsx
+        │   ├── AccountsPayable.tsx
+        │   ├── PettyCash.tsx
+        │   ├── Cashbook.tsx
+        │   ├── GeneralLedger.tsx
+        │   ├── JournalEntries.tsx
+        │   ├── Budgets.tsx
+        │   ├── PayrollIntegration.tsx
+        │   ├── FinancialReports.tsx
+        │   ├── ApprovalCentre.tsx
+        │   └── FinancialAudit.tsx
+        ├── components/
+        │   ├── FinanceSidebar.tsx
+        │   ├── FinanceHeader.tsx
+        │   ├── FinanceStatCard.tsx
+        │   ├── InvoiceForm.tsx
+        │   ├── PaymentForm.tsx
+        │   ├── PaymentAllocationTable.tsx
+        │   ├── ReceiptPreview.tsx
+        │   ├── RefundApprovalCard.tsx
+        │   ├── BudgetUtilizationChart.tsx
+        │   └── LedgerTable.tsx
+        ├── services/
+        │   ├── financeApi.ts
+        │   ├── paymentApi.ts
+        │   ├── mpesaApi.ts
+        │   ├── invoiceApi.ts
+        │   ├── accountingApi.ts
+        │   └── reportsApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+37. Security and separation of duties
+The following controls are mandatory:
+
+Finance Officers must not edit student academic results.
+
+Lecturers must not access student financial transaction details by default.
+
+Students must only access their own statements and invoices.
+
+Payment confirmation must be server-side.
+
+M-Pesa callbacks must be validated and idempotent.
+
+Posted payments must not be deleted.
+
+Refunds require authorization.
+
+High-value transactions require additional approval.
+
+Invoice adjustments must be auditable.
+
+Financial exports must be permission-controlled.
+
+General ledger posting must preserve debit-credit balance.
+
+Supplier creation and supplier payment approval should be separated where possible.
+
+Finance users must not approve their own restricted transactions.
+
+Bank reconciliation changes must retain history.
+
+Financial audit logs must be protected from modification.
+
+38. Acceptance criteria
+The Finance Portal is ready for production review only when:
+
+Fee structures can be configured and versioned.
+
+Invoices can be generated and tracked.
+
+Student statements calculate correctly.
+
+M-Pesa payment callbacks are validated.
+
+Duplicate payment processing is prevented.
+
+Payments can be allocated accurately.
+
+Receipts can be generated and verified.
+
+Bank statements can be reconciled.
+
+Refunds follow approval workflows.
+
+Scholarships and waivers are auditable.
+
+Supplier invoices and payments are tracked.
+
+Double-entry accounting is enforced.
+
+Budget commitments and expenditure reconcile.
+
+Financial reports use posted transaction data.
+
+Student portal access is restricted to authorized records.
+
+Financial approval limits are enforced by the backend.
+
+Critical workflows have automated tests.
+
+Backup and recovery procedures are verified.
+
+39. Module 20 implementation deliverables
+The development package should include:
+
+Finance dashboard.
+
+Fee structure and fee version management.
+
+Student billing and invoicing.
+
+Student statements.
+
+M-Pesa Daraja integration.
+
+Bank and manual payments.
+
+Payment allocation.
+
+Receipt management.
+
+Scholarships and bursaries.
+
+Refund and adjustment workflows.
+
+Supplier invoices and accounts payable.
+
+Petty cash and cashbook.
+
+General ledger and double-entry accounting.
+
+Budget management.
+
+Payroll integration.
+
+Financial reports.
+
+Approval centre.
+
+Audit and fraud monitoring.
+
+Student finance portal integration.
+
+Prisma migrations, API validation, permissions and tests.
+
+This is the module specification. The integrations and accounting workflows still require implementation, credentials where applicable, institutional configuration and testing.
+
+NEXT: MODULE 21 — HUMAN RESOURCE (HR) AND STAFF MANAGEMENT PORTAL
+The next module will cover:
+
+HR dashboard.
+
+Staff recruitment.
+
+Job vacancies.
+
+Online job applications.
+
+Applicant management.
+
+Interview scheduling.
+
+Staff onboarding.
+
+Automatic staff registration numbers (HCA/STAFF/YYYY/NNN).
+
+Employee profiles.
+
+Lecturer and trainer management.
+
+Department and campus assignments.
+
+Employment contracts.
+
+Staff document management.
+
+Qualifications and professional certificates.
+
+Staff attendance.
+
+Staff clock-in and clock-out.
+
+Leave management.
+
+Duty rosters.
+
+Workload management.
+
+Staff performance appraisal.
+
+Disciplinary case management.
+
+Staff training and professional development.
+
+Payroll integration.
+
+Staff benefits.
+
+Staff promotions.
+
+Transfers and changes of designation.
+
+Staff exit and clearance.
+
+Former employee records.
+
+HR reports and analytics.
+
+HR approval centre.
+
+Staff self-service portal.
+
+HR security and confidentiality.
+
+
+Convert to PDF
+
+
+
+KES 400K

@@ -1,0 +1,1911 @@
+# Module 40 – HI-TECH College AI Administration, Usage & Governance
+
+This module introduces the central AI control centre for the college. The Super Admin can manage AI availability, approved models, usage limits, knowledge indexing, prompt versions and audit records.
+
+The design separates institution-wide AI governance from individual chatbot conversations. API credentials remain on the server, while administrators only see provider configuration status—not secret values.
+
+The module includes:
+
+1. AI provider configuration and health checks.
+2. Global emergency disable switch.
+3. Institution-specific AI settings.
+4. Monthly usage and token accounting.
+5. Usage quotas and role-based limits.
+6. Versioned prompt templates.
+7. Knowledge indexing status.
+8. AI governance audit logs.
+
+## 1. Database schema
+
+Add the following models and enums to `apps/api/prisma/schema.prisma`. The `ChatbotAIConfiguration` model from Module 39 should be extended rather than duplicated.
+
+```
+
+enum AIProviderStatus {
+  ACTIVE
+  DISABLED
+  DEGRADED
+}
+
+enum AIAuditAction {
+  CONFIG_UPDATED
+  AI_ENABLED
+  AI_DISABLED
+  EMERGENCY_DISABLED
+  PROVIDER_CHECKED
+  PROMPT_CREATED
+  PROMPT_PUBLISHED
+  PROMPT_ARCHIVED
+  QUOTA_UPDATED
+  INDEXING_REQUESTED
+}
+
+enum AIPromptStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model AIProviderConfiguration {
+  id             String           @id @default(uuid())
+  institutionId  String
+  providerKey    String
+  displayName    String
+  baseUrl        String?
+  chatModel      String?
+  embeddingModel String?
+  status         AIProviderStatus @default(DISABLED)
+  isDefault      Boolean          @default(false)
+  lastHealthCheck DateTime?
+  lastHealthError String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([institutionId, providerKey])
+  @@index([institutionId, status])
+}
+
+model AIUsageRecord {
+  id              String   @id @default(uuid())
+  institutionId   String
+  userId          String?
+  conversationId  String?
+  providerKey     String
+  model           String
+  operation       String
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  totalTokens     Int      @default(0)
+  estimatedCost   Decimal  @default(0) @db.Decimal(12, 6)
+  requestStatus   String
+  createdAt       DateTime @default(now())
+
+  @@index([institutionId, createdAt])
+  @@index([institutionId, userId, createdAt])
+  @@index([institutionId, operation, createdAt])
+}
+
+model AIUsageQuota {
+  id             String   @id @default(uuid())
+  institutionId  String
+  role           String
+  monthlyTokens  Int      @default(100000)
+  monthlyRequests Int     @default(1000)
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([institutionId, role])
+}
+
+model AIPromptTemplate {
+  id             String         @id @default(uuid())
+  institutionId  String
+  name           String
+  description    String?
+  version        Int
+  content        String
+  status         AIPromptStatus @default(DRAFT)
+  createdById    String
+  publishedById  String?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([institutionId, name, version])
+  @@index([institutionId, status])
+}
+
+model AIGovernanceAudit {
+  id             String        @id @default(uuid())
+  institutionId  String
+  actorId        String?
+  action         AIAuditAction
+  targetType     String
+  targetId       String?
+  details        Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([institutionId, createdAt])
+  @@index([institutionId, action])
+}
+
+```
+
+Extend the existing `ChatbotAIConfiguration` model with:
+
+```
+globalEnabled Boolean @default(false)
+emergencyDisabled Boolean @default(false)
+monthlyTokenLimit Int @default(100000)
+monthlyRequestLimit Int @default(1000)
+```
+
+Important: `globalEnabled` and `emergencyDisabled` are institution-level controls in this design. If the platform will host multiple independently administered institutions, create a separate platform-level control managed only by the platform Super Admin.
+
+Run:
+
+```
+cd apps/api
+npx prisma format
+npx prisma migrate dev --name ai_governance_control_centre
+npx prisma generate
+```
+
+## 2. Governance service
+
+Create `apps/api/src/services/aiGovernance.ts`.
+
+This service centralizes AI enablement checks so that the chatbot cannot bypass the emergency disable switch.
+
+```
+
+import { prisma } from "../lib/prisma";
+
+export async function isAIAvailable(institutionId: string) {
+  const configuration = await prisma.chatbotAIConfiguration.findUnique({
+    where: { institutionId },
+    select: {
+      enabled: true,
+      globalEnabled: true,
+      emergencyDisabled: true,
+    },
+  });
+
+  if (!configuration) return false;
+
+  return (
+    configuration.enabled &&
+    configuration.globalEnabled &&
+    !configuration.emergencyDisabled &&
+    process.env.CHATBOT_AI_ENABLED === "true"
+  );
+}
+
+export async function recordAIUsage(input: {
+  institutionId: string;
+  userId?: string | null;
+  conversationId?: string | null;
+  providerKey: string;
+  model: string;
+  operation: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  estimatedCost?: number;
+  requestStatus: "SUCCESS" | "FAILED" | "BLOCKED";
+}) {
+  const inputTokens = Math.max(0, Math.trunc(input.inputTokens ?? 0));
+  const outputTokens = Math.max(0, Math.trunc(input.outputTokens ?? 0));
+  const estimatedCost = Math.max(0, input.estimatedCost ?? 0);
+
+  return prisma.aIUsageRecord.create({
+    data: {
+      institutionId: input.institutionId,
+      userId: input.userId ?? null,
+      conversationId: input.conversationId ?? null,
+      providerKey: input.providerKey,
+      model: input.model,
+      operation: input.operation,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      estimatedCost,
+      requestStatus: input.requestStatus,
+    },
+  });
+}
+
+export async function recordGovernanceAudit(input: {
+  institutionId: string;
+  actorId?: string | null;
+  action:
+    | "CONFIG_UPDATED"
+    | "AI_ENABLED"
+    | "AI_DISABLED"
+    | "EMERGENCY_DISABLED"
+    | "PROVIDER_CHECKED"
+    | "PROMPT_CREATED"
+    | "PROMPT_PUBLISHED"
+    | "PROMPT_ARCHIVED"
+    | "QUOTA_UPDATED"
+    | "INDEXING_REQUESTED";
+  targetType: string;
+  targetId?: string | null;
+  details?: Record<string, unknown>;
+}) {
+  return prisma.aIGovernanceAudit.create({
+    data: {
+      institutionId: input.institutionId,
+      actorId: input.actorId ?? null,
+      action: input.action,
+      targetType: input.targetType,
+      targetId: input.targetId ?? null,
+      details: input.details as object | undefined,
+    },
+  });
+}
+
+```
+
+Use `isAIAvailable()` before calling the generation provider in `chatbotRAG.ts` or the main chatbot route. The environment variable remains an additional platform-level safety gate.
+
+## 3. AI governance API
+
+Create `apps/api/src/routes/aiGovernance.ts`.
+
+This API provides configuration, emergency controls, usage reports and quotas. It deliberately does not accept provider API keys.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+import { recordGovernanceAudit } from "../services/aiGovernance";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN", "ADMIN"));
+
+function scope(req: any) {
+  const institutionId = req.user?.institutionId;
+  const actorId = req.user?.id;
+
+  if (!institutionId || !actorId) {
+    throw new Error("Missing authenticated institution or user.");
+  }
+
+  return { institutionId, actorId };
+}
+
+const configSchema = z.object({
+  enabled: z.boolean(),
+  globalEnabled: z.boolean(),
+  monthlyTokenLimit: z.number().int().min(0).max(100_000_000),
+  monthlyRequestLimit: z.number().int().min(0).max(1_000_000),
+  confidenceThreshold: z.number().min(0).max(1),
+  maxContextArticles: z.number().int().min(1).max(10),
+  responseLanguage: z.enum(["auto", "en", "sw"]),
+});
+
+router.get("/configuration", async (req, res) => {
+  try {
+    const { institutionId } = scope(req);
+
+    const configuration = await prisma.chatbotAIConfiguration.findUnique({
+      where: { institutionId },
+      select: {
+        enabled: true,
+        globalEnabled: true,
+        emergencyDisabled: true,
+        monthlyTokenLimit: true,
+        monthlyRequestLimit: true,
+        confidenceThreshold: true,
+        maxContextArticles: true,
+        responseLanguage: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json({
+      configuration: configuration ?? null,
+      environmentEnabled: process.env.CHATBOT_AI_ENABLED === "true",
+    });
+  } catch {
+    return res.status(400).json({ message: "Unable to load AI configuration." });
+  }
+});
+
+router.patch("/configuration", async (req, res) => {
+  const parsed = configSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Invalid AI configuration.",
+      errors: parsed.error.flatten(),
+    });
+  }
+
+  try {
+    const { institutionId, actorId } = scope(req);
+
+    const current = await prisma.chatbotAIConfiguration.findUnique({
+      where: { institutionId },
+    });
+
+    const next = parsed.data;
+
+    const configuration = await prisma.chatbotAIConfiguration.upsert({
+      where: { institutionId },
+      create: {
+        institutionId,
+        ...next,
+      },
+      update: next,
+      select: {
+        enabled: true,
+        globalEnabled: true,
+        emergencyDisabled: true,
+        monthlyTokenLimit: true,
+        monthlyRequestLimit: true,
+        confidenceThreshold: true,
+        maxContextArticles: true,
+        responseLanguage: true,
+        updatedAt: true,
+      },
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "CONFIG_UPDATED",
+      targetType: "AI_CONFIGURATION",
+      details: {
+        previousEnabled: current?.enabled ?? false,
+        enabled: next.enabled,
+        globalEnabled: next.globalEnabled,
+        monthlyTokenLimit: next.monthlyTokenLimit,
+        monthlyRequestLimit: next.monthlyRequestLimit,
+      },
+    });
+
+    return res.json({ configuration });
+  } catch (error) {
+    console.error("AI configuration update failed:", error);
+    return res.status(500).json({ message: "Unable to update AI configuration." });
+  }
+});
+
+router.post("/emergency-disable", async (req, res) => {
+  try {
+    const { institutionId, actorId } = scope(req);
+
+    const configuration = await prisma.chatbotAIConfiguration.upsert({
+      where: { institutionId },
+      create: {
+        institutionId,
+        enabled: false,
+        globalEnabled: false,
+        emergencyDisabled: true,
+      },
+      update: {
+        enabled: false,
+        globalEnabled: false,
+        emergencyDisabled: true,
+      },
+      select: {
+        enabled: true,
+        globalEnabled: true,
+        emergencyDisabled: true,
+      },
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "EMERGENCY_DISABLED",
+      targetType: "AI_CONFIGURATION",
+      details: { reason: "Administrator emergency disable action." },
+    });
+
+    return res.json({
+      message: "AI has been disabled for this institution.",
+      configuration,
+    });
+  } catch (error) {
+    console.error("AI emergency disable failed:", error);
+    return res.status(500).json({ message: "Unable to disable AI." });
+  }
+});
+
+router.post("/restore", async (req, res) => {
+  try {
+    const { institutionId, actorId } = scope(req);
+
+    const configuration = await prisma.chatbotAIConfiguration.update({
+      where: { institutionId },
+      data: { emergencyDisabled: false },
+      select: {
+        enabled: true,
+        globalEnabled: true,
+        emergencyDisabled: true,
+      },
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "CONFIG_UPDATED",
+      targetType: "AI_CONFIGURATION",
+      details: { emergencyDisableRestored: true },
+    });
+
+    return res.json({
+      message: "Emergency disable has been lifted. Normal AI controls still apply.",
+      configuration,
+    });
+  } catch (error) {
+    console.error("AI restore failed:", error);
+    return res.status(500).json({ message: "Unable to restore AI controls." });
+  }
+});
+
+router.get("/usage", async (req, res) => {
+  try {
+    const { institutionId } = scope(req);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [
+      totals,
+      successfulRequests,
+      failedRequests,
+      recentRecords,
+    ] = await Promise.all([
+      prisma.aIUsageRecord.aggregate({
+        where: { institutionId, createdAt: { gte: monthStart } },
+        _sum: {
+          inputTokens: true,
+          outputTokens: true,
+          totalTokens: true,
+          estimatedCost: true,
+        },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.count({
+        where: {
+          institutionId,
+          createdAt: { gte: monthStart },
+          requestStatus: "SUCCESS",
+        },
+      }),
+      prisma.aIUsageRecord.count({
+        where: {
+          institutionId,
+          createdAt: { gte: monthStart },
+          requestStatus: "FAILED",
+        },
+      }),
+      prisma.aIUsageRecord.findMany({
+        where: { institutionId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          providerKey: true,
+          model: true,
+          operation: true,
+          inputTokens: true,
+          outputTokens: true,
+          totalTokens: true,
+          estimatedCost: true,
+          requestStatus: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    return res.json({
+      period: { start: monthStart },
+      totals: {
+        requests: totals._count._all,
+        successfulRequests,
+        failedRequests,
+        inputTokens: totals._sum.inputTokens ?? 0,
+        outputTokens: totals._sum.outputTokens ?? 0,
+        totalTokens: totals._sum.totalTokens ?? 0,
+        estimatedCost: Number(totals._sum.estimatedCost ?? 0),
+      },
+      recentRecords,
+    });
+  } catch (error) {
+    console.error("AI usage report failed:", error);
+    return res.status(500).json({ message: "Unable to load AI usage." });
+  }
+});
+
+const quotaSchema = z.object({
+  role: z.string().min(2).max(50),
+  monthlyTokens: z.number().int().min(0).max(100_000_000),
+  monthlyRequests: z.number().int().min(0).max(1_000_000),
+  enabled: z.boolean(),
+});
+
+router.get("/quotas", async (req, res) => {
+  try {
+    const { institutionId } = scope(req);
+
+    const quotas = await prisma.aIUsageQuota.findMany({
+      where: { institutionId },
+      orderBy: { role: "asc" },
+    });
+
+    return res.json({ quotas });
+  } catch {
+    return res.status(500).json({ message: "Unable to load AI quotas." });
+  }
+});
+
+router.put("/quotas", async (req, res) => {
+  const parsed = quotaSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ message: "Invalid quota configuration." });
+  }
+
+  try {
+    const { institutionId, actorId } = scope(req);
+    const quota = await prisma.aIUsageQuota.upsert({
+      where: {
+        institutionId_role: {
+          institutionId,
+          role: parsed.data.role,
+        },
+      },
+      create: { institutionId, ...parsed.data },
+      update: {
+        monthlyTokens: parsed.data.monthlyTokens,
+        monthlyRequests: parsed.data.monthlyRequests,
+        enabled: parsed.data.enabled,
+      },
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "QUOTA_UPDATED",
+      targetType: "AI_USAGE_QUOTA",
+      targetId: quota.id,
+      details: {
+        role: quota.role,
+        monthlyTokens: quota.monthlyTokens,
+        monthlyRequests: quota.monthlyRequests,
+        enabled: quota.enabled,
+      },
+    });
+
+    return res.json({ quota });
+  } catch (error) {
+    console.error("AI quota update failed:", error);
+    return res.status(500).json({ message: "Unable to update AI quota." });
+  }
+});
+
+router.get("/audit", async (req, res) => {
+  try {
+    const { institutionId } = scope(req);
+
+    const records = await prisma.aIGovernanceAudit.findMany({
+      where: { institutionId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    return res.json({ records });
+  } catch {
+    return res.status(500).json({ message: "Unable to load AI audit records." });
+  }
+});
+
+export default router;
+
+```
+
+Mount the routes:
+
+```
+import aiGovernanceRoutes from "./routes/aiGovernance";
+
+app.use("/api/ai-admin", aiGovernanceRoutes);
+```
+
+Authorization correction required: The code above uses `SUPER_ADMIN` and `ADMIN` for the whole router. In production, restrict configuration changes, emergency restoration, quota management and audit access to the appropriate permissions. A general administrator should not automatically receive the same authority as a Super Admin.
+
+## 4. Enforce quotas before AI requests
+
+Create `apps/api/src/services/aiQuota.ts`.
+
+This service checks the institution's monthly token and request limits, plus the authenticated user's role quota.
+
+```
+
+import { prisma } from "../lib/prisma";
+
+export async function checkAIQuota(input: {
+  institutionId: string;
+  role: string;
+}) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const configuration = await prisma.chatbotAIConfiguration.findUnique({
+    where: { institutionId },
+    select: {
+      enabled: true,
+      globalEnabled: true,
+      emergencyDisabled: true,
+      monthlyTokenLimit: true,
+      monthlyRequestLimit: true,
+    },
+  });
+
+  if (
+    !configuration ||
+    !configuration.enabled ||
+    !configuration.globalEnabled ||
+    configuration.emergencyDisabled ||
+    process.env.CHATBOT_AI_ENABLED !== "true"
+  ) {
+    return { allowed: false, reason: "AI is disabled." };
+  }
+
+  const quota = await prisma.aIUsageQuota.findUnique({
+    where: {
+      institutionId_role: {
+        institutionId: input.institutionId,
+        role: input.role,
+      },
+    },
+  });
+
+  if (quota && !quota.enabled) {
+    return { allowed: false, reason: "AI access is disabled for this role." };
+  }
+
+  const [institutionUsage, roleUsage] = await Promise.all([
+    prisma.aIUsageRecord.aggregate({
+      where: { institutionId: input.institutionId, createdAt: { gte: monthStart } },
+      _sum: { totalTokens: true },
+      _count: { _all: true },
+    }),
+    quota
+      ? prisma.aIUsageRecord.aggregate({
+          where: {
+            institutionId: input.institutionId,
+            createdAt: { gte: monthStart },
+            // Role-specific usage requires a role field on AIUsageRecord.
+          },
+          _sum: { totalTokens: true },
+          _count: { _all: true },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const institutionTokens = institutionUsage._sum.totalTokens ?? 0;
+  const institutionRequests = institutionUsage._count._all;
+
+  if (
+    configuration.monthlyTokenLimit > 0 &&
+    institutionTokens >= configuration.monthlyTokenLimit
+  ) {
+    return { allowed: false, reason: "Institution monthly token quota reached." };
+  }
+
+  if (
+    configuration.monthlyRequestLimit > 0 &&
+    institutionRequests >= configuration.monthlyRequestLimit
+  ) {
+    return { allowed: false, reason: "Institution monthly request quota reached." };
+  }
+
+  if (quota && roleUsage) {
+    const roleTokens = roleUsage._sum.totalTokens ?? 0;
+    const roleRequests = roleUsage._count._all;
+
+    if (quota.monthlyTokens > 0 && roleTokens >= quota.monthlyTokens) {
+      return { allowed: false, reason: "Role monthly token quota reached." };
+    }
+
+    if (quota.monthlyRequests > 0 && roleRequests >= quota.monthlyRequests) {
+      return { allowed: false, reason: "Role monthly request quota reached." };
+    }
+  }
+
+  return { allowed: true, reason: null };
+}
+
+```
+
+Required schema refinement for accurate role quotas: Add `userRole String?` to `AIUsageRecord`, and record the authenticated user's role with every request. Then add `userRole: input.role` to the usage record and filter the role aggregation using `userRole: input.role`.
+
+Replace the role aggregation filter with:
+
+```
+where: {
+  institutionId: input.institutionId,
+  userRole: input.role,
+  createdAt: { gte: monthStart },
+}
+```
+
+The quota check above is a preflight check, not a concurrency-safe reservation. For strict limits under high request volume, implement an atomic monthly usage counter or transactional quota reservation before provider calls. Also, zero limits currently mean unlimited; if the college wants zero to mean disabled, change that policy consistently.
+
+## 5. Provider health checks
+
+Do not let an administrator enter an arbitrary URL and have the server fetch it. That can create server-side request forgery (SSRF) vulnerabilities.
+
+For this module, provider health checks should use the provider endpoint configured in server environment variables and an allowlisted provider key.
+
+Create `apps/api/src/services/aiProviderHealth.ts`:
+
+```
+
+const providers = {
+  "openai-compatible": {
+    baseUrl: process.env.CHATBOT_AI_BASE_URL,
+    apiKey: process.env.CHATBOT_AI_API_KEY,
+    model: process.env.CHATBOT_AI_MODEL,
+  },
+};
+
+export async function checkAIProviderHealth(providerKey: string) {
+  if (providerKey !== "openai-compatible") {
+    return {
+      healthy: false,
+      message: "Provider is not in the approved provider allowlist.",
+    };
+  }
+
+  const provider = providers["openai-compatible"];
+
+  if (!provider.baseUrl || !provider.apiKey || !provider.model) {
+    return {
+      healthy: false,
+      message: "Provider environment configuration is incomplete.",
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${provider.baseUrl.replace(/\/+$/, "")}/models`,
+      {
+        headers: {
+          Authorization: `Bearer ${provider.apiKey}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+
+    return {
+      healthy: response.ok,
+      message: response.ok
+        ? "Provider endpoint is reachable."
+        : `Provider returned HTTP ${response.status}.`,
+    };
+  } catch {
+    return {
+      healthy: false,
+      message: "Provider health check failed.",
+    };
+  }
+}
+
+```
+
+Add a health-check route to `aiGovernance.ts`:
+
+```
+import { checkAIProviderHealth } from "../services/aiProviderHealth";
+
+router.post("/provider-health", async (req, res) => {
+  try {
+    const { institutionId, actorId } = scope(req);
+    const providerKey = z.string().min(1).max(50).parse(req.body.providerKey);
+
+    const result = await checkAIProviderHealth(providerKey);
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "PROVIDER_CHECKED",
+      targetType: "AI_PROVIDER",
+      details: {
+        providerKey,
+        healthy: result.healthy,
+      },
+    });
+
+    return res.json(result);
+  } catch {
+    return res.status(400).json({
+      message: "Unable to perform provider health check.",
+    });
+  }
+});
+```
+
+This health check only confirms endpoint reachability, not that the model can successfully generate a valid chatbot answer. A separate controlled integration test should verify generation and embeddings.
+
+## 6. Prompt template management
+
+Create `apps/api/src/routes/aiPrompts.ts`.
+
+This provides versioned prompts. Published versions should be immutable; changes create a new draft version.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+import { recordGovernanceAudit } from "../services/aiGovernance";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN"));
+
+function getScope(req: any) {
+  if (!req.user?.institutionId || !req.user?.id) {
+    throw new Error("Missing user scope.");
+  }
+
+  return {
+    institutionId: req.user.institutionId,
+    actorId: req.user.id,
+  };
+}
+
+const promptSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  description: z.string().trim().max(500).optional(),
+  content: z.string().trim().min(20).max(12000),
+});
+
+router.get("/", async (req, res) => {
+  try {
+    const { institutionId } = getScope(req);
+
+    const prompts = await prisma.aIPromptTemplate.findMany({
+      where: { institutionId },
+      orderBy: [{ name: "asc" }, { version: "desc" }],
+    });
+
+    return res.json({ prompts });
+  } catch {
+    return res.status(500).json({ message: "Unable to load prompt templates." });
+  }
+});
+
+router.post("/", async (req, res) => {
+  const parsed = promptSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ message: "Invalid prompt template." });
+  }
+
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const latest = await prisma.aIPromptTemplate.findFirst({
+      where: {
+        institutionId,
+        name: parsed.data.name,
+      },
+      orderBy: { version: "desc" },
+      select: { version: true },
+    });
+
+    const prompt = await prisma.aIPromptTemplate.create({
+      data: {
+        institutionId,
+        ...parsed.data,
+        version: (latest?.version ?? 0) + 1,
+        createdById: actorId,
+        status: "DRAFT",
+      },
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "PROMPT_CREATED",
+      targetType: "AI_PROMPT",
+      targetId: prompt.id,
+      details: { name: prompt.name, version: prompt.version },
+    });
+
+    return res.status(201).json({ prompt });
+  } catch (error) {
+    console.error("Prompt creation failed:", error);
+    return res.status(500).json({ message: "Unable to create prompt template." });
+  }
+});
+
+router.post("/:id/publish", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const prompt = await prisma.aIPromptTemplate.findFirst({
+      where: {
+        id: req.params.id,
+        institutionId,
+        status: "DRAFT",
+      },
+    });
+
+    if (!prompt) {
+      return res.status(404).json({ message: "Draft prompt not found." });
+    }
+
+    const published = await prisma.$transaction(async (tx) => {
+      await tx.aIPromptTemplate.updateMany({
+        where: {
+          institutionId,
+          name: prompt.name,
+          status: "PUBLISHED",
+        },
+        data: { status: "ARCHIVED" },
+      });
+
+      return tx.aIPromptTemplate.update({
+        where: { id: prompt.id },
+        data: {
+          status: "PUBLISHED",
+          publishedById: actorId,
+          publishedAt: new Date(),
+        },
+      });
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "PROMPT_PUBLISHED",
+      targetType: "AI_PROMPT",
+      targetId: prompt.id,
+      details: { name: prompt.name, version: prompt.version },
+    });
+
+    return res.json({ prompt: published });
+  } catch (error) {
+    console.error("Prompt publishing failed:", error);
+    return res.status(500).json({ message: "Unable to publish prompt." });
+  }
+});
+
+export default router;
+
+```
+
+Mount it:
+
+```
+import aiPromptsRoutes from "./routes/aiPrompts";
+
+app.use("/api/ai-admin/prompts", aiPromptsRoutes);
+```
+
+The prompt API is Super Admin-only. The actual RAG service must subsequently load the active published prompt from the database; simply creating and publishing templates does not yet make them active in generation.
+
+## 7. Add role tracking to AI usage records
+
+Update `AIUsageRecord` with:
+
+```
+userRole String?
+```
+
+Then update `recordAIUsage()` in `aiGovernance.ts` to accept and save `userRole`:
+
+```
+userRole?: string | null;
+```
+
+Add this to the `create.data` object:
+
+```
+userRole: input.userRole ?? null,
+```
+
+Every provider call should record the authenticated user's institution, ID, role, provider, model, operation and token usage. Do not use browser-supplied identity or token counts as authoritative accounting data.
+
+## 8. AI administration dashboard
+
+Create `apps/web/src/pages/admin/AIGovernancePage.tsx`.
+
+This page provides the main control centre for configuration, emergency shutdown, usage and quota management.
+
+```
+
+import { useEffect, useState } from "react";
+import "./ai-governance.css";
+
+type Configuration = {
+  enabled: boolean;
+  globalEnabled: boolean;
+  emergencyDisabled: boolean;
+  monthlyTokenLimit: number;
+  monthlyRequestLimit: number;
+  confidenceThreshold: number;
+  maxContextArticles: number;
+  responseLanguage: "auto" | "en" | "sw";
+};
+
+type Usage = {
+  totals: {
+    requests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCost: number;
+  };
+};
+
+type Quota = {
+  id: string;
+  role: string;
+  monthlyTokens: number;
+  monthlyRequests: number;
+  enabled: boolean;
+};
+
+const API = "/api/ai-admin";
+
+async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(result.message || "AI administration request failed.");
+  }
+
+  return result as T;
+}
+
+export default function AIGovernancePage() {
+  const [configuration, setConfiguration] = useState<Configuration | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [quotas, setQuotas] = useState<Quota[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [providerHealth, setProviderHealth] = useState("");
+
+  async function loadData() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [configResult, usageResult, quotaResult] = await Promise.all([
+        api<{ configuration: Configuration | null }>("/configuration"),
+        api<Usage>("/usage"),
+        api<{ quotas: Quota[] }>("/quotas"),
+      ]);
+
+      setConfiguration(configResult.configuration);
+      setUsage(usageResult);
+      setQuotas(quotaResult.quotas);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load AI controls.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  function update<K extends keyof Configuration>(
+    key: K,
+    value: Configuration[K]
+  ) {
+    setConfiguration((current) =>
+      current ? { ...current, [key]: value } : current
+    );
+  }
+
+  async function saveConfiguration() {
+    if (!configuration) return;
+
+    setSaving(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await api<{ configuration: Configuration }>(
+        "/configuration",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            enabled: configuration.enabled,
+            globalEnabled: configuration.globalEnabled,
+            monthlyTokenLimit: configuration.monthlyTokenLimit,
+            monthlyRequestLimit: configuration.monthlyRequestLimit,
+            confidenceThreshold: configuration.confidenceThreshold,
+            maxContextArticles: configuration.maxContextArticles,
+            responseLanguage: configuration.responseLanguage,
+          }),
+        }
+      );
+
+      setConfiguration(result.configuration);
+      setNotice("AI configuration saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save configuration.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function emergencyDisable() {
+    if (!window.confirm("Emergency disable AI for this institution?")) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const result = await api<{ configuration: Configuration }>(
+        "/emergency-disable",
+        { method: "POST", body: JSON.stringify({}) }
+      );
+
+      setConfiguration((current) =>
+        current ? { ...current, ...result.configuration } : result.configuration
+      );
+      setNotice("Emergency AI disable activated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Emergency disable failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function restoreAI() {
+    if (!window.confirm("Lift the emergency disable switch?")) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const result = await api<{ configuration: Configuration }>(
+        "/restore",
+        { method: "POST", body: JSON.stringify({}) }
+      );
+
+      setConfiguration((current) =>
+        current ? { ...current, ...result.configuration } : result.configuration
+      );
+      setNotice("Emergency disable lifted. Review normal AI settings before enabling AI.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to restore AI controls.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function checkProvider() {
+    setProviderHealth("Checking provider...");
+    try {
+      const result = await api<{ healthy: boolean; message: string }>(
+        "/provider-health",
+        {
+          method: "POST",
+          body: JSON.stringify({ providerKey: "openai-compatible" }),
+        }
+      );
+      setProviderHealth(result.message);
+    } catch (err) {
+      setProviderHealth(
+        err instanceof Error ? err.message : "Provider check failed."
+      );
+    }
+  }
+
+  async function saveQuota(quota: Quota) {
+    setSaving(true);
+    setError("");
+
+    try {
+      await api("/quotas", {
+        method: "PUT",
+        body: JSON.stringify({
+          role: quota.role,
+          monthlyTokens: quota.monthlyTokens,
+          monthlyRequests: quota.monthlyRequests,
+          enabled: quota.enabled,
+        }),
+      });
+      setNotice(`Quota saved for ${quota.role}.`);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save quota.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <main className="ai-admin-page">Loading AI governance...</main>;
+  }
+
+  if (!configuration) {
+    return (
+      <main className="ai-admin-page">
+        <h1>AI Governance</h1>
+        {error && <div className="ai-alert ai-alert-error">{error}</div>}
+        <p>AI configuration has not yet been created for this institution.</p>
+        <button className="ai-button" onClick={() => void loadData()}>
+          Retry
+        </button>
+      </main>
+    );
+  }
+
+  const total = usage?.totals;
+
+  return (
+    <main className="ai-admin-page">
+      <header className="ai-admin-header">
+        <div>
+          <span>HI-TECH COLLEGE · PLATFORM CONTROL</span>
+          <h1>AI Governance Centre</h1>
+          <p>Control AI availability, usage limits and institutional safeguards.</p>
+        </div>
+        <button className="ai-button ai-button-outline" onClick={() => void loadData()}>
+          Refresh
+        </button>
+      </header>
+
+      {error && <div className="ai-alert ai-alert-error">{error}</div>}
+      {notice && <div className="ai-alert ai-alert-success">{notice}</div>}
+
+      <section className="ai-control-banner">
+        <div>
+          <strong>Emergency AI control</strong>
+          <p>
+            Immediately disable AI responses for this institution if a security,
+            safety or provider issue occurs.
+          </p>
+        </div>
+
+        {configuration.emergencyDisabled ? (
+          <button
+            className="ai-button"
+            disabled={saving}
+            onClick={() => void restoreAI()}
+          >
+            Lift emergency disable
+          </button>
+        ) : (
+          <button
+            className="ai-button ai-button-danger"
+            disabled={saving}
+            onClick={() => void emergencyDisable()}
+          >
+            Emergency disable AI
+          </button>
+        )}
+      </section>
+
+      <section className="ai-usage-grid">
+        <article>
+          <span>Monthly requests</span>
+          <strong>{total?.requests ?? 0}</strong>
+        </article>
+        <article>
+          <span>Tokens consumed</span>
+          <strong>{(total?.totalTokens ?? 0).toLocaleString()}</strong>
+        </article>
+        <article>
+          <span>Successful requests</span>
+          <strong>{total?.successfulRequests ?? 0}</strong>
+        </article>
+        <article>
+          <span>Failed requests</span>
+          <strong>{total?.failedRequests ?? 0}</strong>
+        </article>
+        <article>
+          <span>Estimated cost</span>
+          <strong>{(total?.estimatedCost ?? 0).toFixed(4)}</strong>
+        </article>
+      </section>
+
+      <section className="ai-admin-panel">
+        <h2>AI availability and configuration</h2>
+
+        <div className="ai-switch-row">
+          <div>
+            <strong>Institution AI enabled</strong>
+            <p>Allow AI responses when all safety conditions are met.</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={configuration.enabled}
+            onChange={(e) => update("enabled", e.target.checked)}
+          />
+        </div>
+
+        <div className="ai-switch-row">
+          <div>
+            <strong>Global AI enabled</strong>
+            <p>Institution-level AI availability control.</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={configuration.globalEnabled}
+            onChange={(e) => update("globalEnabled", e.target.checked)}
+          />
+        </div>
+
+        <label>
+          Monthly token limit
+          <input
+            type="number"
+            min={0}
+            value={configuration.monthlyTokenLimit}
+            onChange={(e) => update("monthlyTokenLimit", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Monthly request limit
+          <input
+            type="number"
+            min={0}
+            value={configuration.monthlyRequestLimit}
+            onChange={(e) => update("monthlyRequestLimit", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Retrieval confidence threshold: {configuration.confidenceThreshold.toFixed(2)}
+          <input
+            type="range"
+            min={0.3}
+            max={0.95}
+            step={0.01}
+            value={configuration.confidenceThreshold}
+            onChange={(e) => update("confidenceThreshold", Number(e.target.value))}
+          />
+        </label>
+
+        <label>
+          Maximum knowledge articles
+          <select
+            value={configuration.maxContextArticles}
+            onChange={(e) => update("maxContextArticles", Number(e.target.value))}
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Response language
+          <select
+            value={configuration.responseLanguage}
+            onChange={(e) =>
+              update("responseLanguage", e.target.value as Configuration["responseLanguage"])
+            }
+          >
+            <option value="auto">Automatic</option>
+            <option value="en">English</option>
+            <option value="sw">Kiswahili</option>
+          </select>
+        </label>
+
+        <div className="ai-form-actions">
+          <button className="ai-button" disabled={saving} onClick={() => void saveConfiguration()}>
+            {saving ? "Saving..." : "Save AI settings"}
+          </button>
+        </div>
+
+        <p className="ai-environment-note">
+          Emergency disabled: {configuration.emergencyDisabled ? "Yes" : "No"}.
+          The server environment switch must also be enabled before AI can operate.
+        </p>
+      </section>
+
+      <section className="ai-admin-panel">
+        <div className="ai-section-heading">
+          <div>
+            <h2>AI provider health</h2>
+            <p>Checks the server-configured provider endpoint.</p>
+          </div>
+          <button className="ai-button ai-button-outline" onClick={() => void checkProvider()}>
+            Test provider
+          </button>
+        </div>
+        {providerHealth && <p className="ai-provider-result">{providerHealth}</p>}
+      </section>
+
+      <section className="ai-admin-panel">
+        <h2>Role-based usage quotas</h2>
+        {quotas.length === 0 ? (
+          <p>No role-specific quotas have been configured.</p>
+        ) : (
+          <div className="ai-quota-list">
+            {quotas.map((quota) => (
+              <article className="ai-quota-row" key={quota.id}>
+                <strong>{quota.role}</strong>
+                <label>
+                  Monthly tokens
+                  <input
+                    type="number"
+                    min={0}
+                    value={quota.monthlyTokens}
+                    onChange={(e) =>
+                      setQuotas((items) =>
+                        items.map((item) =>
+                          item.id === quota.id
+                            ? { ...item, monthlyTokens: Number(e.target.value) }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  Monthly requests
+                  <input
+                    type="number"
+                    min={0}
+                    value={quota.monthlyRequests}
+                    onChange={(e) =>
+                      setQuotas((items) =>
+                        items.map((item) =>
+                          item.id === quota.id
+                            ? { ...item, monthlyRequests: Number(e.target.value) }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                </label>
+                <label className="ai-quota-toggle">
+                  Enabled
+                  <input
+                    type="checkbox"
+                    checked={quota.enabled}
+                    onChange={(e) =>
+                      setQuotas((items) =>
+                        items.map((item) =>
+                          item.id === quota.id
+                            ? { ...item, enabled: e.target.checked }
+                            : item
+                        )
+                      )
+                    }
+                  />
+                </label>
+                <button
+                  className="ai-button ai-button-outline"
+                  disabled={saving}
+                  onClick={() => void saveQuota(quota)}
+                >
+                  Save quota
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+```
+
+## 9. Dashboard styling
+
+Create `apps/web/src/pages/admin/ai-governance.css`.
+
+```
+
+.ai-admin-page {
+  max-width: 1500px;
+  margin: auto;
+  padding: 24px;
+  color: var(--text-primary, #172033);
+}
+
+.ai-admin-header,
+.ai-section-heading,
+.ai-switch-row,
+.ai-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ai-admin-header {
+  margin-bottom: 22px;
+}
+
+.ai-admin-header span {
+  color: #b42332;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.ai-admin-header h1 {
+  margin: 6px 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.ai-admin-header p,
+.ai-admin-panel p,
+.ai-control-banner p {
+  color: var(--text-muted, #64748b);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ai-control-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding: 19px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.ai-control-banner strong {
+  font-size: 16px;
+}
+
+.ai-control-banner p {
+  margin-bottom: 0;
+}
+
+.ai-usage-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ai-usage-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 11px;
+  background: var(--surface, #fff);
+}
+
+.ai-usage-grid span {
+  color: var(--text-muted, #64748b);
+  font-size: 11px;
+}
+
+.ai-usage-grid strong {
+  overflow-wrap: anywhere;
+  font-size: 23px;
+}
+
+.ai-admin-panel {
+  margin-bottom: 18px;
+  padding: 22px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.ai-admin-panel h2 {
+  margin: 0 0 18px;
+  font-size: 18px;
+}
+
+.ai-admin-panel > label,
+.ai-quota-row > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 15px 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.ai-admin-panel input:not([type="checkbox"]):not([type="range"]),
+.ai-admin-panel select,
+.ai-quota-row input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 7px;
+  background: var(--input-bg, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.ai-switch-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.ai-switch-row strong {
+  font-size: 14px;
+}
+
+.ai-switch-row p {
+  margin: 4px 0 0;
+}
+
+.ai-switch-row input,
+.ai-quota-toggle input {
+  width: 19px;
+  height: 19px;
+  accent-color: #b42332;
+}
+
+.ai-button {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #b42332;
+  border-radius: 8px;
+  background: #b42332;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ai-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.ai-button-outline {
+  border-color: var(--border, #cbd5e1);
+  background: var(--surface, #fff);
+  color: var(--text-primary, #172033);
+}
+
+.ai-button-danger {
+  border-color: #991b1b;
+  background: #991b1b;
+}
+
+.ai-form-actions {
+  justify-content: flex-start;
+  margin-top: 20px;
+}
+
+.ai-environment-note {
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.ai-provider-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--subtle-bg, #f1f5f9);
+}
+
+.ai-quota-list {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-quota-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr .7fr auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.ai-quota-row > strong {
+  padding-bottom: 12px;
+  font-size: 13px;
+}
+
+.ai-quota-row > label {
+  margin: 0;
+}
+
+.ai-quota-toggle {
+  align-items: center;
+}
+
+.ai-alert {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.ai-alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ai-alert-success {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+@media (max-width: 1050px) {
+  .ai-usage-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ai-quota-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .ai-admin-page {
+    padding: 14px;
+  }
+
+  .ai-admin-header,
+  .ai-control-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-usage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-admin-panel {
+    padding: 15px;
+  }
+
+  .ai-quota-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-quota-row > strong {
+    padding-bottom: 0;
+  }
+
+  .ai-quota-row > button {
+    width: 100%;
+  }
+}
+
+```
+
+## 10. Register the governance dashboard
+
+Add the import to the admin router:
+
+```
+import AIGovernancePage from "./pages/admin/AIGovernancePage";
+```
+
+Add the protected route:
+
+```
+<Route
+  path="/admin/ai-governance"
+  element={<AIGovernancePage />}
+/>
+```
+
+Add the sidebar entry:
+
+```
+{
+  label: "AI Governance Centre",
+  path: "/admin/ai-governance",
+  icon: "brain-circuit",
+  permission: "ai.governance.manage",
+}
+```
+
+Only the Super Admin should see this entry. Enforce the same restriction in the backend, not just in the sidebar.
+
+## 11. Required integration changes
+
+Before enabling this module, connect the governance checks to the existing chatbot pipeline.
+
+| Component                  | Required integration                                           |
+| -------------------------- | -------------------------------------------------------------- |
+| `chatbotRAG.ts`            | Check `isAIAvailable()` and `checkAIQuota()` before generation |
+| AI generation response     | Extract actual provider token usage                            |
+| `recordAIUsage()`          | Record successful, failed and blocked requests                 |
+| `aiQuota.ts`               | Filter usage by `userRole` for role-specific quotas            |
+| `chatbotKnowledgeIndex.ts` | Record indexing jobs and failures                              |
+| `chatbotAdmin.ts`          | Use the published prompt version                               |
+| `aiGovernance.ts`          | Restrict sensitive operations to Super Admin                   |
+| Audit system               | Record configuration and emergency control changes             |
+
+### Important production safeguards
+
+1. Quota enforcement: The supplied quota check is a preflight check. It does not reserve usage atomically, so simultaneous requests could exceed limits.
+2. Token accounting: Only use provider-reported usage, not estimates supplied by the browser.
+3. Emergency control: Every AI entry point, including background jobs and other AI modules, must check the emergency disable state.
+4. Prompt security: Published prompt templates must be versioned and immutable. Only approved prompts should be used.
+5. Provider security: Keep credentials in server-side secrets. Never return API keys to the frontend.
+6. Cost reporting: Estimated costs require provider-specific pricing configuration; the usage table alone does not establish accurate billing.
+7. Permissions: Separate AI configuration, quota management, prompt publishing and emergency restoration permissions.
+
+Integration and testing required
+
+The code is a module implementation template, not a verified migration or completed integration with your local repository. In particular, the role-based quota tracking and published-prompt loading need to be connected to the actual AI request pipeline.
+
+## 12. Module 40 navigation structure
+
+HI-TECH College AI Governance Centre
+
+AI Configuration
+
+Implemented template
+
+Provider Health
+
+Implemented template
+
+Usage & Cost Reports
+
+Implemented template
+
+Role Quotas
+
+Implemented template
+
+Prompt Management
+
+API template
+
+Emergency Controls
+
+Implemented template
+
+AI Audit Logs
+
+API available
+
+## Next: Module 41 – AI Knowledge Indexing & Audit Dashboard
+
+The next module will complete the remaining governance workflows:
+
+- Knowledge indexing queue, retry and failure management.
+- Article embedding status and model-version tracking.
+- Prompt version history and rollback.
+- AI audit log viewer with filtering and export.
+- Token usage by user, role, department and AI service.
+- Usage quota alerts and automatic restrictions.
+- AI performance and feedback reports.

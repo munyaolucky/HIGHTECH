@@ -1,0 +1,8006 @@
+
+Loading older messages…
+next
+MODULE 22: LIBRARY MANAGEMENT AND DIGITAL LIBRARY PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Physical and digital library
+
+The Library Management Portal manages physical books, e-books, journals, research materials, borrowing, returns, reservations, library access, fines, digital reading and library resources.
+
+It integrates with the Student Portal, Staff Portal, Lecturer Portal, Registrar Portal, Finance Portal, Examination Portal and Administration Portal.
+
+Primary users:
+
+Librarian.
+
+Senior Librarian.
+
+Library Assistant.
+
+Library Administrator.
+
+Student.
+
+Lecturer.
+
+Researcher.
+
+Registrar.
+
+Finance Officer.
+
+Institution Administrator.
+
+1. Library dashboard
+The dashboard provides a complete overview of library operations.
+
+Dashboard statistics:
+
+Total registered books.
+
+Total physical book copies.
+
+Total digital resources.
+
+Available books.
+
+Borrowed books.
+
+Reserved books.
+
+Overdue books.
+
+Lost books.
+
+Damaged books.
+
+Active library members.
+
+Students with suspended borrowing privileges.
+
+Staff library members.
+
+Today's borrowing transactions.
+
+Today's returns.
+
+Pending reservations.
+
+Outstanding library fines.
+
+Books awaiting processing.
+
+New acquisitions.
+
+Quick actions:
+
+Add new book.
+
+Register book copies.
+
+Register library member.
+
+Issue book.
+
+Receive returned book.
+
+Reserve book.
+
+Add e-book.
+
+Upload research material.
+
+Record damaged book.
+
+Generate library report.
+
+2. Physical book catalogue
+The system maintains a searchable catalogue of physical books.
+
+Book information:
+
+Book title.
+
+ISBN.
+
+Edition.
+
+Author.
+
+Co-author.
+
+Publisher.
+
+Publication year.
+
+Language.
+
+Subject.
+
+Category.
+
+Department.
+
+Programme.
+
+Course/unit relevance.
+
+Book description.
+
+Cover image.
+
+Number of copies.
+
+Available copies.
+
+Shelf location.
+
+Classification number.
+
+Acquisition date.
+
+Acquisition cost.
+
+Supplier.
+
+Book condition.
+
+Features:
+
+Add books.
+
+Edit book information.
+
+Archive book records.
+
+Search books.
+
+Filter by category.
+
+Filter by author.
+
+Filter by department.
+
+Filter by programme.
+
+Filter by availability.
+
+View book history.
+
+Import catalogue records.
+
+Export catalogue records.
+
+3. Book classification and categories
+The librarian can configure the library classification system.
+
+Suggested categories:
+
+Category
+
+Examples
+
+Computer Science
+
+Programming, algorithms
+
+Information Technology
+
+ICT, networking
+
+Cybersecurity
+
+Security, ethical hacking
+
+Business
+
+Management, entrepreneurship
+
+Accounting
+
+CPA, ATD, bookkeeping
+
+Mathematics
+
+Statistics, algebra
+
+Communication
+
+English, communication
+
+Engineering
+
+Electronics, electrical
+
+Education
+
+Teaching methodology
+
+Research
+
+Research methods
+
+Law
+
+Legal studies
+
+General Reference
+
+Dictionaries, encyclopedias
+
+Features:
+
+Create categories.
+
+Create subcategories.
+
+Assign classification numbers.
+
+Configure shelf locations.
+
+Assign department ownership.
+
+Configure subject tags.
+
+The classification system should support Dewey Decimal Classification and configurable local classification schemes.
+
+4. Authors and publishers
+Features:
+
+Register authors.
+
+Register co-authors.
+
+Register publishers.
+
+Record author biographies where appropriate.
+
+Record publisher information.
+
+Link authors to multiple books.
+
+Link publishers to multiple publications.
+
+Search publications by author.
+
+Search publications by publisher.
+
+5. Book acquisition management
+Manage new books entering the college library.
+
+Features:
+
+Create acquisition requests.
+
+Receive requests from lecturers.
+
+Receive requests from HODs.
+
+Review requested books.
+
+Approve acquisition.
+
+Record suppliers.
+
+Record quotations.
+
+Record purchase orders.
+
+Record donated books.
+
+Record donated materials.
+
+Record acquisition dates.
+
+Record acquisition costs.
+
+Record invoices.
+
+Track acquisition status.
+
+Acquisition statuses:
+
+Requested.
+
+Under review.
+
+Approved.
+
+Ordered.
+
+Received.
+
+Processed.
+
+Rejected.
+
+Cancelled.
+
+6. Supplier management
+Features:
+
+Register book suppliers.
+
+Record supplier contacts.
+
+Record supplier addresses.
+
+Record supplied books.
+
+Record quotations.
+
+Track purchase orders.
+
+Record supplier invoices.
+
+View supply history.
+
+Record supplier performance.
+
+Archive suppliers.
+
+Finance approvals and payments remain within the Finance Portal.
+
+7. Book stock and inventory management
+Features:
+
+Register individual book copies.
+
+Generate unique copy numbers.
+
+Generate barcode labels.
+
+Generate QR codes.
+
+Record shelf locations.
+
+Record book condition.
+
+Track available copies.
+
+Track issued copies.
+
+Track missing copies.
+
+Track damaged copies.
+
+Track withdrawn copies.
+
+Perform stocktaking.
+
+Reconcile inventory.
+
+Generate inventory reports.
+
+Each physical copy must have its own unique identifier, even when several copies share the same ISBN.
+
+Example:
+
+Book
+
+Copy number
+
+Status
+
+Introduction to Python
+
+HCA/LIB/2026/001
+
+Available
+
+Introduction to Python
+
+HCA/LIB/2026/002
+
+Borrowed
+
+Introduction to Python
+
+HCA/LIB/2026/003
+
+Damaged
+
+8. Barcode and QR code management
+Features:
+
+Generate book barcodes.
+
+Generate QR labels.
+
+Print barcode sheets.
+
+Scan book barcodes.
+
+Scan member cards.
+
+Identify book copies.
+
+Identify borrowers.
+
+Process borrowing transactions.
+
+Process returns.
+
+Track scanned transactions.
+
+The system should support USB barcode scanners that behave like keyboard input and supported mobile camera scanning.
+
+9. Library member registration
+Library members can be registered from existing college identities.
+
+Member categories:
+
+Student.
+
+Lecturer.
+
+Trainer.
+
+Administrative staff.
+
+Researcher.
+
+Authorized external member.
+
+Member information:
+
+Member number.
+
+College registration number.
+
+Full name.
+
+Department.
+
+Programme.
+
+Campus.
+
+Member category.
+
+Account status.
+
+Membership start date.
+
+Membership expiry date.
+
+Borrowing limit.
+
+Current borrowed books.
+
+Outstanding fines.
+
+Identity integration:
+
+Students use their existing HCA/STU/YYYY/NNN identity.
+
+Employees use their existing HCA/STAFF/YYYY/NNN identity.
+
+Library membership must not create a duplicate student or staff identity.
+
+10. Student library portal
+Students access the library through their existing Student Portal.
+
+Features:
+
+Search library catalogue.
+
+View book details.
+
+Check availability.
+
+View shelf location.
+
+Reserve books.
+
+View borrowed books.
+
+View return dates.
+
+Renew eligible books.
+
+View reservation queue.
+
+View overdue books.
+
+View approved fines.
+
+View digital books.
+
+Read authorized e-books.
+
+Download permitted resources.
+
+View reading history.
+
+Receive return reminders.
+
+Request books.
+
+Contact librarian.
+
+11. Staff and lecturer library portal
+Features:
+
+Search catalogue.
+
+Borrow books.
+
+Reserve books.
+
+Renew eligible books.
+
+Access digital resources.
+
+Request academic materials.
+
+Recommend new books.
+
+Request journals.
+
+Submit research materials.
+
+View borrowing history.
+
+View current loans.
+
+Receive overdue notifications.
+
+Lecturers can recommend books for their courses and units.
+
+12. Book borrowing and issue management
+The librarian can issue books to authorized members.
+
+Borrowing workflow:
+
+Identify member
+
+Scan library card or search member
+Scan book copy
+
+Verify availability and copy condition
+Validate borrowing eligibility
+
+Check loan limit, account status and restrictions
+Confirm issue
+
+Set return date and record librarian
+Generate borrowing receipt
+
+Configurable borrowing rules:
+
+Maximum books per student.
+
+Maximum books per lecturer.
+
+Loan duration.
+
+Renewal limit.
+
+Reference-only restrictions.
+
+Reserved-book restrictions.
+
+Special collection restrictions.
+
+Different rules by member category.
+
+13. Book returns
+Features:
+
+Scan returned book.
+
+Identify borrower.
+
+Check return date.
+
+Calculate overdue period.
+
+Record book condition.
+
+Record damage.
+
+Record missing accessories where applicable.
+
+Update book availability.
+
+Issue return receipt.
+
+Notify borrower.
+
+Process any applicable approved fine.
+
+Return transactions must preserve the original issue history.
+
+14. Book renewal
+Features:
+
+Renew borrowed books.
+
+Configure renewal limits.
+
+Set renewal periods.
+
+Prevent renewal of reserved books.
+
+Prevent renewal of restricted books.
+
+Check outstanding borrowing restrictions.
+
+Record renewal history.
+
+Notify member of revised due date.
+
+Renewals may be available through the Student Portal, Staff Portal or librarian interface, according to library policy.
+
+15. Book reservation and waiting list
+Features:
+
+Reserve unavailable books.
+
+Reserve available books for collection where policy permits.
+
+Join waiting lists.
+
+View queue position.
+
+Cancel reservations.
+
+Notify members when books become available.
+
+Set collection deadlines.
+
+Automatically expire uncollected reservations.
+
+Notify the next waiting member.
+
+Reservations must be handled transactionally so that two members cannot reserve the same individual copy at the same time.
+
+16. Overdue book management
+Features:
+
+Identify overdue books.
+
+Calculate overdue days.
+
+Send reminders.
+
+Notify borrowers.
+
+Escalate long-overdue cases.
+
+Generate overdue reports.
+
+Record returned overdue books.
+
+Track unresolved cases.
+
+Record authorized exceptions.
+
+Notification schedule should be configurable, for example:
+
+Before due date.
+
+On due date.
+
+After due date.
+
+Escalation after a configured number of days.
+
+17. Library fines and charges
+Features:
+
+Configure overdue fines.
+
+Configure damaged-book charges.
+
+Configure lost-book charges.
+
+Record approved waivers.
+
+Record disputed fines.
+
+Generate fine statements.
+
+Track outstanding balances.
+
+Integrate approved charges with Finance.
+
+Reconcile payments.
+
+Record reversals with reasons and authorization.
+
+Important: The Library Portal records the charge and sends it to Finance. It must not independently mark a fine as paid based on an unverified payment notification.
+
+18. Lost and damaged books
+Features:
+
+Report lost book.
+
+Report damaged book.
+
+Record incident date.
+
+Record member explanation.
+
+Upload supporting evidence.
+
+Assess damage.
+
+Record replacement cost.
+
+Submit charges for approval.
+
+Record replacement book.
+
+Record write-off approval.
+
+Maintain incident history.
+
+19. Digital library
+The digital library allows authorized members to access electronic academic resources.
+
+Supported formats:
+
+PDF.
+
+EPUB.
+
+HTML.
+
+DOCX, where permitted.
+
+Audio learning materials.
+
+Video learning materials.
+
+Approved interactive learning resources.
+
+Features:
+
+Upload e-books.
+
+Upload academic notes.
+
+Upload course materials.
+
+Upload journals.
+
+Upload research publications.
+
+Categorize resources.
+
+Assign subject tags.
+
+Link resources to programmes.
+
+Link resources to course units.
+
+Set access permissions.
+
+Set publication dates.
+
+Set resource expiry dates.
+
+Archive outdated materials.
+
+20. E-book reading system
+Features:
+
+Online PDF reader.
+
+Supported EPUB reader.
+
+Search within documents.
+
+Bookmark pages.
+
+Save reading progress.
+
+Add private notes.
+
+Highlight text where permitted.
+
+Continue reading across devices.
+
+Track reading activity according to privacy policy.
+
+Manage offline access where licensing permits.
+
+Digital resource access must respect copyright, subscription licensing and download restrictions.
+
+21. Journals and research materials
+Features:
+
+Register academic journals.
+
+Add journal issues.
+
+Register research papers.
+
+Upload institutional research.
+
+Store abstracts.
+
+Store keywords.
+
+Record authors.
+
+Record publication date.
+
+Record DOI or persistent identifier.
+
+Search research publications.
+
+Link research to departments.
+
+Link research to programmes.
+
+Manage access permissions.
+
+22. Research repository
+The college can maintain an institutional research repository.
+
+Materials:
+
+Student projects.
+
+Lecturer research.
+
+Final-year projects.
+
+Dissertations.
+
+Academic papers.
+
+Conference presentations.
+
+Institutional publications.
+
+Approved teaching resources.
+
+Features:
+
+Submit research.
+
+Assign reviewers.
+
+Review submitted work.
+
+Approve publication.
+
+Reject submissions with reasons.
+
+Publish approved records.
+
+Configure public or restricted access.
+
+Preserve versions.
+
+Record citation information.
+
+Student research must only be made public according to institutional authorization and the relevant student's rights and consent.
+
+23. Course and unit resource management
+The library integrates with academic management.
+
+Features:
+
+Link books to programmes.
+
+Link books to departments.
+
+Link books to units.
+
+Link digital resources to courses.
+
+Identify recommended textbooks.
+
+Identify supplementary materials.
+
+Track resource availability.
+
+Receive lecturer resource requests.
+
+Generate unit-based reading lists.
+
+Example:
+
+Programme
+
+Unit
+
+Recommended resource
+
+Diploma in ICT
+
+Computer Networking
+
+Networking fundamentals
+
+Certificate in ICT
+
+Computer Applications
+
+Computer applications textbook
+
+CPA
+
+Financial Accounting
+
+Financial accounting reference
+
+Computer Science
+
+Programming
+
+Python programming textbook
+
+24. Library access permissions and restrictions
+The system must support configurable access policies.
+
+Examples:
+
+Active students can borrow books.
+
+Registered lecturers can access staff borrowing privileges.
+
+External members require approval.
+
+Certain books are reference-only.
+
+Some digital resources are limited to campus users.
+
+Some subscribed resources require authenticated access.
+
+Suspended members cannot borrow until the restriction is resolved.
+
+Fee-related restrictions: Any policy that links borrowing privileges to financial clearance must be configurable, transparent and approved by the institution. It must not automatically block access to free library resources or override an authorized exception, appeal, welfare arrangement or other institutional policy.
+
+A library access restriction should record:
+
+Restriction reason.
+
+Issuing authority.
+
+Effective date.
+
+Review date.
+
+Appeal route.
+
+Authorized override.
+
+Audit history.
+
+25. Library attendance management
+Features:
+
+Record library entry.
+
+Record library exit.
+
+Scan student ID.
+
+Scan staff ID.
+
+Record visitor entry.
+
+Configure opening hours.
+
+Record daily attendance.
+
+View occupancy.
+
+Generate attendance reports.
+
+Identify peak usage periods.
+
+The system should not collect unnecessary continuous location data.
+
+26. Reading rooms and study spaces
+Features:
+
+Register reading rooms.
+
+Register study spaces.
+
+Configure room capacity.
+
+Configure operating hours.
+
+Manage study-space reservations.
+
+Assign group study areas.
+
+Record room utilization.
+
+Report damaged facilities.
+
+Manage booking cancellation.
+
+Notify members of reservations.
+
+This is for library study spaces only, not college transport management.
+
+27. Librarian management portal
+Librarians can:
+
+Manage catalogue.
+
+Manage physical copies.
+
+Issue and receive books.
+
+Manage reservations.
+
+Register members.
+
+Manage digital resources.
+
+Manage acquisitions.
+
+Record damaged books.
+
+Record lost books.
+
+Manage stocktaking.
+
+Review overdue items.
+
+Manage research submissions.
+
+Generate reports.
+
+Submit acquisition requests.
+
+Manage library announcements.
+
+Senior Librarians can approve designated catalogue, inventory and resource management actions.
+
+28. Library notifications
+Notifications include:
+
+Borrowing confirmation.
+
+Return-date reminders.
+
+Overdue reminders.
+
+Reservation confirmation.
+
+Book availability.
+
+Reservation expiry.
+
+Renewal confirmation.
+
+Fine notification.
+
+New digital resource announcement.
+
+Research submission status.
+
+Library closure notice.
+
+Opening-hours changes.
+
+Delivery channels:
+
+Student Portal.
+
+Staff Portal.
+
+Email.
+
+SMS.
+
+Approved messaging integrations.
+
+29. Library reports and analytics
+Catalogue reports
+
+Books by category.
+
+Books by department.
+
+Books by programme.
+
+Books by publisher.
+
+Books by author.
+
+Circulation reports
+
+Borrowing activity.
+
+Returns.
+
+Renewals.
+
+Reservations.
+
+Overdue books.
+
+Inventory reports
+
+Available copies.
+
+Borrowed copies.
+
+Damaged books.
+
+Lost books.
+
+Missing inventory.
+
+Stocktaking results.
+
+Financial reports
+
+Outstanding fines.
+
+Collected fines.
+
+Waivers.
+
+Lost-book charges.
+
+Acquisition expenditure.
+
+Digital library reports
+
+E-book catalogue.
+
+Resource downloads where permitted.
+
+Digital resource usage.
+
+Research repository submissions.
+
+Resource access restrictions.
+
+Reports must respect user permissions and should distinguish actual operational figures from test or demonstration data.
+
+30. Library approval centre
+Approval workflows include:
+
+Book acquisition requests.
+
+Purchase recommendations.
+
+New digital resource publication.
+
+Research repository publication.
+
+Fine waivers.
+
+Lost-book write-offs.
+
+Damaged-book charges.
+
+External membership.
+
+Access exceptions.
+
+Inventory adjustments.
+
+Every approval must record the responsible officer and decision history.
+
+31. Library portal interface
+HI-TECH COLLEGE
+
+Library Management Portal
+Dashboard
+
+Book Catalogue
+
+Categories & Classification
+
+Library Members
+
+Barcode & QR Management
+
+Book Inventory
+
+Acquisitions
+
+Suppliers
+
+Borrowing & Issue
+
+Returns
+
+Renewals
+
+Reservations
+
+Overdue Books
+
+Fines & Charges
+
+Lost & Damaged Books
+
+Digital Library
+
+E-books & Journals
+
+Research Repository
+
+Course Resources
+
+Librarian Management
+
+Library Attendance
+
+Study Spaces
+
+Notifications
+
+Reports & Analytics
+
+Approval Centre
+
+Library Settings
+
+32. Database design
+Recommended Prisma models:
+
+Model
+
+Purpose
+
+Library
+
+Library configuration
+
+LibraryCategory
+
+Book categories
+
+LibraryClassification
+
+Classification schemes
+
+Book
+
+Book catalogue
+
+BookAuthor
+
+Book-author relationships
+
+Publisher
+
+Publisher records
+
+BookCopy
+
+Individual physical copies
+
+BookBarcode
+
+Copy barcode and QR records
+
+BookLocation
+
+Shelves and locations
+
+LibraryMember
+
+Existing student/staff library identity
+
+LibraryMembership
+
+Membership and borrowing privileges
+
+BookLoan
+
+Borrowing transaction
+
+BookReturn
+
+Return transaction
+
+BookRenewal
+
+Renewal history
+
+BookReservation
+
+Reservations and queue
+
+LibraryFine
+
+Approved fines and charges
+
+FineWaiver
+
+Authorized fine waiver
+
+BookIncident
+
+Lost and damaged book records
+
+AcquisitionRequest
+
+Book acquisition request
+
+LibrarySupplier
+
+Suppliers
+
+PurchaseOrder
+
+Library purchase orders
+
+DigitalResource
+
+E-books and electronic materials
+
+DigitalResourceAccess
+
+Access rules
+
+DigitalBookmark
+
+Reading bookmarks
+
+ResearchSubmission
+
+Research submissions
+
+ResearchReview
+
+Research approval
+
+Journal
+
+Journal records
+
+JournalIssue
+
+Journal issues
+
+CourseReadingList
+
+Unit reading lists
+
+LibraryAttendance
+
+Library entry and exit
+
+StudySpace
+
+Reading rooms and study areas
+
+StudySpaceBooking
+
+Study-space reservations
+
+LibraryNotification
+
+Library communications
+
+LibraryApproval
+
+Approval workflow
+
+LibraryAuditLog
+
+Audit history
+
+Important data relationships
+Student / Employee
+       |
+       v
+LibraryMember
+       |
+       +---- LibraryMembership
+       |
+       +---- BookLoan
+       |       |
+       |       +---- BookCopy
+       |       +---- BookReturn
+       |       +---- BookRenewal
+       |
+       +---- BookReservation
+       |
+       +---- LibraryFine
+       |
+       +---- DigitalResourceAccess
+
+Book
+ |
+ +---- BookAuthor
+ |
+ +---- BookCopy
+ |
+ +---- LibraryCategory
+ |
+ +---- BookLocation
+ |
+ +---- CourseReadingList
+33. Backend API structure
+Recommended Express endpoints:
+
+/api/library/dashboard
+
+/api/library/books
+/api/library/books/:id
+/api/library/books/:id/copies
+/api/library/categories
+/api/library/classifications
+/api/library/authors
+/api/library/publishers
+
+/api/library/inventory
+/api/library/inventory/stocktake
+/api/library/barcodes
+
+/api/library/members
+/api/library/members/:id
+/api/library/members/:id/loans
+
+/api/library/loans
+/api/library/loans/issue
+/api/library/loans/:id/return
+/api/library/loans/:id/renew
+
+/api/library/reservations
+/api/library/reservations/:id/cancel
+
+/api/library/overdue
+/api/library/fines
+/api/library/fines/:id/waive
+
+/api/library/incidents
+/api/library/acquisitions
+/api/library/suppliers
+/api/library/purchase-orders
+
+/api/library/digital-resources
+/api/library/digital-resources/:id/access
+
+/api/library/journals
+/api/library/research
+/api/library/research/:id/review
+
+/api/library/reading-lists
+/api/library/attendance
+/api/library/study-spaces
+/api/library/study-space-bookings
+
+/api/library/notifications
+/api/library/approvals
+/api/library/reports
+/api/library/audit
+Every endpoint must validate the authenticated user's institution, campus, role and resource-level permissions.
+
+34. Frontend project structure
+src/
+└── modules/
+    └── library/
+        ├── pages/
+        │   ├── LibraryDashboard.tsx
+        │   ├── BookCatalogue.tsx
+        │   ├── BookDetails.tsx
+        │   ├── BookRegistration.tsx
+        │   ├── BookInventory.tsx
+        │   ├── BookAcquisition.tsx
+        │   ├── SupplierManagement.tsx
+        │   ├── LibraryMembers.tsx
+        │   ├── BorrowingManagement.tsx
+        │   ├── BookReturns.tsx
+        │   ├── BookRenewals.tsx
+        │   ├── Reservations.tsx
+        │   ├── OverdueBooks.tsx
+        │   ├── LibraryFines.tsx
+        │   ├── LostDamagedBooks.tsx
+        │   ├── DigitalLibrary.tsx
+        │   ├── EbookReader.tsx
+        │   ├── Journals.tsx
+        │   ├── ResearchRepository.tsx
+        │   ├── CourseReadingLists.tsx
+        │   ├── LibraryAttendance.tsx
+        │   ├── StudySpaces.tsx
+        │   ├── LibraryReports.tsx
+        │   └── LibraryApprovalCentre.tsx
+        ├── components/
+        │   ├── LibrarySidebar.tsx
+        │   ├── LibraryHeader.tsx
+        │   ├── BookCard.tsx
+        │   ├── BookSearch.tsx
+        │   ├── BarcodeScanner.tsx
+        │   ├── BookIssueForm.tsx
+        │   ├── BookReturnForm.tsx
+        │   ├── ReservationCard.tsx
+        │   ├── MemberProfile.tsx
+        │   ├── FineStatement.tsx
+        │   └── DigitalResourceViewer.tsx
+        ├── services/
+        │   ├── libraryApi.ts
+        │   ├── booksApi.ts
+        │   ├── borrowingApi.ts
+        │   ├── membersApi.ts
+        │   └── digitalLibraryApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+35. Security and technical requirements
+Enforce role-based access control.
+
+Separate student and staff borrowing policies.
+
+Prevent duplicate active loans for the same physical copy.
+
+Use database transactions when issuing and returning books.
+
+Prevent simultaneous reservations from conflicting.
+
+Validate file uploads and scan uploaded files for malware.
+
+Store digital resources securely.
+
+Apply copyright and licensing restrictions.
+
+Use signed or authorized resource access rather than public storage URLs.
+
+Record fine adjustments and waivers.
+
+Maintain immutable transaction history for completed loans.
+
+Preserve deleted or archived catalogue history according to retention policy.
+
+Protect student reading history from unnecessary disclosure.
+
+Back up catalogue and digital resource metadata.
+
+Test all borrowing and return workflows.
+
+36. Acceptance criteria
+The module is ready for production review when:
+
+Librarians can register books and individual copies.
+
+Each physical copy has a unique barcode.
+
+Students and staff can search the catalogue.
+
+The system can issue and receive books.
+
+Loan periods and limits are configurable.
+
+Renewals and reservations work correctly.
+
+Overdue books are identified automatically.
+
+Fines integrate with Finance.
+
+Lost and damaged books are tracked.
+
+Digital resources have controlled access.
+
+Lecturers can submit course reading lists.
+
+Research submissions can be reviewed and published.
+
+Library attendance is recorded.
+
+Reports are generated with permission checks.
+
+Student and employee identities are reused.
+
+Every sensitive action is audited.
+
+Mobile and desktop interfaces are usable.
+
+Automated tests cover concurrent borrowing, returns, renewals and reservations.
+
+37. Module 22 implementation deliverables
+Library dashboard.
+
+Physical book catalogue.
+
+Classification and inventory.
+
+Barcode and QR code management.
+
+Member registration and identity integration.
+
+Borrowing and returns.
+
+Reservations and renewals.
+
+Overdue and fine management.
+
+Acquisition and supplier management.
+
+Digital library and e-book reader.
+
+Journals and research repository.
+
+Course reading lists.
+
+Library attendance and study spaces.
+
+Student and staff library interfaces.
+
+Librarian management portal.
+
+Finance and Registrar integrations.
+
+Prisma migrations, API validation, permissions and automated tests.
+
+This is the implementation specification, not a claim that the module has already been coded or deployed.
+
+NEXT: MODULE 23 — EXAMINATION MANAGEMENT AND ASSESSMENT PORTAL
+The next module will cover the complete examination lifecycle:
+
+Examination office dashboard.
+
+Examination bodies management.
+
+KNEC, KASNEB, TVET, NITA and configurable examination bodies.
+
+Examination registration.
+
+Student examination eligibility.
+
+Examination timetables.
+
+Course-specific examinations.
+
+CATs and assignments.
+
+Question bank.
+
+All configured question types.
+
+Advanced assessment formats.
+
+AI-assisted question generation.
+
+Online examination delivery.
+
+Practical examinations.
+
+ICDL-style software assessments.
+
+Programming and networking lab examinations.
+
+Examination security and proctoring.
+
+Auto-marking and manual marking.
+
+Rubrics and moderation.
+
+Results approval and publication.
+
+Examination appeals.
+
+Certificates and examination records.
+
+Reports and analytics.
+
+Audit and examination integrity.
+
+
+Convert to PDF
+next
+MODULE 23: EXAMINATION MANAGEMENT AND ASSESSMENT PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Examinations, assessments and results
+
+The Examination Management Portal controls the complete examination lifecycle, including examination registration, assessment creation, question banks, timetables, online examinations, practical assessments, marking, moderation, results approval, publication, appeals and examination records.
+
+It integrates with:
+
+Student Portal.
+
+Lecturer / Trainer Portal.
+
+HOD Portal.
+
+Registrar Portal.
+
+Finance Portal.
+
+HR Portal.
+
+Library Portal.
+
+Administration Portal.
+
+Digital Learning Management System.
+
+Certificate Management Module.
+
+Primary users:
+
+Examination Officer.
+
+Chief Examination Officer.
+
+Examination Administrator.
+
+Registrar.
+
+Principal.
+
+HOD.
+
+Lecturer / Trainer.
+
+Internal Examiner.
+
+External Examiner.
+
+Invigilator.
+
+Marker.
+
+Moderator.
+
+Student.
+
+Finance Officer.
+
+Authorized Examination Body Officer.
+
+1. Examination dashboard
+The dashboard provides a live overview of examination operations.
+
+Dashboard statistics:
+
+Total examinations.
+
+Upcoming examinations.
+
+Ongoing examinations.
+
+Completed examinations.
+
+Cancelled examinations.
+
+Registered candidates.
+
+Students awaiting examination registration.
+
+Students with examination eligibility issues.
+
+Assessments awaiting approval.
+
+Questions in the question bank.
+
+Examination sessions scheduled.
+
+Examination rooms allocated.
+
+Invigilators assigned.
+
+Scripts awaiting marking.
+
+Scripts currently being marked.
+
+Results awaiting moderation.
+
+Results awaiting approval.
+
+Results published.
+
+Examination appeals.
+
+Examination incidents.
+
+Quick actions:
+
+Create examination.
+
+Register examination body.
+
+Create examination timetable.
+
+Register candidates.
+
+Create assessment.
+
+Create question bank.
+
+Generate examination questions.
+
+Assign invigilators.
+
+Allocate examination rooms.
+
+Start examination.
+
+Record examination incident.
+
+Assign markers.
+
+Moderate results.
+
+Approve results.
+
+Publish results.
+
+2. Examination bodies management
+The platform must allow the college to configure examination bodies rather than permanently hard-code a fixed list.
+
+Examples of examination bodies include:
+
+KNEC
+
+KASNEB
+
+TVET
+
+NITA
+
+ICDL
+
+Internal HI-TECH College examinations.
+
+Other institution-approved examination bodies.
+
+Features:
+
+Create examination body.
+
+Edit examination body.
+
+Activate or deactivate examination body.
+
+Upload examination body logo.
+
+Record official contact details.
+
+Record examination body requirements.
+
+Configure registration rules.
+
+Configure examination fees.
+
+Configure candidate requirements.
+
+Configure grading systems.
+
+Configure examination subjects.
+
+Configure examination periods.
+
+Configure certification requirements.
+
+Record external examination body references.
+
+Maintain examination body history.
+
+The college must not represent an internal examination as an externally accredited examination. External examination registrations and certifications must follow the relevant body's official procedures.
+
+3. Examination body course management
+Each examination body can have its own examination programmes.
+
+Features:
+
+Create examination programme.
+
+Create examination level.
+
+Add examination papers.
+
+Add subjects.
+
+Add units.
+
+Configure paper codes.
+
+Configure examination duration.
+
+Configure examination format.
+
+Configure practical requirements.
+
+Configure grading structure.
+
+Configure candidate eligibility.
+
+Configure examination registration deadlines.
+
+Configure certification rules.
+
+Example structure:
+
+Examination Body
+    |
+    +---- Programme
+    |       |
+    |       +---- Level
+    |       |      |
+    |       |      +---- Paper
+    |       |      +---- Subject
+    |       |      +---- Unit
+    |       |
+    |       +---- Examination Session
+    |
+    +---- Candidate Registration
+    |
+    +---- Results
+    |
+    +---- Certification
+4. Examination registration
+The system allows authorized users to register candidates for examinations.
+
+Features:
+
+Register individual candidates.
+
+Register candidates in bulk.
+
+Import candidate lists.
+
+Select examination body.
+
+Select examination programme.
+
+Select examination level.
+
+Select examination papers.
+
+Select examination session.
+
+Validate student information.
+
+Validate course registration.
+
+Validate examination eligibility.
+
+Validate outstanding required documentation.
+
+Record examination registration fees.
+
+Generate registration reference.
+
+Submit registration for approval.
+
+Export candidate lists.
+
+Registration statuses:
+
+Status
+
+Meaning
+
+Draft
+
+Registration not submitted
+
+Pending
+
+Awaiting review
+
+Eligible
+
+Requirements satisfied
+
+Ineligible
+
+Eligibility requirements not satisfied
+
+Approved
+
+Registration approved
+
+Submitted
+
+Submitted to examination body
+
+Confirmed
+
+Registration confirmed
+
+Rejected
+
+Registration rejected
+
+Withdrawn
+
+Candidate withdrawn
+
+5. Student examination eligibility
+The platform checks eligibility before confirming examination registration.
+
+Possible checks:
+
+Active student registration.
+
+Correct programme.
+
+Correct academic year.
+
+Correct semester.
+
+Unit registration.
+
+Required attendance, where institutional policy applies.
+
+Required coursework completion.
+
+Required practical completion.
+
+Examination fee requirements.
+
+Examination body requirements.
+
+Approved special arrangements.
+
+Eligibility rules must be configurable by examination type, programme and examination body.
+
+Important: An authorized Registrar or Examination Officer must be able to review exceptional cases. The system must not automatically make irreversible academic decisions from a single financial or attendance flag.
+
+6. Student examination portal
+Students can access examination services through their existing Student Portal.
+
+Features:
+
+View examination eligibility.
+
+View registered examinations.
+
+View examination timetable.
+
+View examination venue.
+
+View examination instructions.
+
+View examination notices.
+
+Book eligible course-specific examination sessions.
+
+View upcoming online assessments.
+
+Start examinations when authorized.
+
+View submission confirmation.
+
+View permitted results.
+
+Download approved result slips.
+
+Submit examination appeals.
+
+View appeal progress.
+
+View examination history.
+
+Receive examination notifications.
+
+Students must not access questions, answers or marking information before the authorized release time.
+
+7. Examination timetable management
+Features:
+
+Create examination periods.
+
+Configure examination sessions.
+
+Create examination timetables.
+
+Assign examination dates.
+
+Assign start times.
+
+Assign end times.
+
+Allocate examination rooms.
+
+Allocate examination laboratories.
+
+Assign invigilators.
+
+Assign examination papers.
+
+Assign candidate groups.
+
+Detect timetable conflicts.
+
+Publish timetables.
+
+Revise timetables.
+
+Notify affected students and staff.
+
+Maintain timetable versions.
+
+Conflict detection should identify:
+
+Student examination overlaps.
+
+Lecturer or invigilator overlaps.
+
+Room booking conflicts.
+
+Laboratory booking conflicts.
+
+Invalid room capacity.
+
+Incompatible practical equipment requirements.
+
+8. Course-specific examination booking
+Students may be allowed to book examinations for eligible courses or units.
+
+Features:
+
+View eligible units.
+
+View available examination sessions.
+
+Select an available session.
+
+Select an available time slot.
+
+View venue.
+
+Confirm booking.
+
+Cancel booking according to policy.
+
+Reschedule with authorization.
+
+View booking confirmation.
+
+Receive reminders.
+
+The booking engine must enforce capacity limits and prevent duplicate bookings.
+
+Examination booking does not replace academic registration or examination eligibility approval.
+
+9. Examination room and laboratory management
+Features:
+
+Register examination rooms.
+
+Register computer laboratories.
+
+Record room capacity.
+
+Record computer availability.
+
+Record available software.
+
+Record installed applications.
+
+Record network availability.
+
+Record power backup availability.
+
+Record accessibility facilities.
+
+Assign rooms to examinations.
+
+Assign laboratories to practical assessments.
+
+Generate seating arrangements.
+
+Generate candidate attendance lists.
+
+Record room inspection.
+
+Record examination setup checks.
+
+10. Invigilator management
+Features:
+
+Register invigilators.
+
+Assign invigilators.
+
+Assign chief invigilators.
+
+Assign examination rooms.
+
+Assign examination sessions.
+
+View duty rosters.
+
+Record attendance.
+
+Record briefing completion.
+
+Record examination incidents.
+
+Submit invigilation reports.
+
+Track assigned responsibilities.
+
+Invigilators should only access the examination information needed for their assigned sessions.
+
+11. Assessment management
+The platform must support different forms of assessment.
+
+Assessment categories:
+
+Assessment
+
+Description
+
+CAT
+
+Continuous assessment test
+
+Assignment
+
+Individual or group coursework
+
+Quiz
+
+Short assessment
+
+Practical
+
+Hands-on assessment
+
+Theory
+
+Written examination
+
+Online examination
+
+Browser-delivered examination
+
+Oral examination
+
+Spoken assessment
+
+Project
+
+Project-based assessment
+
+Research
+
+Research-based assessment
+
+ICDL-style assessment
+
+Digital skills assessment
+
+Programming assessment
+
+Code-based assessment
+
+Networking laboratory
+
+Network configuration assessment
+
+Final examination
+
+End-of-course examination
+
+Competency assessment
+
+Skills-based assessment
+
+Features:
+
+Create assessment.
+
+Select programme.
+
+Select course.
+
+Select unit.
+
+Select lecturer.
+
+Select assessment type.
+
+Configure total marks.
+
+Configure duration.
+
+Configure instructions.
+
+Configure submission rules.
+
+Configure availability dates.
+
+Configure attempts.
+
+Configure question selection.
+
+Configure marking.
+
+Configure moderation.
+
+Submit assessment for approval.
+
+Publish assessment.
+
+12. Question bank management
+The question bank stores reusable assessment questions.
+
+Question information:
+
+Question title.
+
+Question text.
+
+Question type.
+
+Subject.
+
+Programme.
+
+Course.
+
+Unit.
+
+Topic.
+
+Subtopic.
+
+Difficulty level.
+
+Marks.
+
+Expected answer.
+
+Marking scheme.
+
+Explanation.
+
+Reference material.
+
+Images.
+
+Audio.
+
+Video.
+
+Attachments.
+
+Author.
+
+Reviewer.
+
+Approval status.
+
+Version number.
+
+Features:
+
+Create questions.
+
+Edit questions.
+
+Duplicate questions.
+
+Import questions.
+
+Export questions.
+
+Tag questions.
+
+Categorize questions.
+
+Search questions.
+
+Filter questions.
+
+Review questions.
+
+Approve questions.
+
+Archive questions.
+
+Track question usage.
+
+Track question performance.
+
+Maintain question versions.
+
+Question statuses:
+
+Draft.
+
+Submitted.
+
+Under review.
+
+Approved.
+
+Rejected.
+
+Archived.
+
+13. Question types — 63 supported formats
+The assessment engine should use a configurable question-type registry. Each type needs its own editor, validation rules, response component, scoring strategy and accessibility requirements.
+
+The following is the recommended 63-type catalogue.
+
+A. Objective questions
+No.
+
+Question type
+
+Description
+
+1
+
+Single-choice MCQ
+
+Select one correct answer
+
+2
+
+Multiple-response MCQ
+
+Select more than one answer
+
+3
+
+True / False
+
+Select true or false
+
+4
+
+Yes / No
+
+Select yes or no
+
+5
+
+Agree / Disagree
+
+Select a position
+
+6
+
+Best answer
+
+Select the best option
+
+7
+
+Odd-one-out
+
+Identify the item that does not belong
+
+8
+
+Assertion and Reason
+
+Evaluate an assertion and its explanation
+
+9
+
+Multiple statements
+
+Evaluate several statements
+
+10
+
+Combination MCQ
+
+Select a combination of correct statements
+
+11
+
+Sequence selection
+
+Select the correct sequence
+
+12
+
+Classification MCQ
+
+Classify an item into a category
+
+B. Text and completion questions
+No.
+
+Question type
+
+Description
+
+13
+
+Short answer
+
+Enter a brief response
+
+14
+
+Long answer
+
+Enter a detailed response
+
+15
+
+Essay
+
+Write an extended discussion
+
+16
+
+Fill in the blank
+
+Complete missing text
+
+17
+
+Multiple blanks
+
+Complete several missing sections
+
+18
+
+Numeric answer
+
+Enter a numeric value
+
+19
+
+Mathematical expression
+
+Enter a mathematical expression
+
+20
+
+Formula answer
+
+Enter a formula
+
+21
+
+Code completion
+
+Complete missing code
+
+22
+
+Word completion
+
+Complete an incomplete word
+
+23
+
+Sentence completion
+
+Complete an incomplete sentence
+
+24
+
+Paragraph completion
+
+Complete a paragraph
+
+C. Matching and ordering questions
+No.
+
+Question type
+
+Description
+
+25
+
+Standard matching
+
+Match items in two columns
+
+26
+
+Extended matching
+
+Match items against multiple options
+
+27
+
+Drag-and-drop matching
+
+Drag items to matching targets
+
+28
+
+Ordering / sequencing
+
+Arrange items in the correct order
+
+29
+
+Ranking
+
+Rank items by importance or value
+
+30
+
+Grouping / categorization
+
+Place items into categories
+
+31
+
+Timeline ordering
+
+Arrange events chronologically
+
+32
+
+Cause-and-effect matching
+
+Match causes to their effects
+
+D. Visual and interactive questions
+No.
+
+Question type
+
+Description
+
+33
+
+Image identification
+
+Identify an item in an image
+
+34
+
+Image hotspot
+
+Select a specific area in an image
+
+35
+
+Label a diagram
+
+Add labels to diagram components
+
+36
+
+Image annotation
+
+Mark or annotate an image
+
+37
+
+Map-based question
+
+Identify locations on a map
+
+38
+
+Graph interpretation
+
+Interpret a graph
+
+39
+
+Chart interpretation
+
+Interpret chart data
+
+40
+
+Table interpretation
+
+Analyze information in a table
+
+41
+
+Audio-based question
+
+Respond to an audio recording
+
+42
+
+Video-based question
+
+Respond to a video
+
+43
+
+Listening comprehension
+
+Answer questions after listening
+
+44
+
+Pronunciation assessment
+
+Record and assess spoken pronunciation
+
+E. Language and competency questions
+No.
+
+Question type
+
+Description
+
+45
+
+Spelling assessment
+
+Type correctly spelled words
+
+46
+
+Dictation
+
+Transcribe spoken content
+
+47
+
+Grammar correction
+
+Correct grammatical errors
+
+48
+
+Translation
+
+Translate text
+
+49
+
+Reading comprehension
+
+Answer questions based on a passage
+
+50
+
+Oral response
+
+Provide a spoken answer
+
+51
+
+Presentation assessment
+
+Submit or deliver a presentation
+
+52
+
+Scenario-based response
+
+Respond to a practical scenario
+
+F. Practical and technical questions
+No.
+
+Question type
+
+Description
+
+53
+
+Practical file submission
+
+Upload a completed practical file
+
+54
+
+Software simulation
+
+Complete a simulated software task
+
+55
+
+Live software practical
+
+Complete a task in installed software
+
+56
+
+Programming / code execution
+
+Write and execute code
+
+57
+
+SQL / database query
+
+Write and execute database queries
+
+58
+
+Networking configuration
+
+Configure a network environment
+
+59
+
+Command-line assessment
+
+Execute command-line tasks
+
+60
+
+Spreadsheet practical
+
+Complete spreadsheet operations
+
+61
+
+Document formatting practical
+
+Format a document
+
+62
+
+Presentation practical
+
+Create or modify a presentation
+
+63
+
+Laboratory observation
+
+Perform a practical task observed by an examiner
+
+The platform must support custom question types created by authorized administrators without requiring developers to modify every examination form.
+
+14. Advanced assessment formats
+The assessment engine must also support advanced formats that can combine with the 63 question types.
+
+No.
+
+Format
+
+Function
+
+1
+
+Randomized assessment
+
+Random question selection
+
+2
+
+Adaptive assessment
+
+Adjust difficulty based on performance
+
+3
+
+Branching assessment
+
+Next question depends on previous response
+
+4
+
+Scenario-based assessment
+
+Questions built around a shared scenario
+
+5
+
+Case-study assessment
+
+Analyze a case and answer related questions
+
+6
+
+Multi-stage assessment
+
+Complete connected assessment stages
+
+7
+
+Timed section assessment
+
+Apply separate section timers
+
+8
+
+Competency-based assessment
+
+Assess defined skills or competencies
+
+9
+
+Group assessment
+
+Assess group submissions
+
+10
+
+Peer assessment
+
+Students evaluate approved peer submissions
+
+11
+
+Portfolio assessment
+
+Evaluate a collection of work
+
+12
+
+Hybrid assessment
+
+Combine online, written and practical components
+
+These formats are configurable. The platform must not assume that every examination body permits every format.
+
+15. Assessment generation and AI question creation
+The platform should provide AI-assisted assessment generation.
+
+Generation options:
+
+Generate questions from lecturer notes.
+
+Generate questions from uploaded documents.
+
+Generate questions from approved course materials.
+
+Generate questions from the question bank.
+
+Generate questions from lecturer instructions.
+
+Generate questions from learning outcomes.
+
+Generate questions by topic.
+
+Generate questions by difficulty.
+
+Generate marking schemes.
+
+Generate model answers.
+
+Generate practical tasks.
+
+Generate case studies.
+
+Generate scenario-based assessments.
+
+Generate multiple versions of an examination.
+
+Configuration:
+
+Assessment type.
+
+Course.
+
+Unit.
+
+Topic.
+
+Number of questions.
+
+Marks per question.
+
+Difficulty distribution.
+
+Question formats.
+
+Duration.
+
+Marking method.
+
+Source materials.
+
+Recommended AI configuration:
+
+Setting
+
+Supported options
+
+Deployment
+
+Hybrid
+
+Sources
+
+Uploaded documents and approved knowledge sources
+
+Marking
+
+Hybrid
+
+Question review
+
+Mandatory human approval
+
+Answer generation
+
+Draft model answers
+
+Final approval
+
+Authorized lecturer or examiner
+
+AI-generated questions must be treated as drafts until reviewed. AI must not independently approve examination papers, publish official results or make final academic progression decisions.
+
+16. Examination paper creation
+Features:
+
+Create examination paper.
+
+Select question bank.
+
+Select questions manually.
+
+Generate questions automatically.
+
+Randomize question order.
+
+Randomize answer options.
+
+Configure section instructions.
+
+Configure marks.
+
+Configure duration.
+
+Configure page layout.
+
+Add college branding.
+
+Add examination body details.
+
+Add examination instructions.
+
+Add candidate information fields.
+
+Generate PDF examination papers.
+
+Generate printable answer sheets.
+
+Create alternative examination versions.
+
+Create secure paper packages.
+
+Paper approval workflow:
+
+Lecturer prepares examination paper
+
+HOD reviews assessment
+
+Examination Officer verifies requirements
+
+Authorized examination approval
+
+Secure publication or examination delivery
+
+17. Online examination delivery
+Students can sit authorized examinations through their portal.
+
+Features:
+
+Examination instructions.
+
+Candidate identity verification.
+
+Examination start authorization.
+
+Countdown timer.
+
+Question navigation.
+
+Question flagging.
+
+Save answers automatically.
+
+Submit answers.
+
+Display remaining time.
+
+Submit automatically when time expires.
+
+Handle temporary connectivity interruptions.
+
+Generate submission receipt.
+
+Record examination events.
+
+Support approved additional time.
+
+Support approved accessibility arrangements.
+
+Important technical requirements:
+
+Persist answers securely and frequently.
+
+Make submissions idempotent.
+
+Use server-authoritative examination timing.
+
+Recover safely from browser refreshes and temporary disconnections.
+
+Prevent unauthorized changes after final submission.
+
+Preserve submission timestamps and version history.
+
+18. Examination security and proctoring
+Features:
+
+Candidate authentication.
+
+Authorized identity verification.
+
+Examination access codes.
+
+Randomized question sets.
+
+Randomized options.
+
+Secure examination sessions.
+
+Session activity logs.
+
+Multiple-session detection.
+
+Browser focus and visibility event logging.
+
+Network interruption records.
+
+Examination incident reporting.
+
+Invigilator monitoring.
+
+Secure examination paper access.
+
+Examination session audit trail.
+
+Where remote proctoring is used, the college must configure transparent notices, appropriate consent or other lawful basis, data retention, access restrictions and human review.
+
+Automated suspicious-activity flags must not be treated as proof of cheating.
+
+19. Practical examinations
+Practical assessments must evaluate the student's actual ability to complete a task.
+
+Supported practical environments:
+
+Microsoft Word.
+
+Microsoft Excel.
+
+Microsoft PowerPoint.
+
+Database software.
+
+Programming IDEs.
+
+Web development environments.
+
+Networking simulation tools.
+
+Command-line environments.
+
+Graphic design software.
+
+CAD/CAM software.
+
+Other administrator-approved applications.
+
+Practical examination workflow:
+
+Lecturer creates practical task.
+
+Examination Officer approves the task.
+
+System assigns eligible candidates.
+
+Student receives task instructions.
+
+Student opens the authorized practical environment.
+
+Student completes the task.
+
+System collects permitted evidence.
+
+Student submits the final work.
+
+Examiner evaluates the submission.
+
+Marks are recorded.
+
+Results go through moderation.
+
+20. ICDL-style software assessment
+The system should support software competency examinations.
+
+Example practical tasks:
+
+Microsoft Word
+
+Create a document.
+
+Format text.
+
+Insert tables.
+
+Insert images.
+
+Create headers and footers.
+
+Apply page layout.
+
+Use styles.
+
+Save the document correctly.
+
+Microsoft Excel
+
+Enter data.
+
+Apply formulas.
+
+Use functions.
+
+Format worksheets.
+
+Create charts.
+
+Sort and filter data.
+
+Use conditional formatting.
+
+Prepare reports.
+
+Microsoft PowerPoint
+
+Create slides.
+
+Apply layouts.
+
+Insert images.
+
+Create charts.
+
+Add transitions.
+
+Apply consistent design.
+
+Database applications
+
+Create tables.
+
+Define fields.
+
+Set primary keys.
+
+Create relationships.
+
+Enter records.
+
+Build queries.
+
+Generate reports.
+
+The platform should support two practical execution modes:
+
+Browser simulation: Tasks are completed in an approved interactive simulated environment.
+
+Installed software: Tasks are completed in actual desktop software, with an approved local examination client or evidence-submission process.
+
+A normal browser cannot reliably inspect every action performed in an unrelated desktop application. Actual desktop software assessment therefore requires a controlled local client, supported integration or examiner-reviewed submission evidence.
+
+21. Programming and networking laboratory examinations
+Programming assessments
+
+Write code.
+
+Execute code.
+
+Test output.
+
+Correct errors.
+
+Complete incomplete programs.
+
+Submit source files.
+
+Run predefined test cases.
+
+Evaluate program output.
+
+Assess code quality using rubrics.
+
+Supported languages should be configurable, for example:
+
+C.
+
+C++.
+
+Python.
+
+Java.
+
+JavaScript.
+
+PHP.
+
+SQL.
+
+Code execution must occur in isolated sandboxes with restricted filesystem, network, memory and CPU access.
+
+Networking practicals
+
+Configure IP addresses.
+
+Configure subnet masks.
+
+Configure gateways.
+
+Configure routers.
+
+Configure switches.
+
+Configure VLANs.
+
+Configure routing.
+
+Configure DHCP.
+
+Configure DNS.
+
+Test connectivity.
+
+Diagnose network faults.
+
+Submit Packet Tracer or other approved lab files.
+
+22. Examination attendance and candidate verification
+Features:
+
+Generate candidate attendance lists.
+
+Verify student identity.
+
+Record examination attendance.
+
+Record late arrival.
+
+Record absence.
+
+Record approved special arrangements.
+
+Record candidate signatures where required.
+
+Generate attendance reports.
+
+Reconcile candidates against examination registration.
+
+Candidate verification must not depend on a single optional biometric method.
+
+23. Examination incident management
+Features:
+
+Report examination misconduct allegations.
+
+Report technical failures.
+
+Report network interruptions.
+
+Report power interruptions.
+
+Report late examination start.
+
+Report missing examination papers.
+
+Record candidate complaints.
+
+Record invigilator observations.
+
+Upload supporting evidence.
+
+Assign incident reviewers.
+
+Record findings.
+
+Record authorized decisions.
+
+Track appeals.
+
+An incident report should include:
+
+Examination reference.
+
+Candidate reference where relevant.
+
+Date and time.
+
+Examination venue.
+
+Incident category.
+
+Description.
+
+Reporting officer.
+
+Evidence references.
+
+Review status.
+
+Decision and audit history.
+
+24. Auto-marking engine
+The platform should automatically mark question types with objectively verifiable answers.
+
+Supported automatic marking:
+
+Single-choice MCQ.
+
+Multiple-response MCQ.
+
+True/False.
+
+Yes/No.
+
+Matching.
+
+Ordering.
+
+Numeric answers.
+
+Fill-in-the-blank with configured answer variants.
+
+Formula answers with defined tolerance rules.
+
+Code execution against approved test cases.
+
+Selected interactive tasks with defined scoring rules.
+
+Marking configurations:
+
+Exact match.
+
+Case-insensitive match.
+
+Accepted alternative answers.
+
+Numeric tolerance.
+
+Partial marks.
+
+Negative marking.
+
+Multiple-correct-answer scoring.
+
+Weighted question scoring.
+
+Section-based marks.
+
+Manual override with reason.
+
+Example multiple-response scoring:
+
+A question is worth 4 marks and contains four correct options. The examiner may configure:
+
+Full marks for all correct selections.
+
+Partial marks for correct selections.
+
+Deduction for incorrect selections.
+
+A minimum score of zero.
+
+The exact formula must be configured and visible before the examination begins.
+
+25. Manual marking engine
+Lecturers and examiners can mark responses requiring human judgment.
+
+Supported:
+
+Essays.
+
+Long answers.
+
+Explanations.
+
+Practical submissions.
+
+Presentations.
+
+Oral examinations.
+
+Laboratory performance.
+
+Research projects.
+
+Code quality.
+
+File submissions.
+
+Scenario-based responses.
+
+Features:
+
+Open marking queue.
+
+View candidate answer.
+
+View marking scheme.
+
+Enter marks.
+
+Add examiner comments.
+
+Annotate submissions.
+
+Upload feedback.
+
+Save draft marks.
+
+Submit marks.
+
+Return for correction.
+
+Record marker identity.
+
+Track marking progress.
+
+26. Rubric management
+The platform should provide configurable marking rubrics.
+
+Example practical rubric:
+
+Criterion
+
+Marks
+
+Task completion
+
+30
+
+Accuracy
+
+25
+
+Technical skills
+
+20
+
+Presentation
+
+10
+
+Problem solving
+
+10
+
+File submission
+
+5
+
+Total
+
+100
+
+Features:
+
+Create rubric.
+
+Add criteria.
+
+Configure maximum marks.
+
+Configure performance levels.
+
+Add descriptors.
+
+Assign rubric to assessment.
+
+Allow examiner comments.
+
+Calculate total marks.
+
+Reuse approved rubrics.
+
+27. Moderation and second marking
+Features:
+
+Assign second marker.
+
+Configure moderation rules.
+
+Select scripts for moderation.
+
+Compare marker scores.
+
+Calculate score differences.
+
+Record moderation comments.
+
+Request remarking.
+
+Approve moderated marks.
+
+Record final mark.
+
+Preserve original marks.
+
+Record moderation history.
+
+Moderation policies should support:
+
+All scripts.
+
+Random sample.
+
+Scripts above or below configured thresholds.
+
+Scripts with significant marker disagreement.
+
+Special examination categories.
+
+28. Results processing and grading
+Features:
+
+Calculate assessment scores.
+
+Combine CAT marks.
+
+Combine assignment marks.
+
+Combine practical marks.
+
+Combine final examination marks.
+
+Apply approved weighting.
+
+Calculate final unit scores.
+
+Apply configured grade scales.
+
+Determine pass or fail.
+
+Identify missing marks.
+
+Identify incomplete assessments.
+
+Identify special examination cases.
+
+Generate provisional results.
+
+The system must support different grading schemes by programme, course, examination body and academic period.
+
+Example configurable grading scheme:
+
+Marks
+
+Grade
+
+Description
+
+80–100
+
+A
+
+Excellent
+
+70–79
+
+B
+
+Very Good
+
+60–69
+
+C
+
+Good
+
+50–59
+
+D
+
+Pass
+
+0–49
+
+E
+
+Fail
+
+Illustrative grading scale only. The institution must configure the official grading rules.
+29. Results approval workflow
+Results must not be published immediately after lecturers submit marks.
+
+Lecturer submits marks
+
+HOD reviews departmental results
+
+Examination Officer checks completeness
+
+Registrar verifies academic records
+
+Authorized examination board approves
+
+Approved results published
+
+The institution must configure the actual approval hierarchy. No officer should approve their own marks where separation of duties is required.
+
+30. Student results portal
+Students can:
+
+View published examination results.
+
+View unit results.
+
+View CAT marks where released.
+
+View practical assessment marks where released.
+
+View examination grades.
+
+View academic progress.
+
+Download approved result slips.
+
+View examination history.
+
+View pending results notices.
+
+Submit result queries.
+
+Submit examination appeals.
+
+Students must not see provisional or confidential results unless specifically authorized.
+
+31. Examination appeals and remarking
+Features:
+
+Submit appeal.
+
+Select examination.
+
+Select course or unit.
+
+Select appeal reason.
+
+Enter explanation.
+
+Upload supporting evidence.
+
+Pay applicable approved appeal charge through Finance, where required.
+
+Track appeal status.
+
+Assign appeal reviewer.
+
+Review examination script.
+
+Record remarking.
+
+Record appeal decision.
+
+Notify student.
+
+Preserve original and revised results.
+
+Appeal statuses:
+
+Draft.
+
+Submitted.
+
+Payment pending, where applicable.
+
+Under review.
+
+Additional information required.
+
+Approved.
+
+Rejected.
+
+Completed.
+
+Withdrawn.
+
+Any mark change must retain its previous value, new value, reason, authorizing officer and timestamp.
+
+32. Special examination arrangements
+Features:
+
+Extra time.
+
+Accessible examination interface.
+
+Approved alternative formats.
+
+Assistive technology support.
+
+Approved separate examination venue.
+
+Approved special scheduling.
+
+Approved examination accommodations.
+
+Sensitive supporting information must be restricted to authorized personnel. Examination staff should see only the accommodation instructions necessary to administer the examination.
+
+33. Examination certificate and academic records integration
+Features:
+
+Identify eligible students.
+
+Verify examination completion.
+
+Verify approved results.
+
+Verify examination body requirements.
+
+Submit certificate requests.
+
+Record certificate references.
+
+Link examination outcomes to academic transcripts.
+
+Track external certification status.
+
+Record certificate issue date.
+
+Record certificate verification details.
+
+Official certificates and transcripts must be issued through their respective authorized Registrar and Certification workflows.
+
+34. Examination notifications
+Notifications include:
+
+Examination registration confirmation.
+
+Examination eligibility status.
+
+Timetable publication.
+
+Timetable changes.
+
+Examination reminders.
+
+Examination booking confirmation.
+
+Examination room changes.
+
+Examination instructions.
+
+Assessment publication.
+
+Submission confirmation.
+
+Results publication.
+
+Result appeal status.
+
+Examination incident updates.
+
+Examination closure notices.
+
+Channels:
+
+Student Portal.
+
+Staff Portal.
+
+Email.
+
+SMS.
+
+Approved messaging integrations.
+
+35. Examination reports and analytics
+Examination administration reports
+
+Examination calendar.
+
+Examination registration.
+
+Candidate attendance.
+
+Examination venue allocation.
+
+Invigilator assignments.
+
+Examination incidents.
+
+Academic performance reports
+
+Results by programme.
+
+Results by department.
+
+Results by unit.
+
+Results by lecturer.
+
+Grade distribution.
+
+Pass rates.
+
+Failure rates.
+
+Missing marks.
+
+Student progression indicators.
+
+Assessment reports
+
+Question difficulty.
+
+Question performance.
+
+Average scores.
+
+Assessment completion.
+
+Time taken.
+
+Question discrimination indicators where statistically appropriate.
+
+Marking reports
+
+Marking progress.
+
+Scripts awaiting marking.
+
+Marker workload.
+
+Moderation differences.
+
+Remarking history.
+
+Pending approvals.
+
+Integrity reports
+
+Examination incident summaries.
+
+Suspicious activity flags.
+
+Access logs.
+
+Examination paper access history.
+
+Result modification history.
+
+Reports must distinguish suspected incidents from confirmed findings.
+
+36. Examination Officer portal navigation
+HI-TECH COLLEGE
+
+Examination Management Portal
+Dashboard
+
+Examination Bodies
+
+Programmes & Papers
+
+Candidate Registration
+
+Examination Timetable
+
+Examination Booking
+
+Rooms & Laboratories
+
+Invigilator Management
+
+Assessment Management
+
+Question Bank
+
+Question Types
+
+AI Assessment Generator
+
+Examination Papers
+
+Online Examinations
+
+Practical Assessments
+
+Examination Security
+
+Candidate Attendance
+
+Incident Management
+
+Auto-marking
+
+Manual Marking
+
+Rubric Management
+
+Moderation & Second Marking
+
+Results Processing
+
+Results Approval
+
+Published Results
+
+Examination Appeals
+
+Certification Records
+
+Notifications
+
+Reports & Analytics
+
+Audit Logs
+
+Examination Settings
+
+37. Database design
+Recommended Prisma models:
+
+Model
+
+Purpose
+
+ExaminationBody
+
+Configurable examination bodies
+
+ExaminationProgramme
+
+Examination programmes
+
+ExaminationLevel
+
+Programme levels
+
+ExaminationPaper
+
+Examination papers
+
+ExaminationSubject
+
+Examination subjects
+
+ExaminationSession
+
+Examination periods
+
+ExaminationRegistration
+
+Candidate registrations
+
+ExaminationEligibility
+
+Candidate eligibility checks
+
+ExaminationTimetable
+
+Examination timetable
+
+ExaminationBooking
+
+Course-specific booking
+
+ExaminationRoom
+
+Examination venues
+
+ExaminationLab
+
+Practical laboratories
+
+InvigilatorAssignment
+
+Invigilator duties
+
+Assessment
+
+Assessment records
+
+AssessmentSection
+
+Assessment sections
+
+QuestionType
+
+Configurable question types
+
+QuestionBank
+
+Question bank
+
+Question
+
+Individual questions
+
+QuestionOption
+
+Objective question options
+
+QuestionAnswer
+
+Approved answer definitions
+
+QuestionVersion
+
+Question history
+
+AssessmentQuestion
+
+Assessment-question relationship
+
+AssessmentAttempt
+
+Student examination attempts
+
+StudentResponse
+
+Student answers
+
+ResponseAttachment
+
+Uploaded evidence
+
+ExaminationEvent
+
+Examination activity log
+
+ExaminationIncident
+
+Examination incidents
+
+MarkingScheme
+
+Marking rules
+
+MarkingRubric
+
+Rubric definitions
+
+MarkingRubricCriterion
+
+Rubric criteria
+
+MarkingAssignment
+
+Marker allocation
+
+AssessmentMark
+
+Recorded marks
+
+MarkingReview
+
+Second marking
+
+ModerationRecord
+
+Moderation history
+
+Result
+
+Official academic result
+
+ResultApproval
+
+Results approval workflow
+
+ResultPublication
+
+Publication records
+
+ExaminationAppeal
+
+Student appeals
+
+RemarkingRecord
+
+Remarking history
+
+PracticalEnvironment
+
+Approved practical environments
+
+PracticalSubmission
+
+Practical evidence
+
+ExaminationCertificateRecord
+
+Examination certificate references
+
+ExaminationAuditLog
+
+Examination audit history
+
+Core data relationships
+ExaminationBody
+     |
+     +---- ExaminationProgramme
+     |          |
+     |          +---- ExaminationLevel
+     |          +---- ExaminationPaper
+     |
+     +---- ExaminationSession
+                |
+                +---- ExaminationRegistration
+                |
+                +---- ExaminationTimetable
+
+Assessment
+     |
+     +---- AssessmentSection
+     |
+     +---- AssessmentQuestion
+                |
+                +---- Question
+                +---- QuestionType
+     |
+     +---- AssessmentAttempt
+                |
+                +---- StudentResponse
+                +---- AssessmentMark
+                +---- PracticalSubmission
+
+AssessmentMark
+     |
+     +---- MarkingAssignment
+     +---- MarkingReview
+     +---- ModerationRecord
+     |
+     v
+Result
+     |
+     +---- ResultApproval
+     +---- ResultPublication
+     +---- ExaminationAppeal
+Important technical requirements
+Use decimal-safe mark and score calculations.
+
+Preserve examination paper versions.
+
+Preserve student answer versions.
+
+Use transaction-safe examination submissions.
+
+Use server-authoritative timestamps.
+
+Prevent unauthorized mark changes.
+
+Keep provisional and approved results separate.
+
+Preserve every result modification.
+
+Apply tenant and campus isolation.
+
+Store examination attachments securely.
+
+Keep marking and approval audit trails.
+
+38. Backend API structure
+Recommended Express endpoints:
+
+/api/examinations/dashboard
+
+/api/examinations/bodies
+/api/examinations/bodies/:id
+/api/examinations/programmes
+/api/examinations/levels
+/api/examinations/papers
+/api/examinations/sessions
+
+/api/examinations/registrations
+/api/examinations/registrations/:id
+/api/examinations/eligibility
+/api/examinations/eligibility/:id/review
+
+/api/examinations/timetables
+/api/examinations/bookings
+/api/examinations/rooms
+/api/examinations/labs
+/api/examinations/invigilators
+
+/api/assessments
+/api/assessments/:id
+/api/assessments/:id/publish
+/api/assessments/:id/approve
+
+/api/question-types
+/api/question-bank
+/api/questions
+/api/questions/:id
+/api/questions/:id/approve
+/api/ai/assessment-generation
+
+/api/examination-papers
+/api/examination-papers/:id/versions
+
+/api/examination-attempts
+/api/examination-attempts/:id/start
+/api/examination-attempts/:id/responses
+/api/examination-attempts/:id/submit
+
+/api/examinations/attendance
+/api/examinations/incidents
+
+/api/marking/queues
+/api/marking/assignments
+/api/marking/submissions
+/api/marking/rubrics
+/api/marking/reviews
+/api/marking/moderation
+
+/api/results
+/api/results/:id
+/api/results/:id/approve
+/api/results/:id/publish
+
+/api/examination-appeals
+/api/examination-appeals/:id/review
+/api/examination-appeals/:id/remark
+
+/api/examination-certificates
+/api/examinations/reports
+/api/examinations/audit
+39. Frontend project structure
+src/
+└── modules/
+    └── examinations/
+        ├── pages/
+        │   ├── ExaminationDashboard.tsx
+        │   ├── ExaminationBodies.tsx
+        │   ├── ExaminationProgrammes.tsx
+        │   ├── ExaminationRegistration.tsx
+        │   ├── CandidateEligibility.tsx
+        │   ├── ExaminationTimetable.tsx
+        │   ├── ExaminationBooking.tsx
+        │   ├── ExaminationRooms.tsx
+        │   ├── LaboratoryManagement.tsx
+        │   ├── InvigilatorManagement.tsx
+        │   ├── AssessmentManagement.tsx
+        │   ├── QuestionBank.tsx
+        │   ├── QuestionTypeRegistry.tsx
+        │   ├── AIAssessmentGenerator.tsx
+        │   ├── ExaminationPaperBuilder.tsx
+        │   ├── OnlineExamination.tsx
+        │   ├── PracticalAssessment.tsx
+        │   ├── ExaminationSecurity.tsx
+        │   ├── CandidateAttendance.tsx
+        │   ├── IncidentManagement.tsx
+        │   ├── AutoMarking.tsx
+        │   ├── ManualMarking.tsx
+        │   ├── RubricManagement.tsx
+        │   ├── Moderation.tsx
+        │   ├── ResultsProcessing.tsx
+        │   ├── ResultsApproval.tsx
+        │   ├── ResultsPublication.tsx
+        │   ├── ExaminationAppeals.tsx
+        │   ├── CertificationRecords.tsx
+        │   └── ExaminationReports.tsx
+        ├── components/
+        │   ├── ExaminationSidebar.tsx
+        │   ├── ExaminationHeader.tsx
+        │   ├── QuestionEditor.tsx
+        │   ├── QuestionRenderer.tsx
+        │   ├── QuestionTypeSelector.tsx
+        │   ├── AssessmentBuilder.tsx
+        │   ├── ExaminationTimer.tsx
+        │   ├── AnswerNavigator.tsx
+        │   ├── CandidateCard.tsx
+        │   ├── MarkingWorkspace.tsx
+        │   ├── RubricEditor.tsx
+        │   ├── ModerationPanel.tsx
+        │   ├── ResultsTable.tsx
+        │   └── ApprovalWorkflow.tsx
+        ├── services/
+        │   ├── examinationApi.ts
+        │   ├── assessmentApi.ts
+        │   ├── questionBankApi.ts
+        │   ├── markingApi.ts
+        │   └── resultsApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+40. Security and examination integrity
+Mandatory controls:
+
+Role-based access control.
+
+Examination body and institution configuration permissions.
+
+Secure question bank access.
+
+Separation between question creation and approval.
+
+Secure examination paper generation.
+
+Controlled examination paper distribution.
+
+Server-authoritative examination timers.
+
+Secure answer submission.
+
+Examination session recovery.
+
+Restricted marking access.
+
+Marker and moderator separation.
+
+Controlled results approval.
+
+Immutable audit history.
+
+Secure practical assessment environments.
+
+Isolated code execution.
+
+Protected candidate records.
+
+Secure evidence uploads.
+
+Examination incident management.
+
+Data retention policies.
+
+Disaster recovery and backup.
+
+41. Acceptance criteria
+The Examination Management Portal is ready for production review when:
+
+Administrators can configure examination bodies.
+
+Examination programmes and papers can be created.
+
+Candidates can be registered.
+
+Eligibility checks work.
+
+Examination timetables detect conflicts.
+
+Students can book authorized examinations.
+
+Examination rooms and invigilators can be assigned.
+
+Assessments can be created and approved.
+
+The question bank supports all 63 configured question types.
+
+The assessment engine supports the 12 advanced formats.
+
+AI-generated assessments require human review.
+
+Online examinations save and submit answers reliably.
+
+Practical assessments support approved execution modes.
+
+Automatic marking follows configured rules.
+
+Manual marking supports rubrics.
+
+Second marking and moderation preserve history.
+
+Results follow approval workflows.
+
+Students only see authorized published results.
+
+Appeals and remarking preserve previous results.
+
+Examination incidents are tracked.
+
+Reports respect permissions.
+
+Automated tests cover critical examination workflows.
+
+42. Module 23 implementation deliverables
+Examination Officer dashboard.
+
+Examination body configuration.
+
+Examination programme and paper management.
+
+Candidate registration and eligibility.
+
+Timetable and booking engine.
+
+Examination room and invigilator management.
+
+Assessment management.
+
+Configurable 63-type question registry.
+
+Twelve advanced assessment formats.
+
+Question bank.
+
+AI assessment generation.
+
+Examination paper builder.
+
+Online examination engine.
+
+Practical assessment engine.
+
+ICDL-style software assessment.
+
+Programming and networking assessment.
+
+Examination security and incident management.
+
+Auto-marking engine.
+
+Manual marking workspace.
+
+Rubric and moderation engine.
+
+Results processing.
+
+Results approval and publication.
+
+Examination appeals and remarking.
+
+Examination certificate integration.
+
+Reports, audit logs, database migrations, APIs, permissions and automated tests.
+
+This is the full Module 23 specification. The features are requirements for implementation, not a claim that they already exist in the codebase.
+
+NEXT: MODULE 24 — ADMISSIONS AND STUDENT ENROLMENT MANAGEMENT PORTAL
+The next module will cover:
+
+Public online application.
+
+Course and programme discovery.
+
+Admission requirements.
+
+Application forms.
+
+Applicant accounts.
+
+Application reference generation.
+
+Application document uploads.
+
+Application fees and Finance integration.
+
+Application review.
+
+Admission decisions.
+
+Offer letters.
+
+Acceptance and rejection.
+
+Student registration.
+
+Automatic student registration numbers.
+
+First-login password change.
+
+Student profile completion.
+
+Programme and unit allocation.
+
+Campus and semester allocation.
+
+Student ID generation.
+
+Student portal activation.
+
+Admission reporting.
+
+Admission communication and notifications.
+
+
+Convert to PDF
+next
+MODULE 24: ADMISSIONS AND STUDENT ENROLMENT MANAGEMENT PORTAL
+HI-TECH College Integrated Digital Academic & Certification Platform
+Module specification Student recruitment and enrolment
+
+The Admissions Management Portal manages the complete student admission journey, from discovering a course on the public website to submitting an application, receiving an admission decision, accepting an offer, registering as a student and activating the Student Portal.
+
+It integrates with the Public Website, Finance, Registrar, Academic Operations, Examination, Library, Student Portal, Notification and Document Management modules.
+
+Primary users:
+
+Admissions Officer.
+
+Senior Admissions Officer.
+
+Admissions Manager.
+
+Registrar.
+
+Principal.
+
+HOD.
+
+Finance Officer.
+
+Student.
+
+Parent or sponsor, where authorized by the student.
+
+Institution Administrator.
+
+1. Admissions dashboard
+The dashboard provides a summary of admission operations.
+
+Dashboard statistics:
+
+Total applications.
+
+Applications received today.
+
+Applications received this month.
+
+Draft applications.
+
+Submitted applications.
+
+Applications awaiting review.
+
+Applications awaiting documents.
+
+Applications approved.
+
+Applications rejected.
+
+Applicants awaiting acceptance.
+
+Accepted admission offers.
+
+Applicants awaiting registration.
+
+Registered students.
+
+Applications by campus.
+
+Applications by programme.
+
+Applications by intake.
+
+Application fee status.
+
+Admission conversion rate.
+
+Available programme capacity.
+
+Quick actions:
+
+Register new applicant.
+
+Create admission intake.
+
+Add programme.
+
+Review application.
+
+Verify documents.
+
+Approve application.
+
+Generate admission letter.
+
+Record offer acceptance.
+
+Register student.
+
+Generate student number.
+
+Activate Student Portal.
+
+2. Public course and programme discovery
+The admissions module connects directly to the HI-TECH College public website.
+
+Prospective students should be able to discover available courses before creating an account.
+
+Features:
+
+Browse all programmes.
+
+Search courses.
+
+Filter by department.
+
+Filter by campus.
+
+Filter by qualification level.
+
+Filter by course category.
+
+View course descriptions.
+
+View entry requirements.
+
+View duration.
+
+View study mode.
+
+View fees.
+
+View available intakes.
+
+View application deadlines.
+
+View career pathways.
+
+View course units.
+
+View course accreditation or examination-body information where verified.
+
+Download course brochures.
+
+Start online application.
+
+Programme categories may include:
+
+ICT.
+
+Computer Science.
+
+Business.
+
+Accounting.
+
+Professional certifications.
+
+Digital skills.
+
+Technical and vocational training.
+
+Short courses.
+
+Other administrator-configured programmes.
+
+Programme information must be linked to the approved Academic Catalogue, rather than maintaining a separate conflicting course list.
+
+3. Admission intake management
+The Admissions Manager can configure different admission periods.
+
+Features:
+
+Create admission intake.
+
+Set intake name.
+
+Set intake year.
+
+Set application opening date.
+
+Set application closing date.
+
+Select participating campuses.
+
+Select programmes.
+
+Configure available places.
+
+Configure entry requirements.
+
+Configure application charges.
+
+Configure admission deadlines.
+
+Open intake.
+
+Pause applications.
+
+Close intake.
+
+Extend deadline.
+
+Archive intake.
+
+Example:
+
+Intake
+
+Academic year
+
+Status
+
+May Intake
+
+2026
+
+Closed
+
+September Intake
+
+2026
+
+Open
+
+January Intake
+
+2027
+
+Scheduled
+
+These are illustrative intake examples; actual status is controlled by the college.
+
+4. Online applicant account
+Prospective students can create an applicant account through the public website.
+
+Features:
+
+Register account.
+
+Enter full name.
+
+Enter email address.
+
+Enter telephone number.
+
+Verify email.
+
+Verify phone where configured.
+
+Create password.
+
+Sign in.
+
+Reset password.
+
+View application dashboard.
+
+Save application as draft.
+
+Continue incomplete application.
+
+Track submitted applications.
+
+Receive admission notifications.
+
+An applicant account must be distinguishable from an active student account. Applying does not automatically create an active student.
+
+5. Online application form
+The application form should be configurable according to the programme and intake.
+
+Section A: Personal information
+
+Full name.
+
+Date of birth.
+
+Gender, where required.
+
+Nationality.
+
+Identification type.
+
+Identification number, where required.
+
+Email.
+
+Telephone.
+
+Residential address.
+
+Emergency contact.
+
+Section B: Academic background
+
+Highest qualification.
+
+Previous institution.
+
+Completion year.
+
+Examination body.
+
+Grades or results.
+
+Certificate details.
+
+Previous academic history.
+
+Section C: Programme selection
+
+Campus.
+
+Department.
+
+Programme.
+
+Qualification level.
+
+Study mode.
+
+Intake.
+
+Preferred start date.
+
+Section D: Employment information, if applicable
+
+Employment status.
+
+Employer.
+
+Job title.
+
+Relevant work experience.
+
+Section E: Additional information
+
+Relevant skills.
+
+Previous training.
+
+Applicant declaration.
+
+Privacy notice acknowledgement.
+
+Terms acceptance.
+
+The institution should collect only information necessary for the admission process.
+
+6. Application reference number generation
+Every submitted application must receive a unique application reference.
+
+Example:
+
+APPLICATION REFERENCE
+
+HCA/APP/2026/001
+Illustrative application reference.
+Component
+
+Meaning
+
+HCA
+
+Institution prefix
+
+APP
+
+Application type
+
+2026
+
+Application year
+
+001
+
+Sequence
+
+Rules:
+
+Generate the reference through the central registration number service.
+
+Generate it at the defined submission point.
+
+Ensure uniqueness.
+
+Use atomic database transactions.
+
+Never generate permanent numbers with frontend counters.
+
+Do not reuse issued references.
+
+Preserve application references after rejection or withdrawal.
+
+Do not create a student number until the applicant reaches the approved student-registration stage.
+
+The application number and student registration number must remain separate identifiers.
+
+7. Application document uploads
+Applicants can upload required supporting documents.
+
+Supported document categories:
+
+Academic certificates.
+
+Academic transcripts.
+
+School-leaving certificates.
+
+Professional certificates.
+
+Identification documents where required.
+
+Passport photographs.
+
+Employment recommendation letters where required.
+
+Previous institution transfer documents.
+
+Other programme-specific evidence.
+
+Features:
+
+Upload documents.
+
+View upload progress.
+
+Replace documents before the submission deadline.
+
+Preview permitted documents.
+
+Track verification status.
+
+Receive document rejection reasons.
+
+Resubmit corrected documents.
+
+Download application document checklist.
+
+Document statuses:
+
+Not uploaded.
+
+Uploaded.
+
+Under verification.
+
+Verified.
+
+Rejected.
+
+Resubmission required.
+
+Security:
+
+Restrict file types.
+
+Limit file sizes.
+
+Scan uploads for malware.
+
+Store files privately.
+
+Restrict access to authorized admissions personnel.
+
+Maintain document versions.
+
+Audit downloads and verification decisions.
+
+8. Application fee management
+The system should support configurable application charges.
+
+Features:
+
+Configure application fees.
+
+Configure free application categories.
+
+Generate application invoices.
+
+Record application payment status.
+
+Integrate M-Pesa Daraja.
+
+Integrate approved bank payment channels.
+
+Record manual payments with authorization.
+
+Generate receipts.
+
+Reconcile payment references.
+
+Process approved refunds.
+
+Track payment failures.
+
+Payment statuses:
+
+Not required.
+
+Unpaid.
+
+Pending.
+
+Paid.
+
+Failed.
+
+Under reconciliation.
+
+Refunded.
+
+Waived.
+
+Important: Payment confirmation must come from a validated server-side payment or Finance record. A browser message or uploaded payment screenshot is not sufficient proof of payment.
+
+9. Application submission
+Before submission, the system validates required fields and documents.
+
+Features:
+
+Review completed application.
+
+Display missing information.
+
+Display missing documents.
+
+Validate programme requirements.
+
+Validate intake status.
+
+Validate application deadline.
+
+Validate required application payment, if applicable.
+
+Confirm applicant declaration.
+
+Submit application.
+
+Generate reference number.
+
+Generate submission confirmation.
+
+Send notification.
+
+After submission, changes should be controlled. Admissions Officers can request corrections or return the application for amendment while retaining its history.
+
+10. Application review and assessment
+Admissions Officers can review submitted applications.
+
+Features:
+
+View applications.
+
+Search applicants.
+
+Filter by intake.
+
+Filter by programme.
+
+Filter by campus.
+
+Filter by qualification.
+
+View documents.
+
+Verify qualifications.
+
+Review entry requirements.
+
+Add internal comments.
+
+Request additional information.
+
+Assign application reviewers.
+
+Record review scores where required.
+
+Recommend admission.
+
+Recommend rejection.
+
+Escalate exceptional applications.
+
+Application review must be auditable.
+
+11. Admission requirements management
+The college should configure admission requirements by programme.
+
+Features:
+
+Define minimum qualifications.
+
+Define required subjects.
+
+Define minimum grades.
+
+Define professional requirements.
+
+Define relevant experience.
+
+Define prerequisite courses.
+
+Define required documents.
+
+Define special entry routes.
+
+Define recognition of prior learning rules.
+
+Configure equivalency review.
+
+Configure approved exceptions.
+
+An application eligibility engine can flag whether an applicant appears to satisfy the configured criteria. Final decisions must follow authorized admission policy and human review.
+
+12. Admission decision management
+Possible decisions:
+
+Recommended for admission.
+
+Provisionally admitted.
+
+Fully admitted.
+
+Additional documents required.
+
+Interview required.
+
+Assessment required.
+
+Waitlisted.
+
+Rejected.
+
+Deferred.
+
+Withdrawn.
+
+Features:
+
+Record decision.
+
+Record decision date.
+
+Record decision officer.
+
+Record reasons.
+
+Record conditions.
+
+Request approval.
+
+Approve admission.
+
+Generate decision notice.
+
+Notify applicant.
+
+Preserve decision history.
+
+Admissions Officers must not approve their own applications where the institution's separation-of-duties policy requires another approver.
+
+13. Admission interview and entry assessment
+Some programmes may require an interview or entrance assessment.
+
+Features:
+
+Schedule interview.
+
+Assign interview panel.
+
+Record interview location.
+
+Configure online interview.
+
+Send invitations.
+
+Record attendance.
+
+Record interview questions.
+
+Record evaluation scores.
+
+Record panel comments.
+
+Recommend admission.
+
+Schedule entry assessment.
+
+Record assessment results.
+
+Link results to the applicant record.
+
+14. Admission offer letter generation
+Once an application is approved, the system can generate an offer letter.
+
+The offer letter may contain:
+
+HI-TECH College branding.
+
+Applicant's name.
+
+Application reference.
+
+Programme.
+
+Campus.
+
+Intake.
+
+Qualification level.
+
+Admission conditions.
+
+Reporting date.
+
+Fee information.
+
+Payment instructions.
+
+Acceptance deadline.
+
+Required documents.
+
+Registrar or authorized officer details.
+
+Features:
+
+Generate PDF offer letter.
+
+Generate provisional offer.
+
+Generate full admission offer.
+
+Generate conditional offer.
+
+Approve offer letter.
+
+Send offer by email.
+
+Make offer available in applicant portal.
+
+Track delivery.
+
+Record offer version.
+
+15. Offer acceptance and rejection
+Applicants should be able to respond to admission offers online.
+
+Features:
+
+View offer letter.
+
+Accept offer.
+
+Decline offer.
+
+Request deferral.
+
+Request clarification.
+
+Upload required documents.
+
+Confirm programme.
+
+Confirm intake.
+
+Confirm campus.
+
+Acknowledge admission terms.
+
+Offer statuses:
+
+Prepared.
+
+Approved.
+
+Issued.
+
+Viewed.
+
+Accepted.
+
+Declined.
+
+Expired.
+
+Withdrawn.
+
+Deferred.
+
+The system should not automatically activate an enrolled student merely because an offer was accepted.
+
+16. Student registration
+After admission acceptance and fulfillment of required registration conditions, authorized staff can convert the applicant into a student.
+
+Registration features:
+
+Verify applicant identity.
+
+Verify admission decision.
+
+Verify accepted offer.
+
+Verify required documents.
+
+Confirm programme.
+
+Confirm campus.
+
+Confirm intake.
+
+Confirm academic year.
+
+Confirm semester.
+
+Create student record.
+
+Generate student number.
+
+Create Student Portal account.
+
+Assign student permissions.
+
+Generate registration confirmation.
+
+Notify Registrar.
+
+Student number format:
+
+STUDENT REGISTRATION NUMBER
+
+HCA/STU/2026/001
+Illustrative student number.
+HCA: Institution prefix.
+
+STU: Student record type.
+
+2026: Registration year.
+
+001: Unique sequence.
+
+The student number must be generated by the central registration number service. It must not be based on the application reference or an unprotected database count.
+
+17. First-time student login
+This is a mandatory onboarding requirement.
+
+The first time a newly registered student signs in:
+
+The system authenticates the account.
+
+The student is redirected to the mandatory password-change page.
+
+The student sets a new password.
+
+The system invalidates any temporary credential.
+
+The student accepts applicable portal terms and privacy notices.
+
+The student completes required profile information.
+
+The student is directed to the Student Dashboard.
+
+Mandatory first-login rule:
+
+Student account created
+
+First login
+
+Mandatory
+Change temporary password
+
+Complete required profile information
+
+Access Student Portal
+
+Optional profile information may be completed later. Students must not be permanently blocked from essential academic services merely because optional information is incomplete.
+
+18. Student profile completion
+Required information may include:
+
+Full name.
+
+Contact details.
+
+Emergency contact.
+
+Next of kin, where required.
+
+Programme.
+
+Campus.
+
+Admission details.
+
+Required academic documents.
+
+Optional information may include:
+
+Additional skills.
+
+Interests.
+
+Personal biography.
+
+Additional emergency contact.
+
+Other approved profile information.
+
+Students can update permitted information through their portal. Changes to official identity, admission and academic records must be submitted for Registrar verification.
+
+19. Student ID card generation
+Features:
+
+Generate student ID card.
+
+Display student photograph.
+
+Display student registration number.
+
+Display student name.
+
+Display programme.
+
+Display campus.
+
+Display admission year.
+
+Generate barcode or QR code.
+
+Print physical student ID.
+
+Generate digital student ID.
+
+Record card issue date.
+
+Manage replacement cards.
+
+Deactivate invalid cards.
+
+The QR code should contain a secure verification reference, not exposed confidential student information.
+
+20. Programme and academic allocation
+After student registration, the student must be linked to the approved academic structure.
+
+Features:
+
+Assign department.
+
+Assign programme.
+
+Assign qualification level.
+
+Assign campus.
+
+Assign academic year.
+
+Assign semester.
+
+Assign class or cohort.
+
+Assign course units.
+
+Assign academic advisor where configured.
+
+Link student to timetable.
+
+Link student to learning materials.
+
+Link student to examination eligibility rules.
+
+The Registrar and authorized academic officers remain responsible for official academic registration.
+
+21. Student account activation
+Features:
+
+Create authentication account.
+
+Link account to student record.
+
+Assign Student role.
+
+Assign campus scope.
+
+Assign programme scope.
+
+Generate temporary login credentials securely.
+
+Send activation instructions.
+
+Enforce first-login password change.
+
+Configure MFA where required.
+
+Track activation status.
+
+Lock inactive accounts according to policy.
+
+Reset credentials securely.
+
+An application account should be linked to the student account after registration rather than creating unrelated duplicate identities.
+
+22. Admission deferral and transfer
+Features:
+
+Request admission deferral.
+
+Request programme change.
+
+Request campus change.
+
+Request intake change.
+
+Request course change.
+
+Record reasons.
+
+Review requests.
+
+Approve or reject changes.
+
+Generate revised offer letters.
+
+Preserve previous admission decisions.
+
+Maintain academic and registration history.
+
+Programme changes must be validated against academic capacity and admission requirements.
+
+23. Student withdrawal and admission cancellation
+Features:
+
+Record applicant withdrawal.
+
+Record accepted-offer withdrawal.
+
+Cancel an unaccepted offer.
+
+Cancel admission with authorization.
+
+Record reasons.
+
+Record effective date.
+
+Reconcile approved refunds through Finance.
+
+Preserve application history.
+
+Notify relevant departments.
+
+Cancellation of an admission record must not delete the application or its audit history.
+
+24. Applicant and student communication
+Features:
+
+Send application confirmation.
+
+Send document reminders.
+
+Send application review updates.
+
+Send interview invitations.
+
+Send admission decisions.
+
+Send offer letters.
+
+Send offer expiry reminders.
+
+Send registration instructions.
+
+Send student activation details.
+
+Send orientation invitations.
+
+Send intake reminders.
+
+Channels:
+
+Applicant Portal.
+
+Student Portal.
+
+Email.
+
+SMS.
+
+Approved messaging integrations.
+
+25. Orientation and student onboarding
+Features:
+
+Create orientation programmes.
+
+Schedule orientation sessions.
+
+Assign orientation facilitators.
+
+Publish student handbooks.
+
+Share college policies.
+
+Share academic calendars.
+
+Share examination regulations.
+
+Introduce Student Portal features.
+
+Register orientation attendance.
+
+Record onboarding completion.
+
+Issue onboarding certificates where approved.
+
+Orientation can be delivered physically, online or through a combination of both.
+
+26. Admissions integration with other portals
+Portal/module
+
+Integration
+
+Public Website
+
+Programme discovery and online applications
+
+Finance
+
+Application invoices and payment reconciliation
+
+Registrar
+
+Student registration and academic records
+
+Academic Operations
+
+Programme and unit allocation
+
+Student Portal
+
+Account activation and onboarding
+
+Examination
+
+Examination eligibility after academic registration
+
+Library
+
+Library membership creation
+
+LMS
+
+Learning account and course enrollment
+
+Document Centre
+
+Admission documents and offer letters
+
+Notifications
+
+Application and admission communication
+
+Analytics
+
+Admission and enrolment reporting
+
+27. Admissions reports and analytics
+Application reports
+
+Applications by programme.
+
+Applications by intake.
+
+Applications by campus.
+
+Applications by date.
+
+Applications by status.
+
+Applications by qualification.
+
+Admission reports
+
+Approved applicants.
+
+Rejected applicants.
+
+Waitlisted applicants.
+
+Accepted offers.
+
+Declined offers.
+
+Deferred applicants.
+
+Registration reports
+
+Newly registered students.
+
+Students by programme.
+
+Students by campus.
+
+Students by intake.
+
+Student registration completion.
+
+Student portal activation.
+
+Financial reports
+
+Application invoices.
+
+Application fee collection.
+
+Outstanding application charges.
+
+Approved application fee waivers.
+
+Refund records.
+
+Conversion analytics
+
+Application-to-admission rate.
+
+Offer acceptance rate.
+
+Admission-to-registration rate.
+
+Registration-to-activation rate.
+
+All reports must use actual recorded data and distinguish test records from production records.
+
+28. Admissions Officer portal navigation
+HI-TECH COLLEGE
+
+Admissions Management Portal
+Dashboard
+
+Programmes & Courses
+
+Admission Intakes
+
+Applicant Accounts
+
+Online Applications
+
+Application Documents
+
+Application Payments
+
+Application Review
+
+Admission Requirements
+
+Interviews & Assessments
+
+Admission Decisions
+
+Offer Letters
+
+Offer Acceptance
+
+Student Registration
+
+Student Number Generation
+
+Student ID Cards
+
+Academic Allocation
+
+Student Account Activation
+
+Deferrals & Transfers
+
+Withdrawals & Cancellations
+
+Student Orientation
+
+Notifications
+
+Reports & Analytics
+
+Approval Centre
+
+Admissions Settings
+
+29. Database design
+Recommended Prisma models:
+
+Model
+
+Purpose
+
+AdmissionIntake
+
+Configurable admission periods
+
+Applicant
+
+Applicant identity
+
+ApplicantAccount
+
+Applicant authentication link
+
+Application
+
+Main admission application
+
+ApplicationProgrammeChoice
+
+Programme selections
+
+ApplicationDocument
+
+Uploaded supporting documents
+
+ApplicationPayment
+
+Application fee references
+
+AdmissionRequirement
+
+Programme requirements
+
+AdmissionRequirementItem
+
+Individual requirement rules
+
+ApplicationReview
+
+Application assessment
+
+ApplicationReviewComment
+
+Reviewer comments
+
+AdmissionInterview
+
+Interview records
+
+InterviewPanelMember
+
+Interview panel
+
+InterviewEvaluation
+
+Interview scoring
+
+AdmissionDecision
+
+Admission decision
+
+AdmissionOffer
+
+Admission offers
+
+OfferAcceptance
+
+Applicant response
+
+StudentRegistration
+
+Student registration process
+
+Student
+
+Permanent student identity
+
+StudentProfile
+
+Student personal and contact profile
+
+StudentIDCard
+
+Physical and digital ID records
+
+StudentProgrammeEnrollment
+
+Programme allocation
+
+StudentUnitEnrollment
+
+Unit allocation
+
+StudentAccountActivation
+
+Portal activation and onboarding
+
+AdmissionDeferral
+
+Admission deferral
+
+AdmissionTransfer
+
+Programme or campus changes
+
+AdmissionWithdrawal
+
+Withdrawal and cancellation
+
+OrientationProgramme
+
+Orientation events
+
+OrientationAttendance
+
+Orientation participation
+
+AdmissionNotification
+
+Admission communications
+
+AdmissionApproval
+
+Approval workflow
+
+AdmissionAuditLog
+
+Admission audit history
+
+Core data relationships
+AdmissionIntake
+      |
+      +---- Application
+               |
+               +---- Applicant
+               |
+               +---- ApplicationDocument
+               |
+               +---- ApplicationPayment
+               |
+               +---- ApplicationReview
+               |
+               +---- AdmissionInterview
+               |
+               +---- AdmissionDecision
+                          |
+                          +---- AdmissionOffer
+                                      |
+                                      +---- OfferAcceptance
+                                                 |
+                                                 v
+                                          StudentRegistration
+                                                 |
+                                                 v
+                                              Student
+                                                 |
+                    +----------------------------+-------------------+
+                    |                            |                   |
+              StudentProfile              StudentIDCard       StudentAccount
+                    |                            |                   |
+                    +----------------------------+-------------------+
+                                                 |
+                                      Programme Enrollment
+                                                 |
+                                      Unit Enrollment
+                                                 |
+                                      Student Portal
+Important identity design
+The platform must distinguish:
+
+Applicant identity.
+
+Application reference.
+
+Student identity.
+
+Student registration number.
+
+Authentication account.
+
+An applicant may submit more than one application over time, but after successful registration the student's official record must be linked to the existing verified person identity where appropriate.
+
+Do not create duplicate student records merely because an applicant applied for a different intake or programme.
+
+30. Backend API structure
+Recommended Express endpoints:
+
+/api/admissions/dashboard
+
+/api/admissions/intakes
+/api/admissions/intakes/:id
+
+/api/admissions/programmes
+/api/admissions/requirements
+
+/api/admissions/applicants
+/api/admissions/applicants/:id
+/api/admissions/applicants/:id/verify
+
+/api/admissions/applications
+/api/admissions/applications/:id
+/api/admissions/applications/:id/submit
+/api/admissions/applications/:id/documents
+/api/admissions/applications/:id/review
+/api/admissions/applications/:id/request-information
+
+/api/admissions/payments
+/api/admissions/payments/reconcile
+
+/api/admissions/interviews
+/api/admissions/interviews/:id/evaluations
+
+/api/admissions/decisions
+/api/admissions/decisions/:id/approve
+
+/api/admissions/offers
+/api/admissions/offers/:id/issue
+/api/admissions/offers/:id/accept
+/api/admissions/offers/:id/decline
+
+/api/admissions/registrations
+/api/admissions/registrations/:id/complete
+/api/admissions/registrations/:id/student-number
+
+/api/admissions/student-accounts
+/api/admissions/student-accounts/:id/activate
+
+/api/admissions/student-ids
+/api/admissions/deferrals
+/api/admissions/transfers
+/api/admissions/withdrawals
+
+/api/admissions/orientation
+/api/admissions/notifications
+/api/admissions/approvals
+/api/admissions/reports
+/api/admissions/audit
+Public applicant endpoints should be separated from internal administrative endpoints. All public requests must be validated, rate-limited and protected against automated abuse.
+
+31. Frontend project structure
+src/
+└── modules/
+    └── admissions/
+        ├── pages/
+        │   ├── AdmissionsDashboard.tsx
+        │   ├── AdmissionIntakes.tsx
+        │   ├── ProgrammeDiscovery.tsx
+        │   ├── ApplicantAccounts.tsx
+        │   ├── OnlineApplications.tsx
+        │   ├── ApplicationDetails.tsx
+        │   ├── ApplicationDocuments.tsx
+        │   ├── ApplicationPayments.tsx
+        │   ├── ApplicationReview.tsx
+        │   ├── AdmissionRequirements.tsx
+        │   ├── InterviewManagement.tsx
+        │   ├── AdmissionDecisions.tsx
+        │   ├── OfferLetters.tsx
+        │   ├── OfferAcceptance.tsx
+        │   ├── StudentRegistration.tsx
+        │   ├── StudentNumberGeneration.tsx
+        │   ├── StudentIDCards.tsx
+        │   ├── AcademicAllocation.tsx
+        │   ├── StudentAccountActivation.tsx
+        │   ├── AdmissionDeferrals.tsx
+        │   ├── AdmissionTransfers.tsx
+        │   ├── AdmissionWithdrawals.tsx
+        │   ├── StudentOrientation.tsx
+        │   └── AdmissionReports.tsx
+        ├── components/
+        │   ├── AdmissionsSidebar.tsx
+        │   ├── AdmissionsHeader.tsx
+        │   ├── ApplicantSearch.tsx
+        │   ├── ApplicationWizard.tsx
+        │   ├── ApplicationProgress.tsx
+        │   ├── DocumentUploader.tsx
+        │   ├── ApplicationReviewPanel.tsx
+        │   ├── AdmissionDecisionCard.tsx
+        │   ├── OfferLetterPreview.tsx
+        │   ├── StudentRegistrationForm.tsx
+        │   ├── StudentNumberDisplay.tsx
+        │   ├── StudentIDCardPreview.tsx
+        │   └── ApprovalWorkflow.tsx
+        ├── services/
+        │   ├── admissionsApi.ts
+        │   ├── applicantApi.ts
+        │   ├── applicationApi.ts
+        │   ├── registrationApi.ts
+        │   └── admissionPaymentApi.ts
+        ├── hooks/
+        ├── types/
+        └── permissions/
+32. Security and privacy requirements
+Separate applicant and student account permissions.
+
+Protect personal information.
+
+Restrict access to identity documents.
+
+Validate all uploaded documents.
+
+Use secure password hashing.
+
+Enforce mandatory first-login password change.
+
+Use server-side admission approval checks.
+
+Restrict student-number generation to authorized workflows.
+
+Use the central registration number service.
+
+Prevent duplicate student identities.
+
+Validate payment callbacks server-side.
+
+Audit application decisions.
+
+Preserve admission document versions.
+
+Restrict bulk data exports.
+
+Enforce institution and campus permissions.
+
+Apply retention policies to unsuccessful applications.
+
+Secure account activation tokens.
+
+Provide a clear privacy notice and applicable data-subject request process.
+
+33. Acceptance criteria
+The Admissions Portal is ready for production review when:
+
+Applicants can browse approved programmes.
+
+Admissions Officers can configure intakes.
+
+Applicants can create accounts.
+
+Applicants can complete and submit applications.
+
+Application references are generated centrally.
+
+Applicants can upload required documents.
+
+Application payments are reconciled with Finance.
+
+Admissions Officers can review applications.
+
+Entry requirements are configurable.
+
+Interview and assessment workflows operate correctly.
+
+Admission decisions are auditable.
+
+Offer letters can be generated and delivered.
+
+Applicants can accept or decline offers.
+
+Approved applicants can be registered as students.
+
+Student numbers are generated centrally.
+
+Existing student identities are not duplicated.
+
+First-login password change is enforced.
+
+Required and optional profile information is distinguished.
+
+Student accounts receive correct permissions.
+
+Student IDs can be generated.
+
+Academic allocations are linked to official records.
+
+Deferrals, transfers and withdrawals preserve history.
+
+Reports reflect actual records.
+
+Automated tests cover the complete applicant-to-student journey.
+
+34. Module 24 implementation deliverables
+Public programme discovery integration.
+
+Admission intake management.
+
+Applicant account management.
+
+Online application wizard.
+
+Application reference generation.
+
+Document upload and verification.
+
+Application fee and Finance integration.
+
+Application review.
+
+Admission requirement engine.
+
+Interview and entry assessment management.
+
+Admission decision workflows.
+
+Offer letter generation.
+
+Offer acceptance.
+
+Student registration.
+
+Central student number generation.
+
+First-login password-change enforcement.
+
+Student profile completion.
+
+Student ID generation.
+
+Programme and unit allocation.
+
+Student account activation.
+
+Admission deferrals and transfers.
+
+Withdrawals and cancellations.
+
+Student orientation.
+
+Notifications and reporting.
+
+Database migrations, APIs, permissions and automated tests.
+
+This is the complete Module 24 specification, not a claim that the implementation is already complete.
+
+NEXT: MODULE 25 — STUDENT MANAGEMENT AND STUDENT SELF-SERVICE PORTAL
+The next module will cover the complete student experience after admission:
+
+Student dashboard.
+
+Student profile.
+
+Student identity and registration.
+
+Academic programme management.
+
+Course and unit registration.
+
+Semester management.
+
+Timetable.
+
+Attendance.
+
+Academic progress.
+
+Results and transcripts.
+
+Examination registration.
+
+Online classes.
+
+LMS and assignments.
+
+Digital library.
+
+Finance and fee statements.
+
+M-Pesa payments.
+
+Receipts.
+
+Scholarships and bursaries.
+
+Student documents.
+
+Student ID card.
+
+Leave and deferment requests.
+
+Student welfare and support.
+
+Clubs and societies.
+
+Student elections.
+
+Hostel management, if enabled.
+
+Complaints and helpdesk.
+
+Notifications.
+
+Parent monitoring with student opt-in/opt-out.
+
+Mobile student portal.
+
+Student privacy, security and account management.
+
+
+Convert to PDF
+design create image of homepage
+
+
+Edit Image
+create the portal dashboard as it is Code here
+Below is the HI-TECH College Student Portal Dashboard, built to closely match the generated homepage design: navy-blue sidebar, white top header, campus welcome banner, coloured quick-action cards, academic overview, notifications, upcoming events and a promotional college banner.
+
+It uses React + TypeScript + CSS + Lucide icons and is responsive for desktop, tablet and mobile. The dashboard includes working navigation, mobile sidebar toggle, notification count and interactive quick actions.
+
+1. Install the icon dependency
+npm install lucide-react
+
+2. Create src/modules/student/StudentDashboard.tsx
+An error occurred inside the visualization
+
+3. Create src/modules/student/StudentDashboard.css
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --hca-navy: #092c60;
+  --hca-dark: #092653;
+  --hca-blue: #0866d7;
+  --hca-border: #dce7f5;
+  --hca-text: #102b55;
+  --hca-muted: #64748b;
+  --hca-bg: #f5f8fd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.hca-dashboard {
+  min-height: 100vh;
+  background: var(--hca-bg);
+  color: var(--hca-text);
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* HEADER */
+
+.hca-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 78px;
+  padding: 0 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #e4eaf2;
+  box-shadow: 0 2px 9px rgba(10, 35, 75, 0.04);
+}
+
+.hca-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 270px;
+}
+
+.hca-brand-icon {
+  width: 54px;
+  height: 54px;
+  color: var(--hca-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hca-brand h1 {
+  margin: 0;
+  color: var(--hca-navy);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.hca-brand p {
+  margin: 3px 0 0;
+  color: #52657e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hca-header-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.hca-search {
+  width: 230px;
+  height: 39px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #718198;
+  background: #f5f8fc;
+  border: 1px solid #e4eaf2;
+  border-radius: 8px;
+}
+
+.hca-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--hca-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.hca-header-dropdown {
+  position: relative;
+}
+
+.hca-notification-button {
+  position: relative;
+  width: 40px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--hca-navy);
+  cursor: pointer;
+}
+
+.hca-notification-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #e72e3c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.hca-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px;
+  background: transparent;
+  border: 0;
+  color: var(--hca-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-avatar {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5effc;
+  color: var(--hca-blue);
+  border: 2px solid #dce8f8;
+}
+
+.hca-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-profile-info strong {
+  font-size: 12px;
+}
+
+.hca-profile-info small {
+  color: var(--hca-muted);
+  font-size: 10px;
+}
+
+.hca-mobile-menu {
+  display: none;
+  background: transparent;
+  border: 0;
+  color: var(--hca-navy);
+  cursor: pointer;
+}
+
+/* DROPDOWNS */
+
+.hca-dropdown {
+  position: absolute;
+  top: 51px;
+  right: 0;
+  z-index: 100;
+  width: 340px;
+  padding: 10px;
+  border: 1px solid var(--hca-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(13, 39, 77, 0.16);
+}
+
+.hca-dropdown-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 7px 13px;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.hca-dropdown-heading div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-dropdown-heading strong {
+  font-size: 13px;
+}
+
+.hca-dropdown-heading small {
+  color: var(--hca-muted);
+  font-size: 11px;
+}
+
+.hca-dropdown-heading button {
+  color: var(--hca-blue);
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-dropdown-notification {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 7px;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #edf1f6;
+  cursor: pointer;
+}
+
+.hca-dropdown-notification > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-dropdown-notification strong {
+  font-size: 11px;
+}
+
+.hca-dropdown-notification small {
+  color: var(--hca-muted);
+  font-size: 10px;
+}
+
+.hca-unread-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hca-blue);
+}
+
+.hca-profile-dropdown {
+  width: 210px;
+  padding: 7px;
+}
+
+.hca-profile-dropdown button {
+  width: 100%;
+  padding: 11px 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--hca-text);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-profile-dropdown button:hover,
+.hca-dropdown-notification:hover {
+  background: #f5f8fd;
+}
+
+/* PAGE LAYOUT */
+
+.hca-layout {
+  display: flex;
+  min-height: calc(100vh - 78px);
+}
+
+.hca-sidebar {
+  position: sticky;
+  top: 78px;
+  width: 240px;
+  height: calc(100vh - 78px);
+  min-height: 600px;
+  padding: 25px 12px 15px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #092b5d 0%, #061f46 100%);
+  color: #fff;
+}
+
+.hca-sidebar-label {
+  padding: 0 13px;
+  margin: 2px 0 14px;
+  color: #91add0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.hca-sidebar-secondary {
+  margin-top: 25px;
+}
+
+.hca-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-nav-item {
+  min-height: 46px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 0;
+  border-radius: 9px;
+  color: #e9f1fc;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hca-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.hca-nav-item.active {
+  background: linear-gradient(100deg, #0875e8, #1761c6);
+  color: #fff;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.12);
+}
+
+.hca-nav-item span:nth-child(2) {
+  flex: 1;
+}
+
+.hca-nav-new {
+  color: #d5e7ff;
+  font-size: 9px;
+}
+
+.hca-sidebar-count {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ed3947;
+  color: #fff;
+  font-size: 10px;
+}
+
+.hca-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.hca-help-card {
+  padding: 15px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hca-help-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.hca-help-card strong {
+  font-size: 11px;
+}
+
+.hca-help-card p {
+  margin: 7px 0 11px;
+  color: #c4d4e8;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.hca-help-card button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-logout {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 12px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hca-logout:hover {
+  color: #ffb7b7;
+}
+
+/* MAIN CONTENT */
+
+.hca-main {
+  min-width: 0;
+  flex: 1;
+  padding: 0 24px 25px;
+}
+
+.hca-main-content {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+}
+
+/* HERO */
+
+.hca-hero {
+  position: relative;
+  min-height: 290px;
+  margin: 0 -24px;
+  padding: 35px 45px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: #fff;
+  background-color: #0a3671;
+  background-image:
+    linear-gradient(90deg, rgba(5, 35, 82, 0.97) 0%, rgba(5, 42, 91, 0.88) 35%, rgba(5, 42, 91, 0.05) 75%),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1800&q=85");
+  background-size: cover;
+  background-position: center 48%;
+}
+
+.hca-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(3, 27, 65, 0.12), transparent);
+  pointer-events: none;
+}
+
+.hca-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+}
+
+.hca-hero-eyebrow {
+  color: #fbc52e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.hca-hero h2 {
+  margin: 12px 0 10px;
+  color: #fff;
+  font-size: clamp(31px, 3.5vw, 48px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -1.8px;
+}
+
+.hca-hero-content p {
+  margin: 0 0 20px;
+  color: #f0f5ff;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.hca-hero-button {
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #092b5d;
+  background: #ffc400;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.hca-hero-button:hover {
+  background: #ffda54;
+  transform: translateY(-2px);
+}
+
+.hca-hero-tag {
+  position: absolute;
+  right: 25px;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* QUICK ACTIONS */
+
+.hca-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 13px;
+  margin: 17px 0 20px;
+}
+
+.hca-quick-card {
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(12, 40, 78, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hca-quick-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(12, 40, 78, 0.16);
+}
+
+.hca-quick-card.blue {
+  background: linear-gradient(110deg, #0871df, #0757b9);
+}
+
+.hca-quick-card.green {
+  background: linear-gradient(110deg, #0a9a5d, #087b4c);
+}
+
+.hca-quick-card.purple {
+  background: linear-gradient(110deg, #8252d8, #6840b9);
+}
+
+.hca-quick-card.teal {
+  background: linear-gradient(110deg, #08a6a9, #078c98);
+}
+
+.hca-quick-card.orange {
+  background: linear-gradient(110deg, #f49b1c, #e98013);
+}
+
+.hca-quick-card.navy {
+  background: linear-gradient(110deg, #174c8b, #10396f);
+}
+
+.hca-quick-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hca-quick-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-quick-text strong {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.hca-quick-text small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 9px;
+}
+
+.hca-quick-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* CONTENT GRID */
+
+.hca-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(290px, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.hca-left-column,
+.hca-right-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hca-panel {
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--hca-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 7px rgba(16, 47, 91, 0.025);
+}
+
+.hca-panel-heading {
+  min-height: 30px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hca-panel-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--hca-navy);
+}
+
+.hca-panel-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.hca-text-link {
+  flex-shrink: 0;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #075fc7;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-text-link:hover {
+  color: #003d87;
+}
+
+/* ACADEMIC CARDS */
+
+.hca-academic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hca-stat-card {
+  min-width: 0;
+  min-height: 70px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+}
+
+.hca-stat-card > svg {
+  flex-shrink: 0;
+}
+
+.hca-stat-card > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hca-stat-card small {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hca-stat-card strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.stat-blue {
+  color: #fff;
+  background: linear-gradient(110deg, #15518f, #0d3972);
+}
+
+.stat-green {
+  color: #fff;
+  background: linear-gradient(110deg, #12a66c, #078452);
+}
+
+.stat-purple {
+  color: #fff;
+  background: linear-gradient(110deg, #7953d2, #6341b4);
+}
+
+.stat-light-blue {
+  color: #0753ac;
+  background: #d9eaff;
+}
+
+.stat-light-green {
+  color: #08784d;
+  background: #d4f5e4;
+}
+
+.stat-light-orange {
+  color: #a65c00;
+  background: #fff0d8;
+}
+
+/* EVENTS */
+
+.hca-event-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hca-event-row {
+  min-width: 0;
+  min-height: 55px;
+  padding: 7px 0;
+  display: grid;
+  grid-template-columns: 54px minmax(120px, 1fr) minmax(110px, 0.55fr) minmax(90px, 0.4fr);
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #e9eef5;
+}
+
+.hca-event-row:last-child {
+  border-bottom: 0;
+}
+
+.hca-event-date {
+  width: 48px;
+  height: 43px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #e6f0ff;
+  color: var(--hca-navy);
+}
+
+.hca-event-date small {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.hca-event-date strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.hca-event-name strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hca-event-time,
+.hca-event-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #526985;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* STUDENT SHORTCUTS */
+
+.hca-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.hca-shortcuts button {
+  min-height: 70px;
+  padding: 11px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #15518f;
+  background: #f4f8fe;
+  border: 1px solid #e5edf8;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-shortcuts button:hover {
+  background: #e7f1ff;
+  border-color: #b9d3f6;
+}
+
+/* NOTIFICATIONS */
+
+.hca-notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hca-notification-row {
+  min-width: 0;
+  padding: 12px 2px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid #eaf0f6;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-notification-row:hover {
+  background: #f8faff;
+}
+
+.hca-notification-row.read {
+  opacity: 0.65;
+}
+
+.hca-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-radius: 50%;
+}
+
+.hca-dot.blue {
+  background: #0867d5;
+}
+
+.hca-dot.green {
+  background: #07975b;
+}
+
+.hca-notification-message {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-notification-message strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hca-notification-message small {
+  color: var(--hca-muted);
+  font-size: 9px;
+}
+
+.hca-notification-time {
+  flex-shrink: 0;
+  color: var(--hca-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.hca-all-notifications {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px;
+  color: #0865c9;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* FEE SUMMARY */
+
+.hca-fee-balance {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #edf5ff, #f7faff);
+}
+
+.hca-fee-balance small {
+  color: #5d718c;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hca-fee-balance strong {
+  color: #103c76;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.hca-fee-balance span {
+  color: #8593a7;
+  font-size: 9px;
+}
+
+.hca-fee-progress {
+  margin: 14px 0;
+}
+
+.hca-fee-progress-label {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  color: #65758c;
+  font-size: 10px;
+}
+
+.hca-fee-progress-label strong {
+  color: #087d50;
+}
+
+.hca-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #e9eef5;
+}
+
+.hca-progress-value {
+  width: 75%;
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #07975d, #35c58b);
+}
+
+.hca-pay-button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #fff;
+  background: #0963c6;
+  border: 0;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-pay-button:hover {
+  background: #064d9d;
+}
+
+.hca-pay-button svg:last-child {
+  margin-left: auto;
+}
+
+/* PROMOTIONAL BANNER */
+
+.hca-promo-banner {
+  min-height: 175px;
+  padding: 19px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 9px;
+  color: #fff;
+  background-color: #073b83;
+  background-image:
+    linear-gradient(90deg, rgba(4, 40, 104, 0.97) 0%, rgba(5, 62, 133, 0.84) 52%, rgba(4, 45, 100, 0.1) 100%),
+    url("https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=900&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+.hca-promo-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hca-promo-content > span {
+  color: #ffd04a;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.hca-promo-content h3 {
+  margin: 8px 0;
+  color: #fff;
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.hca-promo-content h3 b {
+  color: #ffd12d;
+}
+
+.hca-promo-content p {
+  margin: 0 0 12px;
+  color: #e7f1ff;
+  font-size: 9px;
+}
+
+.hca-promo-content button {
+  min-height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #092d60;
+  background: #ffc400;
+  border: 0;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* SUPPORT CARD */
+
+.hca-support-card {
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--hca-border);
+  border-radius: 9px;
+}
+
+.hca-support-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #e8f2ff;
+  color: #075fc2;
+}
+
+.hca-support-card strong {
+  font-size: 11px;
+}
+
+.hca-support-card p {
+  margin: 5px 0 7px;
+  color: var(--hca-muted);
+  font-size: 9px;
+}
+
+.hca-support-card button {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0864c9;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* FOOTER */
+
+.hca-footer {
+  margin-top: 20px;
+  padding: 17px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid #dfe8f3;
+  color: #718198;
+}
+
+.hca-footer > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-footer > div:first-child strong {
+  color: var(--hca-navy);
+  font-size: 10px;
+}
+
+.hca-footer > div:first-child span,
+.hca-footer p {
+  font-size: 9px;
+}
+
+.hca-footer p {
+  margin: 0;
+}
+
+.hca-footer-links {
+  display: flex;
+  gap: 13px;
+}
+
+.hca-footer-links button {
+  padding: 0;
+  color: #526985;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+/* MOBILE OVERLAY */
+
+.hca-sidebar-overlay {
+  display: none;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1250px) {
+  .hca-quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hca-content-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(270px, 1fr);
+  }
+
+  .hca-event-row {
+    grid-template-columns: 50px minmax(100px, 1fr) minmax(90px, 0.6fr);
+  }
+
+  .hca-event-location {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hca-sidebar {
+    position: fixed;
+    top: 78px;
+    left: 0;
+    z-index: 80;
+    height: calc(100vh - 78px);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+  }
+
+  .hca-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .hca-sidebar-overlay {
+    position: fixed;
+    inset: 78px 0 0;
+    z-index: 70;
+    display: block;
+    background: rgba(4, 19, 42, 0.48);
+    border: 0;
+  }
+
+  .hca-mobile-menu {
+    display: grid;
+    place-items: center;
+  }
+
+  .hca-brand {
+    min-width: 0;
+    margin-right: auto;
+  }
+
+  .hca-header-right {
+    gap: 10px;
+  }
+
+  .hca-search {
+    width: 170px;
+  }
+
+  .hca-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hca-right-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .hca-notifications-panel {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .hca-topbar {
+    height: 66px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .hca-brand {
+    gap: 6px;
+  }
+
+  .hca-brand-icon {
+    width: 37px;
+    height: 40px;
+  }
+
+  .hca-brand-icon svg {
+    width: 31px;
+  }
+
+  .hca-brand h1 {
+    font-size: 14px;
+  }
+
+  .hca-brand p {
+    font-size: 9px;
+  }
+
+  .hca-mobile-menu {
+    order: 3;
+    width: 34px;
+    height: 38px;
+  }
+
+  .hca-header-right {
+    margin-left: auto;
+  }
+
+  .hca-search {
+    display: none;
+  }
+
+  .hca-profile-info {
+    display: none;
+  }
+
+  .hca-profile-button {
+    gap: 3px;
+  }
+
+  .hca-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hca-profile-button > svg {
+    width: 13px;
+  }
+
+  .hca-dropdown {
+    position: fixed;
+    top: 60px;
+    right: 8px;
+    width: min(340px, calc(100vw - 16px));
+  }
+
+  .hca-profile-dropdown {
+    width: 210px;
+  }
+
+  .hca-layout {
+    min-height: calc(100vh - 66px);
+  }
+
+  .hca-sidebar {
+    top: 66px;
+    height: calc(100vh - 66px);
+    width: 265px;
+  }
+
+  .hca-sidebar-overlay {
+    inset: 66px 0 0;
+  }
+
+  .hca-main {
+    padding: 0 12px 20px;
+  }
+
+  .hca-hero {
+    min-height: 260px;
+    margin: 0 -12px;
+    padding: 27px 20px;
+    background-position: center;
+  }
+
+  .hca-hero h2 {
+    font-size: 34px;
+  }
+
+  .hca-hero-content p {
+    font-size: 13px;
+  }
+
+  .hca-hero-button {
+    min-height: 40px;
+    font-size: 10px;
+  }
+
+  .hca-hero-tag {
+    right: 13px;
+    bottom: 10px;
+    font-size: 8px;
+  }
+
+  .hca-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .hca-quick-card {
+    min-height: 66px;
+    padding: 9px;
+  }
+
+  .hca-quick-icon {
+    width: 31px;
+  }
+
+  .hca-quick-icon svg {
+    width: 24px;
+  }
+
+  .hca-quick-text strong {
+    font-size: 10px;
+  }
+
+  .hca-quick-text small {
+    font-size: 8px;
+  }
+
+  .hca-content-grid {
+    gap: 12px;
+  }
+
+  .hca-left-column,
+  .hca-right-column {
+    gap: 12px;
+  }
+
+  .hca-right-column {
+    display: flex;
+  }
+
+  .hca-panel {
+    padding: 11px;
+  }
+
+  .hca-panel-title h3 {
+    font-size: 12px;
+  }
+
+  .hca-panel-title svg {
+    width: 19px;
+  }
+
+  .hca-text-link {
+    font-size: 9px;
+  }
+
+  .hca-academic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hca-stat-card {
+    min-height: 65px;
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .hca-stat-card > svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .hca-stat-card small {
+    font-size: 8px;
+  }
+
+  .hca-stat-card strong {
+    font-size: 10px;
+  }
+
+  .hca-event-row {
+    grid-template-columns: 45px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px 0;
+  }
+
+  .hca-event-name strong {
+    font-size: 9px;
+  }
+
+  .hca-event-time {
+    grid-column: 2;
+    font-size: 8px;
+  }
+
+  .hca-event-location {
+    display: none;
+  }
+
+  .hca-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hca-shortcuts button {
+    min-height: 65px;
+  }
+
+  .hca-notification-row {
+    gap: 8px;
+  }
+
+  .hca-notification-message strong {
+    font-size: 9px;
+  }
+
+  .hca-notification-time {
+    font-size: 8px;
+  }
+
+  .hca-promo-banner {
+    min-height: 160px;
+  }
+
+  .hca-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .hca-footer p {
+    order: 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hca-dashboard *,
+  .hca-dashboard *::before,
+  .hca-dashboard *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+4. Add the dashboard to your application
+For example, in src/App.tsx:
+
+import StudentDashboard from "./modules/student/StudentDashboard";
+
+function App() {
+  return (
+    <StudentDashboard
+      studentName="Amina Wanjiku"
+      registrationNumber="HCA/STU/2026/001"
+      programme="BSc. Computer Science"
+      academicYear="2026"
+      semester="Semester 1"
+      registeredCourses={6}
+      attendance={95}
+      gpa={3.75}
+      onNavigate={(page) => {
+        console.log("Navigate to:", page);
+      }}
+      onLogout={() => {
+        window.location.href = "/login";
+      }}
+    />
+  );
+}
+
+export default App;
+
+5. Expected project structure
+src/
+├── modules/
+│   └── student/
+│       ├── StudentDashboard.tsx
+│       └── StudentDashboard.css
+├── App.tsx
+└── main.tsx
+6. Important integration notes
+The current code provides the dashboard interface and local interactions. The following are demonstration data and still need backend integration:
+
+Dashboard feature
+
+Required integration
+
+Student profile
+
+GET /api/students/me
+
+Academic overview
+
+GET /api/students/me/academic-summary
+
+Timetable
+
+GET /api/students/me/timetable
+
+Course registration
+
+/api/academic/unit-enrollments
+
+Results
+
+GET /api/students/me/results
+
+Fee balance
+
+GET /api/finance/students/me/statement
+
+Notifications
+
+/api/notifications
+
+Upcoming events
+
+/api/events
+
+Student documents
+
+/api/documents
+
+Student support
+
+/api/support/tickets
+
+Important: The fee balance, GPA, attendance, notifications and events currently contain sample values. They must be replaced with authenticated API data before deployment. The navigation callback is ready to connect to your React Router routes.
+
+The next development step should be connecting this dashboard to the actual student account, so each student sees their own registration number, programme, units, attendance, results, fee statement and timetable rather than demonstration information.
+
+
+Convert to PDF
+
+
+

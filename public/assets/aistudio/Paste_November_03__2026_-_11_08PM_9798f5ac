@@ -1,0 +1,1828 @@
+# Module 41 – AI Knowledge Indexing, Audit & Performance Dashboard
+
+This module completes the operational side of the HI-TECH College AI Governance Centre. It gives administrators visibility into whether chatbot knowledge articles have been indexed correctly, allows failed indexing jobs to be retried, and provides audit, prompt-version and usage reports.
+
+It builds on Modules 39 and 40. The main addition is a persistent indexing queue: indexing work is recorded in the database instead of relying on an administrator manually calling the embedding service.
+
+New components:
+
+1. Knowledge indexing queue and retry management.
+2. Embedding model/version tracking.
+3. Article re-index and bulk re-index operations.
+4. Prompt version history and rollback.
+5. Filterable AI audit log.
+6. Usage breakdown by user, role, model and operation.
+7. AI feedback and retrieval performance reports.
+
+## 1. Prisma schema additions
+
+Add these enums and models to `apps/api/prisma/schema.prisma`.
+
+```
+
+enum AIIndexingStatus {
+  PENDING
+  PROCESSING
+  INDEXED
+  FAILED
+  CANCELLED
+}
+
+enum AIPromptAction {
+  CREATED
+  PUBLISHED
+  ARCHIVED
+  ROLLED_BACK
+}
+
+model AIKnowledgeIndexJob {
+  id              String           @id @default(uuid())
+  institutionId   String
+  articleId       String
+  status          AIIndexingStatus @default(PENDING)
+  attempts        Int              @default(0)
+  maxAttempts     Int              @default(5)
+  lastError       String?
+  embeddingModel  String?
+  requestedById   String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  nextRetryAt     DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([institutionId, status, nextRetryAt])
+  @@index([institutionId, articleId, createdAt])
+}
+
+model AIPromptVersionHistory {
+  id             String         @id @default(uuid())
+  institutionId  String
+  promptId       String
+  promptName     String
+  version        Int
+  action         AIPromptAction
+  snapshot       Json
+  changedById    String?
+  createdAt      DateTime       @default(now())
+
+  @@index([institutionId, promptName, createdAt])
+  @@index([institutionId, promptId])
+}
+
+```
+
+Extend `ChatbotKnowledgeArticle` with:
+
+```
+indexingStatus       AIIndexingStatus @default(PENDING)
+indexingError        String?
+indexedAt            DateTime?
+indexedModel         String?
+```
+
+Add `userRole String?` to `AIUsageRecord` if it has not already been added in Module 40.
+
+Run:
+
+```
+cd apps/api
+npx prisma format
+npx prisma migrate dev --name ai_indexing_audit_dashboard
+npx prisma generate
+```
+
+Important: `articleId` is intentionally not declared as a Prisma relation here because the existing article model's ID and tenant ownership should be verified before adding a foreign key. Every job query must still verify that the article belongs to the same institution.
+
+## 2. Indexing queue service
+
+Create `apps/api/src/services/aiIndexingQueue.ts`.
+
+This service creates indexing jobs and prevents duplicate pending jobs for the same article.
+
+```
+
+import { prisma } from "../lib/prisma";
+
+export async function enqueueKnowledgeIndexing(input: {
+  institutionId: string;
+  articleId: string;
+  requestedById?: string;
+}) {
+  const article = await prisma.chatbotKnowledgeArticle.findFirst({
+    where: {
+      id: input.articleId,
+      institutionId: input.institutionId,
+      status: "PUBLISHED",
+    },
+    select: { id: true },
+  });
+
+  if (!article) {
+    throw new Error("Published knowledge article not found.");
+  }
+
+  const existing = await prisma.aIKnowledgeIndexJob.findFirst({
+    where: {
+      institutionId: input.institutionId,
+      articleId: input.articleId,
+      status: { in: ["PENDING", "PROCESSING"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existing) return existing;
+
+  await prisma.chatbotKnowledgeArticle.update({
+    where: { id: article.id },
+    data: {
+      indexingStatus: "PENDING",
+      indexingError: null,
+    },
+  });
+
+  return prisma.aIKnowledgeIndexJob.create({
+    data: {
+      institutionId: input.institutionId,
+      articleId: input.articleId,
+      requestedById: input.requestedById,
+      status: "PENDING",
+      nextRetryAt: new Date(),
+    },
+  });
+}
+
+export async function cancelKnowledgeIndexing(input: {
+  institutionId: string;
+  jobId: string;
+}) {
+  const job = await prisma.aIKnowledgeIndexJob.findFirst({
+    where: {
+      id: input.jobId,
+      institutionId: input.institutionId,
+      status: "PENDING",
+    },
+  });
+
+  if (!job) {
+    throw new Error("Pending indexing job not found.");
+  }
+
+  return prisma.aIKnowledgeIndexJob.update({
+    where: { id: job.id },
+    data: { status: "CANCELLED" },
+  });
+}
+
+```
+
+## 3. Indexing worker
+
+Create `apps/api/src/services/aiIndexingWorker.ts`.
+
+The worker processes pending jobs, updates article status and retries failures with increasing delays.
+
+```
+
+import { prisma } from "../lib/prisma";
+import { indexKnowledgeArticle } from "./chatbotKnowledgeIndex";
+
+const WORKER_BATCH_SIZE = 5;
+const MAX_ATTEMPTS = 5;
+
+function retryDelayMinutes(attempt: number) {
+  return Math.min(60, 2 ** Math.max(0, attempt - 1));
+}
+
+export async function processAIIndexingBatch() {
+  const jobs = await prisma.aIKnowledgeIndexJob.findMany({
+    where: {
+      status: "PENDING",
+      nextRetryAt: { lte: new Date() },
+    },
+    orderBy: { createdAt: "asc" },
+    take: WORKER_BATCH_SIZE,
+    select: { id: true, institutionId: true, articleId: true, attempts: true },
+  });
+
+  let processed = 0;
+
+  for (const job of jobs) {
+    // Atomic claim: only one worker can claim this pending job.
+    const claimed = await prisma.aIKnowledgeIndexJob.updateMany({
+      where: {
+        id: job.id,
+        status: "PENDING",
+      },
+      data: {
+        status: "PROCESSING",
+        startedAt: new Date(),
+        attempts: { increment: 1 },
+      },
+    });
+
+    if (claimed.count !== 1) continue;
+
+    try {
+      const article = await prisma.chatbotKnowledgeArticle.findFirst({
+        where: {
+          id: job.articleId,
+          institutionId: job.institutionId,
+          status: "PUBLISHED",
+        },
+        select: { id: true },
+      });
+
+      if (!article) {
+        await prisma.aIKnowledgeIndexJob.update({
+          where: { id: job.id },
+          data: {
+            status: "CANCELLED",
+            lastError: "Article is no longer published or does not exist.",
+            completedAt: new Date(),
+          },
+        });
+        continue;
+      }
+
+      await indexKnowledgeArticle(job.institutionId, job.articleId);
+
+      const indexedArticle = await prisma.chatbotKnowledgeArticle.findFirst({
+        where: {
+          id: job.articleId,
+          institutionId: job.institutionId,
+        },
+        select: {
+          embeddingModel: true,
+          embeddingUpdatedAt: true,
+        },
+      });
+
+      await prisma.$transaction([
+        prisma.chatbotKnowledgeArticle.updateMany({
+          where: {
+            id: job.articleId,
+            institutionId: job.institutionId,
+          },
+          data: {
+            indexingStatus: "INDEXED",
+            indexingError: null,
+            indexedAt: indexedArticle?.embeddingUpdatedAt ?? new Date(),
+            indexedModel: indexedArticle?.embeddingModel ?? null,
+          },
+        }),
+        prisma.aIKnowledgeIndexJob.update({
+          where: { id: job.id },
+          data: {
+            status: "INDEXED",
+            embeddingModel: indexedArticle?.embeddingModel ?? null,
+            completedAt: new Date(),
+            lastError: null,
+          },
+        }),
+      ]);
+
+      processed++;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message.slice(0, 1500) : "Unknown indexing error";
+
+      const current = await prisma.aIKnowledgeIndexJob.findUnique({
+        where: { id: job.id },
+        select: { attempts: true, maxAttempts: true },
+      });
+
+      const attempts = current?.attempts ?? job.attempts + 1;
+      const maxAttempts = current?.maxAttempts ?? MAX_ATTEMPTS;
+      const permanentlyFailed = attempts >= maxAttempts;
+
+      const delay = retryDelayMinutes(attempts);
+
+      await prisma.$transaction([
+        prisma.aIKnowledgeIndexJob.update({
+          where: { id: job.id },
+          data: {
+            status: permanentlyFailed ? "FAILED" : "PENDING",
+            lastError: message,
+            nextRetryAt: new Date(Date.now() + delay * 60_000),
+            completedAt: permanentlyFailed ? new Date() : null,
+          },
+        }),
+        prisma.chatbotKnowledgeArticle.updateMany({
+          where: {
+            id: job.articleId,
+            institutionId: job.institutionId,
+          },
+          data: {
+            indexingStatus: permanentlyFailed ? "FAILED" : "PENDING",
+            indexingError: message,
+          },
+        }),
+      ]);
+    }
+  }
+
+  return { processed, checked: jobs.length };
+}
+
+```
+
+### Start the worker
+
+In `apps/api/src/workers/aiIndexingWorker.ts`:
+
+```
+import { processAIIndexingBatch } from "../services/aiIndexingWorker";
+
+let running = false;
+
+export function startAIIndexingWorker() {
+  if (running) return;
+  running = true;
+
+  const run = async () => {
+    try {
+      await processAIIndexingBatch();
+    } catch (error) {
+      console.error("AI indexing worker failed:", error);
+    }
+  };
+
+  void run();
+
+  const interval = setInterval(() => {
+    void run();
+  }, 15_000);
+
+  interval.unref?.();
+}
+```
+
+Start it from the API bootstrap after the server has initialized:
+
+```
+import { startAIIndexingWorker } from "./workers/aiIndexingWorker";
+
+if (process.env.AI_INDEXING_WORKER_ENABLED === "true") {
+  startAIIndexingWorker();
+}
+```
+
+Add to `.env`:
+
+```
+AI_INDEXING_WORKER_ENABLED=false
+```
+
+Set this to `true` only for the designated worker process. If the API runs on multiple instances, deploy a dedicated worker process rather than starting one in every API instance.
+
+Worker recovery requirement: A process can crash after changing a job to `PROCESSING`. Add a scheduled recovery operation that moves stale processing jobs back to `PENDING` after a defined timeout, while ensuring that a job is not reclaimed while a legitimate long-running embedding request is still active. For production, a dedicated queue such as BullMQ is preferable.
+
+## 4. Add indexing administration endpoints
+
+Create `apps/api/src/routes/aiIndexingAdmin.ts`.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+import { enqueueKnowledgeIndexing, cancelKnowledgeIndexing } from "../services/aiIndexingQueue";
+import { recordGovernanceAudit } from "../services/aiGovernance";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN"));
+
+function getScope(req: any) {
+  if (!req.user?.institutionId || !req.user?.id) {
+    throw new Error("Missing authenticated user scope.");
+  }
+
+  return {
+    institutionId: req.user.institutionId,
+    actorId: req.user.id,
+  };
+}
+
+router.get("/jobs", async (req, res) => {
+  try {
+    const { institutionId } = getScope(req);
+
+    const status = z.enum([
+      "PENDING",
+      "PROCESSING",
+      "INDEXED",
+      "FAILED",
+      "CANCELLED",
+    ]).optional().safeParse(req.query.status);
+
+    if (!status.success) {
+      return res.status(400).json({ message: "Invalid indexing status." });
+    }
+
+    const jobs = await prisma.aIKnowledgeIndexJob.findMany({
+      where: {
+        institutionId,
+        ...(status.data ? { status: status.data } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    const articleIds = [...new Set(jobs.map((job) => job.articleId))];
+
+    const articles = await prisma.chatbotKnowledgeArticle.findMany({
+      where: { institutionId, id: { in: articleIds } },
+      select: { id: true, question: true, category: true },
+    });
+
+    const articleMap = new Map(articles.map((article) => [article.id, article]));
+
+    return res.json({
+      jobs: jobs.map((job) => ({
+        ...job,
+        article: articleMap.get(job.articleId) ?? null,
+      })),
+    });
+  } catch (error) {
+    console.error("Indexing jobs retrieval failed:", error);
+    return res.status(500).json({ message: "Unable to load indexing jobs." });
+  }
+});
+
+router.post("/articles/:articleId/reindex", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const job = await enqueueKnowledgeIndexing({
+      institutionId,
+      articleId: req.params.articleId,
+      requestedById: actorId,
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "INDEXING_REQUESTED",
+      targetType: "KNOWLEDGE_ARTICLE",
+      targetId: req.params.articleId,
+      details: { jobId: job.id },
+    });
+
+    return res.status(202).json({ job });
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to queue article.",
+    });
+  }
+});
+
+router.post("/reindex-all", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const articles = await prisma.chatbotKnowledgeArticle.findMany({
+      where: { institutionId, status: "PUBLISHED" },
+      select: { id: true },
+      take: 500,
+    });
+
+    let queued = 0;
+
+    for (const article of articles) {
+      await enqueueKnowledgeIndexing({
+        institutionId,
+        articleId: article.id,
+        requestedById: actorId,
+      });
+      queued++;
+    }
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "INDEXING_REQUESTED",
+      targetType: "KNOWLEDGE_LIBRARY",
+      details: { queued, maximumBatch: 500 },
+    });
+
+    return res.status(202).json({
+      message: "Bulk indexing request accepted.",
+      queued,
+      limit: 500,
+    });
+  } catch (error) {
+    console.error("Bulk indexing request failed:", error);
+    return res.status(500).json({ message: "Unable to queue bulk indexing." });
+  }
+});
+
+router.post("/jobs/:jobId/retry", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const job = await prisma.aIKnowledgeIndexJob.findFirst({
+      where: {
+        id: req.params.jobId,
+        institutionId,
+        status: "FAILED",
+      },
+    });
+
+    if (!job) {
+      return res.status(404).json({ message: "Failed indexing job not found." });
+    }
+
+    const nextJob = await enqueueKnowledgeIndexing({
+      institutionId,
+      articleId: job.articleId,
+      requestedById: actorId,
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "INDEXING_REQUESTED",
+      targetType: "INDEXING_JOB",
+      targetId: job.id,
+      details: { replacementJobId: nextJob.id },
+    });
+
+    return res.status(202).json({ job: nextJob });
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to retry indexing.",
+    });
+  }
+});
+
+router.post("/jobs/:jobId/cancel", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const job = await cancelKnowledgeIndexing({
+      institutionId,
+      jobId: req.params.jobId,
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "INDEXING_REQUESTED",
+      targetType: "INDEXING_JOB",
+      targetId: job.id,
+      details: { cancelled: true },
+    });
+
+    return res.json({ job });
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to cancel job.",
+    });
+  }
+});
+
+export default router;
+
+```
+
+Mount:
+
+```
+import aiIndexingAdminRoutes from "./routes/aiIndexingAdmin";
+
+app.use("/api/ai-admin/indexing", aiIndexingAdminRoutes);
+```
+
+Bulk indexing note: This endpoint deliberately limits each request to 500 articles. For a large knowledge library, replace the loop with a database-backed bulk enqueue operation and pagination. Also add rate limiting to administrative bulk actions.
+
+## 5. Prompt version history and rollback
+
+The prompt manager from Module 40 can publish new versions. Now it needs a permanent history record and a rollback operation.
+
+Update `apps/api/src/routes/aiPrompts.ts`.
+
+When creating a prompt, after creating the prompt record, add:
+
+```
+await prisma.aIPromptVersionHistory.create({
+  data: {
+    institutionId,
+    promptId: prompt.id,
+    promptName: prompt.name,
+    version: prompt.version,
+    action: "CREATED",
+    changedById: actorId,
+    snapshot: {
+      name: prompt.name,
+      description: prompt.description,
+      content: prompt.content,
+      version: prompt.version,
+      status: prompt.status,
+    },
+  },
+});
+```
+
+When publishing, record the publication:
+
+```
+await prisma.aIPromptVersionHistory.create({
+  data: {
+    institutionId,
+    promptId: published.id,
+    promptName: published.name,
+    version: published.version,
+    action: "PUBLISHED",
+    changedById: actorId,
+    snapshot: {
+      name: published.name,
+      description: published.description,
+      content: published.content,
+      version: published.version,
+      status: published.status,
+    },
+  },
+});
+```
+
+Add the following endpoints to the same router:
+
+```
+
+router.get("/:id/history", async (req, res) => {
+  try {
+    const { institutionId } = getScope(req);
+
+    const prompt = await prisma.aIPromptTemplate.findFirst({
+      where: { id: req.params.id, institutionId },
+      select: { id: true, name: true },
+    });
+
+    if (!prompt) {
+      return res.status(404).json({ message: "Prompt not found." });
+    }
+
+    const history = await prisma.aIPromptVersionHistory.findMany({
+      where: {
+        institutionId,
+        promptName: prompt.name,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    return res.json({ history });
+  } catch {
+    return res.status(500).json({ message: "Unable to load prompt history." });
+  }
+});
+
+router.post("/:id/rollback", async (req, res) => {
+  const schema = z.object({
+    version: z.number().int().positive(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ message: "A valid version is required." });
+  }
+
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const source = await prisma.aIPromptTemplate.findFirst({
+      where: {
+        id: req.params.id,
+        institutionId,
+        version: parsed.data.version,
+      },
+    });
+
+    if (!source) {
+      return res.status(404).json({ message: "Source prompt version not found." });
+    }
+
+    const latest = await prisma.aIPromptTemplate.findFirst({
+      where: { institutionId, name: source.name },
+      orderBy: { version: "desc" },
+      select: { version: true },
+    });
+
+    const nextVersion = (latest?.version ?? 0) + 1;
+
+    const rolledBack = await prisma.$transaction(async (tx) => {
+      await tx.aIPromptTemplate.updateMany({
+        where: {
+          institutionId,
+          name: source.name,
+          status: "PUBLISHED",
+        },
+        data: { status: "ARCHIVED" },
+      });
+
+      const created = await tx.aIPromptTemplate.create({
+        data: {
+          institutionId,
+          name: source.name,
+          description: source.description,
+          content: source.content,
+          version: nextVersion,
+          status: "PUBLISHED",
+          createdById: actorId,
+          publishedById: actorId,
+          publishedAt: new Date(),
+        },
+      });
+
+      await tx.aIPromptVersionHistory.create({
+        data: {
+          institutionId,
+          promptId: created.id,
+          promptName: created.name,
+          version: created.version,
+          action: "ROLLED_BACK",
+          changedById: actorId,
+          snapshot: {
+            name: created.name,
+            description: created.description,
+            content: created.content,
+            version: created.version,
+            restoredFromVersion: source.version,
+            status: created.status,
+          },
+        },
+      });
+
+      return created;
+    });
+
+    await recordGovernanceAudit({
+      institutionId,
+      actorId,
+      action: "CONFIG_UPDATED",
+      targetType: "AI_PROMPT",
+      targetId: rolledBack.id,
+      details: {
+        name: rolledBack.name,
+        restoredFromVersion: source.version,
+        newVersion: rolledBack.version,
+      },
+    });
+
+    return res.status(201).json({ prompt: rolledBack });
+  } catch (error) {
+    console.error("Prompt rollback failed:", error);
+    return res.status(500).json({ message: "Unable to roll back prompt." });
+  }
+});
+
+```
+
+The rollback creates a new version rather than modifying an old one. That preserves the history of what was previously published.
+
+## 6. Audit log filters and export
+
+Create `apps/api/src/routes/aiAuditAdmin.ts`.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN"));
+
+router.get("/", async (req, res) => {
+  try {
+    const institutionId = req.user?.institutionId;
+
+    if (!institutionId) {
+      return res.status(400).json({ message: "Institution scope is required." });
+    }
+
+    const filters = z.object({
+      action: z.string().optional(),
+      targetType: z.string().optional(),
+      from: z.string().datetime().optional(),
+      to: z.string().datetime().optional(),
+      limit: z.coerce.number().int().min(1).max(200).default(50),
+      cursor: z.string().optional(),
+    }).safeParse(req.query);
+
+    if (!filters.success) {
+      return res.status(400).json({ message: "Invalid audit filters." });
+    }
+
+    const { action, targetType, from, to, limit, cursor } = filters.data;
+
+    const records = await prisma.aIGovernanceAudit.findMany({
+      where: {
+        institutionId,
+        ...(action ? { action: action as any } : {}),
+        ...(targetType ? { targetType } : {}),
+        ...(from || to
+          ? {
+              createdAt: {
+                ...(from ? { gte: new Date(from) } : {}),
+                ...(to ? { lte: new Date(to) } : {}),
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+
+    const hasMore = records.length > limit;
+    const page = hasMore ? records.slice(0, limit) : records;
+
+    return res.json({
+      records: page,
+      nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+    });
+  } catch (error) {
+    console.error("AI audit query failed:", error);
+    return res.status(500).json({ message: "Unable to load AI audit records." });
+  }
+});
+
+router.get("/export.csv", async (req, res) => {
+  try {
+    const institutionId = req.user?.institutionId;
+
+    if (!institutionId) {
+      return res.status(400).json({ message: "Institution scope is required." });
+    }
+
+    const records = await prisma.aIGovernanceAudit.findMany({
+      where: { institutionId },
+      orderBy: { createdAt: "desc" },
+      take: 5000,
+    });
+
+    const cell = (value: unknown) => {
+      let text = value == null ? "" : String(value);
+
+      // Protect spreadsheet users from CSV formula injection.
+      if (/^[\s]*[=+\-@]/.test(text)) text = `'${text}`;
+
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = [
+      ["Date", "Actor", "Action", "Target Type", "Target ID", "Details"],
+      ...records.map((record) => [
+        record.createdAt.toISOString(),
+        record.actorId ?? "",
+        record.action,
+        record.targetType,
+        record.targetId ?? "",
+        JSON.stringify(record.details ?? {}),
+      ]),
+    ];
+
+    const csv = rows.map((row) => row.map(cell).join(",")).join("\r\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="ai-governance-audit.csv"'
+    );
+
+    return res.send("\uFEFF" + csv);
+  } catch (error) {
+    console.error("AI audit export failed:", error);
+    return res.status(500).json({ message: "Unable to export AI audit records." });
+  }
+});
+
+export default router;
+
+```
+
+Mount:
+
+```
+import aiAuditAdminRoutes from "./routes/aiAuditAdmin";
+
+app.use("/api/ai-admin/audit", aiAuditAdminRoutes);
+```
+
+The audit export is limited to the latest 5,000 records. For larger datasets, use date filters and paginated export jobs. Audit records should be append-only: do not provide ordinary administrators with update or delete endpoints.
+
+## 7. AI usage and feedback performance reports
+
+Create `apps/api/src/routes/aiPerformanceAdmin.ts`.
+
+This endpoint reports token consumption by role, model and operation, alongside feedback ratings. It does not treat thumbs-up ratings as a definitive measure of answer correctness.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN"));
+
+router.get("/", async (req, res) => {
+  try {
+    const institutionId = req.user?.institutionId;
+
+    if (!institutionId) {
+      return res.status(400).json({ message: "Institution scope is required." });
+    }
+
+    const parsed = z.object({
+      days: z.coerce.number().int().min(7).max(365).default(30),
+    }).safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid reporting period." });
+    }
+
+    const from = new Date();
+    from.setDate(from.getDate() - parsed.data.days);
+
+    const usageWhere = {
+      institutionId,
+      createdAt: { gte: from },
+    };
+
+    const [
+      byRole,
+      byModel,
+      byOperation,
+      feedback,
+      usage,
+    ] = await Promise.all([
+      prisma.aIUsageRecord.groupBy({
+        by: ["userRole"],
+        where: usageWhere,
+        _sum: { totalTokens: true, estimatedCost: true },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.groupBy({
+        by: ["providerKey", "model"],
+        where: usageWhere,
+        _sum: { totalTokens: true, estimatedCost: true },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.groupBy({
+        by: ["operation"],
+        where: usageWhere,
+        _sum: { totalTokens: true },
+        _count: { _all: true },
+      }),
+      prisma.chatbotAnswerFeedback.groupBy({
+        by: ["rating"],
+        where: {
+          institutionId,
+          createdAt: { gte: from },
+        },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.aggregate({
+        where: usageWhere,
+        _sum: {
+          inputTokens: true,
+          outputTokens: true,
+          totalTokens: true,
+          estimatedCost: true,
+        },
+        _count: { _all: true },
+      }),
+    ]);
+
+    return res.json({
+      period: { from, days: parsed.data.days },
+      totals: {
+        requests: usage._count._all,
+        inputTokens: usage._sum.inputTokens ?? 0,
+        outputTokens: usage._sum.outputTokens ?? 0,
+        totalTokens: usage._sum.totalTokens ?? 0,
+        estimatedCost: Number(usage._sum.estimatedCost ?? 0),
+      },
+      byRole,
+      byModel,
+      byOperation,
+      feedback: feedback.map((item) => ({
+        rating: item.rating,
+        count: item._count._all,
+      })),
+    });
+  } catch (error) {
+    console.error("AI performance report failed:", error);
+    return res.status(500).json({ message: "Unable to load AI performance reports." });
+  }
+});
+
+export default router;
+
+```
+
+Mount:
+
+```
+import aiPerformanceAdminRoutes from "./routes/aiPerformanceAdmin";
+
+app.use("/api/ai-admin/performance", aiPerformanceAdminRoutes);
+```
+
+## 8. Indexing queue dashboard
+
+Create `apps/web/src/pages/admin/AIIndexingPage.tsx`.
+
+```
+
+import { useEffect, useState } from "react";
+
+type IndexJob = {
+  id: string;
+  articleId: string;
+  status: "PENDING" | "PROCESSING" | "INDEXED" | "FAILED" | "CANCELLED";
+  attempts: number;
+  maxAttempts: number;
+  lastError?: string | null;
+  embeddingModel?: string | null;
+  createdAt: string;
+  article?: {
+    question: string;
+    category: string;
+  } | null;
+};
+
+const API = "/api/ai-admin/indexing";
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(result.message || "Indexing request failed.");
+  }
+
+  return result as T;
+}
+
+export default function AIIndexingPage() {
+  const [jobs, setJobs] = useState<IndexJob[]>([]);
+  const [status, setStatus] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function loadJobs() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const query = status === "ALL" ? "" : `?status=${status}`;
+      const result = await request<{ jobs: IndexJob[] }>(`/jobs${query}`);
+      setJobs(result.jobs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load indexing jobs.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadJobs();
+  }, [status]);
+
+  async function runAction(path: string, successMessage: string) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await request(path, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      setNotice(successMessage);
+      await loadJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const counts = {
+    pending: jobs.filter((job) => job.status === "PENDING").length,
+    processing: jobs.filter((job) => job.status === "PROCESSING").length,
+    indexed: jobs.filter((job) => job.status === "INDEXED").length,
+    failed: jobs.filter((job) => job.status === "FAILED").length,
+  };
+
+  return (
+    <main className="ai-admin-page">
+      <header className="ai-admin-header">
+        <div>
+          <span>HI-TECH COLLEGE · KNOWLEDGE INTELLIGENCE</span>
+          <h1>Knowledge Indexing</h1>
+          <p>Monitor article embeddings and manage failed indexing jobs.</p>
+        </div>
+
+        <button
+          className="ai-button ai-button-outline"
+          onClick={() => void loadJobs()}
+          disabled={loading || busy}
+        >
+          Refresh queue
+        </button>
+      </header>
+
+      {error && <div className="ai-alert ai-alert-error">{error}</div>}
+      {notice && <div className="ai-alert ai-alert-success">{notice}</div>}
+
+      <section className="ai-usage-grid ai-indexing-stats">
+        <article><span>Pending</span><strong>{counts.pending}</strong></article>
+        <article><span>Processing</span><strong>{counts.processing}</strong></article>
+        <article><span>Indexed</span><strong>{counts.indexed}</strong></article>
+        <article><span>Failed</span><strong>{counts.failed}</strong></article>
+      </section>
+
+      <section className="ai-admin-panel">
+        <div className="ai-section-heading">
+          <div>
+            <h2>Queue management</h2>
+            <p>Bulk indexing is limited to 500 published articles per request.</p>
+          </div>
+
+          <button
+            className="ai-button"
+            disabled={busy}
+            onClick={() => {
+              if (window.confirm("Queue up to 500 published articles for re-indexing?")) {
+                void runAction("/reindex-all", "Bulk re-index request submitted.");
+              }
+            }}
+          >
+            Re-index published articles
+          </button>
+        </div>
+
+        <label>
+          Filter jobs
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="ALL">All jobs</option>
+            <option value="PENDING">Pending</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="INDEXED">Indexed</option>
+            <option value="FAILED">Failed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="ai-admin-panel">
+        <h2>Indexing jobs</h2>
+
+        {loading ? (
+          <p>Loading indexing jobs...</p>
+        ) : jobs.length === 0 ? (
+          <p>No indexing jobs found for this filter.</p>
+        ) : (
+          <div className="ai-indexing-list">
+            {jobs.map((job) => (
+              <article className="ai-indexing-job" key={job.id}>
+                <div className="ai-indexing-job-heading">
+                  <div>
+                    <strong>{job.article?.question ?? job.articleId}</strong>
+                    <p>{job.article?.category ?? "Article unavailable"}</p>
+                  </div>
+                  <span className={`ai-status ai-status-${job.status.toLowerCase()}`}>
+                    {job.status}
+                  </span>
+                </div>
+
+                <div className="ai-indexing-meta">
+                  <span>Attempts: {job.attempts}/{job.maxAttempts}</span>
+                  <span>Model: {job.embeddingModel ?? "Not recorded"}</span>
+                  <span>{new Date(job.createdAt).toLocaleString()}</span>
+                </div>
+
+                {job.lastError && (
+                  <p className="ai-indexing-error">{job.lastError}</p>
+                )}
+
+                <div className="ai-indexing-actions">
+                  {job.status === "FAILED" && (
+                    <button
+                      className="ai-button ai-button-outline"
+                      disabled={busy}
+                      onClick={() =>
+                        void runAction(
+                          `/jobs/${job.id}/retry`,
+                          "Retry job submitted."
+                        )
+                      }
+                    >
+                      Retry
+                    </button>
+                  )}
+
+                  {job.status === "PENDING" && (
+                    <button
+                      className="ai-button ai-button-outline"
+                      disabled={busy}
+                      onClick={() =>
+                        void runAction(
+                          `/jobs/${job.id}/cancel`,
+                          "Pending job cancelled."
+                        )
+                      }
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+```
+
+Add the following styles to `apps/web/src/pages/admin/ai-governance.css`:
+
+```
+
+.ai-indexing-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-indexing-job {
+  padding: 16px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.ai-indexing-job-heading,
+.ai-indexing-meta,
+.ai-indexing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-indexing-job-heading strong {
+  font-size: 14px;
+}
+
+.ai-indexing-job-heading p {
+  margin: 5px 0;
+}
+
+.ai-indexing-meta {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 10px;
+  color: var(--text-muted, #64748b);
+  font-size: 11px;
+}
+
+.ai-status {
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ai-status-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.ai-status-processing {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.ai-status-indexed {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.ai-status-failed {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ai-status-cancelled {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.ai-indexing-error {
+  padding: 10px;
+  border-radius: 7px;
+  background: #fef2f2;
+  color: #991b1b !important;
+  overflow-wrap: anywhere;
+}
+
+.ai-indexing-actions {
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+@media (max-width: 650px) {
+  .ai-indexing-job-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-indexing-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+```
+
+Register the route:
+
+```
+import AIIndexingPage from "./pages/admin/AIIndexingPage";
+
+<Route
+  path="/admin/ai-governance/indexing"
+  element={<AIIndexingPage />}
+/>
+```
+
+Sidebar:
+
+```
+{
+  label: "Knowledge Indexing",
+  path: "/admin/ai-governance/indexing",
+  icon: "database",
+  permission: "ai.governance.manage",
+}
+```
+
+## 9. Audit log dashboard
+
+Create `apps/web/src/pages/admin/AIAuditPage.tsx`.
+
+```
+
+import { useEffect, useState } from "react";
+
+type AuditRecord = {
+  id: string;
+  actorId?: string | null;
+  action: string;
+  targetType: string;
+  targetId?: string | null;
+  details?: unknown;
+  createdAt: string;
+};
+
+export default function AIAuditPage() {
+  const [records, setRecords] = useState<AuditRecord[]>([]);
+  const [action, setAction] = useState("");
+  const [targetType, setTargetType] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function loadAudit(next = false) {
+    setLoading(true);
+    setError("");
+
+    const params = new URLSearchParams({ limit: "50" });
+
+    if (action) params.set("action", action);
+    if (targetType) params.set("targetType", targetType);
+    if (from) params.set("from", new Date(from).toISOString());
+    if (to) params.set("to", new Date(to).toISOString());
+
+    const activeCursor = next ? nextCursor : null;
+    if (activeCursor) params.set("cursor", activeCursor);
+
+    try {
+      const response = await fetch(
+        `/api/ai-admin/audit?${params.toString()}`,
+        { credentials: "include" }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to load audit records.");
+      }
+
+      setRecords(result.records);
+      setCursor(activeCursor);
+      setNextCursor(result.nextCursor);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Audit request failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAudit(false);
+  }, []);
+
+  function applyFilters() {
+    setCursor(null);
+    setNextCursor(null);
+    void loadAudit(false);
+  }
+
+  return (
+    <main className="ai-admin-page">
+      <header className="ai-admin-header">
+        <div>
+          <span>HI-TECH COLLEGE · SECURITY & COMPLIANCE</span>
+          <h1>AI Governance Audit</h1>
+          <p>Review administrator actions and AI configuration changes.</p>
+        </div>
+
+        <a
+          className="ai-button ai-button-outline"
+          href="/api/ai-admin/audit/export.csv"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Export CSV
+        </a>
+      </header>
+
+      <section className="ai-admin-panel">
+        <div className="ai-audit-filters">
+          <label>
+            Action
+            <select value={action} onChange={(e) => setAction(e.target.value)}>
+              <option value="">All actions</option>
+              <option value="CONFIG_UPDATED">Configuration updated</option>
+              <option value="AI_ENABLED">AI enabled</option>
+              <option value="AI_DISABLED">AI disabled</option>
+              <option value="EMERGENCY_DISABLED">Emergency disabled</option>
+              <option value="PROVIDER_CHECKED">Provider checked</option>
+              <option value="PROMPT_CREATED">Prompt created</option>
+              <option value="PROMPT_PUBLISHED">Prompt published</option>
+              <option value="INDEXING_REQUESTED">Indexing requested</option>
+              <option value="QUOTA_UPDATED">Quota updated</option>
+            </select>
+          </label>
+
+          <label>
+            Target type
+            <input
+              value={targetType}
+              onChange={(e) => setTargetType(e.target.value)}
+              placeholder="e.g. AI_PROMPT"
+            />
+          </label>
+
+          <label>
+            From
+            <input
+              type="datetime-local"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+          </label>
+
+          <label>
+            To
+            <input
+              type="datetime-local"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
+          </label>
+
+          <button className="ai-button" onClick={applyFilters} disabled={loading}>
+            Apply filters
+          </button>
+        </div>
+      </section>
+
+      <section className="ai-admin-panel">
+        <h2>Audit events</h2>
+
+        {error && <div className="ai-alert ai-alert-error">{error}</div>}
+        {loading ? (
+          <p>Loading audit events...</p>
+        ) : records.length === 0 ? (
+          <p>No audit records found.</p>
+        ) : (
+          <div className="ai-audit-list">
+            {records.map((record) => (
+              <article className="ai-audit-record" key={record.id}>
+                <div>
+                  <strong>{record.action.replaceAll("_", " ")}</strong>
+                  <p>{record.targetType} · {record.targetId ?? "No target ID"}</p>
+                </div>
+                <div className="ai-audit-meta">
+                  <span>Actor: {record.actorId ?? "System"}</span>
+                  <span>{new Date(record.createdAt).toLocaleString()}</span>
+                </div>
+                <details>
+                  <summary>View event details</summary>
+                  <pre>{JSON.stringify(record.details ?? {}, null, 2)}</pre>
+                </details>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <div className="ai-form-actions">
+          <button
+            className="ai-button ai-button-outline"
+            disabled={!cursor || loading}
+            onClick={() => void loadAudit(false)}
+          >
+            First page
+          </button>
+          <button
+            className="ai-button"
+            disabled={!nextCursor || loading}
+            onClick={() => void loadAudit(true)}
+          >
+            Next page
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+```
+
+Add styles:
+
+```
+
+.ai-audit-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.ai-audit-filters label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ai-audit-filters input,
+.ai-audit-filters select {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 7px;
+  background: var(--input-bg, #fff);
+  color: inherit;
+}
+
+.ai-audit-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-audit-record {
+  padding: 15px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 9px;
+}
+
+.ai-audit-record p,
+.ai-audit-meta {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
+.ai-audit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ai-audit-record details {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.ai-audit-record pre {
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 7px;
+  background: var(--subtle-bg, #f1f5f9);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 850px) {
+  .ai-audit-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .ai-audit-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+```
+
+Register:
+
+```
+import AIAuditPage from "./pages/admin/AIAuditPage";
+
+<Route
+  path="/admin/ai-governance/audit"
+  element={<AIAuditPage />}
+/>
+```
+
+Sidebar:
+
+```
+{
+  label: "AI Audit Logs",
+  path: "/admin/ai-governance/audit",
+  icon: "history",
+  permission: "ai.governance.manage",
+}
+```
+
+The CSV link uses a normal browser navigation. If your authentication uses bearer tokens instead of secure cookies, replace it with an authenticated fetch and Blob download.
+
+## 10. Register the remaining routes
+
+The complete Module 41 route registration should include:
+
+```
+import aiIndexingAdminRoutes from "./routes/aiIndexingAdmin";
+import aiAuditAdminRoutes from "./routes/aiAuditAdmin";
+import aiPerformanceAdminRoutes from "./routes/aiPerformanceAdmin";
+import aiPromptsRoutes from "./routes/aiPrompts";
+
+app.use("/api/ai-admin/indexing", aiIndexingAdminRoutes);
+app.use("/api/ai-admin/audit", aiAuditAdminRoutes);
+app.use("/api/ai-admin/performance", aiPerformanceAdminRoutes);
+app.use("/api/ai-admin/prompts", aiPromptsRoutes);
+```
+
+Route conflict to resolve: Module 40 already included `GET /audit` inside the main `aiGovernance` router. Remove that earlier handler when mounting the dedicated audit router above, or the earlier handler may intercept the audit request.
+
+Add these sidebar entries:
+
+```
+{
+  label: "AI Governance Centre",
+  path: "/admin/ai-governance",
+  icon: "brain-circuit",
+  permission: "ai.governance.manage",
+},
+{
+  label: "Knowledge Indexing",
+  path: "/admin/ai-governance/indexing",
+  icon: "database",
+  permission: "ai.governance.manage",
+},
+{
+  label: "AI Audit Logs",
+  path: "/admin/ai-governance/audit",
+  icon: "history",
+  permission: "ai.governance.manage",
+},
+{
+  label: "AI Performance Reports",
+  path: "/admin/ai-governance/performance",
+  icon: "chart-no-axes-combined",
+  permission: "ai.governance.manage",
+},
+```
+
+The performance API is available at `/api/ai-admin/performance`, but its frontend reporting page remains to be added.
+
+## 11. Connect indexing to knowledge article publishing
+
+In `apps/api/src/routes/chatbotAdmin.ts`, after an article is published or edited while published, enqueue its indexing job:
+
+```
+import { enqueueKnowledgeIndexing } from "../services/aiIndexingQueue";
+
+await enqueueKnowledgeIndexing({
+  institutionId,
+  articleId: article.id,
+  requestedById: actorId,
+});
+```
+
+When an article is archived, remove its embedding using the existing `removeKnowledgeEmbedding()` service and cancel any pending indexing jobs for that article.
+
+Also update the retrieval service to exclude articles unless:
+
+```
+where: {
+  institutionId,
+  status: "PUBLISHED",
+  indexingStatus: "INDEXED",
+  embedding: { not: null },
+}
+```
+
+This prevents an article that has not been indexed successfully from being treated as searchable knowledge.
+
+## 12. Verification checklist
+
+Run these commands:
+
+```
+# Backend
+cd apps/api
+npx prisma format
+npx prisma validate
+npx prisma generate
+npm run build
+
+# Frontend
+cd ../web
+npm run build
+```
+
+Then verify these workflows manually:
+
+| Test                        | Expected result                                     |
+| --------------------------- | --------------------------------------------------- |
+| Publish a knowledge article | Indexing job is created                             |
+| Worker processes job        | Article becomes INDEXED                             |
+| Provider fails              | Job retries                                         |
+| Maximum retries reached     | Job becomes FAILED                                  |
+| Retry failed job            | New indexing job is created                         |
+| Archive article             | It is excluded from retrieval                       |
+| Re-index published articles | Maximum 500 queued per request                      |
+| Publish prompt version 2    | Previous published version is archived              |
+| Roll back prompt version 1  | A new version is published using version 1 content  |
+| Filter audit logs           | Only institution-scoped records appear              |
+| Export audit CSV            | CSV contains no other institution's records         |
+| View usage breakdown        | Tokens are grouped by recorded role/model/operation |
+
+Additional production work before deployment:
+
+- Add stale-job recovery and a dedicated worker queue.
+- Add pagination to the indexing dashboard.
+- Add a performance reporting UI.
+- Ensure every AI request records provider-reported token usage.
+- Validate audit filters against the actual Prisma enum instead of casting arbitrary strings.
+- Make prompt publication and rollback transactional with their audit-history records.
+- Add integration tests for tenant isolation and authorization.
+- Consider PostgreSQL `pgvector` instead of loading hundreds of JSON embeddings into application memory.
+
+Module 41 specification and code supplied
+
+## Next module: Module 42 – AI Performance Analytics & Intelligent Service Monitoring
+
+This will build the remaining reporting interface: interactive usage charts, AI cost analysis, user and department consumption, chatbot answer quality, feedback trends, retrieval accuracy, provider uptime and automated quota alerts.

@@ -1,0 +1,1338 @@
+# Module 37 – HI-TECH College Chatbot Admin Dashboard
+
+This module adds two administration screens to the chatbot introduced in Module 36:
+
+1. Knowledge Base Management – create, edit, search, draft, publish and archive approved answers.
+2. Support Escalations – review conversations, assign requests, update ticket status and record resolutions.
+
+The screens use the existing `/api/chatbot-admin` endpoints. They do not display fabricated analytics or pretend that live-agent chat is available.
+
+## 1. Knowledge Base page
+
+Create `apps/web/src/pages/admin/ChatbotKnowledgePage.tsx`.
+
+This implementation assumes the admin API returns `{ articles: [...] }` for the knowledge list, and accepts `category`, `question`, `answer` and `keywords` when creating or editing an article.
+
+```
+
+import { useEffect, useMemo, useState } from "react";
+import "./chatbot-admin.css";
+
+type ArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+type Article = {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  keywords: string[];
+  status: ArticleStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ArticleForm = {
+  category: string;
+  question: string;
+  answer: string;
+  keywords: string;
+};
+
+const API = "/api/chatbot-admin";
+
+async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.message || payload.error || `Request failed (${response.status})`);
+  }
+
+  return payload as T;
+}
+
+const emptyForm: ArticleForm = {
+  category: "",
+  question: "",
+  answer: "",
+  keywords: "",
+};
+
+export default function ChatbotKnowledgePage() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [form, setForm] = useState<ArticleForm>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function loadArticles() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await apiRequest<{ articles: Article[] }>("/knowledge");
+      setArticles(result.articles ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load knowledge articles.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadArticles();
+  }, []);
+
+  const filteredArticles = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    return articles.filter((article) => {
+      const matchesStatus =
+        statusFilter === "ALL" || article.status === statusFilter;
+
+      const searchable = [
+        article.category,
+        article.question,
+        article.answer,
+        ...(article.keywords ?? []),
+      ].join(" ").toLowerCase();
+
+      return matchesStatus && (!term || searchable.includes(term));
+    });
+  }, [articles, search, statusFilter]);
+
+  function startEdit(article: Article) {
+    setEditingId(article.id);
+    setForm({
+      category: article.category,
+      question: article.question,
+      answer: article.answer,
+      keywords: (article.keywords ?? []).join(", "),
+    });
+    setNotice("");
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetForm() {
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
+  async function saveArticle(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setNotice("");
+
+    const payload = {
+      category: form.category.trim(),
+      question: form.question.trim(),
+      answer: form.answer.trim(),
+      keywords: form.keywords
+        .split(",")
+        .map((keyword) => keyword.trim())
+        .filter(Boolean),
+    };
+
+    try {
+      if (editingId) {
+        await apiRequest(`/knowledge/${editingId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        setNotice("Knowledge article updated.");
+      } else {
+        await apiRequest("/knowledge", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        setNotice("Knowledge article created as a draft. Review it before publishing.");
+      }
+
+      resetForm();
+      await loadArticles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save article.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeStatus(article: Article, status: ArticleStatus) {
+    setError("");
+    setNotice("");
+
+    try {
+      await apiRequest(`/knowledge/${article.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      setNotice(`Article status changed to ${status.toLowerCase()}.`);
+      await loadArticles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update article status.");
+    }
+  }
+
+  async function archiveArticle(article: Article) {
+    if (!window.confirm(`Archive "${article.question}"?`)) return;
+    await changeStatus(article, "ARCHIVED");
+  }
+
+  return (
+    <div className="chatbot-admin-page">
+      <header className="chatbot-admin-heading">
+        <div>
+          <span className="chatbot-admin-eyebrow">WEBSITE MANAGEMENT</span>
+          <h1>Chatbot Knowledge Base</h1>
+          <p>Manage the approved information used by the college website chatbot.</p>
+        </div>
+        <button className="chatbot-button chatbot-button-secondary" onClick={() => void loadArticles()}>
+          Refresh
+        </button>
+      </header>
+
+      {error && <div className="chatbot-alert chatbot-alert-error">{error}</div>}
+      {notice && <div className="chatbot-alert chatbot-alert-success">{notice}</div>}
+
+      <section className="chatbot-admin-panel">
+        <div className="chatbot-panel-heading">
+          <div>
+            <h2>{editingId ? "Edit knowledge article" : "Add knowledge article"}</h2>
+            <p>Use clear questions and verified answers from the relevant college office.</p>
+          </div>
+          {editingId && (
+            <button type="button" className="chatbot-text-button" onClick={resetForm}>
+              Cancel editing
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={saveArticle} className="chatbot-knowledge-form">
+          <label>
+            Category
+            <input
+              required
+              maxLength={100}
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              placeholder="e.g. Admissions, Fees, Examinations"
+            />
+          </label>
+
+          <label>
+            Question or topic
+            <input
+              required
+              maxLength={500}
+              value={form.question}
+              onChange={(e) => setForm({ ...form, question: e.target.value })}
+              placeholder="e.g. How do I apply for admission?"
+            />
+          </label>
+
+          <label className="chatbot-form-full">
+            Approved answer
+            <textarea
+              required
+              rows={6}
+              maxLength={10000}
+              value={form.answer}
+              onChange={(e) => setForm({ ...form, answer: e.target.value })}
+              placeholder="Enter the verified response the chatbot should use..."
+            />
+          </label>
+
+          <label className="chatbot-form-full">
+            Search keywords
+            <input
+              value={form.keywords}
+              onChange={(e) => setForm({ ...form, keywords: e.target.value })}
+              placeholder="admission, application, intake, registration"
+            />
+            <small>Separate keywords with commas.</small>
+          </label>
+
+          <div className="chatbot-form-actions chatbot-form-full">
+            <button className="chatbot-button" type="submit" disabled={saving}>
+              {saving ? "Saving..." : editingId ? "Save changes" : "Create draft"}
+            </button>
+            {editingId && (
+              <button className="chatbot-button chatbot-button-secondary" type="button" onClick={resetForm}>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </section>
+
+      <section className="chatbot-admin-panel">
+        <div className="chatbot-panel-heading">
+          <div>
+            <h2>Knowledge articles</h2>
+            <p>{filteredArticles.length} article(s) displayed</p>
+          </div>
+        </div>
+
+        <div className="chatbot-list-toolbar">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search questions, answers or keywords..."
+            aria-label="Search knowledge articles"
+          />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="ALL">All statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <p className="chatbot-empty-state">Loading knowledge articles...</p>
+        ) : filteredArticles.length === 0 ? (
+          <p className="chatbot-empty-state">No knowledge articles match this search.</p>
+        ) : (
+          <div className="chatbot-article-list">
+            {filteredArticles.map((article) => (
+              <article className="chatbot-article-card" key={article.id}>
+                <div className="chatbot-article-main">
+                  <div className="chatbot-article-meta">
+                    <span>{article.category}</span>
+                    <span className={`chatbot-status chatbot-status-${article.status.toLowerCase()}`}>
+                      {article.status}
+                    </span>
+                  </div>
+                  <h3>{article.question}</h3>
+                  <p>{article.answer}</p>
+                  <div className="chatbot-keywords">
+                    {(article.keywords ?? []).map((keyword) => (
+                      <span key={keyword}>{keyword}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="chatbot-article-actions">
+                  <button className="chatbot-text-button" onClick={() => startEdit(article)}>
+                    Edit
+                  </button>
+
+                  {article.status !== "PUBLISHED" && (
+                    <button
+                      className="chatbot-text-button"
+                      onClick={() => void changeStatus(article, "PUBLISHED")}
+                    >
+                      Publish
+                    </button>
+                  )}
+
+                  {article.status === "PUBLISHED" && (
+                    <button
+                      className="chatbot-text-button"
+                      onClick={() => void changeStatus(article, "DRAFT")}
+                    >
+                      Unpublish
+                    </button>
+                  )}
+
+                  {article.status !== "ARCHIVED" && (
+                    <button
+                      className="chatbot-text-button chatbot-danger-text"
+                      onClick={() => void archiveArticle(article)}
+                    >
+                      Archive
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+```
+
+## 2. Support Escalations page
+
+Create `apps/web/src/pages/admin/ChatbotEscalationsPage.tsx`.
+
+The page uses the existing `GET /escalations` and `PATCH /escalations/:id` endpoints. Assigning a ticket to the current administrator uses the existing `ASSIGNED` status action described in Module 36.
+
+```
+
+import { useEffect, useMemo, useState } from "react";
+import "./chatbot-admin.css";
+
+type TicketStatus = "PENDING" | "ASSIGNED" | "RESOLVED" | "REJECTED";
+
+type ChatMessage = {
+  id: string;
+  role: "USER" | "ASSISTANT" | "SYSTEM";
+  content: string;
+  createdAt: string;
+};
+
+type Escalation = {
+  id: string;
+  subject: string;
+  department: string;
+  description: string;
+  status: TicketStatus;
+  resolution?: string | null;
+  assignedToId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  conversation?: {
+    id: string;
+    visitorName?: string | null;
+    visitorEmail?: string | null;
+    messages?: ChatMessage[];
+  };
+};
+
+const API = "/api/chatbot-admin";
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || payload.error || `Request failed (${response.status})`);
+  }
+  return payload as T;
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString();
+}
+
+export default function ChatbotEscalationsPage() {
+  const [tickets, setTickets] = useState<Escalation[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [resolution, setResolution] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function loadTickets() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await request<{ escalations: Escalation[] }>("/escalations");
+      const rows = result.escalations ?? [];
+      setTickets(rows);
+      setSelectedId((current) =>
+        current && rows.some((ticket) => ticket.id === current)
+          ? current
+          : rows[0]?.id ?? null
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load support requests.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadTickets();
+  }, []);
+
+  const filteredTickets = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) => statusFilter === "ALL" || ticket.status === statusFilter
+      ),
+    [tickets, statusFilter]
+  );
+
+  const selected = filteredTickets.find((ticket) => ticket.id === selectedId) ?? null;
+
+  useEffect(() => {
+    setResolution(selected?.resolution ?? "");
+  }, [selectedId, selected?.resolution]);
+
+  async function updateTicket(
+    ticket: Escalation,
+    changes: { status?: TicketStatus; resolution?: string }
+  ) {
+    setSaving(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await request(`/escalations/${ticket.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(changes),
+      });
+      setNotice("Support request updated.");
+      await loadTickets();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update support request.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function assignToMe(ticket: Escalation) {
+    await updateTicket(ticket, { status: "ASSIGNED" });
+  }
+
+  return (
+    <div className="chatbot-admin-page">
+      <header className="chatbot-admin-heading">
+        <div>
+          <span className="chatbot-admin-eyebrow">CUSTOMER CARE</span>
+          <h1>Chatbot Support Requests</h1>
+          <p>Review escalated website conversations and record the action taken.</p>
+        </div>
+        <button className="chatbot-button chatbot-button-secondary" onClick={() => void loadTickets()}>
+          Refresh
+        </button>
+      </header>
+
+      {error && <div className="chatbot-alert chatbot-alert-error">{error}</div>}
+      {notice && <div className="chatbot-alert chatbot-alert-success">{notice}</div>}
+
+      <section className="chatbot-ticket-summary">
+        {(["PENDING", "ASSIGNED", "RESOLVED", "REJECTED"] as TicketStatus[]).map((status) => (
+          <button
+            type="button"
+            key={status}
+            className={`chatbot-summary-card ${statusFilter === status ? "is-selected" : ""}`}
+            onClick={() => setStatusFilter(statusFilter === status ? "ALL" : status)}
+          >
+            <span>{status}</span>
+            <strong>{tickets.filter((ticket) => ticket.status === status).length}</strong>
+          </button>
+        ))}
+      </section>
+
+      <div className="chatbot-ticket-layout">
+        <section className="chatbot-admin-panel chatbot-ticket-list-panel">
+          <div className="chatbot-panel-heading">
+            <div>
+              <h2>Requests</h2>
+              <p>{filteredTickets.length} request(s)</p>
+            </div>
+            <select
+              aria-label="Filter support requests"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <p className="chatbot-empty-state">Loading support requests...</p>
+          ) : filteredTickets.length === 0 ? (
+            <p className="chatbot-empty-state">No support requests found.</p>
+          ) : (
+            <div className="chatbot-ticket-list">
+              {filteredTickets.map((ticket) => (
+                <button
+                  type="button"
+                  key={ticket.id}
+                  className={`chatbot-ticket-row ${selectedId === ticket.id ? "is-active" : ""}`}
+                  onClick={() => setSelectedId(ticket.id)}
+                >
+                  <span className={`chatbot-status chatbot-status-${ticket.status.toLowerCase()}`}>
+                    {ticket.status}
+                  </span>
+                  <strong>{ticket.subject}</strong>
+                  <span>{ticket.department}</span>
+                  <small>{ticket.conversation?.visitorName || "Website visitor"} · {formatDate(ticket.createdAt)}</small>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="chatbot-admin-panel chatbot-ticket-detail">
+          {!selected ? (
+            <div className="chatbot-empty-state">Select a support request to view its details.</div>
+          ) : (
+            <>
+              <div className="chatbot-panel-heading">
+                <div>
+                  <span className={`chatbot-status chatbot-status-${selected.status.toLowerCase()}`}>
+                    {selected.status}
+                  </span>
+                  <h2>{selected.subject}</h2>
+                  <p>Department: {selected.department}</p>
+                </div>
+              </div>
+
+              <div className="chatbot-ticket-contact">
+                <div>
+                  <small>Visitor</small>
+                  <strong>{selected.conversation?.visitorName || "Not provided"}</strong>
+                </div>
+                <div>
+                  <small>Email</small>
+                  <strong>{selected.conversation?.visitorEmail || "Not provided"}</strong>
+                </div>
+                <div>
+                  <small>Submitted</small>
+                  <strong>{formatDate(selected.createdAt)}</strong>
+                </div>
+              </div>
+
+              <div className="chatbot-ticket-description">
+                <h3>Request description</h3>
+                <p>{selected.description}</p>
+              </div>
+
+              <div className="chatbot-transcript">
+                <h3>Conversation transcript</h3>
+                {(selected.conversation?.messages ?? []).length === 0 ? (
+                  <p className="chatbot-empty-state">No transcript messages were returned by the API.</p>
+                ) : (
+                  selected.conversation!.messages!.map((message) => (
+                    <div className={`chatbot-transcript-message chatbot-transcript-${message.role.toLowerCase()}`} key={message.id}>
+                      <div>
+                        <strong>{message.role === "USER" ? "Visitor" : message.role === "ASSISTANT" ? "Chatbot" : "System"}</strong>
+                        <small>{formatDate(message.createdAt)}</small>
+                      </div>
+                      <p>{message.content}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="chatbot-resolution">
+                <label htmlFor="ticket-resolution">Resolution / internal handling notes</label>
+                <textarea
+                  id="ticket-resolution"
+                  rows={4}
+                  maxLength={5000}
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  placeholder="Record the action taken, response given, or reason for rejection..."
+                />
+                <button
+                  className="chatbot-button chatbot-button-secondary"
+                  disabled={saving}
+                  onClick={() => void updateTicket(selected, { resolution })}
+                >
+                  Save notes
+                </button>
+              </div>
+
+              <div className="chatbot-ticket-actions">
+                {selected.status !== "ASSIGNED" && selected.status !== "RESOLVED" && (
+                  <button
+                    className="chatbot-button chatbot-button-secondary"
+                    disabled={saving}
+                    onClick={() => void assignToMe(selected)}
+                  >
+                    Assign to me
+                  </button>
+                )}
+
+                {selected.status !== "RESOLVED" && (
+                  <button
+                    className="chatbot-button"
+                    disabled={saving || !resolution.trim()}
+                    onClick={() => void updateTicket(selected, { status: "RESOLVED", resolution })}
+                  >
+                    Mark resolved
+                  </button>
+                )}
+
+                {selected.status !== "REJECTED" && selected.status !== "RESOLVED" && (
+                  <button
+                    className="chatbot-button chatbot-button-danger"
+                    disabled={saving}
+                    onClick={() => void updateTicket(selected, { status: "REJECTED", resolution })}
+                  >
+                    Reject request
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+```
+
+## 3. Responsive styling
+
+Create `apps/web/src/pages/admin/chatbot-admin.css`.
+
+```
+
+.chatbot-admin-page {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--text-primary, #172033);
+}
+
+.chatbot-admin-heading,
+.chatbot-panel-heading,
+.chatbot-form-actions,
+.chatbot-article-meta,
+.chatbot-article-actions,
+.chatbot-ticket-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.chatbot-admin-heading {
+  margin-bottom: 24px;
+}
+
+.chatbot-admin-heading h1 {
+  margin: 5px 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.chatbot-admin-heading p,
+.chatbot-panel-heading p {
+  margin: 4px 0 0;
+  color: var(--text-muted, #64748b);
+}
+
+.chatbot-admin-eyebrow {
+  color: #b42332;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.chatbot-admin-panel {
+  margin-bottom: 22px;
+  padding: 22px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+}
+
+.chatbot-panel-heading {
+  margin-bottom: 18px;
+}
+
+.chatbot-panel-heading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.chatbot-knowledge-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.chatbot-knowledge-form label,
+.chatbot-resolution label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.chatbot-form-full {
+  grid-column: 1 / -1;
+}
+
+.chatbot-knowledge-form input,
+.chatbot-knowledge-form textarea,
+.chatbot-list-toolbar input,
+.chatbot-list-toolbar select,
+.chatbot-panel-heading select,
+.chatbot-resolution textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  background: var(--input-bg, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.chatbot-knowledge-form textarea,
+.chatbot-resolution textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.chatbot-knowledge-form small {
+  color: var(--text-muted, #64748b);
+  font-weight: 400;
+}
+
+.chatbot-button {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #b42332;
+  border-radius: 8px;
+  background: #b42332;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chatbot-button:hover {
+  filter: brightness(.95);
+}
+
+.chatbot-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.chatbot-button-secondary {
+  border-color: var(--border, #cbd5e1);
+  background: var(--surface, #fff);
+  color: var(--text-primary, #172033);
+}
+
+.chatbot-button-danger {
+  border-color: #b42332;
+  background: #fff;
+  color: #b42332;
+}
+
+.chatbot-text-button {
+  padding: 5px 7px;
+  border: 0;
+  background: transparent;
+  color: #2456a6;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chatbot-danger-text {
+  color: #b42332;
+}
+
+.chatbot-alert {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.chatbot-alert-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.chatbot-alert-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.chatbot-list-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.chatbot-list-toolbar input {
+  flex: 1;
+}
+
+.chatbot-list-toolbar select,
+.chatbot-panel-heading select {
+  width: auto;
+  min-width: 150px;
+}
+
+.chatbot-article-list {
+  display: grid;
+  gap: 12px;
+}
+
+.chatbot-article-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.chatbot-article-main {
+  min-width: 0;
+}
+
+.chatbot-article-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+
+.chatbot-article-card h3 {
+  margin: 10px 0 7px;
+  font-size: 16px;
+}
+
+.chatbot-article-card p {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chatbot-article-actions {
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.chatbot-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.chatbot-keywords span {
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: var(--subtle-bg, #f1f5f9);
+  color: var(--text-muted, #475569);
+  font-size: 11px;
+}
+
+.chatbot-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.chatbot-status-draft,
+.chatbot-status-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.chatbot-status-published,
+.chatbot-status-resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chatbot-status-archived,
+.chatbot-status-rejected {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.chatbot-status-assigned {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.chatbot-empty-state {
+  padding: 24px 12px;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+  font-size: 13px;
+}
+
+.chatbot-ticket-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.chatbot-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chatbot-summary-card span {
+  color: var(--text-muted, #64748b);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chatbot-summary-card strong {
+  font-size: 25px;
+}
+
+.chatbot-summary-card.is-selected {
+  border-color: #b42332;
+  box-shadow: 0 0 0 2px rgb(180 35 50 / 9%);
+}
+
+.chatbot-ticket-layout {
+  display: grid;
+  grid-template-columns: minmax(270px, .8fr) minmax(0, 1.7fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.chatbot-ticket-list-panel,
+.chatbot-ticket-detail {
+  min-width: 0;
+}
+
+.chatbot-ticket-list {
+  display: grid;
+  gap: 8px;
+}
+
+.chatbot-ticket-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chatbot-ticket-row.is-active {
+  border-color: #b42332;
+  background: var(--subtle-bg, #fff8f8);
+}
+
+.chatbot-ticket-row strong {
+  font-size: 14px;
+}
+
+.chatbot-ticket-row > span:not(.chatbot-status),
+.chatbot-ticket-row small {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
+.chatbot-ticket-contact {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 15px 0;
+  border-top: 1px solid var(--border, #e2e8f0);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.chatbot-ticket-contact div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.chatbot-ticket-contact small {
+  color: var(--text-muted, #64748b);
+}
+
+.chatbot-ticket-contact strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.chatbot-ticket-description,
+.chatbot-transcript,
+.chatbot-resolution {
+  margin-top: 20px;
+}
+
+.chatbot-ticket-description h3,
+.chatbot-transcript h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.chatbot-ticket-description p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chatbot-transcript {
+  display: grid;
+  gap: 10px;
+}
+
+.chatbot-transcript-message {
+  padding: 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 9px;
+  background: var(--subtle-bg, #f8fafc);
+}
+
+.chatbot-transcript-message > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chatbot-transcript-message strong {
+  font-size: 12px;
+}
+
+.chatbot-transcript-message small {
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+}
+
+.chatbot-transcript-message p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chatbot-transcript-user {
+  border-left: 3px solid #2456a6;
+}
+
+.chatbot-transcript-assistant {
+  border-left: 3px solid #16845b;
+}
+
+.chatbot-resolution {
+  display: grid;
+  gap: 10px;
+}
+
+.chatbot-resolution .chatbot-button {
+  justify-self: start;
+}
+
+.chatbot-ticket-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+@media (max-width: 850px) {
+  .chatbot-ticket-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chatbot-ticket-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .chatbot-admin-page {
+    padding: 14px;
+  }
+
+  .chatbot-admin-heading,
+  .chatbot-panel-heading {
+    align-items: flex-start;
+  }
+
+  .chatbot-admin-panel {
+    padding: 15px;
+  }
+
+  .chatbot-knowledge-form {
+    grid-template-columns: 1fr;
+  }
+
+  .chatbot-form-full {
+    grid-column: auto;
+  }
+
+  .chatbot-list-toolbar {
+    flex-direction: column;
+  }
+
+  .chatbot-list-toolbar select,
+  .chatbot-panel-heading select {
+    width: 100%;
+  }
+
+  .chatbot-article-card {
+    flex-direction: column;
+  }
+
+  .chatbot-article-actions {
+    justify-content: flex-start;
+  }
+
+  .chatbot-ticket-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chatbot-ticket-list {
+    grid-template-columns: 1fr;
+  }
+
+  .chatbot-ticket-contact {
+    grid-template-columns: 1fr;
+  }
+
+  .chatbot-ticket-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .chatbot-ticket-actions button {
+    width: 100%;
+  }
+}
+
+```
+
+## 4. Register the pages in the admin router
+
+Add imports to your existing admin route file:
+
+```
+import ChatbotKnowledgePage from "./pages/admin/ChatbotKnowledgePage";
+import ChatbotEscalationsPage from "./pages/admin/ChatbotEscalationsPage";
+```
+
+Add the routes inside the authenticated admin route group:
+
+```
+<Route
+  path="/admin/chatbot/knowledge"
+  element={<ChatbotKnowledgePage />}
+/>
+
+<Route
+  path="/admin/chatbot/escalations"
+  element={<ChatbotEscalationsPage />}
+/>
+```
+
+Add these links to the existing admin sidebar configuration:
+
+```
+{
+  label: "Chatbot Knowledge Base",
+  path: "/admin/chatbot/knowledge",
+  icon: "book-open",
+  permission: "website.manage",
+},
+{
+  label: "Chatbot Support Requests",
+  path: "/admin/chatbot/escalations",
+  icon: "messages-square",
+  permission: "website.manage",
+},
+```
+
+Use your existing permission-aware navigation component; do not bypass its authorization checks.
+
+## 5. API contract expected by the screens
+
+Check that your existing backend returns these response shapes. If your Module 36 routes use different response wrappers, adjust the frontend parsing rather than silently treating missing data as an empty list.
+
+| Endpoint                                  | Method | Expected behaviour                                            |
+| ----------------------------------------- | ------ | ------------------------------------------------------------- |
+| `/api/chatbot-admin/knowledge`            | GET    | Return `{ articles: [] }`                                     |
+| `/api/chatbot-admin/knowledge`            | POST   | Create a draft article                                        |
+| `/api/chatbot-admin/knowledge/:id`        | PATCH  | Update article fields                                         |
+| `/api/chatbot-admin/knowledge/:id/status` | PATCH  | Publish, unpublish or archive                                 |
+| `/api/chatbot-admin/escalations`          | GET    | Return `{ escalations: [] }`, including conversation messages |
+| `/api/chatbot-admin/escalations/:id`      | PATCH  | Update status and/or resolution                               |
+
+Backend requirements to verify:
+
+- All requests must be authenticated and authorized server-side.
+- Every database query must be scoped to the administrator's institution.
+- Only authorized roles should publish knowledge articles.
+- Only authorized customer-care staff should view visitor contact information and transcripts.
+- The `ASSIGNED` action must set `assignedToId` to the authenticated administrator, not an ID supplied by the browser.
+- Validate status transitions and resolution lengths on the server.
+- Record status changes and assignment actions in the audit log.
+- Prefer archiving knowledge articles over permanent deletion.
+
+## 6. Run and verify
+
+From the project root:
+
+```
+cd apps/web
+npm run build
+```
+
+Then test these workflows manually:
+
+1. Create a knowledge article and confirm it appears as a draft.
+2. Publish it and confirm it becomes available to the public chatbot's knowledge search.
+3. Edit the answer and verify the updated answer is saved.
+4. Archive an article and verify it is no longer used by public knowledge search.
+5. Open a support request and inspect its conversation transcript.
+6. Assign a request to yourself.
+7. Record a resolution and mark the request resolved.
+8. Sign in as an unauthorized user and verify the backend rejects access.
+
+Integration verification required
+
+The code above is an implementation template based on the Module 36 API contract. I have not run it against your actual repository, so confirm the existing middleware, response shapes, Prisma relations and route imports before treating the module as integrated.
+
+## Next module: Module 38 – Chatbot Analytics, Notifications & Service Desk
+
+The next module should add real reporting for chatbot conversations, unanswered questions, escalation volumes, response times, departmental workload, email notifications and customer-care service performance.

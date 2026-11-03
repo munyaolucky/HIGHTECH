@@ -1,0 +1,1501 @@
+# Module 42 – AI Performance Analytics & Intelligent Service Monitoring
+
+This module adds the operational reporting interface for HI-TECH College's AI services. It connects the usage, feedback, indexing and governance records from Modules 39–41 into one monitoring dashboard.
+
+The module covers:
+
+1. AI request volume, token consumption and estimated cost.
+2. Usage by user, role, department, provider and model.
+3. Chatbot feedback and answer-quality trends.
+4. Knowledge retrieval performance.
+5. Provider availability and response latency.
+6. Quota threshold alerts.
+7. Service health and failure monitoring.
+
+The distinction is important: usage statistics are measurable from existing records; retrieval accuracy and answer quality require additional evaluation data. A thumbs-up rating alone is not proof that an AI answer is factually correct.
+
+## 1. Extend the database
+
+Add these models to `apps/api/prisma/schema.prisma`.
+
+```
+
+enum AIAlertType {
+  QUOTA_WARNING
+  QUOTA_EXCEEDED
+  PROVIDER_FAILURE
+  INDEXING_FAILURE
+  HIGH_ERROR_RATE
+  HIGH_LATENCY
+}
+
+enum AIAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AIAlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum AIRetrievalOutcome {
+  ANSWERED
+  NO_MATCH
+  LOW_CONFIDENCE
+  FALLBACK
+  ESCALATED
+}
+
+model AIRequestMetric {
+  id              String   @id @default(uuid())
+  institutionId   String
+  usageRecordId   String?  @unique
+  providerKey     String
+  model           String
+  operation       String
+  latencyMs       Int?
+  success         Boolean
+  httpStatus      Int?
+  errorCategory   String?
+  createdAt       DateTime @default(now())
+
+  @@index([institutionId, createdAt])
+  @@index([institutionId, providerKey, createdAt])
+}
+
+model AIRetrievalMetric {
+  id                String             @id @default(uuid())
+  institutionId     String
+  conversationId    String?
+  messageId         String?
+  outcome           AIRetrievalOutcome
+  topSimilarity     Float?
+  retrievedCount    Int                @default(0)
+  citedArticleIds   String[]
+  createdAt         DateTime           @default(now())
+
+  @@index([institutionId, createdAt])
+  @@index([institutionId, outcome, createdAt])
+}
+
+model AIServiceAlert {
+  id              String           @id @default(uuid())
+  institutionId   String
+  type            AIAlertType
+  severity        AIAlertSeverity
+  status          AIAlertStatus    @default(OPEN)
+  title           String
+  message         String
+  source          String?
+  acknowledgedById String?
+  acknowledgedAt DateTime?
+  resolvedById    String?
+  resolvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([institutionId, status, createdAt])
+  @@index([institutionId, type, createdAt])
+}
+
+model AIProviderHealthHistory {
+  id              String   @id @default(uuid())
+  institutionId   String
+  providerKey     String
+  healthy         Boolean
+  latencyMs       Int?
+  message         String?
+  checkedAt       DateTime @default(now())
+
+  @@index([institutionId, checkedAt])
+  @@index([institutionId, providerKey, checkedAt])
+}
+
+```
+
+The `AIRequestMetric.usageRecordId` is optional because failed requests may occur before a usage record is written. `AIRetrievalMetric` stores similarity measurements and retrieved article identifiers, not the entire student conversation.
+
+Run:
+
+```
+cd apps/api
+npx prisma format
+npx prisma migrate dev --name ai_performance_monitoring
+npx prisma generate
+```
+
+## 2. Record AI request performance
+
+Extend `AIUsageRecord` with:
+
+```
+latencyMs Int?
+departmentId String?
+```
+
+Create `apps/api/src/services/aiMetrics.ts`.
+
+```
+
+import { prisma } from "../lib/prisma";
+
+type RequestMetricInput = {
+  institutionId: string;
+  usageRecordId?: string;
+  providerKey: string;
+  model: string;
+  operation: string;
+  latencyMs?: number;
+  success: boolean;
+  httpStatus?: number;
+  errorCategory?: string;
+};
+
+export async function recordAIRequestMetric(input: RequestMetricInput) {
+  return prisma.aIRequestMetric.create({
+    data: {
+      institutionId: input.institutionId,
+      usageRecordId: input.usageRecordId ?? null,
+      providerKey: input.providerKey,
+      model: input.model,
+      operation: input.operation,
+      latencyMs: input.latencyMs ?? null,
+      success: input.success,
+      httpStatus: input.httpStatus ?? null,
+      errorCategory: input.errorCategory?.slice(0, 100) ?? null,
+    },
+  });
+}
+
+export async function recordAIRetrievalMetric(input: {
+  institutionId: string;
+  conversationId?: string;
+  messageId?: string;
+  outcome:
+    | "ANSWERED"
+    | "NO_MATCH"
+    | "LOW_CONFIDENCE"
+    | "FALLBACK"
+    | "ESCALATED";
+  topSimilarity?: number;
+  retrievedCount: number;
+  citedArticleIds?: string[];
+}) {
+  return prisma.aIRetrievalMetric.create({
+    data: {
+      institutionId: input.institutionId,
+      conversationId: input.conversationId ?? null,
+      messageId: input.messageId ?? null,
+      outcome: input.outcome,
+      topSimilarity: input.topSimilarity ?? null,
+      retrievedCount: input.retrievedCount,
+      citedArticleIds: input.citedArticleIds ?? [],
+    },
+  });
+}
+
+```
+
+### Integrate into the AI request pipeline
+
+In the service that calls the AI provider, capture the start time before the request:
+
+```
+const startedAt = Date.now();
+
+try {
+  const response = await callAIProvider(/* existing arguments */);
+
+  const latencyMs = Date.now() - startedAt;
+
+  // After successfully saving the AI usage record:
+  await recordAIRequestMetric({
+    institutionId,
+    usageRecordId: usageRecord.id,
+    providerKey,
+    model,
+    operation: "CHAT_COMPLETION",
+    latencyMs,
+    success: true,
+    httpStatus: 200,
+  });
+
+  return response;
+} catch (error) {
+  await recordAIRequestMetric({
+    institutionId,
+    providerKey,
+    model,
+    operation: "CHAT_COMPLETION",
+    latencyMs: Date.now() - startedAt,
+    success: false,
+    errorCategory: "PROVIDER_REQUEST_FAILED",
+  });
+
+  throw error;
+}
+```
+
+Replace `callAIProvider`, `usageRecord`, and the other variables with the names in your actual RAG service. Do not log API keys, complete authorization headers, or private student messages in metric records.
+
+### Record retrieval outcomes
+
+In `collegeChatbot.ts`, after retrieving knowledge and determining the response type:
+
+```
+await recordAIRetrievalMetric({
+  institutionId,
+  conversationId: conversation.id,
+  messageId: assistantMessage.id,
+  outcome: "ANSWERED",
+  topSimilarity: knowledge[0]?.score,
+  retrievedCount: knowledge.length,
+  citedArticleIds: citations,
+});
+```
+
+Use the appropriate outcome:
+
+| Chatbot result                  | Retrieval outcome |
+| ------------------------------- | ----------------- |
+| AI answer grounded in knowledge | `ANSWERED`        |
+| No matching article             | `NO_MATCH`        |
+| Articles below threshold        | `LOW_CONFIDENCE`  |
+| Safe fallback response          | `FALLBACK`        |
+| Human support ticket created    | `ESCALATED`       |
+
+Only record citations that were actually validated against the retrieved articles.
+
+## 3. Automated AI service alerts
+
+Create `apps/api/src/services/aiAlerts.ts`.
+
+```
+
+import { prisma } from "../lib/prisma";
+
+export async function createAIAlert(input: {
+  institutionId: string;
+  type:
+    | "QUOTA_WARNING"
+    | "QUOTA_EXCEEDED"
+    | "PROVIDER_FAILURE"
+    | "INDEXING_FAILURE"
+    | "HIGH_ERROR_RATE"
+    | "HIGH_LATENCY";
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  title: string;
+  message: string;
+  source?: string;
+}) {
+  const existing = await prisma.aIServiceAlert.findFirst({
+    where: {
+      institutionId: input.institutionId,
+      type: input.type,
+      source: input.source ?? null,
+      status: { in: ["OPEN", "ACKNOWLEDGED"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existing) return existing;
+
+  return prisma.aIServiceAlert.create({
+    data: {
+      institutionId: input.institutionId,
+      type: input.type,
+      severity: input.severity,
+      title: input.title,
+      message: input.message,
+      source: input.source ?? null,
+    },
+  });
+}
+
+export async function acknowledgeAIAlert(input: {
+  institutionId: string;
+  alertId: string;
+  actorId: string;
+}) {
+  const result = await prisma.aIServiceAlert.updateMany({
+    where: {
+      id: input.alertId,
+      institutionId: input.institutionId,
+      status: "OPEN",
+    },
+    data: {
+      status: "ACKNOWLEDGED",
+      acknowledgedById: input.actorId,
+      acknowledgedAt: new Date(),
+    },
+  });
+
+  if (!result.count) {
+    throw new Error("Open alert not found.");
+  }
+
+  return prisma.aIServiceAlert.findFirst({
+    where: {
+      id: input.alertId,
+      institutionId: input.institutionId,
+    },
+  });
+}
+
+export async function resolveAIAlert(input: {
+  institutionId: string;
+  alertId: string;
+  actorId: string;
+}) {
+  const result = await prisma.aIServiceAlert.updateMany({
+    where: {
+      id: input.alertId,
+      institutionId: input.institutionId,
+      status: { in: ["OPEN", "ACKNOWLEDGED"] },
+    },
+    data: {
+      status: "RESOLVED",
+      resolvedById: input.actorId,
+      resolvedAt: new Date(),
+    },
+  });
+
+  if (!result.count) {
+    throw new Error("Active alert not found.");
+  }
+
+  return prisma.aIServiceAlert.findFirst({
+    where: {
+      id: input.alertId,
+      institutionId: input.institutionId,
+    },
+  });
+}
+
+```
+
+The duplicate check is a convenience, not a concurrency-safe deduplication mechanism. If multiple monitoring workers will run simultaneously, introduce a stable alert fingerprint with a database uniqueness constraint.
+
+## 4. Monitoring service
+
+Create `apps/api/src/services/aiMonitoring.ts`.
+
+This checks current monthly quota consumption, provider error rates and failed indexing jobs. It creates alerts without exposing user conversation content.
+
+```
+
+import { prisma } from "../lib/prisma";
+import { createAIAlert } from "./aiAlerts";
+
+export async function monitorInstitutionAI(institutionId: string) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+
+  const [configuration, usage, recentMetrics, failedJobs] = await Promise.all([
+    prisma.chatbotAIConfiguration.findUnique({
+      where: { institutionId },
+      select: {
+        monthlyTokenLimit: true,
+        monthlyRequestLimit: true,
+      },
+    }),
+    prisma.aIUsageRecord.aggregate({
+      where: {
+        institutionId,
+        createdAt: { gte: monthStart },
+      },
+      _sum: {
+        totalTokens: true,
+      },
+      _count: { _all: true },
+    }),
+    prisma.aIRequestMetric.findMany({
+      where: {
+        institutionId,
+        createdAt: { gte: lastHour },
+      },
+      select: {
+        success: true,
+        latencyMs: true,
+      },
+    }),
+    prisma.aIKnowledgeIndexJob.count({
+      where: {
+        institutionId,
+        status: "FAILED",
+      },
+    }),
+  ]);
+
+  const tokens = usage._sum.totalTokens ?? 0;
+  const requests = usage._count._all;
+
+  const tokenLimit = configuration?.monthlyTokenLimit ?? 0;
+  const requestLimit = configuration?.monthlyRequestLimit ?? 0;
+
+  if (tokenLimit > 0) {
+    const percentage = tokens / tokenLimit;
+
+    if (percentage >= 1) {
+      await createAIAlert({
+        institutionId,
+        type: "QUOTA_EXCEEDED",
+        severity: "CRITICAL",
+        title: "Monthly AI token quota exceeded",
+        message: `AI token consumption has reached ${tokens.toLocaleString()} of ${tokenLimit.toLocaleString()}.`,
+        source: "monthly-token-quota",
+      });
+    } else if (percentage >= 0.8) {
+      await createAIAlert({
+        institutionId,
+        type: "QUOTA_WARNING",
+        severity: "WARNING",
+        title: "AI token quota approaching limit",
+        message: `AI token consumption is at ${Math.round(percentage * 100)}% of the monthly allowance.`,
+        source: "monthly-token-quota",
+      });
+    }
+  }
+
+  if (requestLimit > 0) {
+    const percentage = requests / requestLimit;
+
+    if (percentage >= 1) {
+      await createAIAlert({
+        institutionId,
+        type: "QUOTA_EXCEEDED",
+        severity: "CRITICAL",
+        title: "Monthly AI request quota exceeded",
+        message: `AI requests have reached ${requests} of ${requestLimit}.`,
+        source: "monthly-request-quota",
+      });
+    } else if (percentage >= 0.8) {
+      await createAIAlert({
+        institutionId,
+        type: "QUOTA_WARNING",
+        severity: "WARNING",
+        title: "AI request quota approaching limit",
+        message: `AI requests are at ${Math.round(percentage * 100)}% of the monthly allowance.`,
+        source: "monthly-request-quota",
+      });
+    }
+  }
+
+  if (recentMetrics.length >= 10) {
+    const failures = recentMetrics.filter((item) => !item.success).length;
+    const failureRate = failures / recentMetrics.length;
+
+    if (failureRate >= 0.3) {
+      await createAIAlert({
+        institutionId,
+        type: "HIGH_ERROR_RATE",
+        severity: "CRITICAL",
+        title: "High AI provider error rate",
+        message: `${Math.round(failureRate * 100)}% of the last ${recentMetrics.length} recorded requests failed in the last hour.`,
+        source: "provider-error-rate",
+      });
+    }
+
+    const latencies = recentMetrics
+      .map((item) => item.latencyMs)
+      .filter((value): value is number => value !== null);
+
+    if (latencies.length >= 10) {
+      const sorted = [...latencies].sort((a, b) => a - b);
+      const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
+
+      if (p95 >= 10000) {
+        await createAIAlert({
+          institutionId,
+          type: "HIGH_LATENCY",
+          severity: "WARNING",
+          title: "AI response latency is high",
+          message: `The measured 95th percentile latency is ${p95} milliseconds.`,
+          source: "provider-latency",
+        });
+      }
+    }
+  }
+
+  if (failedJobs > 0) {
+    await createAIAlert({
+      institutionId,
+      type: "INDEXING_FAILURE",
+      severity: "WARNING",
+      title: "Knowledge indexing failures detected",
+      message: `${failedJobs} knowledge indexing jobs have failed and require review.`,
+      source: "knowledge-indexing",
+    });
+  }
+
+  return {
+    tokens,
+    requests,
+    failedJobs,
+    recentRequestCount: recentMetrics.length,
+  };
+}
+
+```
+
+This is a threshold-based monitor, not a full observability system. It should run on a scheduled worker, not on every user chatbot request.
+
+## 5. Analytics and alert APIs
+
+Create `apps/api/src/routes/aiMonitoringAdmin.ts`.
+
+```
+
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middleware/requireAuth";
+import { allowRoles } from "../middleware/allowRoles";
+import { acknowledgeAIAlert, resolveAIAlert } from "../services/aiAlerts";
+
+const router = Router();
+
+router.use(requireAuth);
+router.use(allowRoles("SUPER_ADMIN"));
+
+function getScope(req: any) {
+  const institutionId = req.user?.institutionId;
+  const actorId = req.user?.id;
+
+  if (!institutionId || !actorId) {
+    throw new Error("Missing institution or authenticated user.");
+  }
+
+  return { institutionId, actorId };
+}
+
+router.get("/dashboard", async (req, res) => {
+  try {
+    const { institutionId } = getScope(req);
+
+    const parsed = z.object({
+      days: z.coerce.number().int().min(1).max(365).default(30),
+    }).safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid date range." });
+    }
+
+    const from = new Date();
+    from.setDate(from.getDate() - parsed.data.days);
+
+    const where = {
+      institutionId,
+      createdAt: { gte: from },
+    };
+
+    const [
+      totals,
+      byRole,
+      byModel,
+      byDepartment,
+      feedback,
+      retrieval,
+      providerMetrics,
+      openAlerts,
+    ] = await Promise.all([
+      prisma.aIUsageRecord.aggregate({
+        where,
+        _sum: {
+          inputTokens: true,
+          outputTokens: true,
+          totalTokens: true,
+          estimatedCost: true,
+        },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.groupBy({
+        by: ["userRole"],
+        where,
+        _sum: { totalTokens: true },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.groupBy({
+        by: ["providerKey", "model"],
+        where,
+        _sum: { totalTokens: true, estimatedCost: true },
+        _count: { _all: true },
+      }),
+      prisma.aIUsageRecord.groupBy({
+        by: ["departmentId"],
+        where: {
+          ...where,
+          departmentId: { not: null },
+        },
+        _sum: { totalTokens: true },
+        _count: { _all: true },
+      }),
+      prisma.chatbotAnswerFeedback.groupBy({
+        by: ["rating"],
+        where: {
+          institutionId,
+          createdAt: { gte: from },
+        },
+        _count: { _all: true },
+      }),
+      prisma.aIRetrievalMetric.groupBy({
+        by: ["outcome"],
+        where: {
+          institutionId,
+          createdAt: { gte: from },
+        },
+        _count: { _all: true },
+      }),
+      prisma.aIRequestMetric.groupBy({
+        by: ["providerKey", "success"],
+        where: {
+          institutionId,
+          createdAt: { gte: from },
+        },
+        _count: { _all: true },
+        _avg: { latencyMs: true },
+      }),
+      prisma.aIServiceAlert.count({
+        where: {
+          institutionId,
+          status: { in: ["OPEN", "ACKNOWLEDGED"] },
+        },
+      }),
+    ]);
+
+    return res.json({
+      period: { from, days: parsed.data.days },
+      totals: {
+        requests: totals._count._all,
+        inputTokens: totals._sum.inputTokens ?? 0,
+        outputTokens: totals._sum.outputTokens ?? 0,
+        totalTokens: totals._sum.totalTokens ?? 0,
+        estimatedCost: Number(totals._sum.estimatedCost ?? 0),
+      },
+      byRole,
+      byModel,
+      byDepartment,
+      feedback,
+      retrieval,
+      providerMetrics,
+      openAlerts,
+    });
+  } catch (error) {
+    console.error("AI monitoring dashboard failed:", error);
+    return res.status(500).json({ message: "Unable to load AI monitoring dashboard." });
+  }
+});
+
+router.get("/alerts", async (req, res) => {
+  try {
+    const { institutionId } = getScope(req);
+
+    const parsed = z.object({
+      status: z.enum(["OPEN", "ACKNOWLEDGED", "RESOLVED"]).optional(),
+      limit: z.coerce.number().int().min(1).max(200).default(50),
+    }).safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid alert filters." });
+    }
+
+    const alerts = await prisma.aIServiceAlert.findMany({
+      where: {
+        institutionId,
+        ...(parsed.data.status ? { status: parsed.data.status } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: parsed.data.limit,
+    });
+
+    return res.json({ alerts });
+  } catch {
+    return res.status(500).json({ message: "Unable to load AI alerts." });
+  }
+});
+
+router.post("/alerts/:id/acknowledge", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const alert = await acknowledgeAIAlert({
+      institutionId,
+      alertId: req.params.id,
+      actorId,
+    });
+
+    return res.json({ alert });
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to acknowledge alert.",
+    });
+  }
+});
+
+router.post("/alerts/:id/resolve", async (req, res) => {
+  try {
+    const { institutionId, actorId } = getScope(req);
+
+    const alert = await resolveAIAlert({
+      institutionId,
+      alertId: req.params.id,
+      actorId,
+    });
+
+    return res.json({ alert });
+  } catch (error) {
+    return res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to resolve alert.",
+    });
+  }
+});
+
+export default router;
+
+```
+
+Mount:
+
+```
+import aiMonitoringAdminRoutes from "./routes/aiMonitoringAdmin";
+
+app.use("/api/ai-admin/monitoring", aiMonitoringAdminRoutes);
+```
+
+## 6. Scheduled monitoring worker
+
+Create `apps/api/src/workers/aiMonitoringWorker.ts`.
+
+This worker checks every institution independently. It must run as a dedicated worker or scheduled process.
+
+```
+
+import { prisma } from "../lib/prisma";
+import { monitorInstitutionAI } from "../services/aiMonitoring";
+
+let running = false;
+
+export async function runAIMonitoringCycle() {
+  if (running) return;
+  running = true;
+
+  try {
+    const institutions = await prisma.chatbotAIConfiguration.findMany({
+      select: { institutionId: true },
+    });
+
+    for (const institution of institutions) {
+      try {
+        await monitorInstitutionAI(institution.institutionId);
+      } catch (error) {
+        console.error(
+          `AI monitoring failed for institution ${institution.institutionId}:`,
+          error
+        );
+      }
+    }
+  } finally {
+    running = false;
+  }
+}
+
+export function startAIMonitoringWorker() {
+  if (process.env.AI_MONITORING_WORKER_ENABLED !== "true") return;
+
+  void runAIMonitoringCycle();
+
+  const interval = setInterval(() => {
+    void runAIMonitoringCycle();
+  }, 5 * 60 * 1000);
+
+  interval.unref?.();
+}
+
+```
+
+Start from the API bootstrap or a dedicated worker entry point:
+
+```
+import { startAIMonitoringWorker } from "./workers/aiMonitoringWorker";
+
+startAIMonitoringWorker();
+```
+
+Environment:
+
+```
+AI_MONITORING_WORKER_ENABLED=false
+```
+
+For production, use a single scheduled worker, distributed lock or job queue to prevent duplicate monitoring cycles. The in-memory `running` variable only prevents overlapping cycles within one process.
+
+## 7. AI performance dashboard
+
+Create `apps/web/src/pages/admin/AIPerformancePage.tsx`.
+
+```
+
+import { useEffect, useState } from "react";
+import "./ai-governance.css";
+
+type Report = {
+  period: { from: string; days: number };
+  totals: {
+    requests: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCost: number;
+  };
+  byRole: Array<{
+    userRole: string | null;
+    _sum: { totalTokens: number | null };
+    _count: { _all: number };
+  }>;
+  byModel: Array<{
+    providerKey: string;
+    model: string;
+    _sum: { totalTokens: number | null; estimatedCost: number | null };
+    _count: { _all: number };
+  }>;
+  byDepartment: Array<{
+    departmentId: string | null;
+    _sum: { totalTokens: number | null };
+    _count: { _all: number };
+  }>;
+  feedback: Array<{
+    rating: string;
+    _count: { _all: number };
+  }>;
+  retrieval: Array<{
+    outcome: string;
+    _count: { _all: number };
+  }>;
+  providerMetrics: Array<{
+    providerKey: string;
+    success: boolean;
+    _count: { _all: number };
+    _avg: { latencyMs: number | null };
+  }>;
+  openAlerts: number;
+};
+
+type Alert = {
+  id: string;
+  type: string;
+  severity: string;
+  status: string;
+  title: string;
+  message: string;
+  createdAt: string;
+};
+
+async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`/api/ai-admin/monitoring${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(result.message || "AI monitoring request failed.");
+  }
+
+  return result as T;
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <article className="ai-metric-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail && <small>{detail}</small>}
+    </article>
+  );
+}
+
+export default function AIPerformancePage() {
+  const [report, setReport] = useState<Report | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [days, setDays] = useState(30);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function loadDashboard() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [reportResult, alertResult] = await Promise.all([
+        api<Report>(`/dashboard?days=${days}`),
+        api<{ alerts: Alert[] }>("/alerts?limit=20"),
+      ]);
+
+      setReport(reportResult);
+      setAlerts(alertResult.alerts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [days]);
+
+  async function updateAlert(alertId: string, action: "acknowledge" | "resolve") {
+    setError("");
+    setNotice("");
+
+    try {
+      await api(`/alerts/${alertId}/${action}`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      setNotice(`Alert ${action}d successfully.`);
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update alert.");
+    }
+  }
+
+  const totalFeedback = report?.feedback.reduce(
+    (sum, item) => sum + item._count._all,
+    0
+  ) ?? 0;
+
+  const helpfulFeedback = report?.feedback.find(
+    (item) => item.rating === "HELPFUL"
+  )?._count._all ?? 0;
+
+  const helpfulPercentage = totalFeedback
+    ? Math.round((helpfulFeedback / totalFeedback) * 100)
+    : null;
+
+  return (
+    <main className="ai-admin-page">
+      <header className="ai-admin-header">
+        <div>
+          <span>HI-TECH COLLEGE · AI OPERATIONS</span>
+          <h1>AI Performance & Monitoring</h1>
+          <p>Monitor service usage, response quality indicators and system alerts.</p>
+        </div>
+
+        <div className="ai-performance-controls">
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={180}>Last 180 days</option>
+            <option value={365}>Last 365 days</option>
+          </select>
+          <button
+            className="ai-button ai-button-outline"
+            disabled={loading}
+            onClick={() => void loadDashboard()}
+          >
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      {error && <div className="ai-alert ai-alert-error">{error}</div>}
+      {notice && <div className="ai-alert ai-alert-success">{notice}</div>}
+
+      {loading ? (
+        <p>Loading AI performance data...</p>
+      ) : !report ? (
+        <p>No AI performance data is currently available.</p>
+      ) : (
+        <>
+          <section className="ai-performance-grid">
+            <MetricCard label="AI requests" value={report.totals.requests.toLocaleString()} />
+            <MetricCard label="Total tokens" value={report.totals.totalTokens.toLocaleString()} />
+            <MetricCard label="Input tokens" value={report.totals.inputTokens.toLocaleString()} />
+            <MetricCard label="Output tokens" value={report.totals.outputTokens.toLocaleString()} />
+            <MetricCard label="Estimated cost" value={report.totals.estimatedCost.toFixed(4)} />
+            <MetricCard label="Open alerts" value={String(report.openAlerts)} />
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>AI consumption by role</h2>
+            {report.byRole.length === 0 ? (
+              <p>No role usage records for this period.</p>
+            ) : (
+              <div className="ai-report-list">
+                {report.byRole.map((item) => (
+                  <div className="ai-report-row" key={item.userRole ?? "unknown"}>
+                    <strong>{item.userRole ?? "Unknown role"}</strong>
+                    <span>{(item._sum.totalTokens ?? 0).toLocaleString()} tokens</span>
+                    <span>{item._count._all} requests</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>Provider and model usage</h2>
+            {report.byModel.length === 0 ? (
+              <p>No model usage recorded.</p>
+            ) : (
+              <div className="ai-report-list">
+                {report.byModel.map((item) => (
+                  <div className="ai-report-row" key={`${item.providerKey}-${item.model}`}>
+                    <strong>{item.providerKey} / {item.model}</strong>
+                    <span>{(item._sum.totalTokens ?? 0).toLocaleString()} tokens</span>
+                    <span>{item._count._all} requests</span>
+                    <span>{Number(item._sum.estimatedCost ?? 0).toFixed(4)} estimated cost</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>Department consumption</h2>
+            {report.byDepartment.length === 0 ? (
+              <p>No department-linked usage records. Department IDs must be populated when requests are recorded.</p>
+            ) : (
+              <div className="ai-report-list">
+                {report.byDepartment.map((item) => (
+                  <div className="ai-report-row" key={item.departmentId ?? "unknown"}>
+                    <strong>{item.departmentId ?? "Unassigned"}</strong>
+                    <span>{(item._sum.totalTokens ?? 0).toLocaleString()} tokens</span>
+                    <span>{item._count._all} requests</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>Chatbot feedback</h2>
+            <div className="ai-performance-highlight">
+              <strong>
+                {helpfulPercentage === null ? "No feedback" : `${helpfulPercentage}% helpful`}
+              </strong>
+              <span>{totalFeedback} feedback submissions</span>
+            </div>
+            <div className="ai-report-list">
+              {report.feedback.map((item) => (
+                <div className="ai-report-row" key={item.rating}>
+                  <strong>{item.rating.replaceAll("_", " ")}</strong>
+                  <span>{item._count._all} responses</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>Knowledge retrieval outcomes</h2>
+            {report.retrieval.length === 0 ? (
+              <p>No retrieval metrics recorded for this period.</p>
+            ) : (
+              <div className="ai-report-list">
+                {report.retrieval.map((item) => (
+                  <div className="ai-report-row" key={item.outcome}>
+                    <strong>{item.outcome.replaceAll("_", " ")}</strong>
+                    <span>{item._count._all} requests</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="ai-admin-panel">
+            <h2>Provider reliability and latency</h2>
+            {report.providerMetrics.map((item, index) => (
+              <div className="ai-report-row" key={`${item.providerKey}-${item.success}-${index}`}>
+                <strong>{item.providerKey}</strong>
+                <span>{item.success ? "Successful" : "Failed"}</span>
+                <span>{item._count._all} requests</span>
+                <span>
+                  {item._avg.latencyMs == null
+                    ? "Latency unavailable"
+                    : `${Math.round(item._avg.latencyMs)} ms average`}
+                </span>
+              </div>
+            ))}
+          </section>
+        </>
+      )}
+
+      <section className="ai-admin-panel">
+        <h2>AI service alerts</h2>
+        {alerts.length === 0 ? (
+          <p>No active alerts.</p>
+        ) : (
+          <div className="ai-alert-list">
+            {alerts.map((alert) => (
+              <article className="ai-service-alert" key={alert.id}>
+                <div>
+                  <strong>{alert.title}</strong>
+                  <p>{alert.message}</p>
+                  <small>
+                    {alert.severity} · {alert.status} · {new Date(alert.createdAt).toLocaleString()}
+                  </small>
+                </div>
+                <div className="ai-alert-actions">
+                  {alert.status === "OPEN" && (
+                    <button
+                      className="ai-button ai-button-outline"
+                      onClick={() => void updateAlert(alert.id, "acknowledge")}
+                    >
+                      Acknowledge
+                    </button>
+                  )}
+                  {alert.status !== "RESOLVED" && (
+                    <button
+                      className="ai-button"
+                      onClick={() => void updateAlert(alert.id, "resolve")}
+                    >
+                      Resolve
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+```
+
+## 8. Performance dashboard styling
+
+Append to `apps/web/src/pages/admin/ai-governance.css`.
+
+```
+
+.ai-performance-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-performance-controls select {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+
+.ai-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.ai-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 11px;
+  background: var(--surface, #fff);
+}
+
+.ai-metric-card span,
+.ai-metric-card small {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
+.ai-metric-card strong {
+  font-size: 25px;
+  overflow-wrap: anywhere;
+}
+
+.ai-report-list {
+  display: grid;
+  gap: 9px;
+}
+
+.ai-report-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.ai-report-row strong {
+  flex: 1 1 180px;
+}
+
+.ai-report-row span {
+  color: var(--text-muted, #64748b);
+}
+
+.ai-performance-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 16px;
+  border-radius: 9px;
+  background: var(--subtle-bg, #f1f5f9);
+}
+
+.ai-performance-highlight strong {
+  font-size: 23px;
+}
+
+.ai-performance-highlight span {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
+.ai-alert-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-service-alert {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 9px;
+}
+
+.ai-service-alert p {
+  margin: 6px 0;
+}
+
+.ai-service-alert small {
+  color: var(--text-muted, #64748b);
+}
+
+.ai-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 850px) {
+  .ai-performance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .ai-performance-controls,
+  .ai-service-alert {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ai-performance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-alert-actions {
+    flex-direction: column;
+  }
+
+  .ai-alert-actions button {
+    width: 100%;
+  }
+
+  .ai-performance-highlight {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+```
+
+## 9. Register the performance page
+
+In the admin router:
+
+```
+import AIPerformancePage from "./pages/admin/AIPerformancePage";
+
+<Route
+  path="/admin/ai-governance/performance"
+  element={<AIPerformancePage />}
+/>
+```
+
+Sidebar:
+
+```
+{
+  label: "AI Performance & Monitoring",
+  path: "/admin/ai-governance/performance",
+  icon: "chart-no-axes-combined",
+  permission: "ai.governance.manage",
+}
+```
+
+The dashboard should be visible only to authorized AI governance administrators.
+
+## 10. Important reporting corrections
+
+Before using the figures for institutional decisions, address these details:
+
+- Department attribution: Populate `departmentId` from the authenticated user's trusted staff/student profile. Do not accept it directly from the browser.
+- User reporting: The existing usage records contain `userId`; a later report can aggregate by individual user, subject to privacy permissions.
+- Cost: `estimatedCost` must use a versioned pricing table for each provider/model. Do not interpret an unconfigured cost as a real bill.
+- Feedback: Display helpful and not-helpful counts separately. Avoid describing the percentage as an accuracy score.
+- Retrieval: Similarity scores are ranking signals, not verified correctness probabilities.
+- Latency: Failed and successful requests should both be measured. Use percentile calculations over sufficient observations, not just averages.
+- Alerts: Resolve old quota alerts when the next monitoring cycle detects that the condition has cleared. Otherwise, a resolved condition can leave an outdated active alert.
+- Monitoring: Add alert notification delivery through the college's approved email or notification service, with retry handling.
+
+## 11. Final route registration
+
+In your Express application:
+
+```
+import aiMonitoringAdminRoutes from "./routes/aiMonitoringAdmin";
+
+app.use("/api/ai-admin/monitoring", aiMonitoringAdminRoutes);
+```
+
+The new API endpoints are:
+
+| Method | Endpoint                                          | Purpose             |
+| ------ | ------------------------------------------------- | ------------------- |
+| GET    | `/api/ai-admin/monitoring/dashboard`              | Performance summary |
+| GET    | `/api/ai-admin/monitoring/alerts`                 | List service alerts |
+| POST   | `/api/ai-admin/monitoring/alerts/:id/acknowledge` | Acknowledge alert   |
+| POST   | `/api/ai-admin/monitoring/alerts/:id/resolve`     | Resolve alert       |
+
+## 12. Verification
+
+Run:
+
+```
+# Backend
+cd apps/api
+npx prisma format
+npx prisma validate
+npx prisma generate
+npm run build
+
+# Frontend
+cd ../web
+npm run build
+```
+
+Test the following workflows:
+
+| Test                                    | Expected result                          |
+| --------------------------------------- | ---------------------------------------- |
+| Send chatbot request                    | Request metric recorded                  |
+| Provider request fails                  | Failure metric recorded                  |
+| Retrieve knowledge                      | Retrieval outcome recorded               |
+| Token usage reaches 80%                 | Warning alert created                    |
+| Token quota is exceeded                 | Critical alert created                   |
+| Provider failure rate reaches threshold | Reliability alert created                |
+| Indexing jobs fail                      | Indexing alert created                   |
+| Administrator acknowledges alert        | Status changes to ACKNOWLEDGED           |
+| Administrator resolves alert            | Status changes to RESOLVED               |
+| View performance dashboard              | Institution-scoped reports displayed     |
+| Change reporting period                 | Dashboard refreshes with selected period |
+
+Build and integration verification required
+
+These are implementation templates. They have not been compiled against your local project, and the dashboard's accuracy depends on completing the instrumentation and data-attribution integrations.
+
+## 13. AI Governance Centre – updated structure
+
+HI-TECH College – AI Administration
+
+AI Configuration
+
+Provider settings and emergency controls
+
+Module 40–42
+
+AI Usage & Quotas
+
+Monthly limits and role restrictions
+
+Module 40–42
+
+Prompt Management
+
+Versioning, publishing and rollback
+
+Module 40–42
+
+Knowledge Indexing
+
+Index queue, retry and article status
+
+Module 40–42
+
+AI Audit Logs
+
+Administrator activity and compliance
+
+Module 40–42
+
+AI Performance
+
+Usage, feedback, reliability and costs
+
+Module 40–42
+
+Service Alerts
+
+Provider, quota and indexing incidents
+
+Module 40–42
+
+## Next: Module 43 – Complete AI Support Centre
+
+The next module will expand beyond the public website chatbot into a college-wide AI assistant for:
+
+- Student academic support and learning assistance.
+- Lecturer lesson planning and assessment generation.
+- Registrar admission and academic administration assistance.
+- Finance fee-structure and payment-query assistance.
+- HR staff policy and document assistance.
+- Librarian research and digital-library assistance.
+- IT support and troubleshooting.
+- Role-based access, institutional knowledge permissions and human escalation.
+
+Each assistant will use only the information and operations permitted for its authenticated role.

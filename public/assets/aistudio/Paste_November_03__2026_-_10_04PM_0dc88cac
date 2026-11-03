@@ -1,0 +1,2386 @@
+Below is the HI-TECH College Student Portal Dashboard, built to closely match the generated homepage design: navy-blue sidebar, white top header, campus welcome banner, coloured quick-action cards, academic overview, notifications, upcoming events and a promotional college banner.
+
+It uses React + TypeScript + CSS + Lucide icons and is responsive for desktop, tablet and mobile. The dashboard includes working navigation, mobile sidebar toggle, notification count and interactive quick actions.
+
+## 1. Install the icon dependency
+
+```
+npm install lucide-react
+```
+
+## 2. Create `src/modules/student/StudentDashboard.tsx`
+
+```
+import React, { useState } from "react";
+import {
+  Home,
+  UserRound,
+  GraduationCap,
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  CreditCard,
+  Library,
+  HeartHandshake,
+  Bell,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  ArrowRight,
+  CheckCircle2,
+  Headphones,
+  Star,
+  MapPin,
+  Clock,
+  BarChart3,
+  FileText,
+  Search,
+  MessageCircle,
+  Download,
+  User,
+  CalendarCheck,
+  Wallet,
+  BookMarked,
+  ShieldCheck,
+} from "lucide-react";
+
+import "./StudentDashboard.css";
+
+type StudentDashboardProps = {
+  studentName?: string;
+  registrationNumber?: string;
+  programme?: string;
+  academicYear?: string;
+  semester?: string;
+  registeredCourses?: number;
+  attendance?: number;
+  gpa?: number;
+  onNavigate?: (page: string) => void;
+  onLogout?: () => void;
+};
+
+const menuItems = [
+  { label: "Dashboard", icon: Home, page: "dashboard" },
+  { label: "My Profile", icon: UserRound, page: "profile" },
+  { label: "My Programme", icon: GraduationCap, page: "programme" },
+  { label: "Course Registration", icon: ClipboardList, page: "course-registration" },
+  { label: "Timetable", icon: CalendarDays, page: "timetable" },
+  { label: "Results & Transcripts", icon: FileText, page: "results" },
+  { label: "Fees & Payments", icon: CreditCard, page: "finance" },
+  { label: "Library", icon: BookOpen, page: "library" },
+  { label: "Student Support", icon: HeartHandshake, page: "support" },
+];
+
+const quickActions = [
+  {
+    title: "View Timetable",
+    description: "See your classes",
+    icon: CalendarDays,
+    color: "blue",
+    page: "timetable",
+  },
+  {
+    title: "Register Courses",
+    description: "Manage your units",
+    icon: CheckCircle2,
+    color: "green",
+    page: "course-registration",
+  },
+  {
+    title: "Check Results",
+    description: "View your grades",
+    icon: ClipboardList,
+    color: "purple",
+    page: "results",
+  },
+  {
+    title: "Pay Fees",
+    description: "Manage payments",
+    icon: CreditCard,
+    color: "teal",
+    page: "finance",
+  },
+  {
+    title: "Access Library",
+    description: "Books and resources",
+    icon: BookMarked,
+    color: "orange",
+    page: "library",
+  },
+  {
+    title: "Get Support",
+    description: "Contact the college",
+    icon: Headphones,
+    color: "navy",
+    page: "support",
+  },
+];
+
+const notifications = [
+  {
+    id: 1,
+    title: "Your assignment is due tomorrow",
+    detail: "Web Technologies · 11:59 PM",
+    time: "2 hours ago",
+    color: "blue",
+    unread: true,
+  },
+  {
+    id: 2,
+    title: "Semester results are available",
+    detail: "Check your academic results",
+    time: "Yesterday",
+    color: "green",
+    unread: true,
+  },
+  {
+    id: 3,
+    title: "Your payment receipt is ready",
+    detail: "Receipt #HCA-PMT-2026-0456",
+    time: "2 days ago",
+    color: "blue",
+    unread: true,
+  },
+];
+
+const events = [
+  {
+    day: "06",
+    month: "NOV",
+    title: "Assignment Deadline – Web Technologies",
+    time: "9:00 AM – 5:00 PM",
+    location: "Main Campus",
+  },
+  {
+    day: "08",
+    month: "NOV",
+    title: "Online Class – Database Systems",
+    time: "10:00 AM – 12:00 PM",
+    location: "Online",
+  },
+  {
+    day: "12",
+    month: "NOV",
+    title: "Career and Innovation Fair",
+    time: "9:00 AM – 4:00 PM",
+    location: "Main Campus",
+  },
+];
+
+export default function StudentDashboard({
+  studentName = "Amina Wanjiku",
+  registrationNumber = "HCA/STU/2026/001",
+  programme = "BSc. Computer Science",
+  academicYear = "2026",
+  semester = "Semester 1",
+  registeredCourses = 6,
+  attendance = 95,
+  gpa = 3.75,
+  onNavigate,
+  onLogout,
+}: StudentDashboardProps) {
+  const [activePage, setActivePage] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [readNotifications, setReadNotifications] = useState<number[]>([]);
+
+  const unreadCount = notifications.filter(
+    (item) => !readNotifications.includes(item.id)
+  ).length;
+
+  const navigate = (page: string) => {
+    setActivePage(page);
+    setSidebarOpen(false);
+    onNavigate?.(page);
+  };
+
+  const markAllRead = () => {
+    setReadNotifications(notifications.map((item) => item.id));
+  };
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+      return;
+    }
+
+    const confirmed = window.confirm("Are you sure you want to log out?");
+    if (confirmed) {
+      window.location.href = "/login";
+    }
+  };
+
+  return (
+    <div className="hca-dashboard">
+      {/* TOP HEADER */}
+      <header className="hca-topbar">
+        <div className="hca-brand">
+          <div className="hca-brand-icon">
+            <GraduationCap size={38} strokeWidth={2.2} />
+          </div>
+
+          <div>
+            <h1>HI-TECH COLLEGE</h1>
+            <p>Learn • Innovate • Excel</p>
+          </div>
+        </div>
+
+        <button
+          className="hca-mobile-menu"
+          aria-label="Open navigation"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? <X /> : <Menu />}
+        </button>
+
+        <div className="hca-header-right">
+          <div className="hca-search">
+            <Search size={17} />
+            <input
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Search portal..."
+              aria-label="Search portal"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchValue.trim()) {
+                  onNavigate?.(`search:${searchValue.trim()}`);
+                }
+              }}
+            />
+          </div>
+
+          <div className="hca-header-dropdown">
+            <button
+              className="hca-notification-button"
+              onClick={() => {
+                setNotificationOpen(!notificationOpen);
+                setProfileOpen(false);
+              }}
+              aria-label="Notifications"
+            >
+              <Bell size={23} />
+              {unreadCount > 0 && (
+                <span className="hca-notification-badge">{unreadCount}</span>
+              )}
+            </button>
+
+            {notificationOpen && (
+              <div className="hca-dropdown hca-notification-dropdown">
+                <div className="hca-dropdown-heading">
+                  <div>
+                    <strong>Notifications</strong>
+                    <small>{unreadCount} unread messages</small>
+                  </div>
+                  <button onClick={markAllRead}>Mark all read</button>
+                </div>
+
+                {notifications.map((item) => (
+                  <button
+                    className="hca-dropdown-notification"
+                    key={item.id}
+                    onClick={() => {
+                      setReadNotifications((previous) =>
+                        previous.includes(item.id)
+                          ? previous
+                          : [...previous, item.id]
+                      );
+                    }}
+                  >
+                    <span className={`hca-dot ${item.color}`} />
+                    <span>
+                      <strong>{item.title}</strong>
+                      <small>{item.detail}</small>
+                      <small>{item.time}</small>
+                    </span>
+                    {!readNotifications.includes(item.id) && (
+                      <span className="hca-unread-indicator" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="hca-header-dropdown">
+            <button
+              className="hca-profile-button"
+              onClick={() => {
+                setProfileOpen(!profileOpen);
+                setNotificationOpen(false);
+              }}
+            >
+              <div className="hca-avatar">
+                <UserRound size={25} />
+              </div>
+
+              <span className="hca-profile-info">
+                <strong>{studentName}</strong>
+                <small>Student · {registrationNumber}</small>
+              </span>
+
+              <ChevronDown size={17} />
+            </button>
+
+            {profileOpen && (
+              <div className="hca-dropdown hca-profile-dropdown">
+                <button onClick={() => navigate("profile")}>
+                  <User size={17} /> My Profile
+                </button>
+                <button onClick={() => navigate("settings")}>
+                  <Settings size={17} /> Account Settings
+                </button>
+                <button onClick={handleLogout}>
+                  <LogOut size={17} /> Log Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="hca-layout">
+        {/* SIDEBAR */}
+        <aside className={`hca-sidebar ${sidebarOpen ? "open" : ""}`}>
+          <div className="hca-sidebar-label">STUDENT MENU</div>
+
+          <nav className="hca-navigation">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <button
+                  key={item.page}
+                  className={`hca-nav-item ${
+                    activePage === item.page ? "active" : ""
+                  }`}
+                  onClick={() => navigate(item.page)}
+                >
+                  <Icon size={21} />
+                  <span>{item.label}</span>
+
+                  {item.page === "support" && (
+                    <span className="hca-nav-new">Help</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="hca-sidebar-label hca-sidebar-secondary">
+            ACCOUNT
+          </div>
+
+          <nav className="hca-navigation">
+            <button
+              className={`hca-nav-item ${
+                activePage === "notifications" ? "active" : ""
+              }`}
+              onClick={() => navigate("notifications")}
+            >
+              <Bell size={21} />
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <span className="hca-sidebar-count">{unreadCount}</span>
+              )}
+            </button>
+
+            <button
+              className={`hca-nav-item ${
+                activePage === "settings" ? "active" : ""
+              }`}
+              onClick={() => navigate("settings")}
+            >
+              <Settings size={21} />
+              <span>Settings</span>
+            </button>
+          </nav>
+
+          <div className="hca-sidebar-bottom">
+            <div className="hca-help-card">
+              <div className="hca-help-icon">
+                <MessageCircle size={22} />
+              </div>
+              <strong>Need assistance?</strong>
+              <p>Our student support team is ready to help.</p>
+              <button onClick={() => navigate("support")}>
+                Contact Support <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <button className="hca-logout" onClick={handleLogout}>
+              <LogOut size={20} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </aside>
+
+        {sidebarOpen && (
+          <button
+            className="hca-sidebar-overlay"
+            aria-label="Close navigation"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* MAIN CONTENT */}
+        <main className="hca-main">
+          <div className="hca-main-content">
+            {/* WELCOME BANNER */}
+            <section className="hca-hero">
+              <div className="hca-hero-overlay" />
+
+              <div className="hca-hero-content">
+                <span className="hca-hero-eyebrow">
+                  YOUR FUTURE STARTS HERE
+                </span>
+
+                <h2>
+                  Welcome to
+                  <br />
+                  HI-TECH College
+                </h2>
+
+                <p>Your Academic Journey Starts Here</p>
+
+                <button
+                  className="hca-hero-button"
+                  onClick={() => navigate("programme")}
+                >
+                  Explore Your Opportunities
+                  <ArrowRight size={19} />
+                </button>
+              </div>
+
+              <div className="hca-hero-tag">
+                <ShieldCheck size={16} />
+                Student Portal
+              </div>
+            </section>
+
+            {/* QUICK ACTIONS */}
+            <section className="hca-quick-actions">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+
+                return (
+                  <button
+                    key={action.page}
+                    className={`hca-quick-card ${action.color}`}
+                    onClick={() => navigate(action.page)}
+                  >
+                    <span className="hca-quick-icon">
+                      <Icon size={29} />
+                    </span>
+
+                    <span className="hca-quick-text">
+                      <strong>{action.title}</strong>
+                      <small>{action.description}</small>
+                    </span>
+
+                    <ArrowRight className="hca-quick-arrow" size={17} />
+                  </button>
+                );
+              })}
+            </section>
+
+            {/* CONTENT GRID */}
+            <div className="hca-content-grid">
+              <div className="hca-left-column">
+                {/* ACADEMIC OVERVIEW */}
+                <section className="hca-panel">
+                  <div className="hca-panel-heading">
+                    <div className="hca-panel-title">
+                      <BarChart3 size={23} />
+                      <h3>Your Academic Overview</h3>
+                    </div>
+
+                    <button
+                      className="hca-text-link"
+                      onClick={() => navigate("academic-progress")}
+                    >
+                      View Details <ArrowRight size={15} />
+                    </button>
+                  </div>
+
+                  <div className="hca-academic-grid">
+                    <div className="hca-stat-card stat-blue">
+                      <GraduationCap size={37} />
+                      <div>
+                        <small>Current Programme</small>
+                        <strong>{programme}</strong>
+                      </div>
+                    </div>
+
+                    <div className="hca-stat-card stat-green">
+                      <CalendarDays size={36} />
+                      <div>
+                        <small>Academic Year</small>
+                        <strong>{academicYear}</strong>
+                      </div>
+                    </div>
+
+                    <div className="hca-stat-card stat-purple">
+                      <CalendarCheck size={36} />
+                      <div>
+                        <small>Current Semester</small>
+                        <strong>{semester}</strong>
+                      </div>
+                    </div>
+
+                    <div className="hca-stat-card stat-light-blue">
+                      <BookOpen size={36} />
+                      <div>
+                        <small>Registered Courses</small>
+                        <strong>{registeredCourses}</strong>
+                      </div>
+                    </div>
+
+                    <div className="hca-stat-card stat-light-green">
+                      <CheckCircle2 size={36} />
+                      <div>
+                        <small>Attendance</small>
+                        <strong>{attendance}%</strong>
+                      </div>
+                    </div>
+
+                    <div className="hca-stat-card stat-light-orange">
+                      <Star size={36} />
+                      <div>
+                        <small>GPA</small>
+                        <strong>{gpa.toFixed(2)}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* UPCOMING EVENTS */}
+                <section className="hca-panel hca-events-panel">
+                  <div className="hca-panel-heading">
+                    <div className="hca-panel-title">
+                      <CalendarDays size={22} />
+                      <h3>Upcoming Events</h3>
+                    </div>
+
+                    <button
+                      className="hca-text-link"
+                      onClick={() => navigate("calendar")}
+                    >
+                      View Calendar <ArrowRight size={15} />
+                    </button>
+                  </div>
+
+                  <div className="hca-event-list">
+                    {events.map((event, index) => (
+                      <div className="hca-event-row" key={index}>
+                        <div className="hca-event-date">
+                          <small>{event.month}</small>
+                          <strong>{event.day}</strong>
+                        </div>
+
+                        <div className="hca-event-name">
+                          <strong>{event.title}</strong>
+                        </div>
+
+                        <div className="hca-event-time">
+                          <Clock size={14} />
+                          <span>{event.time}</span>
+                        </div>
+
+                        <div className="hca-event-location">
+                          <MapPin size={15} />
+                          <span>{event.location}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* STUDENT SHORTCUTS */}
+                <section className="hca-panel hca-shortcuts-panel">
+                  <div className="hca-panel-heading">
+                    <div className="hca-panel-title">
+                      <Wallet size={22} />
+                      <h3>Student Services</h3>
+                    </div>
+                  </div>
+
+                  <div className="hca-shortcuts">
+                    <button onClick={() => navigate("documents")}>
+                      <FileText size={21} />
+                      <span>My Documents</span>
+                    </button>
+
+                    <button onClick={() => navigate("receipts")}>
+                      <Download size={21} />
+                      <span>Download Receipts</span>
+                    </button>
+
+                    <button onClick={() => navigate("student-id")}>
+                      <UserRound size={21} />
+                      <span>Student ID Card</span>
+                    </button>
+
+                    <button onClick={() => navigate("academic-progress")}>
+                      <BarChart3 size={21} />
+                      <span>Academic Progress</span>
+                    </button>
+                  </div>
+                </section>
+              </div>
+
+              <div className="hca-right-column">
+                {/* NOTIFICATIONS */}
+                <section className="hca-panel hca-notifications-panel">
+                  <div className="hca-panel-heading">
+                    <div className="hca-panel-title">
+                      <Bell size={22} />
+                      <h3>Notifications</h3>
+                    </div>
+
+                    <button
+                      className="hca-text-link"
+                      onClick={() => navigate("notifications")}
+                    >
+                      View All <ArrowRight size={15} />
+                    </button>
+                  </div>
+
+                  <div className="hca-notification-list">
+                    {notifications.map((item) => (
+                      <button
+                        className={`hca-notification-row ${
+                          readNotifications.includes(item.id) ? "read" : ""
+                        }`}
+                        key={item.id}
+                        onClick={() =>
+                          setReadNotifications((previous) =>
+                            previous.includes(item.id)
+                              ? previous
+                              : [...previous, item.id]
+                          )
+                        }
+                      >
+                        <span className={`hca-dot ${item.color}`} />
+
+                        <span className="hca-notification-message">
+                          <strong>{item.title}</strong>
+                          <small>{item.detail}</small>
+                        </span>
+
+                        <span className="hca-notification-time">
+                          {item.time}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    className="hca-all-notifications"
+                    onClick={markAllRead}
+                  >
+                    Mark all notifications as read
+                  </button>
+                </section>
+
+                {/* FEE SUMMARY */}
+                <section className="hca-panel hca-fee-panel">
+                  <div className="hca-panel-heading">
+                    <div className="hca-panel-title">
+                      <CreditCard size={22} />
+                      <h3>Fee Summary</h3>
+                    </div>
+
+                    <button
+                      className="hca-text-link"
+                      onClick={() => navigate("finance")}
+                    >
+                      Details
+                    </button>
+                  </div>
+
+                  <div className="hca-fee-balance">
+                    <small>Outstanding Balance</small>
+                    <strong>KES 12,500.00</strong>
+                    <span>Illustrative account summary</span>
+                  </div>
+
+                  <div className="hca-fee-progress">
+                    <div className="hca-fee-progress-label">
+                      <span>Fee payment progress</span>
+                      <strong>75%</strong>
+                    </div>
+                    <div className="hca-progress-track">
+                      <div className="hca-progress-value" />
+                    </div>
+                  </div>
+
+                  <button
+                    className="hca-pay-button"
+                    onClick={() => navigate("finance")}
+                  >
+                    <CreditCard size={18} />
+                    Make a Payment
+                    <ArrowRight size={17} />
+                  </button>
+                </section>
+
+                {/* PROMOTIONAL BANNER */}
+                <section className="hca-promo-banner">
+                  <div className="hca-promo-content">
+                    <span>LEARN • INNOVATE • EXCEL</span>
+                    <h3>
+                      Build Your Future
+                      <br />
+                      with <b>HI-TECH College</b>
+                    </h3>
+                    <p>Quality Education. Real Opportunities.</p>
+
+                    <button onClick={() => navigate("college-information")}>
+                      Learn More <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </section>
+
+                {/* SUPPORT */}
+                <section className="hca-support-card">
+                  <div className="hca-support-icon">
+                    <Headphones size={25} />
+                  </div>
+                  <div>
+                    <strong>Student Support Centre</strong>
+                    <p>Need help with your portal or studies?</p>
+                    <button onClick={() => navigate("support")}>
+                      Get Help <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <footer className="hca-footer">
+              <div>
+                <strong>HI-TECH COLLEGE</strong>
+                <span>Learn • Innovate • Excel</span>
+              </div>
+
+              <p>
+                © {new Date().getFullYear()} HI-TECH College. All rights
+                reserved.
+              </p>
+
+              <div className="hca-footer-links">
+                <button onClick={() => navigate("privacy")}>Privacy</button>
+                <button onClick={() => navigate("terms")}>Terms</button>
+                <button onClick={() => navigate("support")}>Help Centre</button>
+              </div>
+            </footer>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+## 3. Create `src/modules/student/StudentDashboard.css`
+
+```
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --hca-navy: #092c60;
+  --hca-dark: #092653;
+  --hca-blue: #0866d7;
+  --hca-border: #dce7f5;
+  --hca-text: #102b55;
+  --hca-muted: #64748b;
+  --hca-bg: #f5f8fd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.hca-dashboard {
+  min-height: 100vh;
+  background: var(--hca-bg);
+  color: var(--hca-text);
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* HEADER */
+
+.hca-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 78px;
+  padding: 0 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #e4eaf2;
+  box-shadow: 0 2px 9px rgba(10, 35, 75, 0.04);
+}
+
+.hca-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 270px;
+}
+
+.hca-brand-icon {
+  width: 54px;
+  height: 54px;
+  color: var(--hca-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hca-brand h1 {
+  margin: 0;
+  color: var(--hca-navy);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.hca-brand p {
+  margin: 3px 0 0;
+  color: #52657e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hca-header-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.hca-search {
+  width: 230px;
+  height: 39px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #718198;
+  background: #f5f8fc;
+  border: 1px solid #e4eaf2;
+  border-radius: 8px;
+}
+
+.hca-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--hca-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.hca-header-dropdown {
+  position: relative;
+}
+
+.hca-notification-button {
+  position: relative;
+  width: 40px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--hca-navy);
+  cursor: pointer;
+}
+
+.hca-notification-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #e72e3c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.hca-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px;
+  background: transparent;
+  border: 0;
+  color: var(--hca-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-avatar {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5effc;
+  color: var(--hca-blue);
+  border: 2px solid #dce8f8;
+}
+
+.hca-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-profile-info strong {
+  font-size: 12px;
+}
+
+.hca-profile-info small {
+  color: var(--hca-muted);
+  font-size: 10px;
+}
+
+.hca-mobile-menu {
+  display: none;
+  background: transparent;
+  border: 0;
+  color: var(--hca-navy);
+  cursor: pointer;
+}
+
+/* DROPDOWNS */
+
+.hca-dropdown {
+  position: absolute;
+  top: 51px;
+  right: 0;
+  z-index: 100;
+  width: 340px;
+  padding: 10px;
+  border: 1px solid var(--hca-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(13, 39, 77, 0.16);
+}
+
+.hca-dropdown-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 7px 13px;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.hca-dropdown-heading div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-dropdown-heading strong {
+  font-size: 13px;
+}
+
+.hca-dropdown-heading small {
+  color: var(--hca-muted);
+  font-size: 11px;
+}
+
+.hca-dropdown-heading button {
+  color: var(--hca-blue);
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-dropdown-notification {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 7px;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #edf1f6;
+  cursor: pointer;
+}
+
+.hca-dropdown-notification > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-dropdown-notification strong {
+  font-size: 11px;
+}
+
+.hca-dropdown-notification small {
+  color: var(--hca-muted);
+  font-size: 10px;
+}
+
+.hca-unread-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hca-blue);
+}
+
+.hca-profile-dropdown {
+  width: 210px;
+  padding: 7px;
+}
+
+.hca-profile-dropdown button {
+  width: 100%;
+  padding: 11px 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--hca-text);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-profile-dropdown button:hover,
+.hca-dropdown-notification:hover {
+  background: #f5f8fd;
+}
+
+/* PAGE LAYOUT */
+
+.hca-layout {
+  display: flex;
+  min-height: calc(100vh - 78px);
+}
+
+.hca-sidebar {
+  position: sticky;
+  top: 78px;
+  width: 240px;
+  height: calc(100vh - 78px);
+  min-height: 600px;
+  padding: 25px 12px 15px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #092b5d 0%, #061f46 100%);
+  color: #fff;
+}
+
+.hca-sidebar-label {
+  padding: 0 13px;
+  margin: 2px 0 14px;
+  color: #91add0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.hca-sidebar-secondary {
+  margin-top: 25px;
+}
+
+.hca-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-nav-item {
+  min-height: 46px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 0;
+  border-radius: 9px;
+  color: #e9f1fc;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hca-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.hca-nav-item.active {
+  background: linear-gradient(100deg, #0875e8, #1761c6);
+  color: #fff;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.12);
+}
+
+.hca-nav-item span:nth-child(2) {
+  flex: 1;
+}
+
+.hca-nav-new {
+  color: #d5e7ff;
+  font-size: 9px;
+}
+
+.hca-sidebar-count {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ed3947;
+  color: #fff;
+  font-size: 10px;
+}
+
+.hca-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.hca-help-card {
+  padding: 15px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hca-help-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.hca-help-card strong {
+  font-size: 11px;
+}
+
+.hca-help-card p {
+  margin: 7px 0 11px;
+  color: #c4d4e8;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.hca-help-card button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-logout {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 12px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hca-logout:hover {
+  color: #ffb7b7;
+}
+
+/* MAIN CONTENT */
+
+.hca-main {
+  min-width: 0;
+  flex: 1;
+  padding: 0 24px 25px;
+}
+
+.hca-main-content {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+}
+
+/* HERO */
+
+.hca-hero {
+  position: relative;
+  min-height: 290px;
+  margin: 0 -24px;
+  padding: 35px 45px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: #fff;
+  background-color: #0a3671;
+  background-image:
+    linear-gradient(90deg, rgba(5, 35, 82, 0.97) 0%, rgba(5, 42, 91, 0.88) 35%, rgba(5, 42, 91, 0.05) 75%),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1800&q=85");
+  background-size: cover;
+  background-position: center 48%;
+}
+
+.hca-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(3, 27, 65, 0.12), transparent);
+  pointer-events: none;
+}
+
+.hca-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+}
+
+.hca-hero-eyebrow {
+  color: #fbc52e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.hca-hero h2 {
+  margin: 12px 0 10px;
+  color: #fff;
+  font-size: clamp(31px, 3.5vw, 48px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -1.8px;
+}
+
+.hca-hero-content p {
+  margin: 0 0 20px;
+  color: #f0f5ff;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.hca-hero-button {
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #092b5d;
+  background: #ffc400;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.hca-hero-button:hover {
+  background: #ffda54;
+  transform: translateY(-2px);
+}
+
+.hca-hero-tag {
+  position: absolute;
+  right: 25px;
+  bottom: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* QUICK ACTIONS */
+
+.hca-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 13px;
+  margin: 17px 0 20px;
+}
+
+.hca-quick-card {
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(12, 40, 78, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hca-quick-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(12, 40, 78, 0.16);
+}
+
+.hca-quick-card.blue {
+  background: linear-gradient(110deg, #0871df, #0757b9);
+}
+
+.hca-quick-card.green {
+  background: linear-gradient(110deg, #0a9a5d, #087b4c);
+}
+
+.hca-quick-card.purple {
+  background: linear-gradient(110deg, #8252d8, #6840b9);
+}
+
+.hca-quick-card.teal {
+  background: linear-gradient(110deg, #08a6a9, #078c98);
+}
+
+.hca-quick-card.orange {
+  background: linear-gradient(110deg, #f49b1c, #e98013);
+}
+
+.hca-quick-card.navy {
+  background: linear-gradient(110deg, #174c8b, #10396f);
+}
+
+.hca-quick-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hca-quick-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-quick-text strong {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.hca-quick-text small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 9px;
+}
+
+.hca-quick-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* CONTENT GRID */
+
+.hca-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(290px, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.hca-left-column,
+.hca-right-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hca-panel {
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--hca-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 7px rgba(16, 47, 91, 0.025);
+}
+
+.hca-panel-heading {
+  min-height: 30px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hca-panel-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--hca-navy);
+}
+
+.hca-panel-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.hca-text-link {
+  flex-shrink: 0;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #075fc7;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-text-link:hover {
+  color: #003d87;
+}
+
+/* ACADEMIC CARDS */
+
+.hca-academic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hca-stat-card {
+  min-width: 0;
+  min-height: 70px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+}
+
+.hca-stat-card > svg {
+  flex-shrink: 0;
+}
+
+.hca-stat-card > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hca-stat-card small {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hca-stat-card strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.stat-blue {
+  color: #fff;
+  background: linear-gradient(110deg, #15518f, #0d3972);
+}
+
+.stat-green {
+  color: #fff;
+  background: linear-gradient(110deg, #12a66c, #078452);
+}
+
+.stat-purple {
+  color: #fff;
+  background: linear-gradient(110deg, #7953d2, #6341b4);
+}
+
+.stat-light-blue {
+  color: #0753ac;
+  background: #d9eaff;
+}
+
+.stat-light-green {
+  color: #08784d;
+  background: #d4f5e4;
+}
+
+.stat-light-orange {
+  color: #a65c00;
+  background: #fff0d8;
+}
+
+/* EVENTS */
+
+.hca-event-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hca-event-row {
+  min-width: 0;
+  min-height: 55px;
+  padding: 7px 0;
+  display: grid;
+  grid-template-columns: 54px minmax(120px, 1fr) minmax(110px, 0.55fr) minmax(90px, 0.4fr);
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #e9eef5;
+}
+
+.hca-event-row:last-child {
+  border-bottom: 0;
+}
+
+.hca-event-date {
+  width: 48px;
+  height: 43px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #e6f0ff;
+  color: var(--hca-navy);
+}
+
+.hca-event-date small {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.hca-event-date strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.hca-event-name strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hca-event-time,
+.hca-event-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #526985;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* STUDENT SHORTCUTS */
+
+.hca-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.hca-shortcuts button {
+  min-height: 70px;
+  padding: 11px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #15518f;
+  background: #f4f8fe;
+  border: 1px solid #e5edf8;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-shortcuts button:hover {
+  background: #e7f1ff;
+  border-color: #b9d3f6;
+}
+
+/* NOTIFICATIONS */
+
+.hca-notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hca-notification-row {
+  min-width: 0;
+  padding: 12px 2px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid #eaf0f6;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hca-notification-row:hover {
+  background: #f8faff;
+}
+
+.hca-notification-row.read {
+  opacity: 0.65;
+}
+
+.hca-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-radius: 50%;
+}
+
+.hca-dot.blue {
+  background: #0867d5;
+}
+
+.hca-dot.green {
+  background: #07975b;
+}
+
+.hca-notification-message {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hca-notification-message strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hca-notification-message small {
+  color: var(--hca-muted);
+  font-size: 9px;
+}
+
+.hca-notification-time {
+  flex-shrink: 0;
+  color: var(--hca-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.hca-all-notifications {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px;
+  color: #0865c9;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* FEE SUMMARY */
+
+.hca-fee-balance {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #edf5ff, #f7faff);
+}
+
+.hca-fee-balance small {
+  color: #5d718c;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hca-fee-balance strong {
+  color: #103c76;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.hca-fee-balance span {
+  color: #8593a7;
+  font-size: 9px;
+}
+
+.hca-fee-progress {
+  margin: 14px 0;
+}
+
+.hca-fee-progress-label {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  color: #65758c;
+  font-size: 10px;
+}
+
+.hca-fee-progress-label strong {
+  color: #087d50;
+}
+
+.hca-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #e9eef5;
+}
+
+.hca-progress-value {
+  width: 75%;
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #07975d, #35c58b);
+}
+
+.hca-pay-button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #fff;
+  background: #0963c6;
+  border: 0;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hca-pay-button:hover {
+  background: #064d9d;
+}
+
+.hca-pay-button svg:last-child {
+  margin-left: auto;
+}
+
+/* PROMOTIONAL BANNER */
+
+.hca-promo-banner {
+  min-height: 175px;
+  padding: 19px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 9px;
+  color: #fff;
+  background-color: #073b83;
+  background-image:
+    linear-gradient(90deg, rgba(4, 40, 104, 0.97) 0%, rgba(5, 62, 133, 0.84) 52%, rgba(4, 45, 100, 0.1) 100%),
+    url("https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?auto=format&fit=crop&w=900&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+.hca-promo-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hca-promo-content > span {
+  color: #ffd04a;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.hca-promo-content h3 {
+  margin: 8px 0;
+  color: #fff;
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.hca-promo-content h3 b {
+  color: #ffd12d;
+}
+
+.hca-promo-content p {
+  margin: 0 0 12px;
+  color: #e7f1ff;
+  font-size: 9px;
+}
+
+.hca-promo-content button {
+  min-height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #092d60;
+  background: #ffc400;
+  border: 0;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* SUPPORT CARD */
+
+.hca-support-card {
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--hca-border);
+  border-radius: 9px;
+}
+
+.hca-support-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #e8f2ff;
+  color: #075fc2;
+}
+
+.hca-support-card strong {
+  font-size: 11px;
+}
+
+.hca-support-card p {
+  margin: 5px 0 7px;
+  color: var(--hca-muted);
+  font-size: 9px;
+}
+
+.hca-support-card button {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0864c9;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* FOOTER */
+
+.hca-footer {
+  margin-top: 20px;
+  padding: 17px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid #dfe8f3;
+  color: #718198;
+}
+
+.hca-footer > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hca-footer > div:first-child strong {
+  color: var(--hca-navy);
+  font-size: 10px;
+}
+
+.hca-footer > div:first-child span,
+.hca-footer p {
+  font-size: 9px;
+}
+
+.hca-footer p {
+  margin: 0;
+}
+
+.hca-footer-links {
+  display: flex;
+  gap: 13px;
+}
+
+.hca-footer-links button {
+  padding: 0;
+  color: #526985;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+/* MOBILE OVERLAY */
+
+.hca-sidebar-overlay {
+  display: none;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1250px) {
+  .hca-quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hca-content-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(270px, 1fr);
+  }
+
+  .hca-event-row {
+    grid-template-columns: 50px minmax(100px, 1fr) minmax(90px, 0.6fr);
+  }
+
+  .hca-event-location {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hca-sidebar {
+    position: fixed;
+    top: 78px;
+    left: 0;
+    z-index: 80;
+    height: calc(100vh - 78px);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+  }
+
+  .hca-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .hca-sidebar-overlay {
+    position: fixed;
+    inset: 78px 0 0;
+    z-index: 70;
+    display: block;
+    background: rgba(4, 19, 42, 0.48);
+    border: 0;
+  }
+
+  .hca-mobile-menu {
+    display: grid;
+    place-items: center;
+  }
+
+  .hca-brand {
+    min-width: 0;
+    margin-right: auto;
+  }
+
+  .hca-header-right {
+    gap: 10px;
+  }
+
+  .hca-search {
+    width: 170px;
+  }
+
+  .hca-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hca-right-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .hca-notifications-panel {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .hca-topbar {
+    height: 66px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .hca-brand {
+    gap: 6px;
+  }
+
+  .hca-brand-icon {
+    width: 37px;
+    height: 40px;
+  }
+
+  .hca-brand-icon svg {
+    width: 31px;
+  }
+
+  .hca-brand h1 {
+    font-size: 14px;
+  }
+
+  .hca-brand p {
+    font-size: 9px;
+  }
+
+  .hca-mobile-menu {
+    order: 3;
+    width: 34px;
+    height: 38px;
+  }
+
+  .hca-header-right {
+    margin-left: auto;
+  }
+
+  .hca-search {
+    display: none;
+  }
+
+  .hca-profile-info {
+    display: none;
+  }
+
+  .hca-profile-button {
+    gap: 3px;
+  }
+
+  .hca-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hca-profile-button > svg {
+    width: 13px;
+  }
+
+  .hca-dropdown {
+    position: fixed;
+    top: 60px;
+    right: 8px;
+    width: min(340px, calc(100vw - 16px));
+  }
+
+  .hca-profile-dropdown {
+    width: 210px;
+  }
+
+  .hca-layout {
+    min-height: calc(100vh - 66px);
+  }
+
+  .hca-sidebar {
+    top: 66px;
+    height: calc(100vh - 66px);
+    width: 265px;
+  }
+
+  .hca-sidebar-overlay {
+    inset: 66px 0 0;
+  }
+
+  .hca-main {
+    padding: 0 12px 20px;
+  }
+
+  .hca-hero {
+    min-height: 260px;
+    margin: 0 -12px;
+    padding: 27px 20px;
+    background-position: center;
+  }
+
+  .hca-hero h2 {
+    font-size: 34px;
+  }
+
+  .hca-hero-content p {
+    font-size: 13px;
+  }
+
+  .hca-hero-button {
+    min-height: 40px;
+    font-size: 10px;
+  }
+
+  .hca-hero-tag {
+    right: 13px;
+    bottom: 10px;
+    font-size: 8px;
+  }
+
+  .hca-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .hca-quick-card {
+    min-height: 66px;
+    padding: 9px;
+  }
+
+  .hca-quick-icon {
+    width: 31px;
+  }
+
+  .hca-quick-icon svg {
+    width: 24px;
+  }
+
+  .hca-quick-text strong {
+    font-size: 10px;
+  }
+
+  .hca-quick-text small {
+    font-size: 8px;
+  }
+
+  .hca-content-grid {
+    gap: 12px;
+  }
+
+  .hca-left-column,
+  .hca-right-column {
+    gap: 12px;
+  }
+
+  .hca-right-column {
+    display: flex;
+  }
+
+  .hca-panel {
+    padding: 11px;
+  }
+
+  .hca-panel-title h3 {
+    font-size: 12px;
+  }
+
+  .hca-panel-title svg {
+    width: 19px;
+  }
+
+  .hca-text-link {
+    font-size: 9px;
+  }
+
+  .hca-academic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hca-stat-card {
+    min-height: 65px;
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .hca-stat-card > svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .hca-stat-card small {
+    font-size: 8px;
+  }
+
+  .hca-stat-card strong {
+    font-size: 10px;
+  }
+
+  .hca-event-row {
+    grid-template-columns: 45px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px 0;
+  }
+
+  .hca-event-name strong {
+    font-size: 9px;
+  }
+
+  .hca-event-time {
+    grid-column: 2;
+    font-size: 8px;
+  }
+
+  .hca-event-location {
+    display: none;
+  }
+
+  .hca-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hca-shortcuts button {
+    min-height: 65px;
+  }
+
+  .hca-notification-row {
+    gap: 8px;
+  }
+
+  .hca-notification-message strong {
+    font-size: 9px;
+  }
+
+  .hca-notification-time {
+    font-size: 8px;
+  }
+
+  .hca-promo-banner {
+    min-height: 160px;
+  }
+
+  .hca-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+  }
+
+  .hca-footer p {
+    order: 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hca-dashboard *,
+  .hca-dashboard *::before,
+  .hca-dashboard *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+## 4. Add the dashboard to your application
+
+For example, in `src/App.tsx`:
+
+```
+import StudentDashboard from "./modules/student/StudentDashboard";
+
+function App() {
+  return (
+    <StudentDashboard
+      studentName="Amina Wanjiku"
+      registrationNumber="HCA/STU/2026/001"
+      programme="BSc. Computer Science"
+      academicYear="2026"
+      semester="Semester 1"
+      registeredCourses={6}
+      attendance={95}
+      gpa={3.75}
+      onNavigate={(page) => {
+        console.log("Navigate to:", page);
+      }}
+      onLogout={() => {
+        window.location.href = "/login";
+      }}
+    />
+  );
+}
+
+export default App;
+```
+
+## 5. Expected project structure
+
+```
+src/
+├── modules/
+│   └── student/
+│       ├── StudentDashboard.tsx
+│       └── StudentDashboard.css
+├── App.tsx
+└── main.tsx
+```
+
+## 6. Important integration notes
+
+The current code provides the dashboard interface and local interactions. The following are demonstration data and still need backend integration:
+
+| Dashboard feature   | Required integration                     |
+| ------------------- | ---------------------------------------- |
+| Student profile     | `GET /api/students/me`                   |
+| Academic overview   | `GET /api/students/me/academic-summary`  |
+| Timetable           | `GET /api/students/me/timetable`         |
+| Course registration | `/api/academic/unit-enrollments`         |
+| Results             | `GET /api/students/me/results`           |
+| Fee balance         | `GET /api/finance/students/me/statement` |
+| Notifications       | `/api/notifications`                     |
+| Upcoming events     | `/api/events`                            |
+| Student documents   | `/api/documents`                         |
+| Student support     | `/api/support/tickets`                   |
+
+Important: The fee balance, GPA, attendance, notifications and events currently contain sample values. They must be replaced with authenticated API data before deployment. The navigation callback is ready to connect to your React Router routes.
+
+The next development step should be connecting this dashboard to the actual student account, so each student sees their own registration number, programme, units, attendance, results, fee statement and timetable rather than demonstration information.

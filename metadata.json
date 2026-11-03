@@ -1,0 +1,6 @@
+{
+  "name": "HI-TECH College Academic & Certification Platform",
+  "description": "Integrated Academic ERP, Central Registration Generator, and Multi-Role Portals for HI-TECH College.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
