@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FileText,
   Award,
@@ -9,20 +9,37 @@ import {
   ShieldCheck,
   Building2,
   FileCheck,
-  Download,
-  Plus,
+  ClipboardCheck,
 } from "lucide-react";
-import {
-  INITIAL_STUDENT_PROFILE,
-  INITIAL_TRANSCRIPTS,
-} from "../../data/mockCollegeData";
+import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
 import { registrationService } from "../../services/registrationService";
-import { TranscriptRecord } from "../../types";
+import { studentPortalService } from "../../services/studentPortalService";
+import { PortalRole, TranscriptRecord } from "../../types";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 
-export default function RegistrarPortal() {
-  const [activeTab, setActiveTab] = useState<"students" | "transcripts" | "certificates" | "verification">("students");
-  const [transcripts, setTranscripts] = useState<TranscriptRecord[]>(INITIAL_TRANSCRIPTS);
-  const [searchStudent, setSearchStudent] = useState("");
+interface RegistrarPortalProps {
+  onSwitchPortal?: (role: PortalRole) => void;
+}
+
+export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps) {
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    "students" | "requests" | "transcripts" | "certificates" | "verification"
+  >("registrar", "students");
+  const [transcripts, setTranscripts] = useState<TranscriptRecord[]>(
+    () => collegeErpService.getState().transcripts
+  );
+  const [, setSyncTick] = useState(0);
+  const [regNotice, setRegNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    return subscribeErpSync(() => {
+      setTranscripts([...collegeErpService.getState().transcripts]);
+      setSyncTick((n) => n + 1);
+    });
+  }, []);
+
+  const studentState = studentPortalService.getState();
+  const enrolledStudents = registrationService.getAllIssuances({ recordType: "STU" });
 
   // Certificate Issuance State
   const [certRecipient, setCertRecipient] = useState("Faith Chebet");
@@ -53,23 +70,15 @@ export default function RegistrarPortal() {
   };
 
   const handleVerifyDoc = () => {
-    const clean = docVerifyInput.trim().toUpperCase();
-    const foundTrx = transcripts.find((t) => t.issuanceReference.toUpperCase() === clean);
-    if (foundTrx) {
+    const outcome = collegeErpService.verifyCredentialAnywhere(docVerifyInput);
+    if (outcome.valid) {
       setVerifyOutcome({
         valid: true,
-        type: "Official Academic Transcript",
-        record: foundTrx,
-      });
-      return;
-    }
-
-    const foundReg = registrationService.lookupIssuance(clean);
-    if (foundReg) {
-      setVerifyOutcome({
-        valid: true,
-        type: `${foundReg.recordType} Registration Credential`,
-        record: foundReg,
+        type: outcome.type,
+        holder: outcome.holder,
+        reference: outcome.reference,
+        detail: outcome.detail,
+        status: outcome.status,
       });
       return;
     }
@@ -95,11 +104,47 @@ export default function RegistrarPortal() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-blue-950/60 border border-blue-400/30 px-3 py-1.5 rounded-xl text-xs">
-          <ShieldCheck size={16} className="text-amber-400" />
-          <span>Chief Registrar: <strong>Dr. Kiprop Chemweno (HCA/STAFF/2026/001)</strong></span>
+        <div className="flex flex-wrap items-center gap-2">
+          {onSwitchPortal && (
+            <>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("admissions")}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Admissions Queue
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("generator")}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Central Reg Ledger
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("student")}
+                className="px-3 py-1.5 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl"
+              >
+                Student Portal
+              </button>
+            </>
+          )}
+          <div className="flex items-center gap-2 bg-blue-950/60 border border-blue-400/30 px-3 py-1.5 rounded-xl text-xs">
+            <ShieldCheck size={16} className="text-amber-400" />
+            <span>Chief Registrar: <strong>Dr. Kiprop Chemweno</strong></span>
+          </div>
         </div>
       </div>
+
+      {regNotice && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3">
+          <span>{regNotice}</span>
+          <button type="button" onClick={() => setRegNotice(null)} className="underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* TABS */}
       <div className="flex items-center gap-2 border-b border-slate-200">
@@ -111,7 +156,17 @@ export default function RegistrarPortal() {
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Users size={16} /> Official Student Records
+          <Users size={16} /> Enrolled Registry ({enrolledStudents.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 ${
+            activeTab === "requests"
+              ? "border-blue-600 text-blue-800"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <ClipboardCheck size={16} /> Student Requests ({studentState.unitChanges.length + studentState.defermentRequests.length})
         </button>
         <button
           onClick={() => setActiveTab("transcripts")}
@@ -149,7 +204,7 @@ export default function RegistrarPortal() {
       {activeTab === "students" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-900">Enrolled Student Registry</h3>
+            <h3 className="text-sm font-bold text-slate-900">Enrolled Student Registry (Synced with Admissions &amp; Student Portal)</h3>
             <span className="text-xs text-slate-500">Academic Year 2026</span>
           </div>
 
@@ -160,27 +215,135 @@ export default function RegistrarPortal() {
                 <th className="p-4">Student Name</th>
                 <th className="p-4">Programme</th>
                 <th className="p-4">Campus</th>
-                <th className="p-4">Attendance</th>
-                <th className="p-4">Cumulative GPA</th>
+                <th className="p-4">Nominal Roll / Stats</th>
                 <th className="p-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              <tr className="hover:bg-slate-50">
-                <td className="p-4 font-mono font-bold text-blue-900">{INITIAL_STUDENT_PROFILE.registrationNumber}</td>
-                <td className="p-4 font-bold text-slate-900">{INITIAL_STUDENT_PROFILE.fullName}</td>
-                <td className="p-4 text-slate-800">{INITIAL_STUDENT_PROFILE.programme}</td>
-                <td className="p-4 text-slate-600">{INITIAL_STUDENT_PROFILE.campus}</td>
-                <td className="p-4 font-bold text-emerald-700">{INITIAL_STUDENT_PROFILE.attendanceRate}%</td>
-                <td className="p-4 font-mono font-bold text-amber-700">{INITIAL_STUDENT_PROFILE.gpa.toFixed(2)}</td>
-                <td className="p-4">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    {INITIAL_STUDENT_PROFILE.status}
-                  </span>
-                </td>
-              </tr>
+              {enrolledStudents.map((stu) => {
+                const isPrimary =
+                  stu.registrationNumber.toUpperCase() ===
+                  studentState.profile.registrationNumber.toUpperCase();
+                return (
+                  <tr key={stu.id} className="hover:bg-slate-50">
+                    <td className="p-4 font-mono font-bold text-blue-900">{stu.registrationNumber}</td>
+                    <td className="p-4 font-bold text-slate-900">{stu.recipientName}</td>
+                    <td className="p-4 text-slate-800">{stu.programmeOrRole}</td>
+                    <td className="p-4 text-slate-600">{stu.campus}</td>
+                    <td className="p-4 font-mono text-slate-700">
+                      {isPrimary
+                        ? `${studentState.units.length} Units · ${studentState.profile.attendanceRate}% Att. · GPA ${studentState.profile.gpa.toFixed(2)}`
+                        : `${stu.issuedBy}`}
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        {isPrimary ? studentState.profile.status : stu.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* STUDENT REQUESTS APPROVALS TAB */}
+      {activeTab === "requests" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900">
+              Unit Add / Drop / Swap Requests ({studentState.unitChanges.length})
+            </h3>
+            {studentState.unitChanges.length === 0 ? (
+              <p className="text-slate-500">
+                No unit change requests submitted yet from the Student Portal.
+              </p>
+            ) : (
+              studentState.unitChanges.map((req) => (
+                <div key={req.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="flex justify-between font-mono">
+                    <strong className="text-[#092c60]">{req.action} · {req.unitCode}</strong>
+                    <span className="font-bold text-amber-700">{req.status}</span>
+                  </div>
+                  <p className="text-slate-600">{req.reason}</p>
+                  {req.status === "PENDING_REGISTRAR" && (
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          studentPortalService.reviewUnitChangeRequest(req.id, "APPROVED");
+                          setRegNotice(`Approved ${req.action} ${req.unitCode} and updated student timetable.`);
+                          setSyncTick((n) => n + 1);
+                        }}
+                        className="px-3 py-1.5 bg-emerald-600 text-white font-semibold rounded-lg"
+                      >
+                        Approve &amp; Update Units
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          studentPortalService.reviewUnitChangeRequest(req.id, "REJECTED");
+                          setRegNotice(`Rejected ${req.action} ${req.unitCode}.`);
+                          setSyncTick((n) => n + 1);
+                        }}
+                        className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 font-semibold rounded-lg"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900">
+              Academic Leave, Deferment &amp; Transfers ({studentState.defermentRequests.length})
+            </h3>
+            {studentState.defermentRequests.length === 0 ? (
+              <p className="text-slate-500">
+                No academic leave or deferment requests submitted yet from the Student Portal.
+              </p>
+            ) : (
+              studentState.defermentRequests.map((req) => (
+                <div key={req.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="flex justify-between font-mono">
+                    <strong className="text-[#092c60]">{req.type.replace("_", " ")} · {req.targetSemester}</strong>
+                    <span className="font-bold text-amber-700">{req.status}</span>
+                  </div>
+                  <p className="text-slate-600">{req.reason}</p>
+                  {req.status === "SUBMITTED_TO_DEAN" && (
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          studentPortalService.reviewDefermentRequest(req.id, "APPROVED");
+                          setRegNotice(`Approved ${req.type} for ${req.targetSemester}.`);
+                          setSyncTick((n) => n + 1);
+                        }}
+                        className="px-3 py-1.5 bg-emerald-600 text-white font-semibold rounded-lg"
+                      >
+                        Approve Request
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          studentPortalService.reviewDefermentRequest(req.id, "REJECTED");
+                          setRegNotice(`Declined ${req.type}.`);
+                          setSyncTick((n) => n + 1);
+                        }}
+                        className="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 font-semibold rounded-lg"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
@@ -341,9 +504,10 @@ export default function RegistrarPortal() {
                   </div>
                   <div className="text-xs space-y-1 pt-1 border-t border-emerald-200">
                     <div>Document Type: <strong>{verifyOutcome.type}</strong></div>
-                    <div>Holder: <strong>{verifyOutcome.record.studentName || verifyOutcome.record.recipientName}</strong></div>
-                    <div>Reference: <span className="font-mono font-bold">{verifyOutcome.record.issuanceReference || verifyOutcome.record.registrationNumber}</span></div>
-                    <div>Status: <span className="font-bold text-emerald-700">{verifyOutcome.record.status}</span></div>
+                    <div>Holder: <strong>{verifyOutcome.holder}</strong></div>
+                    <div>Reference: <span className="font-mono font-bold">{verifyOutcome.reference}</span></div>
+                    <div>Detail: <span>{verifyOutcome.detail}</span></div>
+                    <div>Status: <span className="font-bold text-emerald-700">{verifyOutcome.status}</span></div>
                   </div>
                 </>
               ) : (

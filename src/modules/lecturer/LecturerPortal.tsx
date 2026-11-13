@@ -20,6 +20,7 @@ import {
   X,
   GraduationCap,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 
 import "./lecturer.css";
@@ -68,7 +69,11 @@ export type LecturerTab =
   | "questions"
   | "create_question";
 
-export default function LecturerPortal() {
+interface LecturerPortalProps {
+  onLogout?: () => void;
+}
+
+export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
   const [activeTab, setActiveTab] = useState<LecturerTab>("dashboard");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("asg-csc301");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("stu-001");
@@ -232,12 +237,22 @@ export default function LecturerPortal() {
         {/* LECTURER PROFILE FOOTER */}
         <div className="lecturer-footer-profile">
           <div className="profile-avatar-sm">PO</div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <strong className="text-white text-xs block truncate">Dr. Peter Otieno</strong>
             <small className="text-amber-300 font-mono text-[10px] block truncate">
               HCA/LECT/2026/001
             </small>
           </div>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Sign Out to Website"
+              className="p-1.5 rounded-lg text-blue-200 hover:text-red-200 hover:bg-white/10 transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
       </aside>
 

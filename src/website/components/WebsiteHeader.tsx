@@ -18,6 +18,13 @@ import {
   HelpCircle,
   FileCheck2,
   Headphones,
+  BedDouble,
+  Briefcase,
+  Vote,
+  Bell,
+  BarChart3,
+  LifeBuoy,
+  QrCode,
 } from "lucide-react";
 import { COLLEGE_INFO } from "../../data/college";
 
@@ -200,6 +207,113 @@ export default function WebsiteHeader({
                     <div>
                       <div className="font-semibold text-blue-900">Chatbot &amp; AI Service Desk</div>
                       <div className="text-[10px] text-slate-500">Modules 36-39 KB &amp; Escalations</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("ai-governance");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 border-t border-slate-100"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                    <div>
+                      <div className="font-semibold text-indigo-900">AI Governance Centre</div>
+                      <div className="text-[10px] text-slate-500">Modules 40-42 Quotas, Indexing &amp; Audit</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("ai-support");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 border-t border-slate-100"
+                  >
+                    <LifeBuoy className="w-4 h-4 text-[#d92332]" />
+                    <div>
+                      <div className="font-semibold text-slate-900">AI Support &amp; Help Centre</div>
+                      <div className="text-[10px] text-slate-500">Module 43 Role Assistants &amp; Tickets</div>
+                    </div>
+                  </button>
+                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-t border-slate-100 bg-slate-50">
+                    Campus Operations &amp; Compliance
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("hostels");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <BedDouble className="w-4 h-4 text-teal-600" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Hostels &amp; Student Welfare</div>
+                      <div className="text-[10px] text-slate-500">Beds, Stays, Billing &amp; Support</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("hr");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Briefcase className="w-4 h-4 text-blue-700" />
+                    <div>
+                      <div className="font-semibold text-slate-800">HR &amp; Staff Management</div>
+                      <div className="text-[10px] text-slate-500">Contracts, Leave &amp; Attendance</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("community");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Vote className="w-4 h-4 text-red-600" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Elections, Clubs &amp; Alumni</div>
+                      <div className="text-[10px] text-slate-500">Secret Ballots &amp; Campus Life</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("engagement");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Bell className="w-4 h-4 text-amber-600" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Notifications, Guardians &amp; Careers</div>
+                      <div className="text-[10px] text-slate-500">Alerts, Parent Consent &amp; Internships</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("quality-reports");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <BarChart3 className="w-4 h-4 text-emerald-700" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Docs, TVETA Quality &amp; Reports</div>
+                      <div className="text-[10px] text-slate-500">Accreditation, Vault &amp; CSV Analytics</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("campus-services");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <QrCode className="w-4 h-4 text-[#153b70]" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Credentials, CRM &amp; Appointments</div>
+                      <div className="text-[10px] text-slate-500">QR Verify, Enquiry Funnel &amp; Compliance</div>
                     </div>
                   </button>
                 </div>

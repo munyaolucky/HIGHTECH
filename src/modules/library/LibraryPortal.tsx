@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BookOpen,
   Search,
@@ -17,20 +17,33 @@ import {
   Eye,
   Layers,
 } from "lucide-react";
-import {
-  INITIAL_LIBRARY_BOOKS,
-  INITIAL_BOOK_LOANS,
-  INITIAL_DIGITAL_RESOURCES,
-} from "../../data/mockCollegeData";
-import { LibraryBook, BookLoan, DigitalResource } from "../../types";
+import { INITIAL_DIGITAL_RESOURCES } from "../../data/mockCollegeData";
+import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
+import { LibraryBook, BookLoan, DigitalResource, PortalRole } from "../../types";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 
-export default function LibraryPortal() {
-  const [activeTab, setActiveTab] = useState<"catalogue" | "circulation" | "digital" | "fines">("catalogue");
-  const [books, setBooks] = useState<LibraryBook[]>(INITIAL_LIBRARY_BOOKS);
-  const [loans, setLoans] = useState<BookLoan[]>(INITIAL_BOOK_LOANS);
+interface LibraryPortalProps {
+  onSwitchPortal?: (role: PortalRole) => void;
+}
+
+export default function LibraryPortal({ onSwitchPortal }: LibraryPortalProps) {
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    "catalogue" | "circulation" | "digital" | "fines"
+  >("library", "catalogue");
+  const [books, setBooks] = useState<LibraryBook[]>(() => collegeErpService.getState().books);
+  const [loans, setLoans] = useState<BookLoan[]>(() => collegeErpService.getState().loans);
   const [resources] = useState<DigitalResource[]>(INITIAL_DIGITAL_RESOURCES);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [libraryBanner, setLibraryBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    return subscribeErpSync(() => {
+      const st = collegeErpService.getState();
+      setBooks([...st.books]);
+      setLoans([...st.loans]);
+    });
+  }, []);
 
   // Issue modal / form state
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -44,47 +57,34 @@ export default function LibraryPortal() {
 
   const handleIssueBook = (e: React.FormEvent) => {
     e.preventDefault();
-    const targetBook = books.find((b) => b.barcode === issueBarcode);
-    if (!targetBook || targetBook.availableCopies <= 0) {
-      alert("Book copy is not currently available for checkout.");
+    const res = collegeErpService.issueOrReserveBook({
+      barcode: issueBarcode,
+      studentRegNo: issueStudentReg,
+      studentName: issueStudentName,
+    });
+    if (!res.ok || !res.loan) {
+      setLibraryBanner(res.error ?? "Book copy is not currently available for checkout.");
       return;
     }
 
-    const newLoan: BookLoan = {
-      id: `loan-${Date.now()}`,
-      barcode: issueBarcode,
-      bookTitle: targetBook.title,
-      borrowerName: issueStudentName,
-      borrowerRegNo: issueStudentReg,
-      borrowDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
-      status: "BORROWED",
-      fineAmount: 0,
-    };
-
-    setLoans([newLoan, ...loans]);
-    setBooks(
-      books.map((b) =>
-        b.barcode === issueBarcode ? { ...b, availableCopies: b.availableCopies - 1 } : b
-      )
-    );
-    setIssueSuccess(`Successfully issued "${targetBook.title}" to ${issueStudentName} (${issueStudentReg}). Due in 14 days.`);
+    const st = collegeErpService.getState();
+    setLoans([...st.loans]);
+    setBooks([...st.books]);
+    setIssueSuccess(`Successfully issued "${res.loan.bookTitle}" to ${issueStudentName} (${issueStudentReg}). Due in 14 days.`);
     setTimeout(() => {
       setShowIssueModal(false);
       setIssueSuccess(null);
-    }, 2500);
+    }, 2000);
   };
 
-  const handleReturnBook = (loanId: string, barcode: string) => {
-    setLoans(
-      loans.map((l) =>
-        l.id === loanId ? { ...l, status: "RETURNED", returnDate: new Date().toISOString().split("T")[0] } : l
-      )
-    );
-    setBooks(
-      books.map((b) => (b.barcode === barcode ? { ...b, availableCopies: b.availableCopies + 1 } : b))
-    );
-    alert("Book returned and inventory updated successfully.");
+  const handleReturnBook = (loanId: string) => {
+    const res = collegeErpService.returnLibraryBook(loanId);
+    if (res.ok) {
+      const st = collegeErpService.getState();
+      setLoans([...st.loans]);
+      setBooks([...st.books]);
+      setLibraryBanner("Book returned cleanly and inventory updated across Student & Library portals.");
+    }
   };
 
   const filteredBooks = books.filter((b) => {
@@ -112,7 +112,16 @@ export default function LibraryPortal() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {onSwitchPortal && (
+            <button
+              type="button"
+              onClick={() => onSwitchPortal("student")}
+              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+            >
+              Student Library View
+            </button>
+          )}
           <button
             onClick={() => setShowIssueModal(true)}
             className="px-4 py-2 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl flex items-center gap-2 shadow"
@@ -121,6 +130,15 @@ export default function LibraryPortal() {
           </button>
         </div>
       </div>
+
+      {libraryBanner && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3">
+          <span>{libraryBanner}</span>
+          <button type="button" onClick={() => setLibraryBanner(null)} className="underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* TABS */}
       <div className="flex items-center gap-2 border-b border-slate-200">
@@ -277,7 +295,7 @@ export default function LibraryPortal() {
                   <td className="p-4 text-right">
                     {loan.status === "BORROWED" && (
                       <button
-                        onClick={() => handleReturnBook(loan.id, loan.barcode)}
+                        onClick={() => handleReturnBook(loan.id)}
                         className="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded"
                       >
                         Return Copy
@@ -437,7 +455,10 @@ export default function LibraryPortal() {
 
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => alert(`Downloading verified copy of ${readingResource.title}`)}
+                onClick={() => {
+                  setReadingResource(null);
+                  setLibraryBanner(`Downloaded verified PDF resource: "${readingResource.title}"`);
+                }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-2"
               >
                 <Download size={15} /> Download PDF ({readingResource.fileSize})

@@ -42,11 +42,12 @@ import {
   UserRoleItem,
 } from "../../data/masterFeatureCatalogue";
 import { COLLEGE_INFO } from "../../data/college";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 
 export default function MasterFeatureCataloguePortal() {
-  const [activeTab, setActiveTab] = useState<
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
     "modules" | "questions63" | "rbac" | "phases" | "budget" | "print_view"
-  >("modules");
+  >("catalogue", "modules");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPart, setSelectedPart] = useState<string>("ALL");
   const [expandedSectionId, setExpandedSectionId] = useState<number | null>(1);

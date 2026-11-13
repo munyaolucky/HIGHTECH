@@ -19,6 +19,13 @@ import {
   UserCheck,
   Globe,
   Headphones,
+  BedDouble,
+  Briefcase,
+  Vote,
+  Bell,
+  BarChart3,
+  LifeBuoy,
+  QrCode,
 } from "lucide-react";
 import StudentDashboard from "./modules/student/StudentDashboard";
 import RegistrationGeneratorPortal from "./components/RegistrationGeneratorPortal";
@@ -30,7 +37,18 @@ import FinancePortal from "./modules/finance/FinancePortal";
 import LecturerPortal from "./modules/lecturer/LecturerPortal";
 import MasterFeatureCataloguePortal from "./modules/catalogue/MasterFeatureCataloguePortal";
 import ChatbotAdminPortal from "./modules/chatbot/ChatbotAdminPortal";
+import AIGovernancePortal from "./modules/ai-governance/AIGovernancePortal";
+import HostelsServicesPortal from "./modules/hostels/HostelsServicesPortal";
+import HRStaffPortal from "./modules/hr/HRStaffPortal";
+import ElectionsCommunityPortal from "./modules/community/ElectionsCommunityPortal";
+import EngagementHubPortal from "./modules/engagement/EngagementHubPortal";
+import QualityReportsPortal from "./modules/quality/QualityReportsPortal";
+import AISupportCentrePortal from "./modules/ai-support/AISupportCentrePortal";
+import CampusServicesPortal from "./modules/campus-services/CampusServicesPortal";
 import PublicWebsite from "./website/PublicWebsite";
+import UserPortalShell from "./components/UserPortalShell";
+import { PortalShellProvider } from "./context/PortalShellContext";
+import { getPortalShellConfig, ShellRoleKey } from "./config/portalShellConfigs";
 import { PortalRole } from "./types";
 
 export default function App() {
@@ -58,6 +76,13 @@ export default function App() {
       badge: "Mod 36-39",
       icon: Headphones,
       description: "Knowledge Base, Escalations, Analytics & Controlled RAG Desk",
+    },
+    {
+      id: "ai-governance" as PortalRole,
+      label: "AI Governance Centre",
+      badge: "Mod 40-42",
+      icon: ShieldCheck,
+      description: "AI Quotas, Prompt Rollback, Indexing Queue, Performance & Alerts",
     },
     {
       id: "student" as PortalRole,
@@ -115,10 +140,106 @@ export default function App() {
       icon: Users,
       description: "Applications, Offer Letters & Student Conversion",
     },
+    {
+      id: "hostels" as PortalRole,
+      label: "Hostels & Welfare",
+      badge: "Campus Ops",
+      icon: BedDouble,
+      description: "Residence Inventory, Bed Allocations, Billing & Sensitive Cases",
+    },
+    {
+      id: "hr" as PortalRole,
+      label: "HR & Staff",
+      badge: "People Ops",
+      icon: Briefcase,
+      description: "Staff Registry, Independent Contracts, Leave, Attendance & Workloads",
+    },
+    {
+      id: "community" as PortalRole,
+      label: "Elections & Community",
+      badge: "Secret Ballot",
+      icon: Vote,
+      description: "Secret-Ballot SRC Elections, Clubs, Events, Volunteering & Alumni",
+    },
+    {
+      id: "engagement" as PortalRole,
+      label: "Notices, Guardians & Careers",
+      badge: "Stakeholders",
+      icon: Bell,
+      description: "In-App Inbox, Outbox, Parent Consent Portal & Placements",
+    },
+    {
+      id: "quality-reports" as PortalRole,
+      label: "Docs, Quality & Reports",
+      badge: "TVETA / CSV",
+      icon: BarChart3,
+      description: "Document Vault, TVETA Accreditation & Multi-Currency CSV Exports",
+    },
+    {
+      id: "ai-support" as PortalRole,
+      label: "AI Support & Help Centre",
+      badge: "Module 43",
+      icon: LifeBuoy,
+      description: "7-Role AI Assistants, PII Redaction & Help Desk Tickets",
+    },
+    {
+      id: "campus-services" as PortalRole,
+      label: "Credentials, CRM & Services",
+      badge: "Campus Suite",
+      icon: QrCode,
+      description: "QR Credential Verify, Admissions CRM Pipeline, Appointments & Compliance",
+    },
   ];
 
+  const primaryQuickIds: PortalRole[] = [
+    "website",
+    "catalogue",
+    "student",
+    "hostels",
+    "hr",
+    "quality-reports",
+  ];
+
+  const renderShellPortalBody = (role: ShellRoleKey) => {
+    switch (role) {
+      case "catalogue":
+        return <MasterFeatureCataloguePortal />;
+      case "chatbot-admin":
+        return <ChatbotAdminPortal />;
+      case "ai-governance":
+        return <AIGovernancePortal />;
+      case "generator":
+        return <RegistrationGeneratorPortal />;
+      case "registrar":
+        return <RegistrarPortal onSwitchPortal={(r) => setCurrentRole(r)} />;
+      case "finance":
+        return <FinancePortal onSwitchPortal={(r) => setCurrentRole(r)} />;
+      case "library":
+        return <LibraryPortal onSwitchPortal={(r) => setCurrentRole(r)} />;
+      case "examination":
+        return <ExaminationPortal />;
+      case "admissions":
+        return <AdmissionsPortal onSwitchPortal={(r) => setCurrentRole(r)} />;
+      case "hostels":
+        return <HostelsServicesPortal />;
+      case "hr":
+        return <HRStaffPortal />;
+      case "community":
+        return <ElectionsCommunityPortal />;
+      case "engagement":
+        return <EngagementHubPortal />;
+      case "quality-reports":
+        return <QualityReportsPortal />;
+      case "ai-support":
+        return <AISupportCentrePortal />;
+      case "campus-services":
+        return <CampusServicesPortal />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f5f8fd] text-[#102b55] flex flex-col font-sans">
+    <PortalShellProvider>
+      <div className="min-h-screen bg-[#f5f8fd] text-[#102b55] flex flex-col font-sans">
       {/* Top Global Role Navigation Bar */}
       <nav className="bg-[#061d40] text-white border-b border-blue-900/60 sticky top-0 z-50 px-4 sm:px-6 py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
@@ -142,35 +263,36 @@ export default function App() {
             </div>
           </div>
 
-          {/* Desktop Portal Switcher Pills */}
-          <div className="hidden xl:flex items-center gap-1.5 bg-black/20 p-1 rounded-xl border border-white/10">
-            {portals.map((p) => {
-              const Icon = p.icon;
-              const isActive = currentRole === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setCurrentRole(p.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                    isActive
-                      ? "bg-[#0875e8] text-white shadow-md"
-                      : "text-blue-200 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{p.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Primary Desktop Quick-Jump Pills + Full 17-Portal Switcher */}
+          <div className="flex items-center gap-2">
+            <div className="hidden xl:flex items-center gap-1 bg-black/20 p-1 rounded-xl border border-white/10">
+              {portals
+                .filter((p) => primaryQuickIds.includes(p.id))
+                .map((p) => {
+                  const Icon = p.icon;
+                  const isActive = currentRole === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setCurrentRole(p.id)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                        isActive
+                          ? "bg-[#0875e8] text-white shadow-md"
+                          : "text-blue-200 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span>{p.label}</span>
+                    </button>
+                  );
+                })}
+            </div>
 
-          {/* Dropdown for Medium / Mobile */}
-          <div className="xl:hidden flex items-center gap-2">
             <select
-              aria-label="Select administrative portal"
+              aria-label="Select institutional portal"
               value={currentRole}
               onChange={(e) => setCurrentRole(e.target.value as PortalRole)}
-              className="bg-[#092c60] border border-blue-400/40 text-xs font-bold text-white px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+              className="bg-[#092c60] border border-blue-400/40 text-xs font-bold text-white px-3 py-1.5 rounded-lg outline-none cursor-pointer max-w-[230px]"
             >
               {portals.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -184,72 +306,29 @@ export default function App() {
 
       {/* RENDER CURRENT ACTIVE PORTAL */}
       <div className="flex-1">
-        {currentRole === "website" && (
+        {currentRole === "website" ? (
           <PublicWebsite
             onSwitchToERP={(role) => setCurrentRole(role as PortalRole)}
             onLaunchStudentDashboard={() => setCurrentRole("student")}
           />
-        )}
-
-        {currentRole === "catalogue" && (
-          <MasterFeatureCataloguePortal />
-        )}
-
-        {currentRole === "chatbot-admin" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <ChatbotAdminPortal />
-          </div>
-        )}
-
-        {currentRole === "student" && (
+        ) : currentRole === "student" ? (
           <StudentDashboard
             onSwitchPortal={(role) => setCurrentRole(role as PortalRole)}
             onLogout={() => setCurrentRole("website")}
           />
-        )}
-
-        {currentRole === "generator" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <RegistrationGeneratorPortal />
-          </div>
-        )}
-
-        {currentRole === "lecturer" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <LecturerPortal />
-          </div>
-        )}
-
-        {currentRole === "registrar" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <RegistrarPortal />
-          </div>
-        )}
-
-        {currentRole === "finance" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <FinancePortal />
-          </div>
-        )}
-
-        {currentRole === "library" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <LibraryPortal />
-          </div>
-        )}
-
-        {currentRole === "examination" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <ExaminationPortal />
-          </div>
-        )}
-
-        {currentRole === "admissions" && (
-          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-            <AdmissionsPortal />
-          </div>
+        ) : currentRole === "lecturer" ? (
+          <LecturerPortal onLogout={() => setCurrentRole("website")} />
+        ) : (
+          <UserPortalShell
+            config={getPortalShellConfig(currentRole as ShellRoleKey)}
+            onSwitchPortal={(role) => setCurrentRole(role)}
+            onLogout={() => setCurrentRole("website")}
+          >
+            {renderShellPortalBody(currentRole as ShellRoleKey)}
+          </UserPortalShell>
         )}
       </div>
     </div>
+    </PortalShellProvider>
   );
 }

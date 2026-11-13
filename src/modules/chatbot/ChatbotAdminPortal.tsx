@@ -63,9 +63,14 @@ import {
   ChatbotKnowledgeArticle,
   ChatbotKnowledgeStatus,
 } from '../../types/chatbot';
+import { useSyncedPortalTab } from '../../context/PortalShellContext';
 
 export default function ChatbotAdminPortal() {
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'escalations' | 'analytics' | 'settings'>('knowledge');
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    'knowledge' | 'escalations' | 'analytics' | 'settings'
+  >('chatbot-admin', 'knowledge');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
 
   // Knowledge base state
   const [articles, setArticles] = useState<ChatbotKnowledgeArticle[]>([]);
@@ -195,11 +200,10 @@ export default function ChatbotAdminPortal() {
   };
 
   const handleDeleteArticle = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this knowledge article?')) {
-      deleteKnowledgeArticle(id);
-      refreshData();
-      showToast('Article removed from knowledge base.');
-    }
+    deleteKnowledgeArticle(id);
+    setConfirmDeleteId(null);
+    refreshData();
+    showToast('Article removed from knowledge base.');
   };
 
   // Convert Unanswered Query into Knowledge Article
@@ -236,10 +240,11 @@ export default function ChatbotAdminPortal() {
   const handleUpdateEscalationStatus = (newStatus: ChatbotEscalationStatus) => {
     if (!selectedEscalation) return;
     if (!resolutionNoteInput.trim()) {
-      alert('Please provide internal resolution / action notes before updating status.');
+      setResolutionError('Please provide internal resolution / action notes before updating status.');
       return;
     }
 
+    setResolutionError(null);
     updateEscalationStatus(
       selectedEscalation.id,
       newStatus,
@@ -490,13 +495,33 @@ export default function ChatbotAdminPortal() {
                     >
                       <Edit2 size={14} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteArticle(art.id)}
-                      className="p-1.5 rounded text-rose-600 hover:bg-rose-50"
-                      title="Delete Article"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {confirmDeleteId === art.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteArticle(art.id)}
+                          className="px-2 py-1 rounded text-[11px] font-bold bg-rose-600 text-white hover:bg-rose-700"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-1 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(art.id)}
+                        className="p-1.5 rounded text-rose-600 hover:bg-rose-50"
+                        title="Delete Article"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -749,9 +774,19 @@ export default function ChatbotAdminPortal() {
                     rows={2}
                     placeholder="Enter internal action note, student follow-up outcome or resolution details..."
                     value={resolutionNoteInput}
-                    onChange={(e) => setResolutionNoteInput(e.target.value)}
+                    onChange={(e) => {
+                      setResolutionNoteInput(e.target.value);
+                      if (resolutionError) setResolutionError(null);
+                    }}
                     className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#153B70]"
                   />
+
+                  {resolutionError && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+                      <AlertTriangle size={14} />
+                      <span>{resolutionError}</span>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-end gap-2">
                     <button

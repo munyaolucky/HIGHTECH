@@ -296,38 +296,32 @@ export default function PortalAccessModal({
         </div>
 
         {/* Modal Footer with Staff & Administration Links */}
-        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between text-[11px] text-slate-500 gap-2">
-          <span>Are you an instructor or administrator?</span>
-          <div className="flex items-center gap-3 font-semibold text-blue-700">
-            <button
-              onClick={() => {
-                onClose();
-                onSwitchToERP("lecturer");
-              }}
-              className="hover:underline"
-            >
-              Lecturer Portal
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => {
-                onClose();
-                onSwitchToERP("registrar");
-              }}
-              className="hover:underline"
-            >
-              Registrar
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => {
-                onClose();
-                onSwitchToERP("generator");
-              }}
-              className="hover:underline"
-            >
-              Reg Generator
-            </button>
+        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex flex-col gap-2 text-[11px] text-slate-500">
+          <span className="font-medium">Sign in to another institutional user dashboard:</span>
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold text-blue-700">
+            {[
+              { role: "lecturer", label: "Lecturer" },
+              { role: "registrar", label: "Registrar" },
+              { role: "finance", label: "Finance" },
+              { role: "admissions", label: "Admissions" },
+              { role: "library", label: "Library" },
+              { role: "examination", label: "Exams & CBT" },
+              { role: "hostels", label: "Hostels" },
+              { role: "hr", label: "HR & Staff" },
+              { role: "generator", label: "Reg Generator" },
+            ].map((item) => (
+              <button
+                key={item.role}
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onSwitchToERP(item.role);
+                }}
+                className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

@@ -1,43 +1,52 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  Home,
-  UserRound,
-  GraduationCap,
-  BookOpen,
-  CalendarDays,
-  ClipboardList,
-  CreditCard,
-  HeartHandshake,
-  Bell,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
   ArrowRight,
-  CheckCircle2,
-  Headphones,
-  Star,
-  MapPin,
-  Clock,
   BarChart3,
-  FileText,
-  Search,
-  MessageCircle,
-  Download,
-  User,
-  CalendarCheck,
-  Wallet,
+  Bell,
   BookMarked,
+  BookOpen,
+  Briefcase,
+  CalendarCheck,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  Download,
+  FileCheck2,
+  FileText,
+  GraduationCap,
+  Headphones,
+  HeartHandshake,
+  Home,
+  Laptop,
+  LogOut,
+  MapPin,
+  Menu,
+  MessageCircle,
+  Search,
+  Settings,
   ShieldCheck,
-  ChevronLeft,
-  Sparkles,
-  Smartphone,
-  Printer,
-  AlertCircle,
-} from "lucide-react";
-import "./StudentDashboard.css";
-import { INITIAL_STUDENT_PROFILE, INITIAL_STUDENT_UNITS, INITIAL_BOOK_LOANS, INITIAL_TRANSACTIONS } from "../../data/mockCollegeData";
+  Star,
+  User,
+  UserCheck,
+  UserRound,
+  Users,
+  Vote,
+  Wallet,
+  X,
+} from 'lucide-react';
+import campusHeroUrl from '../../assets/images/campus_hero_banner_1794587290452.jpg';
+import libraryPromoUrl from '../../assets/images/student_library_promo_1794587291004.jpg';
+import studentAvatarUrl from '../../assets/images/student_profile_portrait_1794587291385.jpg';
+import { subscribeErpSync } from '../../services/collegeErpService';
+import { engagementService } from '../../services/engagementService';
+import {
+  studentPortalService,
+  StudentPortalSection,
+} from '../../services/studentPortalService';
+import StudentSubPages from './components/StudentSubPages';
 
 type StudentDashboardProps = {
   studentName?: string;
@@ -53,324 +62,388 @@ type StudentDashboardProps = {
   onSwitchPortal?: (role: string) => void;
 };
 
-const menuItems = [
-  { label: "Dashboard", icon: Home, page: "dashboard" },
-  { label: "My Profile", icon: UserRound, page: "profile" },
-  { label: "My Programme", icon: GraduationCap, page: "programme" },
-  { label: "Course Registration", icon: ClipboardList, page: "course-registration" },
-  { label: "Timetable", icon: CalendarDays, page: "timetable" },
-  { label: "Results & Transcripts", icon: FileText, page: "results" },
-  { label: "Fees & Payments", icon: CreditCard, page: "finance" },
-  { label: "Library", icon: BookOpen, page: "library" },
-  { label: "Student Support", icon: HeartHandshake, page: "support" },
+const MENU_ITEMS: {
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  page: StudentPortalSection;
+  badgeText?: string;
+}[] = [
+  { label: 'Dashboard', icon: Home, page: 'dashboard' },
+  { label: 'My Profile', icon: UserRound, page: 'profile' },
+  { label: 'My Programme', icon: GraduationCap, page: 'programme' },
+  { label: 'Course Registration', icon: ClipboardList, page: 'course-registration' },
+  { label: 'Timetable & Tasks', icon: CalendarDays, page: 'timetable' },
+  { label: 'Class Attendance', icon: UserCheck, page: 'attendance' },
+  { label: 'E-Learning', icon: Laptop, page: 'elearning' },
+  { label: 'Exams & Permit', icon: FileCheck2, page: 'examinations' },
+  { label: 'Results & Transcripts', icon: FileText, page: 'results' },
+  { label: 'Fees & M-Pesa', icon: CreditCard, page: 'finance' },
+  { label: 'Library', icon: BookOpen, page: 'library' },
+  { label: 'Attachment & Careers', icon: Briefcase, page: 'attachment' },
+  { label: 'Clearance', icon: FileCheck2, page: 'clearance' },
+  { label: 'Clubs & SRC Voting', icon: Vote, page: 'campus-life' },
+  { label: 'Student Support', icon: HeartHandshake, page: 'support', badgeText: 'Help' },
 ];
 
-const quickActions = [
+const QUICK_ACTIONS: {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ size?: number }>;
+  gradientClass: string;
+  page: StudentPortalSection;
+}[] = [
   {
-    title: "View Timetable",
-    description: "See your classes",
+    title: 'View Timetable',
+    description: 'See your classes',
     icon: CalendarDays,
-    color: "blue",
-    page: "timetable",
+    gradientClass: 'bg-gradient-to-br from-[#0871df] to-[#0757b9]',
+    page: 'timetable',
   },
   {
-    title: "Register Courses",
-    description: "Manage your units",
+    title: 'Register Courses',
+    description: 'Manage your units',
     icon: CheckCircle2,
-    color: "green",
-    page: "course-registration",
+    gradientClass: 'bg-gradient-to-br from-[#0a9a5d] to-[#087b4c]',
+    page: 'course-registration',
   },
   {
-    title: "Check Results",
-    description: "View your grades",
+    title: 'Check Results',
+    description: 'View your grades',
     icon: ClipboardList,
-    color: "purple",
-    page: "results",
+    gradientClass: 'bg-gradient-to-br from-[#8252d8] to-[#6840b9]',
+    page: 'results',
   },
   {
-    title: "Pay Fees",
-    description: "Manage payments",
+    title: 'Pay Fees',
+    description: 'Lipa na M-Pesa STK',
     icon: CreditCard,
-    color: "teal",
-    page: "finance",
+    gradientClass: 'bg-gradient-to-br from-[#08a6a9] to-[#078c98]',
+    page: 'finance',
   },
   {
-    title: "Access Library",
-    description: "Books and resources",
+    title: 'Access Library',
+    description: 'Books and e-resources',
     icon: BookMarked,
-    color: "orange",
-    page: "library",
+    gradientClass: 'bg-gradient-to-br from-[#f49b1c] to-[#e98013]',
+    page: 'library',
   },
   {
-    title: "Get Support",
-    description: "Contact the college",
+    title: 'Get Support',
+    description: 'Contact the college',
     icon: Headphones,
-    color: "navy",
-    page: "support",
+    gradientClass: 'bg-gradient-to-br from-[#174c8b] to-[#10396f]',
+    page: 'support',
   },
 ];
 
-const notifications = [
-  {
-    id: 1,
-    title: "Your assignment is due tomorrow",
-    detail: "CSC 301: Advanced Data Structures · 11:59 PM",
-    time: "2 hours ago",
-    color: "blue",
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Semester results are available",
-    detail: "Check your academic results breakdown",
-    time: "Yesterday",
-    color: "green",
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Official payment receipt generated",
-    detail: "Receipt #RCT-2026-0002 for KES 15,000",
-    time: "2 days ago",
-    color: "blue",
-    unread: true,
-  },
-];
-
-const events = [
-  {
-    day: "06",
-    month: "NOV",
-    title: "CAT II – Advanced Data Structures & Algorithms",
-    time: "9:00 AM – 11:00 AM",
-    location: "Tech Lab 3B",
-  },
-  {
-    day: "08",
-    month: "NOV",
-    title: "Virtual Masterclass – Cloud Microservices in Africa",
-    time: "10:00 AM – 12:00 PM",
-    location: "Online / LMS Portal",
-  },
-  {
-    day: "12",
-    month: "NOV",
-    title: "HI-TECH Annual Career & Innovation Expo",
-    time: "9:00 AM – 4:00 PM",
-    location: "Nairobi Main Auditorium",
-  },
+const SEARCH_DIRECTORY: { label: string; keywords: string; section: StudentPortalSection }[] = [
+  { label: 'My Profile & Next of Kin', keywords: 'profile contact phone email kin avatar', section: 'profile' },
+  { label: 'My Programme & Onboarding Steps', keywords: 'programme degree onboarding registration status', section: 'programme' },
+  { label: 'Course Registration, Nominal Roll & Deferment', keywords: 'courses units add drop nominal roll report deferment leave transfer', section: 'course-registration' },
+  { label: 'Weekly Timetable & Assignments', keywords: 'timetable classes schedule assignment submit', section: 'timetable' },
+  { label: 'Class Attendance & QR Check-In', keywords: 'attendance register qr checkin roll percentage', section: 'attendance' },
+  { label: 'E-Learning Notes & Lab Manuals', keywords: 'elearning lecture notes videos slides labs lms', section: 'elearning' },
+  { label: 'Examinations, CBT & Exam Card', keywords: 'exams knec cdacc cbt permit card venue', section: 'examinations' },
+  { label: 'Results & Official Transcripts', keywords: 'results grades marks gpa transcript', section: 'results' },
+  { label: 'Fees, Invoice, Lipa na M-Pesa & Receipts', keywords: 'fees invoice helb mpesa payment balance receipt', section: 'finance' },
+  { label: 'Digital Library & Book Holds', keywords: 'library books reserve ebooks pdf loans', section: 'library' },
+  { label: 'Industrial Attachment & Logbook', keywords: 'attachment internship logbook intro letter career board', section: 'attachment' },
+  { label: 'Institutional Clearance Form', keywords: 'clearance graduation finance library hostel hod', section: 'clearance' },
+  { label: 'Campus Clubs, Events & SRC Elections', keywords: 'clubs societies events rsvp src voting elections ballot', section: 'campus-life' },
+  { label: 'Digital Student ID Card', keywords: 'id card qr print badge', section: 'student-id' },
+  { label: 'Official Documents & Letters', keywords: 'documents admission letter handbook statement', section: 'documents' },
+  { label: 'Helpdesk, Lecturers, Hostels & Welfare', keywords: 'support ticket lecturer message hostel counselling', section: 'support' },
+  { label: 'Security, MFA & Guardian Consent', keywords: 'settings password mfa guardian parent audit', section: 'settings' },
 ];
 
 export default function StudentDashboard({
-  studentName = INITIAL_STUDENT_PROFILE.fullName,
-  registrationNumber = INITIAL_STUDENT_PROFILE.registrationNumber,
-  programme = INITIAL_STUDENT_PROFILE.programme,
-  academicYear = INITIAL_STUDENT_PROFILE.academicYear,
-  semester = INITIAL_STUDENT_PROFILE.semester,
-  registeredCourses = INITIAL_STUDENT_PROFILE.registeredCourses,
-  attendance = INITIAL_STUDENT_PROFILE.attendanceRate,
-  gpa = INITIAL_STUDENT_PROFILE.gpa,
   onNavigate,
   onLogout,
   onSwitchPortal,
 }: StudentDashboardProps) {
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState<StudentPortalSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [readNotifications, setReadNotifications] = useState<number[]>([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [banner, setBanner] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'logout' | null>(null);
+  const [, setVersionTick] = useState(0);
 
-  // Interactive sub-page states
-  const [mpesaPhone, setMpesaPhone] = useState("0712345678");
-  const [mpesaAmount, setMpesaAmount] = useState("12500");
-  const [mpesaStatus, setMpesaStatus] = useState<string | null>(null);
-  const [supportMessage, setSupportMessage] = useState("");
-  const [supportSubmitted, setSupportSubmitted] = useState(false);
+  const refresh = () => setVersionTick((n) => n + 1);
+  const notify = (type: 'ok' | 'err', text: string) => setBanner({ type, text });
 
-  const unreadCount = notifications.filter(
-    (item) => !readNotifications.includes(item.id)
-  ).length;
+  useEffect(() => {
+    return subscribeErpSync(refresh);
+  }, []);
 
-  const navigate = (page: string) => {
+  const state = studentPortalService.getState();
+  const profile = state.profile;
+  const fin = studentPortalService.getFinancialSummary();
+  const engState = engagementService.getState();
+
+  const unreadNotifications = engState.notifications.filter((n) => !n.read);
+  const pendingAssignments = state.assignments.filter((a) => a.status === 'PENDING');
+
+  const navigate = (page: StudentPortalSection) => {
     setActivePage(page);
     setSidebarOpen(false);
+    setNotificationOpen(false);
+    setProfileOpen(false);
+    setSearchValue('');
+    setBanner(null);
     onNavigate?.(page);
   };
 
-  const markAllRead = () => {
-    setReadNotifications(notifications.map((item) => item.id));
-  };
-
-  const handleLogout = () => {
+  const handleLogoutConfirm = () => {
+    setActiveModal(null);
     if (onLogout) {
       onLogout();
       return;
     }
-    const confirmed = window.confirm("Are you sure you want to log out from Student Portal?");
-    if (confirmed) {
-      window.location.reload();
-    }
+    notify('ok', 'Signed out of student workspace cleanly.');
   };
 
-  const handleSimulatePayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMpesaStatus("SENDING");
-    setTimeout(() => {
-      setMpesaStatus("PROMPT_SENT");
-      setTimeout(() => {
-        setMpesaStatus("SUCCESS");
-      }, 1500);
-    }, 1000);
-  };
+  const progressWidthClass =
+    fin.percentPaid >= 100
+      ? 'w-full'
+      : fin.percentPaid >= 90
+      ? 'w-11/12'
+      : fin.percentPaid >= 80
+      ? 'w-4/5'
+      : fin.percentPaid >= 70
+      ? 'w-3/4'
+      : fin.percentPaid >= 50
+      ? 'w-1/2'
+      : 'w-1/4';
+
+  const searchMatches = searchValue.trim()
+    ? SEARCH_DIRECTORY.filter(
+        (item) =>
+          item.label.toLowerCase().includes(searchValue.toLowerCase()) ||
+          item.keywords.toLowerCase().includes(searchValue.toLowerCase())
+      ).slice(0, 6)
+    : [];
+
+  const upcomingEvents = [
+    {
+      day: '14',
+      month: 'NOV',
+      title: pendingAssignments[0]?.title ?? 'Assignment Deadline – Web Technologies',
+      time: pendingAssignments[0]?.dueLabel ?? '11:59 PM',
+      location: 'LMS Portal',
+      actionSection: 'timetable' as StudentPortalSection,
+    },
+    {
+      day: '19',
+      month: 'NOV',
+      title: 'Distributed Database Systems Case Study',
+      time: '10:00 AM – 5:00 PM',
+      location: 'Lecture Hall 102',
+      actionSection: 'timetable' as StudentPortalSection,
+    },
+    {
+      day: '24',
+      month: 'MAR',
+      title: 'CSC 301 Final Examination — Data Structures',
+      time: '9:00 AM – 12:00 PM',
+      location: 'Exam Room A-1',
+      actionSection: 'examinations' as StudentPortalSection,
+    },
+  ];
 
   return (
-    <div className="hca-dashboard">
-      {/* TOP HEADER */}
-      <header className="hca-topbar">
-        <div className="hca-brand">
-          <div className="hca-brand-icon">
-            <GraduationCap size={38} strokeWidth={2.2} />
-          </div>
+    <div className="min-h-screen bg-[#f5f8fd] text-[#102b55] font-sans flex flex-col">
+      {/* WHITE TOP PORTAL HEADER */}
+      <header className="sticky top-0 z-40 h-[72px] px-4 sm:px-7 bg-white border-b border-slate-200 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            aria-label="Toggle student menu"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 rounded-lg text-[#092c60] hover:bg-slate-100"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
 
-          <div>
-            <h1>HI-TECH COLLEGE</h1>
-            <p>Learn • Innovate • Excel</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('dashboard')}
+            className="flex items-center gap-3 text-left"
+          >
+            <div className="w-11 h-11 rounded-xl bg-[#eef4fd] text-[#092c60] flex items-center justify-center shrink-0">
+              <GraduationCap size={26} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-extrabold text-[#092c60] tracking-tight truncate">
+                HI-TECH COLLEGE
+              </h1>
+              <p className="text-[11px] font-semibold text-slate-500 hidden sm:block">
+                Learn • Innovate • Excel
+              </p>
+            </div>
+          </button>
         </div>
 
-        <button
-          className="hca-mobile-menu"
-          aria-label="Open navigation"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <X /> : <Menu />}
-        </button>
-
-        <div className="hca-header-right">
-          <div className="hca-search">
-            <Search size={17} />
-            <input
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search units, exams, fees..."
-              aria-label="Search portal"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && searchValue.trim()) {
-                  onNavigate?.(`search:${searchValue.trim()}`);
-                }
-              }}
-            />
-          </div>
-
-          {/* Quick Portal Switcher */}
-          {onSwitchPortal && (
-            <div className="hidden lg:flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-900 rounded-lg px-2.5 py-1 text-xs font-semibold">
-              <Sparkles size={14} className="text-amber-500" />
-              <span>Portal:</span>
-              <select
-                aria-label="Select administrative portal"
-                className="bg-transparent font-bold text-blue-800 outline-none cursor-pointer"
-                value="student"
-                onChange={(e) => onSwitchPortal(e.target.value)}
-              >
-                <option value="student">Student Portal</option>
-                <option value="generator">Central Reg Generator (HCA/STAFF/...)</option>
-                <option value="lecturer">Lecturer Portal (Module 18)</option>
-                <option value="registrar">Registrar Portal (Module 19)</option>
-                <option value="finance">Finance Portal (Module 20)</option>
-                <option value="library">Library Portal (Module 22)</option>
-                <option value="examination">Examination Portal (Module 23)</option>
-                <option value="admissions">Admissions Portal (Module 24)</option>
-              </select>
+        <div className="flex items-center gap-3 sm:gap-5">
+          {/* LIVE PORTAL SEARCH */}
+          <div className="relative hidden md:block">
+            <div className="w-60 h-10 px-3 bg-[#f5f8fc] border border-slate-200 rounded-lg flex items-center gap-2 text-slate-500 focus-within:border-[#0866d7]">
+              <Search size={15} className="shrink-0" />
+              <input
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchMatches.length > 0) {
+                    navigate(searchMatches[0].section);
+                  }
+                }}
+                placeholder="Search courses, fees, exams..."
+                aria-label="Search student portal"
+                className="w-full bg-transparent text-xs text-slate-900 outline-none"
+              />
             </div>
-          )}
 
-          <div className="hca-header-dropdown">
-            <button
-              className="hca-notification-button"
-              onClick={() => {
-                setNotificationOpen(!notificationOpen);
-                setProfileOpen(false);
-              }}
-              aria-label="Notifications"
-            >
-              <Bell size={23} />
-              {unreadCount > 0 && (
-                <span className="hca-notification-badge">{unreadCount}</span>
-              )}
-            </button>
-
-            {notificationOpen && (
-              <div className="hca-dropdown hca-notification-dropdown">
-                <div className="hca-dropdown-heading">
-                  <div>
-                    <strong>Notifications</strong>
-                    <small>{unreadCount} unread messages</small>
-                  </div>
-                  <button onClick={markAllRead}>Mark all read</button>
-                </div>
-
-                {notifications.map((item) => (
+            {searchMatches.length > 0 && (
+              <div className="absolute top-11 right-0 w-72 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-50">
+                {searchMatches.map((item) => (
                   <button
-                    className="hca-dropdown-notification"
-                    key={item.id}
-                    onClick={() => {
-                      setReadNotifications((previous) =>
-                        previous.includes(item.id)
-                          ? previous
-                          : [...previous, item.id]
-                      );
-                    }}
+                    key={item.section}
+                    type="button"
+                    onClick={() => navigate(item.section)}
+                    className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#eef4fd] hover:text-[#092c60] rounded-lg flex items-center justify-between"
                   >
-                    <span className={`hca-dot ${item.color}`} />
-                    <span>
-                      <strong>{item.title}</strong>
-                      <small>{item.detail}</small>
-                      <small>{item.time}</small>
-                    </span>
-                    {!readNotifications.includes(item.id) && (
-                      <span className="hca-unread-indicator" />
-                    )}
+                    <span>{item.label}</span>
+                    <ArrowRight size={13} className="text-slate-400" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="hca-header-dropdown">
+          {/* NOTIFICATIONS DROPDOWN */}
+          <div className="relative">
             <button
-              className="hca-profile-button"
+              type="button"
+              aria-label="Notifications"
+              onClick={() => {
+                setNotificationOpen(!notificationOpen);
+                setProfileOpen(false);
+              }}
+              className="relative w-10 h-10 rounded-lg flex items-center justify-center text-[#092c60] hover:bg-slate-100"
+            >
+              <Bell size={20} />
+              {unreadNotifications.length > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
+                  {unreadNotifications.length}
+                </span>
+              )}
+            </button>
+
+            {notificationOpen && (
+              <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div>
+                    <strong className="text-xs text-slate-900 block">Notifications</strong>
+                    <span className="text-[11px] text-slate-500">
+                      {unreadNotifications.length} unread
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      engagementService.markAllRead();
+                      refresh();
+                    }}
+                    className="text-[11px] font-semibold text-[#0866d7] hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                </div>
+
+                <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                  {engState.notifications.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        engagementService.markNotificationRead(item.id);
+                        refresh();
+                        navigate('notifications');
+                      }}
+                      className="w-full text-left py-2.5 px-1.5 hover:bg-slate-50 rounded text-xs space-y-0.5"
+                    >
+                      <strong className={`block ${item.read ? 'text-slate-500' : 'text-slate-900'}`}>
+                        {item.title}
+                      </strong>
+                      <p className="text-[11px] text-slate-500 line-clamp-2">{item.message}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* STUDENT PROFILE MENU */}
+          <div className="relative">
+            <button
+              type="button"
               onClick={() => {
                 setProfileOpen(!profileOpen);
                 setNotificationOpen(false);
               }}
+              className="flex items-center gap-2.5 p-1 rounded-lg hover:bg-slate-100 text-left"
             >
-              <div className="hca-avatar">
-                <UserRound size={25} />
+              <img
+                src={studentAvatarUrl}
+                alt={profile.fullName}
+                referrerPolicy="no-referrer"
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+              />
+              <div className="hidden sm:block">
+                <strong className="text-xs font-bold text-slate-900 block leading-tight">
+                  {profile.fullName}
+                </strong>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {profile.registrationNumber}
+                </span>
               </div>
-
-              <span className="hca-profile-info">
-                <strong>{studentName}</strong>
-                <small className="font-mono text-blue-700">{registrationNumber}</small>
-              </span>
-
-              <ChevronDown size={17} />
+              <ChevronDown size={15} className="text-slate-500 hidden sm:block" />
             </button>
 
             {profileOpen && (
-              <div className="hca-dropdown hca-profile-dropdown">
-                <button onClick={() => navigate("profile")}>
-                  <User size={17} /> My Profile
+              <div className="absolute right-0 top-12 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-50 text-xs">
+                <button
+                  type="button"
+                  onClick={() => navigate('profile')}
+                  className="w-full px-3 py-2 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-slate-800 font-medium"
+                >
+                  <User size={15} /> My Profile
                 </button>
-                <button onClick={() => navigate("results")}>
-                  <FileText size={17} /> Transcripts
+                <button
+                  type="button"
+                  onClick={() => navigate('student-id')}
+                  className="w-full px-3 py-2 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-slate-800 font-medium"
+                >
+                  <UserRound size={15} /> Digital ID Card
                 </button>
-                <button onClick={() => navigate("settings")}>
-                  <Settings size={17} /> Account Settings
+                <button
+                  type="button"
+                  onClick={() => navigate('settings')}
+                  className="w-full px-3 py-2 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-slate-800 font-medium"
+                >
+                  <Settings size={15} /> Account Settings
                 </button>
-                <button onClick={handleLogout}>
-                  <LogOut size={17} /> Log Out
+                <div className="my-1 border-t border-slate-100" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setActiveModal('logout');
+                  }}
+                  className="w-full px-3 py-2 rounded-lg hover:bg-red-50 flex items-center gap-2 text-red-700 font-semibold"
+                >
+                  <LogOut size={15} /> Log Out
                 </button>
               </div>
             )}
@@ -378,431 +451,573 @@ export default function StudentDashboard({
         </div>
       </header>
 
-      <div className="hca-layout">
-        {/* SIDEBAR */}
-        <aside className={`hca-sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="hca-sidebar-label">STUDENT MENU</div>
+      <div className="flex flex-1 min-h-0">
+        {/* NAVY SIDEBAR */}
+        <aside
+          className={`fixed lg:sticky top-[72px] left-0 z-30 w-60 h-[calc(100vh-72px)] bg-gradient-to-b from-[#092b5d] to-[#061f46] text-white p-3 pt-5 flex flex-col overflow-y-auto transition-transform duration-200 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
+        >
+          <p className="px-3 mb-2 text-[10px] font-extrabold tracking-widest text-blue-300">
+            STUDENT MENU
+          </p>
 
-          <nav className="hca-navigation">
-            {menuItems.map((item) => {
+          <nav className="space-y-1">
+            {MENU_ITEMS.map((item) => {
               const Icon = item.icon;
-
+              const isActive = activePage === item.page;
               return (
                 <button
                   key={item.page}
-                  className={`hca-nav-item ${
-                    activePage === item.page ? "active" : ""
-                  }`}
+                  type="button"
                   onClick={() => navigate(item.page)}
+                  className={`w-full min-h-[42px] px-3 rounded-lg flex items-center gap-3 text-xs font-semibold text-left transition-colors ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#0875e8] to-[#1761c6] text-white shadow-sm'
+                      : 'text-blue-50 hover:bg-white/10'
+                  }`}
                 >
-                  <Icon size={21} />
-                  <span>{item.label}</span>
-
-                  {item.page === "support" && (
-                    <span className="hca-nav-new">Help</span>
+                  <Icon size={17} />
+                  <span className="flex-1 whitespace-nowrap truncate">{item.label}</span>
+                  {item.badgeText && (
+                    <span className="text-[10px] text-blue-200">{item.badgeText}</span>
                   )}
                 </button>
               );
             })}
           </nav>
 
-          <div className="hca-sidebar-label hca-sidebar-secondary">
+          <p className="px-3 mt-6 mb-2 text-[10px] font-extrabold tracking-widest text-blue-300">
             ACCOUNT
-          </div>
+          </p>
 
-          <nav className="hca-navigation">
+          <nav className="space-y-1">
             <button
-              className={`hca-nav-item ${
-                activePage === "notifications" ? "active" : ""
+              type="button"
+              onClick={() => navigate('notifications')}
+              className={`w-full min-h-[42px] px-3 rounded-lg flex items-center gap-3 text-xs font-semibold text-left transition-colors ${
+                activePage === 'notifications'
+                  ? 'bg-gradient-to-r from-[#0875e8] to-[#1761c6] text-white'
+                  : 'text-blue-50 hover:bg-white/10'
               }`}
-              onClick={() => navigate("notifications")}
             >
-              <Bell size={21} />
-              <span>Notifications</span>
-              {unreadCount > 0 && (
-                <span className="hca-sidebar-count">{unreadCount}</span>
+              <Bell size={17} />
+              <span className="flex-1">Notifications</span>
+              {unreadNotifications.length > 0 && (
+                <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
+                  {unreadNotifications.length}
+                </span>
               )}
             </button>
 
             <button
-              className={`hca-nav-item ${
-                activePage === "documents" ? "active" : ""
+              type="button"
+              onClick={() => navigate('settings')}
+              className={`w-full min-h-[42px] px-3 rounded-lg flex items-center gap-3 text-xs font-semibold text-left transition-colors ${
+                activePage === 'settings'
+                  ? 'bg-gradient-to-r from-[#0875e8] to-[#1761c6] text-white'
+                  : 'text-blue-50 hover:bg-white/10'
               }`}
-              onClick={() => navigate("documents")}
             >
-              <FileText size={21} />
-              <span>Documents</span>
-            </button>
-
-            <button
-              className={`hca-nav-item ${
-                activePage === "settings" ? "active" : ""
-              }`}
-              onClick={() => navigate("settings")}
-            >
-              <Settings size={21} />
+              <Settings size={17} />
               <span>Settings</span>
             </button>
           </nav>
 
-          <div className="hca-sidebar-bottom">
-            <div className="hca-help-card">
-              <div className="hca-help-icon">
-                <MessageCircle size={22} />
+          <div className="mt-auto pt-5 space-y-3">
+            <div className="p-3.5 rounded-xl bg-white/10 border border-white/15 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+                <MessageCircle size={17} />
               </div>
-              <strong>Need assistance?</strong>
-              <p>Our student support team is ready to help.</p>
-              <button onClick={() => navigate("support")}>
-                Contact Support <ArrowRight size={14} />
+              <strong className="text-xs block">Need assistance?</strong>
+              <p className="text-[11px] text-blue-100 leading-relaxed">
+                Raise a helpdesk ticket or message your lecturer directly.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('support')}
+                className="text-[11px] font-bold text-white inline-flex items-center gap-1 hover:underline"
+              >
+                Contact Support <ArrowRight size={13} />
               </button>
             </div>
 
-            <button className="hca-logout" onClick={handleLogout}>
-              <LogOut size={20} />
-              <span>Logout</span>
+            <button
+              type="button"
+              onClick={() => setActiveModal('logout')}
+              className="w-full py-2.5 px-3 border-t border-white/15 flex items-center gap-3 text-xs font-semibold text-blue-100 hover:text-red-200"
+            >
+              <LogOut size={17} /> Logout
             </button>
           </div>
         </aside>
 
         {sidebarOpen && (
           <button
-            className="hca-sidebar-overlay"
-            aria-label="Close navigation"
+            type="button"
+            aria-label="Close menu"
             onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 top-[72px] bg-slate-950/50 z-20 lg:hidden"
           />
         )}
 
-        {/* MAIN CONTENT AREA */}
-        <main className="hca-main">
-          <div className="hca-main-content">
-            {activePage === "dashboard" && (
+        {/* MAIN VIEWPORT */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6">
+          <div className="max-w-[1440px] mx-auto space-y-5">
+            {banner && (
+              <div
+                role="status"
+                className={`p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-3 ${
+                  banner.type === 'ok'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    : 'bg-red-50 border-red-200 text-red-900'
+                }`}
+              >
+                <span>{banner.text}</span>
+                <button
+                  type="button"
+                  onClick={() => setBanner(null)}
+                  className="text-xs font-bold opacity-70 hover:opacity-100"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {activePage !== 'dashboard' ? (
+              <StudentSubPages
+                activeSection={activePage}
+                onBackToDashboard={() => navigate('dashboard')}
+                onNavigate={navigate}
+                onNotify={notify}
+                onRefresh={refresh}
+                onSwitchPortal={onSwitchPortal}
+              />
+            ) : (
               <>
-                {/* WELCOME HERO */}
-                <section className="hca-hero">
-                  <div className="hca-hero-overlay" />
+                {/* CAMPUS HERO BANNER */}
+                <section className="relative min-h-[250px] rounded-2xl overflow-hidden text-white flex items-center bg-[#0a3671]">
+                  <img
+                    src={campusHeroUrl}
+                    alt="HI-TECH College Nairobi Main Campus"
+                    referrerPolicy="no-referrer"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#052352]/95 via-[#052a5b]/85 to-[#052a5b]/25" />
 
-                  <div className="hca-hero-content">
-                    <span className="hca-hero-eyebrow">
-                      YOUR FUTURE STARTS HERE
+                  <div className="relative z-10 p-6 sm:p-10 max-w-xl space-y-3">
+                    <span className="text-[11px] font-extrabold tracking-widest text-[#fbc52e]">
+                      {profile.registrationNumber} · {profile.programme}
                     </span>
-
-                    <h2>
-                      Welcome back,
-                      <br />
-                      {studentName}
+                    <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight">
+                      Welcome back, {profile.fullName.split(' ')[0]}
                     </h2>
-
-                    <p>Enrolled in {programme} • Reg No: <span className="font-mono text-amber-300 font-bold">{registrationNumber}</span></p>
-
-                    <button
-                      className="hca-hero-button"
-                      onClick={() => navigate("programme")}
-                    >
-                      Explore Your Units
-                      <ArrowRight size={19} />
-                    </button>
+                    <p className="text-sm sm:text-base text-blue-100 font-medium">
+                      {profile.campus} · {profile.academicYear} {profile.semester} —{' '}
+                      {pendingAssignments.length} pending assignment(s) · Nominal Roll:{' '}
+                      {state.semesterReported ? 'Reported' : 'Action Required'}
+                    </p>
+                    <div className="pt-1 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => navigate('programme')}
+                        className="px-5 py-2.5 bg-[#ffc400] hover:bg-[#ffda54] text-[#092b5d] text-xs font-extrabold rounded-lg inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0"
+                      >
+                        Explore Your Programme <ArrowRight size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('finance')}
+                        className="px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-lg border border-white/25 whitespace-nowrap shrink-0 transition-colors"
+                      >
+                        Balance: KES {fin.balance.toLocaleString()}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="hca-hero-tag">
-                    <ShieldCheck size={16} />
-                    Official Student Portal
+                  <div className="hidden sm:flex items-center gap-1.5 absolute right-6 bottom-4 z-10 text-xs font-bold text-blue-100">
+                    <ShieldCheck size={15} /> Student Portal
                   </div>
                 </section>
 
-                {/* QUICK ACTIONS */}
-                <section className="hca-quick-actions">
-                  {quickActions.map((action) => {
+                {/* 6 QUICK ACTION CARDS */}
+                <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                  {QUICK_ACTIONS.map((action) => {
                     const Icon = action.icon;
-
                     return (
                       <button
                         key={action.page}
-                        className={`hca-quick-card ${action.color}`}
+                        type="button"
                         onClick={() => navigate(action.page)}
+                        className={`${action.gradientClass} text-white rounded-xl p-3.5 min-h-[76px] flex items-center gap-3 text-left shadow-sm hover:-translate-y-0.5 transition-transform`}
                       >
-                        <span className="hca-quick-icon">
-                          <Icon size={29} />
+                        <span className="shrink-0">
+                          <Icon size={24} />
                         </span>
-
-                        <span className="hca-quick-text">
-                          <strong>{action.title}</strong>
-                          <small>{action.description}</small>
+                        <span className="min-w-0 flex-1">
+                          <strong className="block text-xs font-bold leading-tight truncate">
+                            {action.title}
+                          </strong>
+                          <span className="block text-[11px] text-white/85 truncate mt-0.5">
+                            {action.description}
+                          </span>
                         </span>
-
-                        <ArrowRight className="hca-quick-arrow" size={17} />
+                        <ArrowRight size={15} className="shrink-0 opacity-85" />
                       </button>
                     );
                   })}
                 </section>
 
-                {/* CONTENT GRID */}
-                <div className="hca-content-grid">
-                  <div className="hca-left-column">
+                {/* MAIN 2-COLUMN DASHBOARD GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                  {/* LEFT 2 COLUMNS */}
+                  <div className="lg:col-span-2 space-y-5">
                     {/* ACADEMIC OVERVIEW */}
-                    <section className="hca-panel">
-                      <div className="hca-panel-heading">
-                        <div className="hca-panel-title">
-                          <BarChart3 size={23} />
-                          <h3>Your Academic Overview</h3>
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-[#092c60]">
+                          <BarChart3 size={20} />
+                          <h3 className="text-sm font-extrabold">Your Academic Overview</h3>
                         </div>
-
                         <button
-                          className="hca-text-link"
-                          onClick={() => navigate("programme")}
+                          type="button"
+                          onClick={() => navigate('academic-progress')}
+                          className="text-xs font-bold text-[#075fc7] hover:underline inline-flex items-center gap-1 whitespace-nowrap shrink-0"
                         >
-                          View Details <ArrowRight size={15} />
+                          View Details <ArrowRight size={14} />
                         </button>
                       </div>
 
-                      <div className="hca-academic-grid">
-                        <div className="hca-stat-card stat-blue">
-                          <GraduationCap size={37} />
-                          <div>
-                            <small>Current Programme</small>
-                            <strong>{programme}</strong>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="p-3.5 rounded-lg bg-gradient-to-br from-[#15518f] to-[#0d3972] text-white flex items-center gap-3">
+                          <GraduationCap size={28} className="shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-[11px] text-blue-100 block">Current Programme</span>
+                            <strong className="text-xs font-bold block truncate">{profile.programme}</strong>
                           </div>
                         </div>
 
-                        <div className="hca-stat-card stat-green">
-                          <CalendarDays size={36} />
+                        <div className="p-3.5 rounded-lg bg-gradient-to-br from-[#12a66c] to-[#078452] text-white flex items-center gap-3">
+                          <CalendarDays size={28} className="shrink-0" />
                           <div>
-                            <small>Academic Year</small>
-                            <strong>{academicYear}</strong>
+                            <span className="text-[11px] text-emerald-100 block">Academic Year</span>
+                            <strong className="text-sm font-bold font-mono tabular-nums">{profile.academicYear}</strong>
                           </div>
                         </div>
 
-                        <div className="hca-stat-card stat-purple">
-                          <CalendarCheck size={36} />
+                        <div className="p-3.5 rounded-lg bg-gradient-to-br from-[#7953d2] to-[#6341b4] text-white flex items-center gap-3">
+                          <CalendarCheck size={28} className="shrink-0" />
                           <div>
-                            <small>Current Semester</small>
-                            <strong>{semester}</strong>
+                            <span className="text-[11px] text-purple-100 block">Current Semester</span>
+                            <strong className="text-sm font-bold">{profile.semester}</strong>
                           </div>
                         </div>
 
-                        <div className="hca-stat-card stat-light-blue">
-                          <BookOpen size={36} />
+                        <div className="p-3.5 rounded-lg bg-[#d9eaff] text-[#0753ac] flex items-center gap-3">
+                          <BookOpen size={28} className="shrink-0" />
                           <div>
-                            <small>Registered Units</small>
-                            <strong>{registeredCourses} Units</strong>
+                            <span className="text-[11px] font-semibold block">Registered Units</span>
+                            <strong className="text-base font-extrabold font-mono tabular-nums">
+                              {state.units.length}
+                            </strong>
                           </div>
                         </div>
 
-                        <div className="hca-stat-card stat-light-green">
-                          <CheckCircle2 size={36} />
+                        <div className="p-3.5 rounded-lg bg-[#d4f5e4] text-[#08784d] flex items-center gap-3">
+                          <CheckCircle2 size={28} className="shrink-0" />
                           <div>
-                            <small>Class Attendance</small>
-                            <strong>{attendance}%</strong>
+                            <span className="text-[11px] font-semibold block">Attendance</span>
+                            <strong className="text-base font-extrabold font-mono tabular-nums">
+                              {profile.attendanceRate}%
+                            </strong>
                           </div>
                         </div>
 
-                        <div className="hca-stat-card stat-light-orange">
-                          <Star size={36} />
+                        <div className="p-3.5 rounded-lg bg-[#fff0d8] text-[#a65c00] flex items-center gap-3">
+                          <Star size={28} className="shrink-0" />
                           <div>
-                            <small>Cumulative GPA</small>
-                            <strong>{gpa.toFixed(2)} / 4.00</strong>
+                            <span className="text-[11px] font-semibold block">GPA</span>
+                            <strong className="text-base font-extrabold font-mono tabular-nums">
+                              {profile.gpa.toFixed(2)}
+                            </strong>
                           </div>
                         </div>
                       </div>
                     </section>
 
-                    {/* UPCOMING EVENTS */}
-                    <section className="hca-panel hca-events-panel">
-                      <div className="hca-panel-heading">
-                        <div className="hca-panel-title">
-                          <CalendarDays size={22} />
-                          <h3>Upcoming Academic Deadlines</h3>
+                    {/* UPCOMING EVENTS & DEADLINES */}
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-[#092c60]">
+                          <CalendarDays size={20} />
+                          <h3 className="text-sm font-extrabold">Upcoming Deadlines &amp; Events</h3>
                         </div>
-
                         <button
-                          className="hca-text-link"
-                          onClick={() => navigate("timetable")}
+                          type="button"
+                          onClick={() => navigate('calendar')}
+                          className="text-xs font-bold text-[#075fc7] hover:underline inline-flex items-center gap-1 whitespace-nowrap shrink-0"
                         >
-                          View Timetable <ArrowRight size={15} />
+                          View Calendar <ArrowRight size={14} />
                         </button>
                       </div>
 
-                      <div className="hca-event-list">
-                        {events.map((event, index) => (
-                          <div className="hca-event-row" key={index}>
-                            <div className="hca-event-date">
-                              <small>{event.month}</small>
-                              <strong>{event.day}</strong>
+                      <div className="divide-y divide-slate-100">
+                        {upcomingEvents.map((ev) => (
+                          <button
+                            key={ev.title}
+                            type="button"
+                            onClick={() => navigate(ev.actionSection)}
+                            className="w-full py-3 flex items-center justify-between gap-3 text-left hover:bg-slate-50/70 rounded-lg px-1 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-12 h-11 rounded-lg bg-[#e6f0ff] text-[#092c60] flex flex-col items-center justify-center shrink-0">
+                                <span className="text-[9px] font-extrabold">{ev.month}</span>
+                                <strong className="text-base font-extrabold leading-none font-mono tabular-nums">
+                                  {ev.day}
+                                </strong>
+                              </div>
+                              <div className="min-w-0">
+                                <strong className="text-xs font-bold text-slate-900 block truncate">
+                                  {ev.title}
+                                </strong>
+                                <span className="text-[11px] text-slate-500 inline-flex items-center gap-3 mt-0.5">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Clock size={12} /> {ev.time}
+                                  </span>
+                                  <span className="hidden sm:inline-flex items-center gap-1">
+                                    <MapPin size={12} /> {ev.location}
+                                  </span>
+                                </span>
+                              </div>
                             </div>
-
-                            <div className="hca-event-name">
-                              <strong>{event.title}</strong>
-                            </div>
-
-                            <div className="hca-event-time">
-                              <Clock size={14} />
-                              <span>{event.time}</span>
-                            </div>
-
-                            <div className="hca-event-location">
-                              <MapPin size={15} />
-                              <span>{event.location}</span>
-                            </div>
-                          </div>
+                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                          </button>
                         ))}
                       </div>
                     </section>
 
-                    {/* STUDENT SHORTCUTS */}
-                    <section className="hca-panel hca-shortcuts-panel">
-                      <div className="hca-panel-heading">
-                        <div className="hca-panel-title">
-                          <Wallet size={22} />
-                          <h3>Student Services</h3>
-                        </div>
+                    {/* STUDENT SERVICES SHORTCUTS */}
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center gap-2 text-[#092c60]">
+                        <Wallet size={20} />
+                        <h3 className="text-sm font-extrabold">Student Services</h3>
                       </div>
 
-                      <div className="hca-shortcuts">
-                        <button onClick={() => navigate("documents")}>
-                          <FileText size={21} />
-                          <span>My Documents</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => navigate('documents')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <FileText size={20} /> My Documents
                         </button>
-
-                        <button onClick={() => navigate("finance")}>
-                          <Download size={21} />
-                          <span>Fee Receipts</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate('receipts')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <Download size={20} /> Fee Invoices &amp; Receipts
                         </button>
-
-                        <button onClick={() => navigate("profile")}>
-                          <UserRound size={21} />
-                          <span>Student ID</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate('student-id')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <UserRound size={20} /> Student ID Card
                         </button>
-
-                        <button onClick={() => navigate("results")}>
-                          <BarChart3 size={21} />
-                          <span>Transcripts</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate('attendance')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <UserCheck size={20} /> QR Attendance
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate('elearning')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <Laptop size={20} /> E-Learning Notes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate('attachment')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <Briefcase size={20} /> Attachment Logbook
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate('clearance')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <FileCheck2 size={20} /> Clearance Form
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate('campus-life')}
+                          className="p-3 rounded-lg bg-[#f4f8fe] hover:bg-[#e7f1ff] border border-[#e5edf8] text-[#15518f] flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                        >
+                          <Users size={20} /> Clubs &amp; SRC Voting
                         </button>
                       </div>
                     </section>
                   </div>
 
-                  <div className="hca-right-column">
-                    {/* NOTIFICATIONS */}
-                    <section className="hca-panel hca-notifications-panel">
-                      <div className="hca-panel-heading">
-                        <div className="hca-panel-title">
-                          <Bell size={22} />
-                          <h3>Notifications</h3>
+                  {/* RIGHT COLUMN */}
+                  <div className="space-y-5">
+                    {/* LIVE NOTIFICATIONS */}
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[#092c60]">
+                          <Bell size={19} />
+                          <h3 className="text-sm font-extrabold">Notifications</h3>
                         </div>
-
                         <button
-                          className="hca-text-link"
-                          onClick={() => navigate("notifications")}
+                          type="button"
+                          onClick={() => navigate('notifications')}
+                          className="text-xs font-bold text-[#075fc7] hover:underline inline-flex items-center gap-1"
                         >
-                          View All <ArrowRight size={15} />
+                          View All <ArrowRight size={14} />
                         </button>
                       </div>
 
-                      <div className="hca-notification-list">
-                        {notifications.map((item) => (
+                      <div className="divide-y divide-slate-100">
+                        {engState.notifications.map((item) => (
                           <button
-                            className={`hca-notification-row ${
-                              readNotifications.includes(item.id) ? "read" : ""
-                            }`}
                             key={item.id}
-                            onClick={() =>
-                              setReadNotifications((previous) =>
-                                previous.includes(item.id)
-                                  ? previous
-                                  : [...previous, item.id]
-                              )
-                            }
+                            type="button"
+                            onClick={() => {
+                              engagementService.markNotificationRead(item.id);
+                              refresh();
+                            }}
+                            className={`w-full py-2.5 text-left hover:bg-slate-50 rounded px-1 transition-colors ${
+                              item.read ? 'opacity-65' : ''
+                            }`}
                           >
-                            <span className={`hca-dot ${item.color}`} />
-
-                            <span className="hca-notification-message">
-                              <strong>{item.title}</strong>
-                              <small>{item.detail}</small>
-                            </span>
-
-                            <span className="hca-notification-time">
-                              {item.time}
-                            </span>
+                            <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+                              <span>{item.category}</span>
+                              <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <strong className="text-xs font-bold text-slate-900 block mt-0.5">
+                              {item.title}
+                            </strong>
+                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{item.message}</p>
                           </button>
                         ))}
                       </div>
 
                       <button
-                        className="hca-all-notifications"
-                        onClick={markAllRead}
+                        type="button"
+                        onClick={() => {
+                          engagementService.markAllRead();
+                          refresh();
+                        }}
+                        className="w-full py-1.5 text-xs font-bold text-[#0865c9] hover:underline"
                       >
                         Mark all notifications as read
                       </button>
                     </section>
 
-                    {/* FEE SUMMARY */}
-                    <section className="hca-panel hca-fee-panel">
-                      <div className="hca-panel-heading">
-                        <div className="hca-panel-title">
-                          <CreditCard size={22} />
-                          <h3>Fee Summary</h3>
+                    {/* LIVE FEE SUMMARY */}
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[#092c60]">
+                          <CreditCard size={19} />
+                          <h3 className="text-sm font-extrabold">Fee Summary</h3>
                         </div>
-
                         <button
-                          className="hca-text-link"
-                          onClick={() => navigate("finance")}
+                          type="button"
+                          onClick={() => navigate('finance')}
+                          className="text-xs font-bold text-[#075fc7] hover:underline"
                         >
-                          Full Statement
+                          Details
                         </button>
                       </div>
 
-                      <div className="hca-fee-balance">
-                        <small>Outstanding Balance</small>
-                        <strong>KES 12,500.00</strong>
-                        <span>Tuition & Practical Lab Fee</span>
+                      <div className="p-4 rounded-lg bg-gradient-to-br from-[#edf5ff] to-[#f7faff] space-y-1">
+                        <span className="text-[11px] font-semibold text-slate-600 block">
+                          Outstanding Balance
+                        </span>
+                        <strong className="text-2xl font-extrabold text-[#103c76] font-mono tabular-nums block">
+                          KES {fin.balance.toLocaleString()}.00
+                        </strong>
+                        <span className="text-[11px] text-slate-500 block font-mono tabular-nums">
+                          {state.transactions.length} Verified Receipt(s) · Billed KES {fin.totalBilled.toLocaleString()}
+                        </span>
                       </div>
 
-                      <div className="hca-fee-progress">
-                        <div className="hca-fee-progress-label">
-                          <span>Fee payment progress</span>
-                          <strong>75% Paid</strong>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-600">Fee clearance progress</span>
+                          <strong className="text-emerald-700 font-mono tabular-nums">{fin.percentPaid}%</strong>
                         </div>
-                        <div className="hca-progress-track">
-                          <div className="hca-progress-value" />
+                        <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r from-[#07975d] to-[#35c58b] transition-all duration-300 ${progressWidthClass}`}
+                          />
                         </div>
                       </div>
 
                       <button
-                        className="hca-pay-button"
-                        onClick={() => navigate("finance")}
+                        type="button"
+                        onClick={() => navigate('finance')}
+                        className="w-full py-2.5 px-4 bg-[#0963c6] hover:bg-[#064d9d] text-white text-xs font-bold rounded-lg flex items-center justify-between transition-colors"
                       >
-                        <CreditCard size={18} />
-                        Make a Payment (M-Pesa)
-                        <ArrowRight size={17} />
+                        <span className="inline-flex items-center gap-2">
+                          <CreditCard size={16} /> Make a Payment (M-Pesa)
+                        </span>
+                        <ArrowRight size={15} />
                       </button>
                     </section>
 
-                    {/* PROMOTIONAL BANNER */}
-                    <section className="hca-promo-banner">
-                      <div className="hca-promo-content">
-                        <span>LEARN • INNOVATE • EXCEL</span>
-                        <h3>
-                          Build Your Future
-                          <br />
-                          with <b>HI-TECH College</b>
+                    {/* INNOVATION HUB PROMO BANNER */}
+                    <section className="relative min-h-[168px] rounded-xl overflow-hidden text-white p-5 flex items-center bg-[#073b83]">
+                      <img
+                        src={libraryPromoUrl}
+                        alt="HI-TECH College Innovation Hub"
+                        referrerPolicy="no-referrer"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#042868]/95 via-[#053e85]/85 to-[#042d64]/35" />
+                      <div className="relative z-10 space-y-2">
+                        <span className="text-[10px] font-extrabold tracking-widest text-[#ffd04a]">
+                          LEARN • INNOVATE • EXCEL
+                        </span>
+                        <h3 className="text-lg font-extrabold leading-snug">
+                          Build Your Future with <span className="text-[#ffd12d]">HI-TECH College</span>
                         </h3>
-                        <p>Quality TVET & Degree Education. Real Industry Skills.</p>
-
-                        <button onClick={() => navigate("programme")}>
-                          Learn More <ArrowRight size={16} />
+                        <p className="text-[11px] text-blue-100">
+                          Explore labs, exam cards &amp; campus facilities.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => navigate('college-information')}
+                          className="px-3.5 py-1.5 bg-[#ffc400] hover:bg-[#ffda54] text-[#092d60] text-xs font-extrabold rounded-md inline-flex items-center gap-1.5"
+                        >
+                          Learn More <ArrowRight size={14} />
                         </button>
                       </div>
                     </section>
 
-                    {/* SUPPORT */}
-                    <section className="hca-support-card">
-                      <div className="hca-support-icon">
-                        <Headphones size={25} />
+                    {/* SUPPORT CARD */}
+                    <section className="bg-white border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#e8f2ff] text-[#075fc2] flex items-center justify-center shrink-0">
+                        <Headphones size={20} />
                       </div>
-                      <div>
-                        <strong>Student Support Centre</strong>
-                        <p>Need help with your exams, fees or units?</p>
-                        <button onClick={() => navigate("support")}>
-                          Get Help <ArrowRight size={14} />
+                      <div className="space-y-1">
+                        <strong className="text-xs font-bold text-slate-900 block">
+                          Student Support Centre
+                        </strong>
+                        <p className="text-[11px] text-slate-500">
+                          Need help with exams, hostels, or fees?
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => navigate('support')}
+                          className="text-xs font-bold text-[#0864c9] hover:underline inline-flex items-center gap-1"
+                        >
+                          Get Help <ArrowRight size={13} />
                         </button>
                       </div>
                     </section>
@@ -811,592 +1026,107 @@ export default function StudentDashboard({
               </>
             )}
 
-            {/* TIMETABLE VIEW */}
-            {activePage === "timetable" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Semester Timetable</h2>
-                      <p className="text-xs text-slate-500">{academicYear} • {semester} • {programme}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => window.print()}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg"
-                  >
-                    <Printer size={15} /> Print Timetable
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {INITIAL_STUDENT_UNITS.map((unit) => (
-                    <div key={unit.code} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded">
-                            {unit.code}
-                          </span>
-                          <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                            {unit.credits} Credits
-                          </span>
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-900 mb-1">{unit.title}</h4>
-                        <p className="text-xs text-slate-500 mb-3">{unit.lecturerName}</p>
-                      </div>
-                      <div className="pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <CalendarDays size={14} className="text-blue-600" />
-                          <span className="font-semibold text-slate-800">{unit.day}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock size={14} className="text-slate-400" />
-                          <span>{unit.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin size={14} className="text-slate-400" />
-                          <span>{unit.room}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* RESULTS VIEW */}
-            {activePage === "results" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Academic Results &amp; Transcript</h2>
-                      <p className="text-xs text-slate-500">Official Semester Provisional Transcript</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-right">
-                      <small className="text-[10px] text-amber-800 font-semibold block uppercase">Cumulative GPA</small>
-                      <strong className="text-base text-amber-900 font-bold">{gpa.toFixed(2)} / 4.00</strong>
-                    </div>
-                    <button
-                      onClick={() => window.print()}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
-                    >
-                      <Download size={15} /> Download Official Transcript
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap justify-between items-center text-xs text-slate-600">
-                    <div>Student Name: <strong className="text-slate-900">{studentName}</strong></div>
-                    <div>Registration No: <strong className="font-mono text-blue-700">{registrationNumber}</strong></div>
-                    <div>Transcript Register Ref: <strong className="font-mono text-emerald-700">TRX-2026-0001</strong></div>
-                    <div>Status: <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded">OFFICIALLY ISSUED</span></div>
-                  </div>
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
-                      <tr>
-                        <th className="p-4">Unit Code</th>
-                        <th className="p-4">Unit Title</th>
-                        <th className="p-4">Credits</th>
-                        <th className="p-4">Raw Score</th>
-                        <th className="p-4">Grade</th>
-                        <th className="p-4">Remark</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {INITIAL_STUDENT_UNITS.map((unit) => (
-                        <tr key={unit.code} className="hover:bg-slate-50">
-                          <td className="p-4 font-mono font-bold text-blue-900">{unit.code}</td>
-                          <td className="p-4 font-medium text-slate-800">{unit.title}</td>
-                          <td className="p-4 text-slate-600">{unit.credits}</td>
-                          <td className="p-4 font-semibold text-slate-700">{unit.score}%</td>
-                          <td className="p-4">
-                            <span className="px-2 py-1 text-xs font-bold rounded bg-emerald-100 text-emerald-800">
-                              {unit.grade}
-                            </span>
-                          </td>
-                          <td className="p-4 text-xs font-semibold text-emerald-700">Pass (Completed)</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* FINANCE & PAYMENTS VIEW */}
-            {activePage === "finance" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Student Fees &amp; Payments</h2>
-                      <p className="text-xs text-slate-500">M-Pesa Daraja Integration &amp; Official Invoices</p>
-                    </div>
-                  </div>
-                  <div className="bg-red-50 border border-red-200 px-4 py-2 rounded-lg text-right">
-                    <small className="text-[10px] text-red-700 font-semibold uppercase block">Balance Due</small>
-                    <strong className="text-lg text-red-800 font-bold">KES 12,500.00</strong>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* M-PESA STK Push Simulator */}
-                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold">
-                        <Smartphone size={22} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-sm">Lipa na M-Pesa Online</h3>
-                        <p className="text-xs text-slate-500">Instant STK Push to Phone</p>
-                      </div>
-                    </div>
-
-                    <form onSubmit={handleSimulatePayment} className="space-y-3">
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">M-Pesa Mobile Number</label>
-                        <input
-                          type="text"
-                          value={mpesaPhone}
-                          onChange={(e) => setMpesaPhone(e.target.value)}
-                          className="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono"
-                          placeholder="e.g. 0712345678"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">Payment Amount (KES)</label>
-                        <input
-                          type="number"
-                          value={mpesaAmount}
-                          onChange={(e) => setMpesaAmount(e.target.value)}
-                          className="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
-                          required
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={mpesaStatus === "SENDING" || mpesaStatus === "PROMPT_SENT"}
-                        className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition"
-                      >
-                        {mpesaStatus === "SENDING"
-                          ? "Connecting to Daraja API..."
-                          : mpesaStatus === "PROMPT_SENT"
-                          ? "Check your phone for PIN prompt..."
-                          : "Trigger STK Push (Pay Now)"}
-                      </button>
-                    </form>
-
-                    {mpesaStatus === "SUCCESS" && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
-                        <div>
-                          <strong>Payment of KES {Number(mpesaAmount).toLocaleString()} Successful!</strong>
-                          <p className="text-[11px] text-emerald-700 mt-0.5">
-                            Receipt <span className="font-mono font-bold">RCT-2026-0004</span> generated. Balance updated.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment History & Receipts */}
-                  <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                      <h3 className="font-bold text-slate-900 text-sm">Payment Receipts &amp; Ledger</h3>
-                      <span className="text-xs text-slate-500">Double-Entry Verified</span>
-                    </div>
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-100 text-slate-600 text-xs uppercase font-semibold">
-                        <tr>
-                          <th className="p-3">Receipt No</th>
-                          <th className="p-3">Date</th>
-                          <th className="p-3">Channel / Ref</th>
-                          <th className="p-3">Amount (KES)</th>
-                          <th className="p-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 text-xs">
-                        {INITIAL_TRANSACTIONS.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-slate-50">
-                            <td className="p-3 font-mono font-bold text-blue-900">{tx.receiptNumber}</td>
-                            <td className="p-3 text-slate-600">{new Date(tx.timestamp).toLocaleDateString()}</td>
-                            <td className="p-3">
-                              <span className="font-semibold text-slate-800 block">{tx.paymentMethod}</span>
-                              <span className="font-mono text-slate-500 text-[10px]">{tx.referenceNumber}</span>
-                            </td>
-                            <td className="p-3 font-mono font-bold text-slate-900">
-                              KES {tx.amount.toLocaleString()}.00
-                            </td>
-                            <td className="p-3">
-                              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                                {tx.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* LIBRARY VIEW */}
-            {activePage === "library" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Digital Library &amp; Physical Loans</h2>
-                      <p className="text-xs text-slate-500">HI-TECH Central Library Access System</p>
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg text-right">
-                    <small className="text-[10px] text-blue-700 font-semibold uppercase block">Active Member Card</small>
-                    <strong className="text-xs font-mono text-blue-900 font-bold">HCA/LIB/2026/001</strong>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-                  <h3 className="text-sm font-bold text-slate-900">My Currently Borrowed Physical Books</h3>
-                  <div className="divide-y divide-slate-100">
-                    {INITIAL_BOOK_LOANS.filter((l) => l.borrowerRegNo === registrationNumber).map((loan) => (
-                      <div key={loan.id} className="py-3 flex items-center justify-between">
-                        <div>
-                          <strong className="text-sm font-bold text-slate-800 block">{loan.bookTitle}</strong>
-                          <span className="text-xs text-slate-500 font-mono">Barcode: {loan.barcode}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs block text-slate-600">Due Date: <strong className="text-slate-900">{loan.dueDate}</strong></span>
-                          <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-800">
-                            {loan.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MY PROFILE VIEW */}
-            {activePage === "profile" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Student Academic Profile</h2>
-                      <p className="text-xs text-slate-500">Official Student Records Registry</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
-                    ENROLLED &amp; ACTIVE
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider">Academic Identity</h3>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Official Registration Number:</span>
-                        <strong className="font-mono text-blue-800 text-sm">{registrationNumber}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Admission Reference:</span>
-                        <strong className="font-mono text-slate-800">{INITIAL_STUDENT_PROFILE.admissionNumber}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Enrolled Programme:</span>
-                        <strong className="text-slate-900">{programme}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Department / Faculty:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.department}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Campus:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.campus}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider">Personal Details</h3>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Full Name:</span>
-                        <strong className="text-slate-900">{studentName}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Student Email:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.email}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Phone Number:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.phoneNumber}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">National ID / Index Ref:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.nationalId}</strong>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-500">Date of Admission:</span>
-                        <strong className="text-slate-900">{INITIAL_STUDENT_PROFILE.admissionDate}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* SUPPORT VIEW */}
-            {activePage === "support" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Student Support &amp; Helpdesk</h2>
-                      <p className="text-xs text-slate-500">Academic, Financial &amp; Technical Inquiries</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl border border-slate-200 max-w-2xl space-y-4">
-                  <h3 className="font-bold text-slate-900 text-sm">Submit a Support Request</h3>
-                  {supportSubmitted ? (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs flex items-center gap-3">
-                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                      <div>
-                        <strong>Support Ticket #TKT-2026-0941 Created!</strong>
-                        <p className="text-[11px] text-emerald-700 mt-1">
-                          A student counsellor or registrar officer will review and reply within 24 hours.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        setSupportSubmitted(true);
-                      }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">Inquiry Category</label>
-                        <select className="w-full text-xs p-2.5 border border-slate-300 rounded-lg">
-                          <option>Academic &amp; Course Registration</option>
-                          <option>Fees &amp; M-Pesa Payment Reconciliation</option>
-                          <option>Timetable &amp; Exam Room Conflict</option>
-                          <option>Library Fines &amp; Digital Access</option>
-                          <option>Hostels &amp; Student Welfare</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">Explain Your Inquiry</label>
-                        <textarea
-                          rows={4}
-                          value={supportMessage}
-                          onChange={(e) => setSupportMessage(e.target.value)}
-                          placeholder="Please describe your question or issue in detail..."
-                          className="w-full text-xs p-2.5 border border-slate-300 rounded-lg"
-                          required
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs"
-                      >
-                        Submit Ticket
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* DOCUMENTS VIEW */}
-            {activePage === "documents" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Official Student Documents</h2>
-                      <p className="text-xs text-slate-500">Verified and Downloadable Credentials</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
-                    <div>
-                      <FileText size={28} className="text-blue-600 mb-2" />
-                      <h4 className="font-bold text-slate-900 text-sm">Admission Letter</h4>
-                      <p className="text-xs text-slate-500 mb-4">Official letter of admission into {programme}.</p>
-                    </div>
-                    <button
-                      onClick={() => alert(`Downloading Official Admission Letter for ${studentName} (${registrationNumber})`)}
-                      className="px-3 py-2 text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg flex items-center justify-center gap-2"
-                    >
-                      <Download size={14} /> Download PDF
-                    </button>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
-                    <div>
-                      <ShieldCheck size={28} className="text-emerald-600 mb-2" />
-                      <h4 className="font-bold text-slate-900 text-sm">Examination Clearance Card</h4>
-                      <p className="text-xs text-slate-500 mb-4">Valid exam permit for 2026 Semester 1 series.</p>
-                    </div>
-                    <button
-                      onClick={() => alert(`Generating Examination Clearance Pass for ${registrationNumber}`)}
-                      className="px-3 py-2 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg flex items-center justify-center gap-2"
-                    >
-                      <Download size={14} /> Download Card
-                    </button>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
-                    <div>
-                      <CreditCard size={28} className="text-purple-600 mb-2" />
-                      <h4 className="font-bold text-slate-900 text-sm">Consolidated Fee Statement</h4>
-                      <p className="text-xs text-slate-500 mb-4">Certified student financial ledger breakdown.</p>
-                    </div>
-                    <button
-                      onClick={() => alert(`Exporting Consolidated Financial Statement for ${registrationNumber}`)}
-                      className="px-3 py-2 text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg flex items-center justify-center gap-2"
-                    >
-                      <Download size={14} /> Export Statement
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PROGRAMME & COURSES VIEW */}
-            {(activePage === "programme" || activePage === "course-registration") && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white p-5 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigate("dashboard")}
-                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Enrolled Units &amp; Course Registration</h2>
-                      <p className="text-xs text-slate-500">{programme} • 6 Registered Core &amp; Practical Units</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg">
-                    Total Credits: 20
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
-                      <tr>
-                        <th className="p-4">Unit Code</th>
-                        <th className="p-4">Unit Name</th>
-                        <th className="p-4">Credits</th>
-                        <th className="p-4">Assigned Lecturer</th>
-                        <th className="p-4">Attendance</th>
-                        <th className="p-4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {INITIAL_STUDENT_UNITS.map((unit) => (
-                        <tr key={unit.code} className="hover:bg-slate-50">
-                          <td className="p-4 font-mono font-bold text-blue-900">{unit.code}</td>
-                          <td className="p-4 font-semibold text-slate-800">{unit.title}</td>
-                          <td className="p-4 text-slate-600">{unit.credits}</td>
-                          <td className="p-4 text-xs text-slate-600">{unit.lecturerName}</td>
-                          <td className="p-4 text-xs font-semibold text-slate-800">
-                            <span className="text-emerald-700 font-bold">{unit.attendance}%</span>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800">
-                              Registered
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* FOOTER */}
-            <footer className="hca-footer">
+            {/* CLEAN PORTAL FOOTER */}
+            <footer className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
               <div>
-                <strong>HI-TECH COLLEGE</strong>
-                <span>Learn • Innovate • Excel</span>
+                <strong className="text-[#092c60] block">HI-TECH COLLEGE</strong>
+                <span className="text-[11px]">Learn • Innovate • Excel</span>
               </div>
-
-              <p>
+              <p className="text-[11px]">
                 © {new Date().getFullYear()} HI-TECH College. All rights reserved.
               </p>
-
-              <div className="hca-footer-links">
-                <button onClick={() => alert("HI-TECH College ISO 9001:2015 Policy & Data Protection Act 2019 compliance.")}>Privacy</button>
-                <button onClick={() => alert("HI-TECH College Student Handbook & Code of Academic Integrity.")}>Terms</button>
-                <button onClick={() => navigate("support")}>Help Centre</button>
+              <div className="flex items-center gap-4 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('privacy')}
+                  className="hover:text-slate-800 hover:underline"
+                >
+                  Privacy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('terms')}
+                  className="hover:text-slate-800 hover:underline"
+                >
+                  Terms
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('support')}
+                  className="hover:text-slate-800 hover:underline"
+                >
+                  Help Centre
+                </button>
               </div>
             </footer>
           </div>
         </main>
       </div>
+
+      {/* INLINE MODALS (PRIVACY, TERMS, LOGOUT CONFIRMATION) */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-[#092c60]">
+                {activeModal === 'privacy'
+                  ? 'Student Data Privacy Policy'
+                  : activeModal === 'terms'
+                  ? 'Portal Academic & Integrity Terms'
+                  : 'Sign Out of Student Portal'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {activeModal === 'logout' ? (
+              <>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Are you sure you want to sign out of {profile.fullName}&apos;s student portal ({profile.registrationNumber})?
+                </p>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal(null)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50"
+                  >
+                    Stay Signed In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoutConfirm}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg"
+                  >
+                    Confirm Log Out
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {activeModal === 'privacy'
+                    ? 'HI-TECH College processes student academic, fee, and biometric/QR attendance records in strict compliance with the Kenya Data Protection Act (2019). Guardian portal sharing requires explicit student consent and may be revoked at any time in Settings.'
+                    : 'Students have read-only access to Registrar-approved examination marks and verified M-Pesa fee receipts. Final examination hall entry requires at least 75% unit attendance and 100% semester fee clearance.'}
+                </p>
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal(null)}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#092c60] rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,8 @@ import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
 import StudentPortalGuide from "./pages/StudentPortalGuide";
 import CollegeChatbot from "./components/CollegeChatbot";
+import CookieConsentBanner from "./components/CookieConsentBanner";
+import PublicVerifyEnquireModals from "./components/PublicVerifyEnquireModals";
 import { CourseProgramme } from "../types";
 import { COURSES_CATALOGUE } from "../data/college";
 
@@ -31,6 +33,9 @@ export default function PublicWebsite({
     COURSES_CATALOGUE[0]
   );
   const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
+  const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
+  const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+  const [enquireModalOpen, setEnquireModalOpen] = useState(false);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -131,6 +136,9 @@ export default function PublicWebsite({
         onNavigate={handleNavigate}
         onOpenPortalModal={() => setIsPortalModalOpen(true)}
         onSwitchToERP={onSwitchToERP}
+        onOpenCookieSettings={() => setCookieSettingsOpen(true)}
+        onOpenVerifyModal={() => setVerifyModalOpen(true)}
+        onOpenEnquireModal={() => setEnquireModalOpen(true)}
       />
 
       {/* Interactive Portal Access & Sign-In Modal */}
@@ -149,6 +157,20 @@ export default function PublicWebsite({
       <CollegeChatbot
         onNavigateToApply={() => handleNavigate("apply")}
         onOpenPortalModal={() => setIsPortalModalOpen(true)}
+      />
+
+      {/* Privacy & Browser Storage Consent (COOKIES.md) */}
+      <CookieConsentBanner
+        externalOpen={cookieSettingsOpen}
+        onExternalClose={() => setCookieSettingsOpen(false)}
+      />
+
+      {/* Public Credential Verify & Admissions CRM Enquiry (/?verify=CODE, /?enquire=1) */}
+      <PublicVerifyEnquireModals
+        verifyModalOpen={verifyModalOpen}
+        onCloseVerify={() => setVerifyModalOpen(false)}
+        enquireModalOpen={enquireModalOpen}
+        onCloseEnquire={() => setEnquireModalOpen(false)}
       />
     </div>
   );

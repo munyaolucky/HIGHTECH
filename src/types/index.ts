@@ -47,6 +47,7 @@ export type PortalRole =
   | 'website'
   | 'catalogue'
   | 'chatbot-admin'
+  | 'ai-governance'
   | 'student'
   | 'generator'
   | 'lecturer'
@@ -54,7 +55,14 @@ export type PortalRole =
   | 'finance'
   | 'library'
   | 'examination'
-  | 'admissions';
+  | 'admissions'
+  | 'hostels'
+  | 'hr'
+  | 'community'
+  | 'engagement'
+  | 'quality-reports'
+  | 'ai-support'
+  | 'campus-services';
 
 export interface CourseProgramme {
   id: string;

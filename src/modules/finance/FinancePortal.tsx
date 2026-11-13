@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -15,12 +15,30 @@ import {
   Building,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { INITIAL_TRANSACTIONS } from "../../data/mockCollegeData";
-import { FeeTransaction } from "../../types";
+import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
+import { studentPortalService } from "../../services/studentPortalService";
+import { FeeTransaction, PortalRole } from "../../types";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 
-export default function FinancePortal() {
-  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "feestructure" | "stk_push">("overview");
-  const [transactions, setTransactions] = useState<FeeTransaction[]>(INITIAL_TRANSACTIONS);
+interface FinancePortalProps {
+  onSwitchPortal?: (role: PortalRole) => void;
+}
+
+export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    "overview" | "transactions" | "feestructure" | "stk_push"
+  >("finance", "overview");
+  const [transactions, setTransactions] = useState<FeeTransaction[]>(
+    () => collegeErpService.getState().transactions
+  );
+
+  useEffect(() => {
+    return subscribeErpSync(() => {
+      setTransactions([...collegeErpService.getState().transactions]);
+    });
+  }, []);
+
+  const primaryStudentFin = studentPortalService.getFinancialSummary();
 
   // STK Push State
   const [stkPhone, setStkPhone] = useState("0712345678");
@@ -41,30 +59,25 @@ export default function FinancePortal() {
     setStkState("PENDING");
 
     setTimeout(() => {
-      const nextReceiptNumber = `RCT-2026-000${transactions.length + 1}`;
-      const randomMpesaCode = "S" + Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const newTx: FeeTransaction = {
-        id: `tx-${Date.now()}`,
-        receiptNumber: nextReceiptNumber,
+      const posted = collegeErpService.recordFeePayment({
         studentRegNo: stkStudentReg,
         studentName: stkStudentName,
         amount: Number(stkAmount),
         paymentMethod: "M-PESA",
-        referenceNumber: randomMpesaCode,
-        timestamp: new Date().toISOString(),
-        semester: "2026 / Semester 1",
-        description: "Tuition & Lab Fee Payment (M-Pesa STK Push)",
-        status: "COMPLETED",
-      };
+        phoneOrRef: stkPhone,
+        description: `Tuition & Lab Fee Payment (M-Pesa STK Push · ${stkPhone})`,
+      });
 
-      setTransactions([newTx, ...transactions]);
-      setStkState("CONFIRMED");
-
-      try {
-        confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
-      } catch {}
-    }, 1200);
+      if (posted.ok) {
+        setTransactions([...collegeErpService.getState().transactions]);
+        setStkState("CONFIRMED");
+        try {
+          confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+        } catch {}
+      } else {
+        setStkState("IDLE");
+      }
+    }, 600);
   };
 
   const totalCollections = transactions.reduce((sum, tx) => sum + tx.amount, 0);
@@ -84,12 +97,32 @@ export default function FinancePortal() {
           </p>
         </div>
 
-        <button
-          onClick={() => setActiveTab("stk_push")}
-          className="px-4 py-2 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl flex items-center gap-2 shadow"
-        >
-          <Smartphone size={16} /> M-Pesa Daraja STK Simulator
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onSwitchPortal && (
+            <>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("student")}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Student Fee View (Bal: KES {primaryStudentFin.balance.toLocaleString()})
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("registrar")}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Registrar Portal
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setActiveTab("stk_push")}
+            className="px-4 py-2 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl flex items-center gap-2 shadow"
+          >
+            <Smartphone size={16} /> M-Pesa Daraja STK Simulator
+          </button>
+        </div>
       </div>
 
       {/* METRIC CARDS */}

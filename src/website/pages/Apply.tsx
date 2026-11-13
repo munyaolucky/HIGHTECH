@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
 import { COURSES_CATALOGUE, COLLEGE_INFO } from "../../data/college";
+import { collegeErpService } from "../../services/collegeErpService";
 import { CourseProgramme } from "../../types";
 import {
   GraduationCap,
@@ -44,12 +45,22 @@ export default function Apply({
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate backend submission and atomic registration reference assignment
     setTimeout(() => {
+      const courseTitle =
+        COURSES_CATALOGUE.find((c) => c.id === courseId)?.title || "BSc. Computer Science";
+      const created = collegeErpService.submitOnlineApplication({
+        applicantName: fullName,
+        email,
+        phoneNumber,
+        nationalIdOrIndex: kcseIndex || nationalId || `KCSE-${kcseYear}`,
+        targetProgramme: courseTitle,
+        targetCampus: campus,
+        intake: `${intake} Intake`,
+        meanGrade,
+      });
+
       setIsSubmitting(false);
-      const randomSeq = Math.floor(1000 + Math.random() * 9000);
-      const appRef = `HCA/APP/2026/${randomSeq}`;
-      setSubmittedAppRef(appRef);
+      setSubmittedAppRef(created.applicationReference);
 
       try {
         confetti({
@@ -60,7 +71,7 @@ export default function Apply({
       } catch (err) {
         // ignore in case of headless
       }
-    }, 600);
+    }, 400);
   };
 
   const currentCourse = COURSES_CATALOGUE.find((c) => c.id === courseId);

@@ -42,6 +42,7 @@ export default function RegistrationGeneratorPortal() {
   const [lastGenerated, setLastGenerated] = useState<RegistrationIssuance | null>(null);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Verification tool state
   const [verifyInput, setVerifyInput] = useState<string>("HCA/STAFF/2026/001");
@@ -67,9 +68,10 @@ export default function RegistrationGeneratorPortal() {
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipientName.trim()) {
-      alert("Please provide the recipient or holder name.");
+      setFormError("Please provide the recipient or holder name.");
       return;
     }
+    setFormError(null);
 
     const newIssuance = registrationService.generateNextRegistrationNumber({
       recordType: selectedType,
@@ -175,6 +177,16 @@ export default function RegistrationGeneratorPortal() {
           </div>
 
           <form onSubmit={handleGenerate} className="space-y-4">
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5">
+                  <AlertTriangle size={14} /> {formError}
+                </span>
+                <button type="button" onClick={() => setFormError(null)} className="underline">
+                  Dismiss
+                </button>
+              </div>
+            )}
             {/* Record Type Picker */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">

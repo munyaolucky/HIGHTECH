@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   GraduationCap,
   Users,
@@ -15,13 +15,28 @@ import {
   Search,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { INITIAL_ADMISSIONS } from "../../data/mockCollegeData";
-import { registrationService } from "../../services/registrationService";
-import { AdmissionApplication } from "../../types";
+import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
+import { AdmissionApplication, PortalRole } from "../../types";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 
-export default function AdmissionsPortal() {
-  const [applications, setApplications] = useState<AdmissionApplication[]>(INITIAL_ADMISSIONS);
-  const [activeTab, setActiveTab] = useState<"applications" | "new_apply" | "conversion">("applications");
+interface AdmissionsPortalProps {
+  onSwitchPortal?: (role: PortalRole) => void;
+}
+
+export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalProps) {
+  const [applications, setApplications] = useState<AdmissionApplication[]>(
+    () => collegeErpService.getState().applications
+  );
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    "applications" | "new_apply" | "conversion"
+  >("admissions", "applications");
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    return subscribeErpSync(() => {
+      setApplications([...collegeErpService.getState().applications]);
+    });
+  }, []);
 
   // New application form state
   const [applicantName, setApplicantName] = useState("");
@@ -36,10 +51,7 @@ export default function AdmissionsPortal() {
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
-    const ref = `APP-2026-0${Math.floor(100 + Math.random() * 900)}`;
-    const newApp: AdmissionApplication = {
-      id: `app-${Date.now()}`,
-      applicationReference: ref,
+    const newApp = collegeErpService.submitOnlineApplication({
       applicantName,
       email: applicantEmail,
       phoneNumber: applicantPhone,
@@ -48,13 +60,12 @@ export default function AdmissionsPortal() {
       targetCampus,
       intake,
       meanGrade,
-      submittedAt: new Date().toISOString(),
-      applicationFeePaid: true,
-      status: "UNDER_REVIEW",
-    };
+    });
 
-    setApplications([newApp, ...applications]);
-    setApplicationSuccess(`Application ${ref} submitted successfully. Under academic verification review.`);
+    setApplications([...collegeErpService.getState().applications]);
+    setApplicationSuccess(
+      `Application ${newApp.applicationReference} submitted and synced to Admissions & Central Registration Registry.`
+    );
     setTimeout(() => {
       setApplicationSuccess(null);
       setActiveTab("applications");
@@ -62,50 +73,36 @@ export default function AdmissionsPortal() {
       setApplicantEmail("");
       setApplicantPhone("");
       setNationalIdOrIndex("");
-    }, 2000);
+    }, 1800);
   };
 
   const handleMakeOffer = (appId: string) => {
-    const offerRef = `OFFER-2026-0${Math.floor(100 + Math.random() * 900)}`;
-    setApplications(
-      applications.map((app) =>
-        app.id === appId ? { ...app, status: "OFFER_MADE", offerLetterRef: offerRef } : app
-      )
-    );
-    alert(`Offer letter ${offerRef} dispatched to applicant. Waiting for acceptance.`);
+    const res = collegeErpService.makeAdmissionOffer(appId);
+    if (res.ok) {
+      setApplications([...collegeErpService.getState().applications]);
+      setStatusNotice(`Offer letter ${res.offerRef} dispatched to applicant. Waiting for acceptance.`);
+    }
   };
 
   const handleAcceptOffer = (appId: string) => {
-    setApplications(
-      applications.map((app) => (app.id === appId ? { ...app, status: "ACCEPTED" } : app))
-    );
-    alert("Offer accepted by applicant. Eligible for official student registration conversion.");
+    const res = collegeErpService.acceptAdmissionOffer(appId);
+    if (res.ok) {
+      setApplications([...collegeErpService.getState().applications]);
+      setStatusNotice("Offer accepted by applicant. Eligible for official student registration conversion.");
+    }
   };
 
   const handleConvertToStudent = (app: AdmissionApplication) => {
-    // Call central registration generator for STU type
-    const issuance = registrationService.generateNextRegistrationNumber({
-      recordType: "STU",
-      year: 2026,
-      recipientName: app.applicantName,
-      identifierReference: app.nationalIdOrIndex,
-      department: "School of Computing & Informatics",
-      programmeOrRole: app.targetProgramme,
-      campus: app.targetCampus,
-      issuedBy: "Admissions-to-Registration Converter",
-    });
-
-    setApplications(
-      applications.map((a) =>
-        a.id === app.id ? { ...a, status: "REGISTERED", generatedStudentRegNo: issuance.registrationNumber } : a
-      )
-    );
+    const res = collegeErpService.convertApplicationToStudent(app.id);
+    setApplications([...collegeErpService.getState().applications]);
 
     try {
       confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
     } catch {}
 
-    alert(`Official Student Identity Created! Assigned Registration Number: ${issuance.registrationNumber}`);
+    setStatusNotice(
+      `Official Student Identity Created in Central Registry! Assigned Registration Number: ${res.studentRegNo}`
+    );
   };
 
   return (
@@ -123,13 +120,42 @@ export default function AdmissionsPortal() {
           </p>
         </div>
 
-        <button
-          onClick={() => setActiveTab("new_apply")}
-          className="px-4 py-2 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl flex items-center gap-2 shadow"
-        >
-          <Plus size={16} /> New Online Application
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onSwitchPortal && (
+            <>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("generator")}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Reg Generator
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal("registrar")}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xl border border-white/20"
+              >
+                Registrar Portal
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setActiveTab("new_apply")}
+            className="px-4 py-2 bg-[#ffc400] hover:bg-[#ffda54] text-[#092c60] text-xs font-bold rounded-xl flex items-center gap-2 shadow"
+          >
+            <Plus size={16} /> New Online Application
+          </button>
+        </div>
       </div>
+
+      {statusNotice && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3">
+          <span>{statusNotice}</span>
+          <button type="button" onClick={() => setStatusNotice(null)} className="underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* TABS */}
       <div className="flex items-center gap-2 border-b border-slate-200">

@@ -19,12 +19,18 @@ interface WebsiteFooterProps {
   onNavigate: (page: string) => void;
   onOpenPortalModal: () => void;
   onSwitchToERP: (role: string) => void;
+  onOpenCookieSettings?: () => void;
+  onOpenVerifyModal?: () => void;
+  onOpenEnquireModal?: () => void;
 }
 
 export default function WebsiteFooter({
   onNavigate,
   onOpenPortalModal,
   onSwitchToERP,
+  onOpenCookieSettings,
+  onOpenVerifyModal,
+  onOpenEnquireModal,
 }: WebsiteFooterProps) {
   const currentYear = new Date().getFullYear();
 
@@ -251,10 +257,58 @@ export default function WebsiteFooter({
                 <span>• Chatbot &amp; AI Service Desk (Mod 36-39)</span>
               </button>
               <button
+                onClick={() => onSwitchToERP("ai-governance")}
+                className="w-full text-left text-indigo-300 hover:text-white transition flex items-center gap-1.5 font-semibold"
+              >
+                <span>• AI Governance Centre (Mod 40-42)</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("ai-support")}
+                className="w-full text-left text-amber-300 hover:text-white transition flex items-center gap-1.5 font-semibold"
+              >
+                <span>• AI Support &amp; Help Centre (Mod 43)</span>
+              </button>
+              <button
                 onClick={() => onSwitchToERP("generator")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
                 <span>• Reg Number Generator</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("hostels")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Hostels &amp; Student Welfare</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("hr")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• HR &amp; Staff Management</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("community")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Elections, Clubs &amp; Alumni</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("engagement")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Guardians, Notices &amp; Careers</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("quality-reports")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Docs, Quality &amp; Reports</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("campus-services")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Credentials, CRM &amp; Compliance</span>
               </button>
             </div>
           </div>
@@ -267,12 +321,32 @@ export default function WebsiteFooter({
           <div>
             © {currentYear} {COLLEGE_INFO.name}. All Rights Reserved. Reg No: {COLLEGE_INFO.registrationNumber}.
           </div>
-          <div className="flex items-center gap-4 text-slate-400 text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400 text-xs">
+            <button
+              type="button"
+              onClick={() => onOpenVerifyModal?.()}
+              className="text-amber-300 hover:text-white underline font-bold transition"
+            >
+              Verify Credential (/?verify)
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => onOpenEnquireModal?.()}
+              className="text-blue-300 hover:text-white underline font-bold transition"
+            >
+              Admissions Enquiry (/?enquire=1)
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => onOpenCookieSettings?.()}
+              className="hover:text-white underline transition"
+            >
+              Cookie &amp; Storage Policy
+            </button>
+            <span>•</span>
             <span>Privacy Policy</span>
-            <span>•</span>
-            <span>Terms of Admission</span>
-            <span>•</span>
-            <span>Student Code</span>
           </div>
         </div>
       </div>
