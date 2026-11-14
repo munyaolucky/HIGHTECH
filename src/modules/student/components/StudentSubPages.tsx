@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  Eye,
   Lock,
   Mail,
   MapPin,
@@ -13,6 +14,7 @@ import {
   Send,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   UploadCloud,
   Users,
 } from 'lucide-react';
@@ -29,7 +31,11 @@ import {
 } from '../../../services/studentPortalService';
 import { SupportTicketCategory } from '../../../types/aiSupportCentre';
 import { SupportRequestCategory } from '../../../types/hostels';
+import { FeeTransaction } from '../../../types';
 import StudentAcademicExtras from './StudentAcademicExtras';
+import FeeReceiptModal from '../../../components/FeeReceiptModal';
+import MpesaStkPromptModal from '../../../components/MpesaStkPromptModal';
+import StudentCbtExamModal from '../../../components/StudentCbtExamModal';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
@@ -211,6 +217,11 @@ export default function StudentSubPages({
   // Settings & Guardian form
   const [newPassword, setNewPassword] = useState('');
   const [guardianEmail, setGuardianEmail] = useState('');
+
+  // Interactive Modal States
+  const [isCbtModalOpen, setIsCbtModalOpen] = useState(false);
+  const [selectedReceiptForModal, setSelectedReceiptForModal] = useState<FeeTransaction | null>(null);
+  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
 
   if (activeSection === 'dashboard') return null;
 
@@ -827,13 +838,20 @@ export default function StudentSubPages({
       <div className="space-y-5">
         {SectionShellHeader(
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCbtModalOpen(true)}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-sm transition"
+            >
+              <Sparkles size={14} className="text-amber-300" /> Start Interactive CBT Exam
+            </button>
             {onSwitchPortal && (
               <button
                 type="button"
                 onClick={() => onSwitchPortal('examination')}
                 className="px-3.5 py-2 bg-[#0866d7] hover:bg-[#0652b3] text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
               >
-                Open CBT Exam Runner
+                Open Full CBT Workspace
               </button>
             )}
             <button
@@ -938,20 +956,42 @@ export default function StudentSubPages({
                       Status: {myAttempt ? `${myAttempt.moderationStatus} (Score: ${myAttempt.totalAwarded}/${myAttempt.maxPossibleMarks})` : asm.status}
                     </span>
                   </div>
-                  {onSwitchPortal && (
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => onSwitchPortal('examination')}
-                      className="px-3 py-1.5 bg-[#092c60] text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
+                      onClick={() => setIsCbtModalOpen(true)}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1"
                     >
-                      {myAttempt ? 'Review Attempt' : 'Start CBT'}
+                      <Sparkles size={13} /> {myAttempt ? 'Retake CBT Mock' : 'Take CBT Mock'}
                     </button>
-                  )}
+                    {onSwitchPortal && (
+                      <button
+                        type="button"
+                        onClick={() => onSwitchPortal('examination')}
+                        className="px-3 py-1.5 bg-[#092c60] hover:bg-[#061f46] text-white font-semibold rounded-lg text-xs whitespace-nowrap"
+                      >
+                        {myAttempt ? 'Review Engine' : 'Exam Workspace'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* STUDENT CBT EXAM MODAL */}
+        <StudentCbtExamModal
+          isOpen={isCbtModalOpen}
+          studentRegNo={regNo}
+          studentName={profile.fullName}
+          programme={profile.programme}
+          onClose={() => setIsCbtModalOpen(false)}
+          onFinished={(s, m) => {
+            onNotify('ok', `CBT Exam submitted successfully! You scored ${s}/${m} marks.`);
+            onRefresh();
+          }}
+        />
       </div>
     );
   }
@@ -1072,17 +1112,7 @@ export default function StudentSubPages({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              setMpesaPending(true);
-              const numericAmount = Number(mpesaAmount);
-              window.setTimeout(() => {
-                const res = studentPortalService.recordMpesaPayment(mpesaPhone, numericAmount);
-                setMpesaPending(false);
-                if (!res.ok) return onNotify('err', res.error ?? 'M-Pesa settlement failed.');
-                const updated = studentPortalService.getFinancialSummary();
-                setMpesaAmount(String(updated.balance > 0 ? updated.balance : 1000));
-                onNotify('ok', `M-Pesa payment settled! Verified Receipt ${res.receiptNumber} posted.`);
-                onRefresh();
-              }, 500);
+              setIsMpesaModalOpen(true);
             }}
             className="bg-white border border-slate-200 rounded-xl p-5 space-y-3.5 text-xs"
           >
@@ -1116,8 +1146,9 @@ export default function StudentSubPages({
             <button
               type="submit"
               disabled={mpesaPending}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg disabled:opacity-60 transition-colors"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
             >
+              <Smartphone size={14} />
               {mpesaPending ? 'Processing M-Pesa Callback...' : 'Send M-Pesa Payment Prompt'}
             </button>
           </form>
@@ -1148,7 +1179,14 @@ export default function StudentSubPages({
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 whitespace-nowrap">
                         KES {tx.amount.toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-4 text-right whitespace-nowrap space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReceiptForModal(tx)}
+                          className="text-[#0866d7] font-semibold hover:underline inline-flex items-center gap-1"
+                        >
+                          <Eye size={12} /> View Receipt
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
@@ -1158,9 +1196,9 @@ export default function StudentSubPages({
                             );
                             onNotify('ok', `Downloaded receipt ${tx.receiptNumber}.`);
                           }}
-                          className="text-[#0866d7] font-semibold hover:underline"
+                          className="text-slate-500 hover:text-slate-700"
                         >
-                          Download
+                          TXT
                         </button>
                       </td>
                     </tr>
@@ -1226,6 +1264,36 @@ export default function StudentSubPages({
             </tbody>
           </table>
         </div>
+
+        {/* SAFARICOM M-PESA STK PHONE PROMPT MODAL */}
+        <MpesaStkPromptModal
+          isOpen={isMpesaModalOpen}
+          phone={mpesaPhone}
+          amount={Number(mpesaAmount) || 0}
+          accountReference={regNo}
+          onConfirm={(code) => {
+            setIsMpesaModalOpen(false);
+            setMpesaPending(true);
+            const numericAmount = Number(mpesaAmount);
+            const res = studentPortalService.recordMpesaPayment(mpesaPhone, numericAmount);
+            setMpesaPending(false);
+            if (!res.ok) return onNotify('err', res.error ?? 'M-Pesa settlement failed.');
+            if (res.transaction) {
+              setSelectedReceiptForModal(res.transaction);
+            }
+            const updated = studentPortalService.getFinancialSummary();
+            setMpesaAmount(String(updated.balance > 0 ? updated.balance : 1000));
+            onNotify('ok', `M-Pesa payment settled! Receipt ${res.receiptNumber} generated.`);
+            onRefresh();
+          }}
+          onCancel={() => setIsMpesaModalOpen(false)}
+        />
+
+        {/* OFFICIAL FEE RECEIPT MODAL */}
+        <FeeReceiptModal
+          transaction={selectedReceiptForModal}
+          onClose={() => setSelectedReceiptForModal(null)}
+        />
       </div>
     );
   }

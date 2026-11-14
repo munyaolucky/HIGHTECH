@@ -22,10 +22,15 @@ import {
   ChevronDown,
   Headphones,
   Paperclip,
+  KeyRound,
+  Bot,
 } from 'lucide-react';
 import {
   getOrCreateConversation,
   processUserMessage,
+  processUserMessageAsync,
+  getGeminiApiKey,
+  setGeminiApiKey,
   submitMessageFeedback,
   createEscalation,
   detectLanguage,
@@ -55,6 +60,11 @@ export default function CollegeChatbot({
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackSuccessMsgId, setFeedbackSuccessMsgId] = useState<string | null>(null);
 
+  // Gemini API Key State
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => getGeminiApiKey() || '');
+  const [hasGeminiKey, setHasGeminiKey] = useState(() => Boolean(getGeminiApiKey()));
+
   // Escalation form state
   const [escalationForm, setEscalationForm] = useState({
     visitorName: '',
@@ -81,20 +91,29 @@ export default function CollegeChatbot({
     }
   }, [conversation?.messages, isOpen, isTyping]);
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
     if (!text || !conversation) return;
 
     setInputText('');
     setIsTyping(true);
 
-    // Simulate natural AI thinking delay (400ms)
-    setTimeout(() => {
-      const result = processUserMessage(conversation.id, text);
-      const updatedConv = getOrCreateConversation(conversation.id);
-      setConversation({ ...updatedConv });
-      setIsTyping(false);
-    }, 450);
+    try {
+      await processUserMessageAsync(conversation.id, text);
+    } catch {
+      processUserMessage(conversation.id, text);
+    }
+
+    const updatedConv = getOrCreateConversation(conversation.id);
+    setConversation({ ...updatedConv });
+    setIsTyping(false);
+  };
+
+  const handleSaveApiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    setGeminiApiKey(geminiKeyInput);
+    setHasGeminiKey(Boolean(geminiKeyInput.trim()));
+    setShowKeyModal(false);
   };
 
   const handleFeedback = (messageId: string, rating: ChatbotFeedbackRating) => {
@@ -220,6 +239,20 @@ export default function CollegeChatbot({
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Gemini Key Config */}
+              <button
+                onClick={() => setShowKeyModal(true)}
+                title={hasGeminiKey ? "Gemini 2.5 Active (Click to edit key)" : "Configure Google Gemini AI Key"}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${
+                  hasGeminiKey
+                    ? 'bg-emerald-600/40 text-emerald-300 border-emerald-400/50'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
+                }`}
+              >
+                <KeyRound size={13} />
+                {hasGeminiKey && <span className="text-[10px] font-bold hidden sm:inline">AI LIVE</span>}
+              </button>
+
               {/* Language Selector */}
               <button
                 onClick={() => setSelectedLanguage(selectedLanguage === 'en' ? 'sw' : 'en')}
@@ -576,6 +609,66 @@ export default function CollegeChatbot({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* GEMINI API KEY CONFIGURATION MODAL */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Bot size={18} className="text-blue-600" />
+                Google Gemini API Key
+              </h3>
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Enable real-time dynamic conversational AI (Gemini 2.5 Flash) alongside the college's approved knowledge base.
+            </p>
+
+            <form onSubmit={handleSaveApiKey} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                  Gemini API Key:
+                </label>
+                <input
+                  type="password"
+                  value={geminiKeyInput}
+                  onChange={(e) => setGeminiKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGeminiKeyInput('');
+                    setGeminiApiKey('');
+                    setHasGeminiKey(false);
+                    setShowKeyModal(false);
+                  }}
+                  className="flex-1 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                >
+                  Clear Key
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition"
+                >
+                  Save &amp; Activate
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

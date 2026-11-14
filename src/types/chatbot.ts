@@ -111,7 +111,7 @@ export interface ChatbotAIConfig {
   enabled: boolean;
   globalEnabled: boolean;
   confidenceThreshold: number; // default 0.68
-  providerMode: 'CONTROLLED_RAG' | 'STRICT_MATCH';
+  providerMode: 'CONTROLLED_RAG' | 'STRICT_MATCH' | 'GEMINI_LIVE';
   emergencyMode: boolean; // if true, AI is paused and chatbot prompts human escalation immediately
   defaultLanguage: 'auto' | 'en' | 'sw';
   monthlyTokenLimit: number;

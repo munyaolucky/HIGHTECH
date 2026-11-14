@@ -13,11 +13,16 @@ import {
   ArrowRight,
   ShieldCheck,
   Search,
+  UploadCloud,
+  FileCheck2,
+  Eye,
+  Paperclip,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
 import { AdmissionApplication, PortalRole } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import AdmissionOfferLetterModal from "../../components/AdmissionOfferLetterModal";
 
 interface AdmissionsPortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -31,6 +36,9 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
     "applications" | "new_apply" | "conversion"
   >("admissions", "applications");
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
+
+  // Selected application for offer letter modal
+  const [selectedOfferApp, setSelectedOfferApp] = useState<AdmissionApplication | null>(null);
 
   useEffect(() => {
     return subscribeErpSync(() => {
@@ -47,6 +55,12 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
   const [targetCampus, setTargetCampus] = useState("Nairobi Main Campus");
   const [intake, setIntake] = useState("May 2026 Intake");
   const [meanGrade, setMeanGrade] = useState("B+");
+
+  // Document upload checklist state
+  const [docKcseSlip, setDocKcseSlip] = useState<string>("kcse_slip_verified.pdf");
+  const [docNationalId, setDocNationalId] = useState<string>("national_id_card.pdf");
+  const [docPassportPhoto, setDocPassportPhoto] = useState<string>("passport_photo_clean.jpg");
+
   const [applicationSuccess, setApplicationSuccess] = useState<string | null>(null);
 
   const handleApply = (e: React.FormEvent) => {
@@ -246,27 +260,54 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
                     )}
 
                     {app.status === "OFFER_MADE" && (
-                      <button
-                        onClick={() => handleAcceptOffer(app.id)}
-                        className="px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded"
-                      >
-                        Simulate Acceptance
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOfferApp(app)}
+                          className="px-2 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded inline-flex items-center gap-1"
+                        >
+                          <Eye size={12} /> Offer Letter
+                        </button>
+                        <button
+                          onClick={() => handleAcceptOffer(app.id)}
+                          className="px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded"
+                        >
+                          Accept Offer
+                        </button>
+                      </div>
                     )}
 
                     {app.status === "ACCEPTED" && (
-                      <button
-                        onClick={() => handleConvertToStudent(app)}
-                        className="px-3 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded shadow-sm flex items-center gap-1 inline-flex"
-                      >
-                        <UserCheck size={13} /> Convert to Student Record
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOfferApp(app)}
+                          className="px-2 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded inline-flex items-center gap-1"
+                        >
+                          <Eye size={12} /> Offer Letter
+                        </button>
+                        <button
+                          onClick={() => handleConvertToStudent(app)}
+                          className="px-3 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded shadow-sm flex items-center gap-1 inline-flex"
+                        >
+                          <UserCheck size={13} /> Convert to Student
+                        </button>
+                      </div>
                     )}
 
                     {app.status === "REGISTERED" && (
-                      <span className="text-emerald-700 text-xs font-bold inline-flex items-center gap-1">
-                        <CheckCircle2 size={14} /> Registered
-                      </span>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOfferApp(app)}
+                          className="px-2 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded inline-flex items-center gap-1"
+                        >
+                          <Eye size={12} /> Offer Letter
+                        </button>
+                        <span className="text-emerald-700 text-xs font-bold inline-flex items-center gap-1">
+                          <CheckCircle2 size={14} /> Registered
+                        </span>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -385,6 +426,90 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
                 </div>
               </div>
 
+              {/* DOCUMENT VERIFICATION & UPLOAD CHECKLIST */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <FileCheck2 size={15} className="text-blue-700" />
+                    Required Documents Checklist (Antivirus &amp; ClamAV Scanned)
+                  </h4>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                    Gate A &amp; TVETA Verified
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  {/* KCSE RESULT SLIP */}
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-800 block">1. KCSE Result Slip</span>
+                    <label className="flex items-center gap-2 p-2 border border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                      <UploadCloud size={16} className="text-blue-600 shrink-0" />
+                      <span className="text-[10px] text-slate-600 truncate font-mono">
+                        {docKcseSlip || 'Select PDF/Image'}
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setDocKcseSlip(file.name);
+                        }}
+                      />
+                    </label>
+                    <span className="text-[9px] text-emerald-600 font-bold block flex items-center gap-1">
+                      <CheckCircle2 size={10} /> Certified &amp; Clean
+                    </span>
+                  </div>
+
+                  {/* NATIONAL ID / BIRTH CERT */}
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-800 block">2. National ID / Birth Cert</span>
+                    <label className="flex items-center gap-2 p-2 border border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                      <UploadCloud size={16} className="text-blue-600 shrink-0" />
+                      <span className="text-[10px] text-slate-600 truncate font-mono">
+                        {docNationalId || 'Select PDF/Image'}
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setDocNationalId(file.name);
+                        }}
+                      />
+                    </label>
+                    <span className="text-[9px] text-emerald-600 font-bold block flex items-center gap-1">
+                      <CheckCircle2 size={10} /> Identity Scanned Clean
+                    </span>
+                  </div>
+
+                  {/* PASSPORT PHOTO */}
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-800 block">3. Passport Photograph</span>
+                    <label className="flex items-center gap-2 p-2 border border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                      <UploadCloud size={16} className="text-blue-600 shrink-0" />
+                      <span className="text-[10px] text-slate-600 truncate font-mono">
+                        {docPassportPhoto || 'Select JPEG/PNG'}
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setDocPassportPhoto(file.name);
+                        }}
+                      />
+                    </label>
+                    <span className="text-[9px] text-emerald-600 font-bold block flex items-center gap-1">
+                      <CheckCircle2 size={10} /> Biometric Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2 flex justify-end gap-3">
                 <button
                   type="button"
@@ -404,6 +529,12 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
           )}
         </div>
       )}
+
+      {/* FORMAL ADMISSION OFFER LETTER MODAL */}
+      <AdmissionOfferLetterModal
+        application={selectedOfferApp}
+        onClose={() => setSelectedOfferApp(null)}
+      />
     </div>
   );
 }

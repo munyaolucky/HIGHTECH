@@ -603,7 +603,7 @@ export const studentPortalService = {
     return { ok: true };
   },
 
-  recordMpesaPayment(phone: string, amountKes: number): { ok: boolean; receiptNumber?: string; error?: string } {
+  recordMpesaPayment(phone: string, amountKes: number): { ok: boolean; receiptNumber?: string; transaction?: FeeTransaction; error?: string } {
     const cleanPhone = phone.replace(/\s+/g, '');
     if (cleanPhone.length < 9) {
       return { ok: false, error: 'Enter a valid M-Pesa phone number (e.g. 0712345678).' };
@@ -632,7 +632,7 @@ export const studentPortalService = {
       `Receipt ${posted.transaction.receiptNumber} (${posted.transaction.referenceNumber}) for KES ${posted.transaction.amount.toLocaleString()}`
     );
     saveState(state);
-    return { ok: true, receiptNumber: posted.transaction.receiptNumber };
+    return { ok: true, receiptNumber: posted.transaction.receiptNumber, transaction: posted.transaction };
   },
 
   reserveBook(bookId: string): { ok: boolean; error?: string } {

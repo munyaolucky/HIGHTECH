@@ -13,12 +13,16 @@ import {
   PieChart,
   BarChart3,
   Building,
+  Printer,
+  Eye,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
 import { studentPortalService } from "../../services/studentPortalService";
 import { FeeTransaction, PortalRole } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import FeeReceiptModal from "../../components/FeeReceiptModal";
+import MpesaStkPromptModal from "../../components/MpesaStkPromptModal";
 
 interface FinancePortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -31,6 +35,12 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
   const [transactions, setTransactions] = useState<FeeTransaction[]>(
     () => collegeErpService.getState().transactions
   );
+
+  // Receipt Modal State
+  const [selectedReceipt, setSelectedReceipt] = useState<FeeTransaction | null>(null);
+
+  // STK Prompt Modal State
+  const [isStkPromptOpen, setIsStkPromptOpen] = useState(false);
 
   useEffect(() => {
     return subscribeErpSync(() => {
@@ -54,30 +64,34 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
     { programme: "TVET CDACC Modular", tuition: 18000, lab: 4000, exam: 3000, total: 25000 },
   ];
 
-  const handleSimulateDarajaCallback = (e: React.FormEvent) => {
+  const handleOpenStkPrompt = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsStkPromptOpen(true);
+  };
+
+  const handleConfirmMpesaPayment = (mpesaCode: string) => {
+    setIsStkPromptOpen(false);
     setStkState("PENDING");
 
-    setTimeout(() => {
-      const posted = collegeErpService.recordFeePayment({
-        studentRegNo: stkStudentReg,
-        studentName: stkStudentName,
-        amount: Number(stkAmount),
-        paymentMethod: "M-PESA",
-        phoneOrRef: stkPhone,
-        description: `Tuition & Lab Fee Payment (M-Pesa STK Push · ${stkPhone})`,
-      });
+    const posted = collegeErpService.recordFeePayment({
+      studentRegNo: stkStudentReg,
+      studentName: stkStudentName,
+      amount: Number(stkAmount),
+      paymentMethod: "M-PESA",
+      phoneOrRef: `${mpesaCode} · ${stkPhone}`,
+      description: `Tuition & Lab Fee Payment (M-Pesa STK Push · ${mpesaCode})`,
+    });
 
-      if (posted.ok) {
-        setTransactions([...collegeErpService.getState().transactions]);
-        setStkState("CONFIRMED");
-        try {
-          confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
-        } catch {}
-      } else {
-        setStkState("IDLE");
-      }
-    }, 600);
+    if (posted.ok && posted.transaction) {
+      setTransactions([...collegeErpService.getState().transactions]);
+      setStkState("CONFIRMED");
+      setSelectedReceipt(posted.transaction);
+      try {
+        confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+      } catch {}
+    } else {
+      setStkState("IDLE");
+    }
   };
 
   const totalCollections = transactions.reduce((sum, tx) => sum + tx.amount, 0);
@@ -292,11 +306,12 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
                 <th className="p-4">Date &amp; Time</th>
                 <th className="p-4">Amount (KES)</th>
                 <th className="p-4">Status</th>
+                <th className="p-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50">
+                <tr key={tx.id} className="hover:bg-slate-50 transition">
                   <td className="p-4 font-mono font-bold text-blue-900">{tx.receiptNumber}</td>
                   <td className="p-4 font-mono font-bold text-slate-800">{tx.studentRegNo}</td>
                   <td className="p-4 font-bold text-slate-900">{tx.studentName}</td>
@@ -312,6 +327,15 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
                       {tx.status}
                     </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedReceipt(tx)}
+                      className="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg inline-flex items-center gap-1 transition"
+                    >
+                      <Eye size={13} /> View Receipt
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -365,7 +389,7 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
             </p>
           </div>
 
-          <form onSubmit={handleSimulateDarajaCallback} className="space-y-4">
+          <form onSubmit={handleOpenStkPrompt} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">Student Registration Number</label>
               <input
@@ -413,23 +437,52 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
             <button
               type="submit"
               disabled={stkState === "PENDING"}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2"
             >
+              <Smartphone size={16} />
               {stkState === "PENDING" ? "Processing Daraja Callback..." : "Dispatch STK Push & Generate Official Receipt"}
             </button>
           </form>
 
           {stkState === "CONFIRMED" && (
-            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-1 text-emerald-900">
+            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-2 text-emerald-900">
               <div className="flex items-center gap-2 font-bold text-emerald-800">
                 <CheckCircle2 size={16} /> M-Pesa STK Push Completed!
               </div>
               <p>Amount KES {Number(stkAmount).toLocaleString()} credited to student {stkStudentReg}.</p>
               <p className="font-mono text-[11px] text-emerald-700">Receipt generated and ledger reconciled.</p>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const latest = transactions[0];
+                    if (latest) setSelectedReceipt(latest);
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition"
+                >
+                  <Printer size={13} /> View &amp; Print Official Receipt
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
+
+      {/* SAFARICOM M-PESA STK PHONE PROMPT MODAL */}
+      <MpesaStkPromptModal
+        isOpen={isStkPromptOpen}
+        phone={stkPhone}
+        amount={Number(stkAmount) || 0}
+        accountReference={stkStudentReg}
+        onConfirm={handleConfirmMpesaPayment}
+        onCancel={() => setIsStkPromptOpen(false)}
+      />
+
+      {/* OFFICIAL FEE RECEIPT MODAL */}
+      <FeeReceiptModal
+        transaction={selectedReceipt}
+        onClose={() => setSelectedReceipt(null)}
+      />
     </div>
   );
 }
