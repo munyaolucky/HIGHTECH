@@ -45,6 +45,7 @@ import EngagementHubPortal from "./modules/engagement/EngagementHubPortal";
 import QualityReportsPortal from "./modules/quality/QualityReportsPortal";
 import AISupportCentrePortal from "./modules/ai-support/AISupportCentrePortal";
 import CampusServicesPortal from "./modules/campus-services/CampusServicesPortal";
+import StaffUserManagementPage from "./modules/users/StaffUserManagementPage";
 import PublicWebsite from "./website/PublicWebsite";
 import UserPortalShell from "./components/UserPortalShell";
 import { PortalShellProvider } from "./context/PortalShellContext";
@@ -189,6 +190,13 @@ export default function App() {
       icon: QrCode,
       description: "QR Credential Verify, Admissions CRM Pipeline, Appointments & Compliance",
     },
+    {
+      id: "staff-users" as PortalRole,
+      label: "Staff User Management",
+      badge: "Admin",
+      icon: Users,
+      description: "Platform Account Administration, Role Assignment & Access Governance",
+    },
   ];
 
   const primaryQuickIds: PortalRole[] = [
@@ -234,6 +242,8 @@ export default function App() {
         return <AISupportCentrePortal />;
       case "campus-services":
         return <CampusServicesPortal />;
+      case "staff-users":
+        return <StaffUserManagementPage />;
     }
   };
 

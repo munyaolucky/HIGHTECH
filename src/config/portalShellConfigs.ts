@@ -1223,6 +1223,74 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
         ],
       };
 
+    case 'staff-users':
+      return {
+        role,
+        portalTitle: 'Staff User Management',
+        portalSubtitle: 'Platform Account Administration, Role Assignment & Access Governance',
+        userName: 'System Administrator',
+        userRegNo: 'HCA/ADMIN/2026/010',
+        userTitle: 'Platform User Administration Lead',
+        department: 'ICT & Systems Administration',
+        campus: 'Nairobi Main Campus',
+        defaultTab: 'accounts',
+        quickStats: [
+          {
+            label: 'Total Accounts',
+            value: 'All Users',
+            toneClass: 'text-[#092c60]',
+          },
+          {
+            label: 'Active Sessions',
+            value: 'Live',
+            toneClass: 'text-emerald-700',
+          },
+          {
+            label: 'Pending Invitations',
+            value: 'Review',
+            toneClass: 'text-amber-700',
+          },
+          {
+            label: 'Security Posture',
+            value: 'Monitored',
+            toneClass: 'text-purple-700',
+          },
+        ],
+        navItems: [
+          {
+            id: 'accounts',
+            label: 'User Accounts Registry',
+            description: 'View, search, and manage platform user accounts across all roles',
+            keywords: 'accounts users registry manage search',
+            icon: Users,
+            group: 'Administration',
+            gradientClass: 'bg-[#092c60]',
+          },
+          {
+            id: 'roles',
+            label: 'Role & Permission Assignment',
+            description: 'Assign institutional roles and manage granular access permissions',
+            keywords: 'roles permissions access assignment rbac',
+            icon: KeyRound,
+            group: 'Governance',
+            gradientClass: 'bg-blue-700',
+          },
+          {
+            id: 'invitations',
+            label: 'Activation & Invitations',
+            description: 'Send account activation links and manage pending invitations',
+            keywords: 'invitations activation email onboarding',
+            icon: UserCheck,
+            group: 'Onboarding',
+            gradientClass: 'bg-emerald-700',
+          },
+        ],
+        relatedPortals: [
+          { role: 'hr', label: 'HR & Staff Directory' },
+          { role: 'ai-governance', label: 'AI Governance Centre' },
+        ],
+      };
+
     case 'catalogue':
       return {
         role,
@@ -1318,5 +1386,10 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
           { role: 'examination', label: 'Examinations & CBT' },
         ],
       };
+
+    default: {
+      const _exhaustive: never = role;
+      throw new Error(`Unknown portal role: ${_exhaustive}`);
+    }
   }
 }

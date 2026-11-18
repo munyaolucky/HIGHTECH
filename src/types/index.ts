@@ -62,7 +62,9 @@ export type PortalRole =
   | 'engagement'
   | 'quality-reports'
   | 'ai-support'
-  | 'campus-services';
+  | 'campus-services'
+  | 'staff-users';
+
 
 export interface CourseProgramme {
   id: string;
