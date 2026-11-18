@@ -1,0 +1,818 @@
+# **Next development slice: Shared Staff Portal UI**
+
+We will now build the common staff workspace that all HI-TECH College employees use. The layout will automatically display the correct navigation and dashboard according to the authenticated staff role.
+
+This slice covers:
+
+1. Responsive staff sidebar and mobile navigation.
+2. Staff header with search, notifications and profile menu.
+3. Role-aware dashboard routing.
+4. Reusable statistic cards, action buttons and task lists.
+5. Access-denied handling for unsupported roles.
+
+The components below are frontend foundations. They must be connected to your existing authentication and API rather than creating a separate login system.
+
+## **1. Staff sidebar**
+
+Create `apps/web/src/portals/staff/StaffSidebar.tsx`.
+
+```
+
+import {
+  LayoutDashboard, User, ClipboardList, MessageSquare, Bell,
+  LifeBuoy, Folder, Settings, Building2, Users, Network, MapPin,
+  CheckCircle, ChartNoAxesCombined, GraduationCap, BriefcaseBusiness,
+  UserPlus, ClipboardCheck, BookOpen, CalendarDays, FileText, Award,
+  Wallet, CreditCard, Smartphone, Receipt, ChartPie, Clock, Star,
+  Presentation, FolderOpen, FilePenLine, CheckCheck, BookMarked,
+  RotateCcw, Bookmark, Library, Package, Ticket, Monitor,
+  MonitorCheck, Wrench, Building, Calendar, Files, Mail, Gauge,
+  FolderCheck, TrendingUp, HeartHandshake, Vote, Bed, Laptop,
+  FilePlus, Truck, ShoppingCart, PackageCheck, PackageMinus,
+  Megaphone, Globe, Images, ShieldCheck, AlertTriangle, Bus,
+  ChevronDown, ChevronRight, X
+} from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import {
+  getStaffNavigation,
+  type StaffRole,
+  type StaffNavItem
+} from "../../config/staff-navigation";
+
+const iconMap: Record<string, React.ElementType> = {
+  LayoutDashboard, User, ClipboardList, MessageSquare, Bell,
+  LifeBuoy, Folder, Settings, Building2, Users, Network, MapPin,
+  CheckCircle, ChartNoAxesCombined, GraduationCap, BriefcaseBusiness,
+  UserPlus, ClipboardCheck, BookOpen, CalendarDays, FileText, Award,
+  Wallet, CreditCard, Smartphone, Receipt, ChartPie, Clock, Star,
+  Presentation, FolderOpen, FilePenLine, CheckCheck, BookMarked,
+  RotateCcw, Bookmark, Library, Package, Ticket, Monitor,
+  MonitorCheck, Wrench, Building, Calendar, Files, Mail, Gauge,
+  FolderCheck, TrendingUp, HeartHandshake, Vote, Bed, Laptop,
+  FilePlus, Truck, ShoppingCart, PackageCheck, PackageMinus,
+  Megaphone, Globe, Images, ShieldCheck, AlertTriangle, Bus
+};
+
+interface Props {
+  role: StaffRole;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+  permissions: string[];
+}
+
+function hasPermission(item: StaffNavItem, permissions: string[]) {
+  return !item.permission || permissions.includes(item.permission);
+}
+
+export default function StaffSidebar({
+  role,
+  mobileOpen,
+  onCloseMobile,
+  permissions
+}: Props) {
+  const [expanded, setExpanded] = useState<string[]>([]);
+
+  const navigation = getStaffNavigation(role).filter(item =>
+    hasPermission(item, permissions)
+  );
+
+  function toggle(label: string) {
+    setExpanded(current =>
+      current.includes(label)
+        ? current.filter(item => item !== label)
+        : [...current, label]
+    );
+  }
+
+  function renderItem(item: StaffNavItem) {
+    const Icon = iconMap[item.icon] ?? Folder;
+    const isExpanded = expanded.includes(item.label);
+    const hasChildren = Boolean(item.children?.length);
+
+    if (hasChildren) {
+      return (
+        <div key={item.path}>
+          <button
+            type="button"
+            onClick={() => toggle(item.label)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-100"
+            aria-expanded={isExpanded}
+          >
+            <Icon size={18} />
+            <span className="flex-1">{item.label}</span>
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+          {isExpanded && (
+            <div className="ml-7 mt-1 space-y-1">
+              {item.children!.filter(child =>
+                hasPermission(child, permissions)
+              ).map(renderItem)}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <NavLink
+        key={item.path}
+        to={item.path}
+        onClick={onCloseMobile}
+        end={item.path === "/staff/dashboard"}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+            isActive
+              ? "bg-blue-50 font-semibold text-blue-800"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }`
+        }
+      >
+        <Icon size={18} />
+        <span>{item.label}</span>
+      </NavLink>
+    );
+  }
+
+  return (
+    <>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-20 items-center justify-between border-b px-5">
+          <div>
+            <div className="text-lg font-extrabold tracking-tight text-[#102D50]">
+              HI-TECH <span className="text-blue-600">COLLEGE</span>
+            </div>
+            <div className="text-xs text-slate-500">Staff Workspace</div>
+          </div>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="border-b px-5 py-4">
+          <div className="rounded-xl bg-[#102D50] p-3 text-white">
+            <div className="text-xs text-blue-100">Signed in as</div>
+            <div className="mt-1 text-sm font-semibold">
+              {role.replaceAll("_", " ")}
+            </div>
+          </div>
+        </div>
+
+        <nav
+          aria-label="Staff navigation"
+          className="flex-1 space-y-1 overflow-y-auto p-4"
+        >
+          {navigation.map(renderItem)}
+        </nav>
+
+        <div className="border-t p-4 text-xs text-slate-500">
+          HI-TECH College · Staff Portal
+        </div>
+      </aside>
+    </>
+  );
+}
+
+```
+
+## **2. Staff header**
+
+Create `apps/web/src/portals/staff/StaffHeader.tsx`.
+
+```
+
+import {
+  Menu, Search, Bell, ChevronDown, LogOut, User,
+  Settings, HelpCircle
+} from "lucide-react";
+import { useState } from "react";
+
+interface Props {
+  staffName: string;
+  staffRole: string;
+  onMenuClick: () => void;
+  onLogout: () => void;
+}
+
+export default function StaffHeader({
+  staffName,
+  staffRole,
+  onMenuClick,
+  onLogout
+}: Props) {
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-7">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Open navigation"
+          className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"
+        >
+          <Menu size={21} />
+        </button>
+
+        <div className="hidden min-w-0 sm:block">
+          <h1 className="truncate text-sm font-semibold text-slate-800">
+            Staff Portal
+          </h1>
+          <p className="text-xs text-slate-500">
+            HI-TECH College · Kitengela Campus
+          </p>
+        </div>
+      </div>
+
+      <div className="hidden w-full max-w-sm px-5 md:block">
+        <label className="relative block">
+          <Search
+            size={17}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="search"
+            placeholder="Search portal..."
+            aria-label="Search portal"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </label>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative rounded-xl p-2.5 text-slate-600 hover:bg-slate-100"
+        >
+          <Bell size={19} />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
+        </button>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(open => !open)}
+            aria-expanded={profileOpen}
+            className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800">
+              {staffName.trim().charAt(0).toUpperCase() || "S"}
+            </div>
+            <div className="hidden text-left sm:block">
+              <div className="max-w-36 truncate text-sm font-semibold text-slate-800">
+                {staffName}
+              </div>
+              <div className="text-xs text-slate-500">
+                {staffRole.replaceAll("_", " ")}
+              </div>
+            </div>
+            <ChevronDown size={15} className="hidden sm:block" />
+          </button>
+
+          {profileOpen && (
+            <div className="absolute right-0 top-12 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+              <a href="/staff/profile" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-50">
+                <User size={16} /> My Profile
+              </a>
+              <a href="/staff/settings" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-50">
+                <Settings size={16} /> Settings
+              </a>
+              <a href="/staff/support" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-50">
+                <HelpCircle size={16} /> Help & Support
+              </a>
+              <hr className="my-2" />
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                <LogOut size={16} /> Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+```
+
+## **3. Reusable dashboard components**
+
+Create `apps/web/src/portals/staff/components/StaffDashboardUI.tsx`.
+
+```
+
+import type { ReactNode } from "react";
+import {
+  ArrowUpRight, CalendarDays, CheckCircle2,
+  Clock3, AlertCircle
+} from "lucide-react";
+
+export function StaffPageHeader({
+  title,
+  description,
+  actions
+}: {
+  title: string;
+  description: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#102D50]">
+          {title}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
+      </div>
+      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+    </div>
+  );
+}
+
+export function StaffButton({
+  children,
+  onClick,
+  variant = "primary",
+  disabled = false,
+  type = "button"
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary" | "danger";
+  disabled?: boolean;
+  type?: "button" | "submit";
+}) {
+  const styles = {
+    primary: "bg-blue-700 text-white hover:bg-blue-800",
+    secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+    danger: "bg-red-600 text-white hover:bg-red-700"
+  };
+
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function StaffStatCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+  trend
+}: {
+  label: string;
+  value: string | number;
+  description: string;
+  icon: React.ElementType;
+  trend?: string;
+}) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+          <p className="mt-3 text-3xl font-bold tracking-tight text-[#102D50]">
+            {value}
+          </p>
+        </div>
+        <div className="rounded-xl bg-blue-50 p-3 text-blue-700">
+          <Icon size={21} />
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <p className="text-xs text-slate-500">{description}</p>
+        {trend && (
+          <span className="text-xs font-semibold text-emerald-700">
+            {trend}
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export function StaffTaskList({
+  tasks
+}: {
+  tasks: {
+    id: string;
+    title: string;
+    description: string;
+    due?: string;
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "URGENT";
+  }[];
+}) {
+  const statusStyles = {
+    PENDING: "bg-amber-50 text-amber-700",
+    IN_PROGRESS: "bg-blue-50 text-blue-700",
+    COMPLETED: "bg-emerald-50 text-emerald-700",
+    URGENT: "bg-red-50 text-red-700"
+  };
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="font-semibold text-[#102D50]">My tasks</h2>
+        <a href="/staff/tasks" className="text-sm font-semibold text-blue-700">
+          View all <ArrowUpRight className="inline" size={15} />
+        </a>
+      </div>
+
+      {tasks.length === 0 ? (
+        <div className="py-8 text-center text-sm text-slate-500">
+          No tasks have been assigned to you.
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {tasks.map(task => (
+            <div key={task.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  {task.title}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {task.description}
+                </p>
+                {task.due && (
+                  <p className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+                    <CalendarDays size={13} /> Due: {task.due}
+                  </p>
+                )}
+              </div>
+              <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[task.status]}`}>
+                {task.status.replaceAll("_", " ")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function StaffActivityPanel({
+  items
+}: {
+  items: { id: string; title: string; time: string; type: "success" | "pending" | "alert" }[];
+}) {
+  const icons = {
+    success: CheckCircle2,
+    pending: Clock3,
+    alert: AlertCircle
+  };
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <h2 className="mb-4 font-semibold text-[#102D50]">Recent activity</h2>
+      <div className="space-y-4">
+        {items.map(item => {
+          const Icon = icons[item.type];
+          return (
+            <div key={item.id} className="flex gap-3">
+              <div className="rounded-lg bg-slate-50 p-2 text-slate-600">
+                <Icon size={17} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-slate-800">{item.title}</p>
+                <p className="mt-1 text-xs text-slate-500">{item.time}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+```
+
+## **4. Shared staff layout**
+
+Create `apps/web/src/portals/staff/StaffLayout.tsx`.
+
+```
+
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import StaffSidebar from "./StaffSidebar";
+import StaffHeader from "./StaffHeader";
+import type { StaffRole } from "../../config/staff-navigation";
+
+export interface StaffUser {
+  id: string;
+  fullName: string;
+  role: StaffRole;
+  permissions: string[];
+}
+
+interface Props {
+  user: StaffUser;
+  onLogout: () => void;
+}
+
+export default function StaffLayout({ user, onLogout }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[#F4F7FB]">
+      <StaffSidebar
+        role={user.role}
+        permissions={user.permissions}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
+
+      <div className="min-h-screen lg:pl-72">
+        <StaffHeader
+          staffName={user.fullName}
+          staffRole={user.role}
+          onMenuClick={() => setMobileOpen(true)}
+          onLogout={onLogout}
+        />
+
+        <main className="mx-auto w-full max-w-[1600px] p-4 md:p-7">
+          <Outlet context={{ user }} />
+        </main>
+
+        <footer className="border-t border-slate-200 bg-white px-5 py-4 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} HI-TECH College. Staff Portal.
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+```
+
+## **5. Role-aware dashboard router**
+
+Create `apps/web/src/portals/staff/StaffDashboardRouter.tsx`.
+
+This gives each role its own dashboard page while allowing shared components to be reused.
+
+```
+
+import { useOutletContext } from "react-router-dom";
+import {
+  Users, GraduationCap, Wallet, ClipboardCheck,
+  BookOpen, Monitor, BriefcaseBusiness, Building2
+} from "lucide-react";
+
+import {
+  StaffPageHeader,
+  StaffStatCard,
+  StaffTaskList,
+  StaffActivityPanel
+} from "./components/StaffDashboardUI";
+
+import type { StaffUser } from "./StaffLayout";
+
+const dashboardConfig = {
+  ADMIN: {
+    title: "Administration Dashboard",
+    description: "Manage authorized college operations and institutional services.",
+    stats: [
+      ["User accounts", Users],
+      ["Departments", Building2],
+      ["Pending approvals", ClipboardCheck],
+      ["System services", Monitor]
+    ]
+  },
+  PRINCIPAL: {
+    title: "Principal Dashboard",
+    description: "Monitor institutional performance and management activities.",
+    stats: [
+      ["Enrolment overview", GraduationCap],
+      ["Department reports", Building2],
+      ["Pending decisions", ClipboardCheck],
+      ["Management tasks", BriefcaseBusiness]
+    ]
+  },
+  REGISTRAR: {
+    title: "Registrar Dashboard",
+    description: "Manage student records, academic registration and examinations.",
+    stats: [
+      ["Student records", Users],
+      ["Registration reviews", ClipboardCheck],
+      ["Academic programmes", BookOpen],
+      ["Examination activities", GraduationCap]
+    ]
+  },
+  FINANCE_OFFICER: {
+    title: "Finance Dashboard",
+    description: "Manage student accounts, receipts and financial operations.",
+    stats: [
+      ["Student accounts", Users],
+      ["Payment reviews", Wallet],
+      ["Reconciliation tasks", ClipboardCheck],
+      ["Financial reports", Wallet]
+    ]
+  },
+  HR: {
+    title: "Human Resources Dashboard",
+    description: "Manage authorized employee and HR operations.",
+    stats: [
+      ["Employee records", Users],
+      ["Leave applications", ClipboardCheck],
+      ["Recruitment", BriefcaseBusiness],
+      ["HR activities", Building2]
+    ]
+  },
+  LECTURER: {
+    title: "Lecturer Dashboard",
+    description: "Manage assigned teaching, classes and assessments.",
+    stats: [
+      ["Assigned classes", GraduationCap],
+      ["Teaching units", BookOpen],
+      ["Assessment activities", ClipboardCheck],
+      ["Student groups", Users]
+    ]
+  },
+  LIBRARIAN: {
+    title: "Library Dashboard",
+    description: "Manage library resources and circulation.",
+    stats: [
+      ["Library catalogue", BookOpen],
+      ["Borrowing activities", Users],
+      ["Reservations", ClipboardCheck],
+      ["Digital resources", BookOpen]
+    ]
+  },
+  IT_SUPPORT: {
+    title: "IT Support Dashboard",
+    description: "Manage technical incidents, devices and IT services.",
+    stats: [
+      ["Support requests", ClipboardCheck],
+      ["Devices and assets", Monitor],
+      ["Network services", Monitor],
+      ["Maintenance tasks", BriefcaseBusiness]
+    ]
+  }
+} as const;
+
+type DashboardRole = keyof typeof dashboardConfig;
+
+export default function StaffDashboardRouter() {
+  const { user } = useOutletContext<{ user: StaffUser }>();
+
+  const config = dashboardConfig[user.role as DashboardRole];
+
+  if (!config) {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <h1 className="font-bold text-amber-900">
+          Dashboard not configured
+        </h1>
+        <p className="mt-2 text-sm text-amber-800">
+          Your account role does not yet have a dedicated dashboard.
+          Contact the system administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const tasks = [];
+  const activities = [];
+
+  return (
+    <div className="space-y-7">
+      <StaffPageHeader
+        title={`Welcome, ${user.fullName}`}
+        description={config.description}
+      />
+
+      <section>
+        <div className="mb-4">
+          <h2 className="font-semibold text-[#102D50]">
+            Workspace overview
+          </h2>
+          <p className="text-sm text-slate-500">
+            Your role-specific college workspace.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {config.stats.map(([label, Icon]) => (
+            <StaffStatCard
+              key={label}
+              label={label}
+              value="—"
+              description="Connect live dashboard data"
+              icon={Icon}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+        <StaffTaskList tasks={tasks} />
+        <StaffActivityPanel items={activities} />
+      </section>
+    </div>
+  );
+}
+
+```
+
+The `—` values are intentional: the dashboard must not show invented student counts, payment totals, staff numbers or examination results. We will replace them with authenticated API data in the next integration slice.
+
+## **6. Register the staff routes**
+
+Add these routes inside your existing authenticated router. Keep your existing `RequireAuth` component and adapt the user/permission mapping to your actual authentication response.
+
+```
+
+import { Route } from "react-router-dom";
+import StaffLayout from "./portals/staff/StaffLayout";
+import StaffDashboardRouter from "./portals/staff/StaffDashboardRouter";
+
+// Example only: use your existing authenticated user and logout handler.
+<Route
+  path="/staff"
+  element={
+    <RequireAuth allowedRoles={["ADMIN", "PRINCIPAL", "REGISTRAR",
+      "FINANCE_OFFICER", "HR", "LECTURER", "LIBRARIAN",
+      "IT_SUPPORT", "HOD", "ADMISSIONS_OFFICER",
+      "EXAMINATIONS_OFFICER", "QUALITY_ASSURANCE",
+      "STUDENT_AFFAIRS", "HOSTEL_OFFICER", "ICT_TECHNICIAN",
+      "PROCUREMENT_OFFICER", "STORES_OFFICER",
+      "COMMUNICATIONS_OFFICER", "RECEPTIONIST",
+      "SECURITY_OFFICER", "TRANSPORT_OFFICER"]}
+    >
+      <StaffLayout
+        user={authenticatedStaffUser}
+        onLogout={handleLogout}
+      />
+    </RequireAuth>
+  }
+>
+  <Route path="dashboard" element={<StaffDashboardRouter />} />
+</Route>
+
+```
+
+`RequireAuth`, `authenticatedStaffUser` and `handleLogout` above represent your existing application authentication implementation; they are not new functions supplied by these files.
+
+## **7. What the finished staff portal should look like**
+
+[Acadex – University Management Admin Dashboard by Ahmad S. Afandi for Peterdraw Studio on Dribbble](https://images.openai.com/static-rsc-4/rsPiOcN8vdravw5KYYB5VYxizOuy6935lrweqYzzkRjOb5GnOjVCTY4sxXNydW-eM5_qLQE_Dsnp6ndN-tQW-fV6s7413yN0-Nq8ItVBGrEU3c5ZWi86IZMLR4h9NBxZ_qmPgysPCA5dkvGX-pdlzNrcpugyjqPRnKEFtIItsdc?purpose=inline)
+
+[HR SaaS Platform Dashboard – Web App UI/UX by Naimul Hasan ✪‌ for Craftora on Dribbble](https://images.openai.com/static-rsc-4/KO5OlpOSU8gT-wQNehNZWFqCbprr1aVAhAyvNSqppe0pUZnq7T1XKZMQ76H6KT25awYn-mVDtPrXaNymnEucnR1WVZFR8Sn4_V1ZRP7445rDQ2aX5xyA8g-Yt6zFJX_0D6JrVhLqo7BbqSXJiY-TjFVtA8UHmyo5c07sz7ugFPc?purpose=inline)
+
+[LMS Dashboard - Teacher Side by Emir Abiyyu for Nija Works on Dribbble](https://images.openai.com/static-rsc-4/8B-PHBOMP977mfvj7lD9AsGN5YMZUVljka30dXPQ58WqMyNz7X1JepjXPDlxop2Swrep47dOtGghpwziBwTe8Frs3m1g3RZD-zGPVPwC6sJSOd8D7yVExDE2CiKqN0jl-asz3MnR91Ckfg9NE31qdQ-dQNmWvFAxnyzPPnC2I94?purpose=inline)
+
+14
+
+## **8. Next implementation slice: live functionality**
+
+The next stage should connect the dashboard to the real backend:
+
+| API area        | Required endpoints                 |
+| --------------- | ---------------------------------- |
+| Staff dashboard | `GET /api/staff/dashboard/summary` |
+| Tasks           | `GET /api/staff/tasks`             |
+| Notifications   | `GET /api/notifications`           |
+| Profile         | `GET /api/staff/me`                |
+| Activity        | `GET /api/staff/activity`          |
+| Permissions     | `GET /api/auth/me/permissions`     |
+
+All endpoints must enforce authentication, role permissions, campus/department scope and record-level access on the server.
+
+**Before integrating:** I need to see your current authentication and routing files so the next code matches your actual project instead of introducing conflicting routes or types.
+
+**Share your existing project structure or files**
+
+Paste the relevant paths or upload your current project ZIP. I will use them to integrate the staff dashboards into your existing architecture.
+
+apps/web/src/App.tsx\<br>apps/web/src/routes\<br>apps/web/src/auth\<br>apps/api/src
+
+Continue with these project paths

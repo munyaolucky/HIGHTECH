@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import Hero from "../components/Hero";
 import CourseCard from "../components/CourseCard";
+import ScrollView from "../../components/ScrollView";
 import { COURSES_CATALOGUE, NEWS_AND_EVENTS, COLLEGE_INFO, FAQS_LIST } from "../../data/college";
 import { CourseProgramme } from "../../types";
 import {
@@ -27,6 +28,7 @@ interface HomeProps {
 }
 
 export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: HomeProps) {
+  const [courseLayout, setCourseLayout] = useState<"scroll" | "grid">("scroll");
   const featuredCourses = COURSES_CATALOGUE.filter((c) => c.featured);
   const latestNews = NEWS_AND_EVENTS.slice(0, 3);
 
@@ -114,29 +116,81 @@ export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: 
             </p>
           </div>
 
-          <button
-            onClick={() => onNavigate("academics")}
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-[#153b70] hover:text-[#0f274a] transition self-start md:self-auto"
-          >
-            <span>View All {COURSES_CATALOGUE.length} Programmes</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setCourseLayout("scroll")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  courseLayout === "scroll"
+                    ? "bg-white text-[#153b70] shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ScrollView Carousel
+              </button>
+              <button
+                type="button"
+                onClick={() => setCourseLayout("grid")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  courseLayout === "grid"
+                    ? "bg-white text-[#153b70] shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Grid View
+              </button>
+            </div>
+
+            <button
+              onClick={() => onNavigate("academics")}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#153b70] hover:text-[#0f274a] transition whitespace-nowrap shrink-0"
+            >
+              <span>View All {COURSES_CATALOGUE.length} Programmes</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onSelect={onSelectCourse}
-              onApply={() => {
-                onSelectCourse(course);
-                onNavigate("apply");
-              }}
-            />
-          ))}
-        </div>
+        {/* Courses ScrollView Carousel or Grid */}
+        {courseLayout === "scroll" ? (
+          <ScrollView
+            direction="horizontal"
+            snap
+            showArrows
+            fadeColor="from-slate-50"
+            ariaLabel="Academic programmes horizontal showcase"
+          >
+            <div className="flex gap-5 pb-3 px-1">
+              {COURSES_CATALOGUE.map((course) => (
+                <div key={course.id} className="w-[300px] sm:w-[340px] shrink-0 scrollview-snap-item flex">
+                  <CourseCard
+                    course={course}
+                    onSelect={onSelectCourse}
+                    onApply={() => {
+                      onSelectCourse(course);
+                      onNavigate("apply");
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </ScrollView>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onSelect={onSelectCourse}
+                onApply={() => {
+                  onSelectCourse(course);
+                  onNavigate("apply");
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Why Choose HI-TECH College */}

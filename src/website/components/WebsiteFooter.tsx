@@ -227,6 +227,24 @@ export default function WebsiteFooter({
 
             <div className="pt-2 border-t border-blue-950/80 space-y-1.5 text-xs text-slate-300">
               <button
+                onClick={() => onSwitchToERP("staff")}
+                className="w-full text-left text-emerald-300 hover:text-white transition flex items-center gap-1.5 font-bold"
+              >
+                <span>★ Staff Portal (All 21 Roles)</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("manual-registration")}
+                className="w-full text-left text-blue-200 hover:text-white transition flex items-center gap-1.5 font-semibold"
+              >
+                <span>• Manual User Registration Desk</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("activate-account")}
+                className="w-full text-left text-amber-200 hover:text-white transition flex items-center gap-1.5 font-semibold"
+              >
+                <span>• Activate Invited Account</span>
+              </button>
+              <button
                 onClick={() => onSwitchToERP("lecturer")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
@@ -236,19 +254,37 @@ export default function WebsiteFooter({
                 onClick={() => onSwitchToERP("registrar")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Registrar & Transcripts</span>
+                <span>• Registrar &amp; Transcripts</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("finance")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Finance & M-Pesa Receipts</span>
+                <span>• Finance &amp; M-Pesa Receipts</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("admissions")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Admissions &amp; Enrolment</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("library")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Library Management Portal</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("examination")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Examinations &amp; CBT Engine</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("catalogue")}
                 className="w-full text-left text-amber-300 hover:text-white transition flex items-center gap-1.5 font-bold"
               >
-                <span>★ Master Feature Blueprint (PDF)</span>
+                <span>★ Master Feature Blueprint (84 Modules)</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("chatbot-admin")}
@@ -324,10 +360,18 @@ export default function WebsiteFooter({
           <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400 text-xs">
             <button
               type="button"
-              onClick={() => onOpenVerifyModal?.()}
+              onClick={() => (onOpenVerifyModal ? onOpenVerifyModal() : onNavigate("verify"))}
               className="text-amber-300 hover:text-white underline font-bold transition"
             >
-              Verify Credential (/?verify)
+              Verify Certificate (/verify)
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => onNavigate("fees")}
+              className="hover:text-white underline transition"
+            >
+              Fees Structure
             </button>
             <span>•</span>
             <button
@@ -343,10 +387,32 @@ export default function WebsiteFooter({
               onClick={() => onOpenCookieSettings?.()}
               className="hover:text-white underline transition"
             >
-              Cookie &amp; Storage Policy
+              Cookie Policy
             </button>
             <span>•</span>
-            <span>Privacy Policy</span>
+            <button
+              type="button"
+              onClick={() => onNavigate("privacy-policy")}
+              className="hover:text-white underline transition"
+            >
+              Privacy Policy
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => onNavigate("terms")}
+              className="hover:text-white underline transition"
+            >
+              Terms
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => onNavigate("accessibility")}
+              className="hover:text-white underline transition"
+            >
+              Accessibility
+            </button>
           </div>
         </div>
       </div>

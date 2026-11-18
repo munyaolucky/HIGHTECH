@@ -25,6 +25,10 @@ import {
   BarChart3,
   LifeBuoy,
   QrCode,
+  CreditCard,
+  KeyRound,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { COLLEGE_INFO } from "../../data/college";
 
@@ -89,7 +93,7 @@ export default function WebsiteHeader({
             <button
               onClick={() => onSwitchToERP("catalogue")}
               className="inline-flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-[#092c60] px-2.5 py-1 rounded font-black text-xs transition shadow-sm"
-              title="View Complete 47 Modules & Export Official PDF Document"
+              title="View Complete 84 Modules, Feature Register & Export Official PDF Document"
             >
               <FileCheck2 className="w-3.5 h-3.5" />
               <span>Master Blueprint (PDF)</span>
@@ -125,12 +129,57 @@ export default function WebsiteHeader({
 
               {portalDropdownOpen && (
                 <div
-                  className="absolute right-0 mt-1.5 w-60 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 py-1.5 z-50 text-xs font-medium"
+                  className="absolute right-0 mt-1.5 w-72 max-h-[80vh] overflow-y-auto bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 py-1.5 z-50 text-xs font-medium"
                   onMouseLeave={() => setPortalDropdownOpen(false)}
                 >
                   <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-100">
                     HI-TECH Institutional Portals
                   </div>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("staff");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-[#0f274a] font-bold border-b border-slate-100 bg-blue-50/40"
+                  >
+                    <Briefcase className="w-4 h-4 text-[#0875e8]" />
+                    <div>
+                      <div>Staff Portal (All 21 Roles)</div>
+                      <div className="text-[10px] text-slate-500 font-normal">
+                        Admin, Principal, Registrar, HR, Finance &amp; Ops
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("manual-registration");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-800 font-semibold border-b border-slate-100"
+                  >
+                    <UserPlus className="w-4 h-4 text-[#1769AA]" />
+                    <div>
+                      <div>Manual User Registration</div>
+                      <div className="text-[10px] text-slate-500 font-normal">
+                        Create &amp; Approve Staff-Managed Accounts
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("activate-account");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center gap-2.5 text-emerald-900 font-semibold border-b border-slate-100"
+                  >
+                    <KeyRound className="w-4 h-4 text-emerald-600" />
+                    <div>
+                      <div>Activate Invited Account</div>
+                      <div className="text-[10px] text-emerald-700 font-normal">
+                        Single-Use Token Password Setup
+                      </div>
+                    </div>
+                  </button>
                   <button
                     onClick={() => {
                       onSwitchToERP("catalogue");
@@ -141,7 +190,7 @@ export default function WebsiteHeader({
                     <FileCheck2 className="w-4 h-4 text-amber-600" />
                     <div>
                       <div className="text-amber-900">Master Feature Blueprint</div>
-                      <div className="text-[10px] text-amber-700 font-normal">All 47 Modules & PDF Export</div>
+                      <div className="text-[10px] text-amber-700 font-normal">All 84 Modules &amp; Baseline PDF</div>
                     </div>
                   </button>
                   <button
@@ -179,8 +228,60 @@ export default function WebsiteHeader({
                   >
                     <Building2 className="w-4 h-4 text-purple-600" />
                     <div>
-                      <div>Registrar & Transcripts</div>
+                      <div>Registrar &amp; Transcripts</div>
                       <div className="text-[10px] text-slate-500">Module 19 Official Records</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("finance");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <CreditCard className="w-4 h-4 text-emerald-700" />
+                    <div>
+                      <div>Finance &amp; Accounts</div>
+                      <div className="text-[10px] text-slate-500">Module 20 M-Pesa &amp; Receipts</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("admissions");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <div>Admissions &amp; Enrolment</div>
+                      <div className="text-[10px] text-slate-500">Module 24 Offers &amp; Intake</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("library");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <BookOpen className="w-4 h-4 text-amber-700" />
+                    <div>
+                      <div>Library Management</div>
+                      <div className="text-[10px] text-slate-500">Module 22 Physical &amp; E-Books</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("examination");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <FileCheck2 className="w-4 h-4 text-indigo-700" />
+                    <div>
+                      <div>Examinations &amp; CBT</div>
+                      <div className="text-[10px] text-slate-500">Module 23 Question Bank &amp; Tests</div>
                     </div>
                   </button>
                   <button

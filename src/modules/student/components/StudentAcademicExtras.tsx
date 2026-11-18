@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Briefcase,
   CheckCircle2,
@@ -6,10 +6,13 @@ import {
   FileCheck2,
   PlayCircle,
   QrCode,
+  RefreshCw,
   Send,
   Users,
   Vote,
 } from 'lucide-react';
+import { useTheme } from '../../../context/ThemeContext';
+import { Phase4ModuleSkeleton } from '../../../components/ui/PortalUI';
 import { collegeErpService } from '../../../services/collegeErpService';
 import { communityService } from '../../../services/communityService';
 import { engagementService } from '../../../services/engagementService';
@@ -36,10 +39,37 @@ export default function StudentAcademicExtras({
   onNotify,
   onRefresh,
 }: Props) {
+  const { reducedMotion } = useTheme();
   const state = studentPortalService.getState();
   const fin = studentPortalService.getFinancialSummary();
   const profile = state.profile;
   const regNo = profile.registrationNumber;
+
+  const [transitionLoading, setTransitionLoading] = useState(false);
+  const [elearningSyncing, setElearningSyncing] = useState(false);
+
+  useEffect(() => {
+    if (activeSection !== 'elearning' && activeSection !== 'attendance') {
+      setTransitionLoading(false);
+      return;
+    }
+    if (reducedMotion) {
+      setTransitionLoading(false);
+      return;
+    }
+    setTransitionLoading(true);
+    const timer = window.setTimeout(() => setTransitionLoading(false), 160);
+    return () => window.clearTimeout(timer);
+  }, [activeSection, reducedMotion]);
+
+  const handleSyncMaterials = () => {
+    setElearningSyncing(true);
+    window.setTimeout(() => {
+      setElearningSyncing(false);
+      onRefresh();
+      onNotify('ok', 'E-learning modules and recorded lecture links synchronized.');
+    }, reducedMotion ? 80 : 300);
+  };
 
   // Attendance QR check-in
   const [checkInUnit, setCheckInUnit] = useState(state.units[0]?.code ?? 'CSC 301');
@@ -57,6 +87,15 @@ export default function StudentAcademicExtras({
   const [ballotPicks, setBallotPicks] = useState<Record<string, string>>({});
   const [lastBallotHash, setLastBallotHash] = useState<string | null>(null);
 
+  if (transitionLoading || (activeSection === 'elearning' && elearningSyncing)) {
+    return (
+      <div className="space-y-5">
+        {headerBlock}
+        <Phase4ModuleSkeleton section={activeSection} />
+      </div>
+    );
+  }
+
   // 1. CLASS ATTENDANCE REGISTER & QR CHECK-IN
   if (activeSection === 'attendance') {
     return (
@@ -64,29 +103,29 @@ export default function StudentAcademicExtras({
         {headerBlock}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Unit Attendance Summary (75% Exam Eligibility Rule)
               </h3>
-              <span className="text-xs font-mono font-bold text-emerald-700 tabular-nums">
+              <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                 Overall: {profile.attendanceRate}%
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {state.units.map((u) => (
-                <div key={u.code} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                <div key={u.code} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-mono font-bold text-[#092c60]">{u.code}</p>
-                    <strong className="text-slate-900 block">{u.title}</strong>
-                    <span className="text-slate-500">{u.lecturerName}</span>
+                    <p className="font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code}</p>
+                    <strong className="text-slate-900 dark:text-slate-100 block">{u.title}</strong>
+                    <span className="text-slate-600 dark:text-slate-300">{u.lecturerName}</span>
                   </div>
                   <div className="text-right font-mono tabular-nums shrink-0">
-                    <strong className={`text-base ${u.attendance >= 75 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    <strong className={`text-base ${u.attendance >= 75 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                       {u.attendance}%
                     </strong>
-                    <span className="block text-[11px] text-slate-500">
+                    <span className="block text-[11px] text-slate-600 dark:text-slate-300">
                       {u.attendance >= 75 ? 'Cleared' : 'Low'}
                     </span>
                   </div>
@@ -104,20 +143,20 @@ export default function StudentAcademicExtras({
               onNotify('ok', `Attendance check-in recorded for ${checkInUnit}.`);
               onRefresh();
             }}
-            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3.5 text-xs"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3.5 text-xs"
           >
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <QrCode size={16} className="text-[#0866d7]" /> Live Class Session Check-In
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <QrCode size={16} className="text-[#0866d7] dark:text-blue-400" /> Live Class Session Check-In
             </h3>
-            <p className="text-slate-500">
+            <p className="text-slate-600 dark:text-slate-300">
               Enter the classroom session code shared on the projector by your lecturer to mark today&apos;s register.
             </p>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Course Unit</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Course Unit</label>
               <select
                 value={checkInUnit}
                 onChange={(e) => setCheckInUnit(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 {state.units.map((u) => (
                   <option key={u.code} value={u.code}>
@@ -127,14 +166,14 @@ export default function StudentAcademicExtras({
               </select>
             </div>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Lecturer Session Code</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Lecturer Session Code</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. CSC301-LAB"
                 value={sessionCode}
                 onChange={(e) => setSessionCode(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono uppercase"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono uppercase"
               />
             </div>
             <button
@@ -146,12 +185,12 @@ export default function StudentAcademicExtras({
           </form>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h3 className="text-sm font-bold text-slate-900">Recent Attendance Roll History</h3>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Recent Attendance Roll History</h3>
           </div>
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">Date</th>
                 <th className="py-2.5 px-4 font-semibold">Unit</th>
@@ -160,14 +199,14 @@ export default function StudentAcademicExtras({
                 <th className="py-2.5 px-4 font-semibold text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {state.attendanceSessions.map((row) => (
                 <tr key={row.id}>
-                  <td className="py-2.5 px-4 font-mono tabular-nums text-slate-600">{row.date}</td>
-                  <td className="py-2.5 px-4 font-mono font-bold text-[#092c60]">{row.unitCode}</td>
-                  <td className="py-2.5 px-4 text-slate-900 font-medium">{row.sessionTitle}</td>
-                  <td className="py-2.5 px-4 font-mono text-slate-500">{row.method}</td>
-                  <td className="py-2.5 px-4 text-right font-semibold text-emerald-700">{row.status}</td>
+                  <td className="py-2.5 px-4 font-mono tabular-nums text-slate-600 dark:text-slate-300">{row.date}</td>
+                  <td className="py-2.5 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{row.unitCode}</td>
+                  <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-medium">{row.sessionTitle}</td>
+                  <td className="py-2.5 px-4 font-mono text-slate-600 dark:text-slate-300">{row.method}</td>
+                  <td className="py-2.5 px-4 text-right font-semibold text-emerald-700 dark:text-emerald-400">{row.status}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,43 +228,52 @@ export default function StudentAcademicExtras({
       <div className="space-y-5">
         {headerBlock}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Lecture Notes, Recorded Classes &amp; Lab Manuals
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5 font-mono tabular-nums">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-mono tabular-nums">
                 {completedCount} of {state.elearningMaterials.length} modules completed
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
-              {['ALL', ...state.units.slice(0, 4).map((u) => u.code)].map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => setElearnUnit(code)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
-                    elearnUnit === code
-                      ? 'bg-white text-[#092c60] font-semibold shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {code === 'ALL' ? 'All Units' : code}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                {['ALL', ...state.units.slice(0, 4).map((u) => u.code)].map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setElearnUnit(code)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
+                      elearnUnit === code
+                        ? 'bg-white dark:bg-slate-900 text-[#092c60] dark:text-white font-semibold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {code === 'ALL' ? 'All Units' : code}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleSyncMaterials}
+                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <RefreshCw size={13} /> Sync Materials
+              </button>
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filtered.map((mat) => (
               <div key={mat.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="space-y-0.5">
-                  <p className="font-mono text-[#0866d7] font-semibold">
+                  <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
                     {mat.unitCode} · {mat.format.replace('_', ' ')} · {mat.durationOrSize}
                   </p>
-                  <strong className="text-sm text-slate-900 block">{mat.title}</strong>
-                  <span className="text-slate-500">Instructor: {mat.lecturerName}</span>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{mat.title}</strong>
+                  <span className="text-slate-600 dark:text-slate-300">Instructor: {mat.lecturerName}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -238,7 +286,7 @@ export default function StudentAcademicExtras({
                       );
                       onNotify('ok', `Opened/downloaded "${mat.title}".`);
                     }}
-                    className="px-3 py-1.5 border border-slate-300 rounded-lg font-semibold text-slate-800 hover:bg-slate-50 inline-flex items-center gap-1.5 whitespace-nowrap"
+                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 inline-flex items-center gap-1.5 whitespace-nowrap"
                   >
                     {mat.format === 'RECORDED_CLASS' ? <PlayCircle size={14} /> : <Download size={14} />}
                     {mat.format === 'RECORDED_CLASS' ? 'Open Notes' : 'Download'}
@@ -284,11 +332,11 @@ export default function StudentAcademicExtras({
               onNotify('ok', 'Industrial attachment host organization saved.');
               onRefresh();
             }}
-            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Briefcase size={16} className="text-[#0866d7]" /> Industrial Attachment Placement
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Briefcase size={16} className="text-[#0866d7] dark:text-blue-400" /> Industrial Attachment Placement
               </h3>
               <button
                 type="button"
@@ -299,7 +347,7 @@ export default function StudentAcademicExtras({
                   );
                   onNotify('ok', 'Official Attachment Introduction Letter downloaded.');
                 }}
-                className="text-[#0866d7] font-semibold hover:underline inline-flex items-center gap-1"
+                className="text-[#0866d7] dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1"
               >
                 <Download size={13} /> Intro Letter
               </button>
@@ -307,51 +355,51 @@ export default function StudentAcademicExtras({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
-                <label className="block text-slate-600 font-medium mb-1">Host Company / Organization</label>
+                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Host Company / Organization</label>
                 <input
                   type="text"
                   required
                   value={placement.companyName}
                   onChange={(e) => setPlacement({ ...placement, companyName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Industry Supervisor</label>
+                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Industry Supervisor</label>
                 <input
                   type="text"
                   required
                   value={placement.supervisorName}
                   onChange={(e) => setPlacement({ ...placement, supervisorName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Supervisor Phone</label>
+                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Supervisor Phone</label>
                 <input
                   type="text"
                   required
                   value={placement.supervisorPhone}
                   onChange={(e) => setPlacement({ ...placement, supervisorPhone: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
                 />
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Start Date</label>
+                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Start Date</label>
                 <input
                   type="date"
                   value={placement.startDate}
                   onChange={(e) => setPlacement({ ...placement, startDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
                 />
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">End Date</label>
+                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">End Date</label>
                 <input
                   type="date"
                   value={placement.endDate}
                   onChange={(e) => setPlacement({ ...placement, endDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
                 />
               </div>
             </div>
@@ -374,23 +422,23 @@ export default function StudentAcademicExtras({
               onNotify('ok', 'Weekly attachment logbook entry submitted.');
               onRefresh();
             }}
-            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3"
           >
-            <h3 className="text-sm font-bold text-slate-900">Submit Weekly Digital Logbook Entry</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Submit Weekly Digital Logbook Entry</h3>
             <textarea
               rows={3}
               required
               placeholder="Summarize weekly engineering / ICT duties completed..."
               value={logSummary}
               onChange={(e) => setLogSummary(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
             />
             <input
               type="text"
               placeholder="Tools & skills applied (e.g. Docker, SQL, Cisco CLI)"
               value={logSkills}
               onChange={(e) => setLogSkills(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
             />
             <button
               type="submit"
@@ -399,33 +447,33 @@ export default function StudentAcademicExtras({
               <Send size={13} /> Log Weekly Activity
             </button>
 
-            <div className="pt-3 border-t border-slate-100 space-y-2 max-h-44 overflow-y-auto">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 max-h-44 overflow-y-auto">
               {state.attachmentLogs.map((log) => (
-                <div key={log.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between font-mono text-[11px] text-slate-500">
-                    <span className="font-bold text-[#092c60]">Week {log.weekNumber} · {log.loggedAt}</span>
-                    <span className="font-semibold text-emerald-700">{log.status}</span>
+                <div key={log.id} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+                  <div className="flex justify-between font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    <span className="font-bold text-[#092c60] dark:text-blue-300">Week {log.weekNumber} · {log.loggedAt}</span>
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">{log.status}</span>
                   </div>
-                  <p className="text-slate-800 mt-1">{log.summary}</p>
+                  <p className="text-slate-800 dark:text-slate-200 mt-1">{log.summary}</p>
                 </div>
               ))}
             </div>
           </form>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs">
-          <h3 className="text-sm font-bold text-slate-900">College Career &amp; Attachment Board</h3>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">College Career &amp; Attachment Board</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {engState.opportunities.map((opp) => {
               const applied = engState.applications.some((a) => a.opportunityId === opp.id);
               return (
-                <div key={opp.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
+                <div key={opp.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex flex-col justify-between gap-3">
                   <div>
-                    <p className="font-mono text-[#0866d7] font-semibold">
+                    <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
                       {opp.employmentType} · Deadline {opp.deadline}
                     </p>
-                    <strong className="text-sm text-slate-900 block mt-0.5">{opp.title}</strong>
-                    <span className="text-slate-600">{opp.employerName} · {opp.location}</span>
+                    <strong className="text-sm text-slate-900 dark:text-slate-100 block mt-0.5">{opp.title}</strong>
+                    <span className="text-slate-600 dark:text-slate-300">{opp.employerName} · {opp.location}</span>
                   </div>
                   {opp.applicationMode === 'INTERNAL_PLATFORM' ? (
                     <button
@@ -445,7 +493,7 @@ export default function StudentAcademicExtras({
                       {applied ? 'Applied' : 'Apply via Student Portal'}
                     </button>
                   ) : (
-                    <span className="text-slate-500 font-mono">
+                    <span className="text-slate-600 dark:text-slate-300 font-mono">
                       External Employer Application Portal ({opp.externalUrl})
                     </span>
                   )}
@@ -514,12 +562,12 @@ export default function StudentAcademicExtras({
       <div className="space-y-5">
         {headerBlock}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               End-of-Semester / Graduation Clearance Progress ({clearedCount}/{depts.length} Departments)
             </h3>
-            <p className="text-slate-500 mt-0.5">
+            <p className="text-slate-600 dark:text-slate-300 mt-0.5">
               {state.clearanceSubmittedAt
                 ? `Clearance form initiated on ${new Date(state.clearanceSubmittedAt).toLocaleDateString()}.`
                 : 'Initiate institutional clearance to notify all departments automatically.'}
@@ -547,23 +595,23 @@ export default function StudentAcademicExtras({
                 );
                 onNotify('ok', 'Clearance checklist document downloaded.');
               }}
-              className="px-3.5 py-2 border border-slate-300 text-slate-800 font-semibold rounded-lg inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold rounded-lg inline-flex items-center gap-1.5"
             >
               <FileCheck2 size={14} /> Download Form
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800">
           {depts.map((d) => (
             <div key={d.dept} className="p-4 flex items-center justify-between gap-4 text-xs">
               <div>
-                <strong className="text-sm text-slate-900 block">{d.dept}</strong>
-                <span className="text-slate-500">{d.note}</span>
+                <strong className="text-sm text-slate-900 dark:text-slate-100 block">{d.dept}</strong>
+                <span className="text-slate-600 dark:text-slate-300">{d.note}</span>
               </div>
               <span
                 className={`font-mono font-bold whitespace-nowrap shrink-0 ${
-                  d.cleared ? 'text-emerald-700' : 'text-amber-700'
+                  d.cleared ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
                 }`}
               >
                 {d.cleared ? 'CLEARED' : 'ACTION REQUIRED'}
@@ -587,9 +635,9 @@ export default function StudentAcademicExtras({
       {headerBlock}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Users size={16} className="text-[#0866d7]" /> Campus Clubs, Societies &amp; Events
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Users size={16} className="text-[#0866d7] dark:text-blue-400" /> Campus Clubs, Societies &amp; Events
           </h3>
           {commState.clubs.map((cl) => {
             const members = commState.memberships.filter(
@@ -599,13 +647,13 @@ export default function StudentAcademicExtras({
               (m) => m.clubId === cl.id && m.studentRegNo === regNo
             );
             return (
-              <div key={cl.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+              <div key={cl.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-mono text-[#0866d7] font-semibold">
+                  <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
                     {cl.code} · {members} Approved Members
                   </p>
-                  <strong className="text-sm text-slate-900 block">{cl.name}</strong>
-                  <span className="text-slate-600">{cl.description}</span>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{cl.name}</strong>
+                  <span className="text-slate-600 dark:text-slate-300">{cl.description}</span>
                 </div>
                 <button
                   type="button"
@@ -627,13 +675,13 @@ export default function StudentAcademicExtras({
           {commState.events.map((ev) => {
             const registered = ev.registrations.some((r) => r.studentRegNo === regNo);
             return (
-              <div key={ev.id} className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200 flex items-center justify-between gap-3">
+              <div key={ev.id} className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-mono text-[#092c60] font-semibold">
+                  <p className="font-mono text-[#092c60] dark:text-blue-300 font-semibold">
                     EVENT · {ev.startDateTime}
                   </p>
-                  <strong className="text-sm text-slate-900 block">{ev.title}</strong>
-                  <span className="text-slate-600">{ev.location}</span>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{ev.title}</strong>
+                  <span className="text-slate-600 dark:text-slate-300">{ev.location}</span>
                 </div>
                 <button
                   type="button"
@@ -653,21 +701,21 @@ export default function StudentAcademicExtras({
           })}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Vote size={16} className="text-emerald-700" /> SRC Student Council Secret Ballot
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Vote size={16} className="text-emerald-700 dark:text-emerald-400" /> SRC Student Council Secret Ballot
               </h3>
-              <p className="text-slate-500 mt-0.5">{activeElection?.title}</p>
+              <p className="text-slate-600 dark:text-slate-300 mt-0.5">{activeElection?.title}</p>
             </div>
-            <span className={`font-mono font-bold ${hasVoted ? 'text-emerald-700' : 'text-[#0866d7]'}`}>
+            <span className={`font-mono font-bold ${hasVoted ? 'text-emerald-700 dark:text-emerald-400' : 'text-[#0866d7] dark:text-blue-400'}`}>
               {hasVoted ? 'BALLOT CAST' : 'ELIGIBLE'}
             </span>
           </div>
 
           {lastBallotHash && (
-            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
               Anonymous Receipt Token: <strong className="font-mono">{lastBallotHash}</strong>
             </div>
           )}
@@ -678,7 +726,7 @@ export default function StudentAcademicExtras({
             );
             return (
               <div key={pos.id} className="space-y-1.5">
-                <h4 className="font-bold text-slate-800">{pos.title}</h4>
+                <h4 className="font-bold text-slate-800 dark:text-slate-100">{pos.title}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {cands.map((cand) => {
                     const picked = ballotPicks[pos.id] === cand.id;
@@ -691,11 +739,11 @@ export default function StudentAcademicExtras({
                         className={`p-3 rounded-lg border text-left transition ${
                           picked
                             ? 'bg-[#092c60] text-white border-[#092c60]'
-                            : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                         }`}
                       >
                         <strong className="block">{cand.studentName}</strong>
-                        <span className={picked ? 'text-blue-100' : 'text-slate-500'}>{cand.manifesto}</span>
+                        <span className={picked ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}>{cand.manifesto}</span>
                       </button>
                     );
                   })}

@@ -1651,12 +1651,32 @@ export default function ExaminationPortal() {
                             <p className="text-xs font-semibold text-slate-900">{fq.prompt}</p>
 
                             <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 font-mono">
-                              <span className="text-slate-400 block mb-1">Candidate Response:</span>
-                              {typeof resp === 'string'
-                                ? resp
-                                : resp
-                                ? JSON.stringify(resp)
-                                : '(No answer submitted)'}
+                              <span className="text-slate-600 block mb-1">Candidate Response:</span>
+                              {typeof resp === 'string' ? (
+                                resp || '(No answer submitted)'
+                              ) : resp && typeof resp === 'object' && !Array.isArray(resp) && 'fileName' in resp ? (
+                                <div className="space-y-1 font-sans">
+                                  {(resp as Record<string, string>).fileName ? (
+                                    <p className="font-semibold text-slate-900">
+                                      Attached File: {(resp as Record<string, string>).fileName}{' '}
+                                      <span className="font-mono font-normal text-slate-600">
+                                        ({[(resp as Record<string, string>).fileSize, (resp as Record<string, string>).mimeType].filter(Boolean).join(' · ')})
+                                      </span>
+                                    </p>
+                                  ) : (
+                                    <p className="text-slate-600">(No file attached)</p>
+                                  )}
+                                  {(resp as Record<string, string>).notes && (
+                                    <p className="text-slate-700 whitespace-pre-wrap">
+                                      Notes: {(resp as Record<string, string>).notes}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : resp ? (
+                                JSON.stringify(resp)
+                              ) : (
+                                '(No answer submitted)'
+                              )}
                             </div>
 
                             {markRow?.provisionalKeywordHint && (

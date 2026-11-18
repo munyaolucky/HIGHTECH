@@ -13,6 +13,7 @@ import News from "./pages/News";
 import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
 import StudentPortalGuide from "./pages/StudentPortalGuide";
+import PublicGovernancePages from "./pages/PublicGovernancePages";
 import CollegeChatbot from "./components/CollegeChatbot";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import PublicVerifyEnquireModals from "./components/PublicVerifyEnquireModals";
@@ -20,37 +21,56 @@ import { CourseProgramme } from "../types";
 import { COURSES_CATALOGUE } from "../data/college";
 
 interface PublicWebsiteProps {
+  initialPage?: string;
+  initialPortalModalOpen?: boolean;
+  onPageChange?: (page: string) => void;
   onSwitchToERP: (role: string) => void;
   onLaunchStudentDashboard: () => void;
 }
 
 export default function PublicWebsite({
+  initialPage = "home",
+  initialPortalModalOpen = false,
+  onPageChange,
   onSwitchToERP,
   onLaunchStudentDashboard,
 }: PublicWebsiteProps) {
-  const [currentPage, setCurrentPage] = useState("home");
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedCourse, setSelectedCourse] = useState<CourseProgramme | null>(
     COURSES_CATALOGUE[0]
   );
-  const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
+  const [isPortalModalOpen, setIsPortalModalOpen] = useState(initialPortalModalOpen);
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [enquireModalOpen, setEnquireModalOpen] = useState(false);
 
+  React.useEffect(() => {
+    setCurrentPage(initialPage);
+  }, [initialPage]);
+
+  React.useEffect(() => {
+    if (initialPortalModalOpen) {
+      setIsPortalModalOpen(true);
+    }
+  }, [initialPortalModalOpen]);
+
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
+    onPageChange?.(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSelectCourse = (course: CourseProgramme) => {
     setSelectedCourse(course);
     setCurrentPage("course-details");
+    onPageChange?.("course-details");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleApplyCourse = (course: CourseProgramme) => {
     setSelectedCourse(course);
     setCurrentPage("apply");
+    onPageChange?.("apply");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -127,6 +147,18 @@ export default function PublicWebsite({
             onNavigateToApply={() => handleNavigate("apply")}
             onOpenPortalModal={() => setIsPortalModalOpen(true)}
             onSwitchToERP={onSwitchToERP}
+          />
+        )}
+
+        {(currentPage === "verify" ||
+          currentPage === "privacy-policy" ||
+          currentPage === "terms" ||
+          currentPage === "accessibility" ||
+          currentPage === "fees") && (
+          <PublicGovernancePages
+            page={currentPage}
+            onNavigate={handleNavigate}
+            onOpenPortalModal={() => setIsPortalModalOpen(true)}
           />
         )}
       </main>

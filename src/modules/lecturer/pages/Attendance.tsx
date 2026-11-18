@@ -62,59 +62,70 @@ export default function Attendance() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={markAllPresent} className="secondary-button">
+          <button type="button" onClick={markAllPresent} className="secondary-button">
             <CheckCircle2 size={15} /> Mark All Present
           </button>
           <button
+            type="button"
             onClick={handleSynchronize}
             disabled={isSyncing}
             className="primary-button"
           >
-            {isSyncing ? <RefreshCw size={15} className="animate-spin" /> : <Smartphone size={15} />}
+            {isSyncing ? (
+              <RefreshCw size={15} className="motion-safe:animate-spin" />
+            ) : (
+              <Smartphone size={15} />
+            )}
             {isSyncing ? "Synchronizing..." : "Synchronize Register"}
           </button>
         </div>
       </div>
 
       {syncStatus && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-emerald-600" />
+        <div
+          role="status"
+          className="p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold rounded-xl flex items-center gap-2"
+        >
+          <CheckCircle2 size={16} className="text-emerald-700 dark:text-emerald-300 shrink-0" />
           <span>{syncStatus}</span>
         </div>
       )}
 
       {/* STATS OVERVIEW */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] text-slate-500 font-semibold">Attendance Rate</span>
-          <h2 className="text-xl font-bold text-slate-900 mt-0.5">{attendanceRate}%</h2>
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold">Attendance Rate</span>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5 tabular-nums">{attendanceRate}%</h2>
         </div>
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] text-emerald-700 font-semibold">Present</span>
-          <h2 className="text-xl font-bold text-emerald-700 mt-0.5">{presentCount}</h2>
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">Present</span>
+          <h2 className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5 tabular-nums">{presentCount}</h2>
         </div>
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] text-amber-700 font-semibold">Late</span>
-          <h2 className="text-xl font-bold text-amber-700 mt-0.5">{lateCount}</h2>
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <span className="text-[11px] text-amber-800 dark:text-amber-300 font-semibold">Late</span>
+          <h2 className="text-xl font-bold text-amber-800 dark:text-amber-300 mt-0.5 tabular-nums">{lateCount}</h2>
         </div>
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] text-red-700 font-semibold">Absent</span>
-          <h2 className="text-xl font-bold text-red-700 mt-0.5">{absentCount}</h2>
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <span className="text-[11px] text-red-700 dark:text-red-300 font-semibold">Absent</span>
+          <h2 className="text-xl font-bold text-red-700 dark:text-red-300 mt-0.5 tabular-nums">{absentCount}</h2>
         </div>
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] text-purple-700 font-semibold">Excused</span>
-          <h2 className="text-xl font-bold text-purple-700 mt-0.5">{excusedCount}</h2>
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+          <span className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold">Excused</span>
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-300 mt-0.5 tabular-nums">{excusedCount}</h2>
         </div>
       </div>
 
       {/* CONTROLS BAR */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <label className="font-bold text-slate-700 shrink-0">Teaching Assignment:</label>
+          <label htmlFor="attendance-assignment-select" className="font-bold text-slate-700 dark:text-slate-200 shrink-0">
+            Teaching Assignment:
+          </label>
           <select
+            id="attendance-assignment-select"
             value={selectedAsgId}
             onChange={(e) => setSelectedAsgId(e.target.value)}
-            className="p-2 border border-slate-300 rounded-lg bg-white"
+            className="p-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
           >
             {assignments.map((a) => (
               <option key={a.id} value={a.id}>
@@ -125,18 +136,21 @@ export default function Attendance() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <label className="font-bold text-slate-700 shrink-0">Session Date:</label>
+          <label htmlFor="attendance-session-date" className="font-bold text-slate-700 dark:text-slate-200 shrink-0">
+            Session Date:
+          </label>
           <input
+            id="attendance-session-date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="p-2 border border-slate-300 rounded-lg bg-white font-mono font-bold"
+            className="p-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono font-bold tabular-nums"
           />
         </div>
       </div>
 
       {/* ROSTER TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="student-table">
             <thead>
@@ -150,18 +164,18 @@ export default function Attendance() {
             <tbody>
               {roster.map((s) => (
                 <tr key={s.regNo}>
-                  <td className="font-mono font-bold text-blue-900">{s.regNo}</td>
-                  <td className="font-semibold text-slate-900">{s.name}</td>
+                  <td className="font-mono font-bold text-blue-900 dark:text-blue-300">{s.regNo}</td>
+                  <td className="font-semibold text-slate-900 dark:text-white">{s.name}</td>
                   <td>
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
                         s.status === "PRESENT"
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
                           : s.status === "LATE"
-                          ? "bg-amber-100 text-amber-800"
+                          ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
                           : s.status === "ABSENT"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-purple-100 text-purple-800"
+                          ? "bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300"
+                          : "bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300"
                       }`}
                     >
                       {s.status}
@@ -169,6 +183,7 @@ export default function Attendance() {
                   </td>
                   <td className="text-right">
                     <button
+                      type="button"
                       onClick={() => toggleStatus(s.regNo)}
                       className="secondary-button text-[11px] py-1 px-3 ml-auto"
                     >

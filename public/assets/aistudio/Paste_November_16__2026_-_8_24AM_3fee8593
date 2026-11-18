@@ -1,0 +1,1078 @@
+# **HI-TECH College Integrated Digital Academic & Certification Platform**
+
+## **Complete Master Feature Catalogue & Implementation Plan**
+
+This is the master blueprint for the entire HI-TECH College platform—not just the Student Information System. It covers the public website, administration, admissions, student and staff portals, academic operations, examinations, finance, HR, document management, mobile application, integrations, security and reporting.
+
+**Implementation target:** `hitech-college-website/apps`
+
+**Architecture**
+
+- `apps/api` — Express + TypeScript + Prisma + PostgreSQL.
+- `apps/web` — React + Vite + TypeScript.
+- `apps/mobile` — Expo + React Native.
+- Node.js 22.13.0 or later.
+- API port `4000`; web port `5173`.
+- JWT access authentication, rotating refresh sessions, RBAC and record-level permissions.
+
+The key implementation principle is to build one integrated platform with shared data and services, rather than separate disconnected applications for students, staff and administrators.
+
+**Platform-wide design principles**
+
+- One central identity and user account system.
+- One authoritative student record per student.
+- Configurable campuses, departments, programmes and academic years.
+- Role-based and record-level access control.
+- Approval workflows for sensitive operations.
+- Full audit trails for important changes.
+- Responsive web and mobile experiences.
+- Secure integrations with external providers.
+- No unrestricted confidential-record access for Super Admin.
+
+## **1. Complete platform feature catalogue**
+
+The platform is divided into 12 major systems and 43 functional modules.
+
+### **A. Public website and institutional services**
+
+Public-facing system
+
+| No. | Module                | Complete features                                                                                       |
+| --- | --------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1   | Public website        | Homepage, hero banners, animations, navigation, footer, responsive layouts, SEO, accessibility, chatbot |
+| 2   | About the college     | History, mission, vision, leadership, governance, campuses, accreditation and institutional profile     |
+| 3   | Academic catalogue    | Programmes, courses, entry requirements, fees, duration, study modes, accreditation details             |
+| 4   | Admissions website    | Online applications, entry requirements, application tracking, admission enquiries, downloads           |
+| 5   | Student recruitment   | Campaigns, prospectus, enquiries, open days, application conversion tracking                            |
+| 6   | Public communications | News, announcements, events, gallery, notices, newsletters, FAQs, contact forms                         |
+
+Public website pages:
+
+- Home
+- About Us
+- Leadership and Governance
+- Departments
+- Programmes and Courses
+- Admissions
+- Fees Structure
+- Campus and Facilities
+- Student Life
+- Digital Library
+- News and Events
+- Careers
+- Gallery
+- Downloads
+- FAQs
+- Contact Us
+- Portal Login
+- Public Document Verification
+- Privacy Policy
+- Terms and Conditions
+- Accessibility Statement
+
+### **B. Institutional administration and governance**
+
+Administration system
+
+| No. | Module                       | Complete features                                                                                |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| 7   | Super Admin                  | Platform settings, institution configuration, service monitoring, integrations, feature switches |
+| 8   | Institutional administration | Institutional structure, campuses, departments, offices, governance, delegations                 |
+| 9   | User management              | User registration, invitations, activation, account suspension, role assignment, user audit      |
+| 10  | RBAC and permissions         | Roles, permissions, access policies, scope restrictions, approval authority                      |
+| 11  | Workflow management          | Configurable approval chains, assignments, escalation, delegation, rejection, resubmission       |
+| 12  | Audit and compliance         | Activity logs, audit reports, retention, compliance evidence, security events                    |
+
+**Super Admin restrictions:** Technical platform administration does not automatically grant access to confidential student, financial, HR or counselling records. Access to business data must be separately authorized and audited.
+
+### **C. Student administration**
+
+Student Information System
+
+| No. | Module                     | Complete features                                                                         |
+| --- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| 13  | Admissions                 | Application forms, applicant records, documents, eligibility, review, admission decisions |
+| 14  | Student Information System | Student profiles, student numbers, academic history, status management                    |
+| 15  | Student registration       | Manual registration by staff, approval, activation invitations, profile completion        |
+| 16  | Academic registration      | Semester registration, unit selection, prerequisites, add/drop, change requests           |
+| 17  | Student lifecycle          | Transfers, deferment, resumption, withdrawal, completion, graduation, alumni conversion   |
+| 18  | Parent and guardian        | Guardian relationships, consent, linked student accounts, restricted parent access        |
+| 19  | Student affairs            | Welfare, complaints, counselling referrals, disciplinary processes, student support       |
+| 20  | Hostel and accommodation   | Applications, room allocation, occupancy, check-in/out, maintenance requests              |
+| 21  | Student elections          | Candidate applications, campaigns, voting, results, election audit                        |
+
+### **D. Academic management and learning**
+
+Academic operations
+
+| No. | Module                     | Complete features                                                                   |
+| --- | -------------------------- | ----------------------------------------------------------------------------------- |
+| 22  | Academic structure         | Campuses, schools, faculties, departments, programmes, courses and units            |
+| 23  | Curriculum management      | Curriculum versions, learning outcomes, prerequisites, credit hours, approval       |
+| 24  | Timetable management       | Classes, rooms, lecturers, sessions, timetable conflicts, substitutions             |
+| 25  | Attendance                 | Manual, QR, biometric integration, class registers, absence alerts, reports         |
+| 26  | Learning Management System | Courses, learning materials, lessons, activities, assignments, quizzes              |
+| 27  | Virtual learning           | Online classes, meeting links, recordings, discussion forums, attendance            |
+| 28  | Teaching management        | Lesson plans, schemes of work, session plans, records of work, teaching evaluations |
+| 29  | Industrial attachment      | Placement, employer records, logbooks, supervisor assessments, completion           |
+| 30  | Digital library            | Catalogue, circulation, e-books, research, reservations, overdue notices            |
+
+Academic curriculum controls must account for approved programme versions and applicable examining-body requirements. TVETA's accreditation handbook addresses admission requirements, approved curricula, training plans, timetables, assessment methods and examination procedures.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.tveta.go.ke\&sz=32)
+
+Tveta+1
+
+
+
+### **E. Examinations, assessment and certification**
+
+Examination system
+
+| No. | Module                 | Complete features                                                               |
+| --- | ---------------------- | ------------------------------------------------------------------------------- |
+| 31  | Examination management | Exam bodies, exam sessions, schedules, examination entries, venues              |
+| 32  | Question bank          | Question types, categories, difficulty, tags, question versioning               |
+| 33  | Assessment engine      | MCQ, multiple response, matching, ordering, numeric, essay, practical, language |
+| 34  | Online examination     | Timed tests, randomization, question navigation, autosave, submission           |
+| 35  | Practical examination  | Desktop software tasks, file submissions, practical rubrics, evidence           |
+| 36  | Marking engine         | Automatic marking, manual marking, partial credit, rubrics, moderation          |
+| 37  | AI-assisted assessment | Question generation, marking assistance, feedback, human approval               |
+| 38  | Results management     | Marks entry, grade calculation, result moderation, approval, publication        |
+| 39  | Certification          | Certificates, transcripts, result slips, verification, graduation clearance     |
+
+**Examination capabilities**
+
+The assessment engine should support:
+
+- Single-answer multiple choice.
+- Multiple-answer multiple choice.
+- True or false.
+- Fill in the blank.
+- Short answer.
+- Long answer and essays.
+- Matching.
+- Ordering and sequencing.
+- Numeric questions and tolerance.
+- Calculations and formula-based questions.
+- Image-based questions.
+- Audio and listening questions.
+- Pronunciation and speech assessments.
+- Spelling and language assessments.
+- Coding and programming exercises.
+- File upload and document assessment.
+- Practical software assessment.
+- Scenario-based assessments.
+- Case studies.
+- Adaptive assessments.
+- Randomized questions and options.
+- Branching questions.
+- Multi-part questions.
+- Oral examinations.
+- Portfolio assessments.
+
+Each assessment type must have its own validation, scoring and marking rules. AI-generated questions and AI-assisted marks must go through the appropriate academic review and approval process.
+
+### **F. Finance and institutional resources**
+
+Enterprise operations
+
+| No. | Module               | Complete features                                                     |
+| --- | -------------------- | --------------------------------------------------------------------- |
+| 40  | Finance management   | Chart of accounts, journals, ledgers, cashbooks, financial statements |
+| 41  | Student fees         | Fee structures, invoices, balances, payments, penalties, sponsorship  |
+| 42  | Payment integration  | M-Pesa Daraja STK Push, C2B, bank payments, receipts, reconciliation  |
+| 43  | Procurement          | Purchase requests, quotations, supplier evaluation, purchase orders   |
+| 44  | Inventory and stores | Stock, item categories, issue/return, stock counts, reorder alerts    |
+| 45  | Asset management     | Asset register, depreciation, maintenance, allocation, disposal       |
+| 46  | Budget management    | Department budgets, approvals, expenditure monitoring                 |
+| 47  | Financial reporting  | Income, expenditure, arrears, reconciliation, audit reports           |
+
+**Finance controls**
+
+- No direct editing of confirmed payment records.
+- Payment callbacks must be authenticated and idempotent.
+- Reconciliation must identify duplicate, missing and unmatched payments.
+- Refunds require authorization and audit records.
+- Financial data access must be separated from general student-record access.
+
+### **G. Human resources and staff operations**
+
+HR and workforce
+
+| No. | Module                 | Complete features                                                      |
+| --- | ---------------------- | ---------------------------------------------------------------------- |
+| 48  | HR management          | Staff profiles, contracts, departments, job titles, employment history |
+| 49  | Recruitment            | Vacancies, applications, interviews, selection and appointment         |
+| 50  | Staff attendance       | Clock-in/out, leave, attendance reports, authorized device integration |
+| 51  | Leave management       | Applications, approval, balances, leave calendar                       |
+| 52  | Payroll                | Earnings, deductions, statutory calculations, payslips and reports     |
+| 53  | Performance management | Objectives, appraisal, reviews, training plans                         |
+| 54  | Staff development      | Training, qualifications, professional development, certification      |
+| 55  | Staff portal           | Personal profile, payslips, leave, timetable, tasks and announcements  |
+
+### **H. Documents and institutional communications**
+
+Document and communication services
+
+| No. | Module              | Complete features                                                       |
+| --- | ------------------- | ----------------------------------------------------------------------- |
+| 56  | Document management | Uploads, folders, versions, metadata, search, retention, permissions    |
+| 57  | Digital signatures  | Electronic signatures, signing authority, approval chains, verification |
+| 58  | Notifications       | In-app, email, SMS, mobile push, preferences and delivery tracking      |
+| 59  | Communications      | Announcements, campaigns, newsletters, scheduled messages               |
+| 60  | Records management  | Institutional archives, correspondence, policies, meeting minutes       |
+
+### **I. Campus operations and facilities**
+
+| No. | Module                        | Complete features                                                        |
+| --- | ----------------------------- | ------------------------------------------------------------------------ |
+| 61  | Facilities management         | Rooms, laboratories, buildings, equipment, maintenance                   |
+| 62  | Transport management          | Vehicles, drivers, routes, fuel, maintenance, transport requests         |
+| 63  | Campus security               | Incidents, visitor records, access logs, emergency procedures            |
+| 64  | ICT and laboratory management | Devices, software, network inventory, lab schedules, repair tickets      |
+| 65  | Health and safety             | Safety incidents, inspections, emergency plans, approved welfare records |
+| 66  | Events management             | Event calendars, bookings, attendance, venue management                  |
+
+### **J. Quality assurance and accreditation**
+
+| No. | Module                   | Complete features                                                  |
+| --- | ------------------------ | ------------------------------------------------------------------ |
+| 67  | Quality assurance        | Internal reviews, quality indicators, audits, corrective actions   |
+| 68  | Accreditation management | Institutional licences, programme approvals, renewal reminders     |
+| 69  | Curriculum compliance    | Approved curriculum versions, learning outcomes, training evidence |
+| 70  | Examination compliance   | Exam body requirements, examination records, moderation evidence   |
+| 71  | Institutional reporting  | Enrolment, staff, programme, performance and compliance reports    |
+
+TVETA provides accreditation and compliance resources, including guidance on approved programmes and continuing compliance assessment. The system should maintain evidence and reminders rather than claim accreditation automatically.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.tveta.go.ke\&sz=32)
+
+TVET Authority+2
+
+
+
+### **K. Technology, security and integrations**
+
+| No. | Module                       | Complete features                                                        |
+| --- | ---------------------------- | ------------------------------------------------------------------------ |
+| 72  | Authentication               | Login, password recovery, MFA, secure sessions                           |
+| 73  | Cybersecurity                | Rate limits, device controls, threat monitoring, security audit          |
+| 74  | API management               | API keys, access scopes, webhooks, integration logs                      |
+| 75  | Data governance              | Data classification, consent, retention, correction, deletion workflows  |
+| 76  | Backup and disaster recovery | Database backups, file backups, restoration, recovery testing            |
+| 77  | System monitoring            | API health, errors, performance, queue monitoring                        |
+| 78  | AI services                  | AI assistant, knowledge retrieval, academic support, workflow assistance |
+| 79  | Mobile services              | Push notifications, offline access, synchronization, mobile security     |
+
+### **L. Alumni and external partnerships**
+
+| No. | Module                  | Complete features                                               |
+| --- | ----------------------- | --------------------------------------------------------------- |
+| 80  | Alumni management       | Alumni profiles, graduation history, networks, reunions         |
+| 81  | Industry partnerships   | Employer records, internships, placement agreements             |
+| 82  | Partner institutions    | Collaboration agreements, shared learning, approved services    |
+| 83  | Career services         | Job listings, career guidance, employer engagement              |
+| 84  | Research and innovation | Research projects, publications, collaboration and repositories |
+
+This expands the earlier 43 database-domain catalogue into a larger functional feature catalogue. It is a target scope, not a statement that every feature already exists in the repository.
+
+## **2. Portal design: who uses the system?**
+
+The system should have one login entry point, then route users to the dashboard authorized for their account.
+
+## **HI-TECH College Portal**
+
+One identity system · Role-specific workspaces
+
+Super Admin
+
+Admin
+
+Principal
+
+Registrar
+
+Finance
+
+HR
+
+Lecturer
+
+HOD
+
+Admissions
+
+Examinations
+
+Librarian
+
+ICT Support
+
+Student
+
+Parent
+
+Student Affairs
+
+Procurement
+
+Each user can have multiple authorized roles or scoped responsibilities where institution policy permits.
+
+### **Role dashboards and features**
+
+| Portal               | Dashboard contents                                                          |
+| -------------------- | --------------------------------------------------------------------------- |
+| Super Admin          | Platform configuration, integrations, service status, global audit metadata |
+| Admin                | Institution overview, user administration, approvals, operational reports   |
+| Principal            | Institutional performance, academic reports, major approvals                |
+| Registrar            | Admissions, student records, academic registration, progression             |
+| Finance              | Fee accounts, payments, invoices, reconciliations, finance reports          |
+| HR                   | Recruitment, employee records, leave, payroll and appraisals                |
+| HOD                  | Department staff, programmes, teaching, departmental results                |
+| Lecturer             | Classes, timetable, attendance, assignments, marking, student progress      |
+| Admissions Officer   | Applications, applicant verification, admission decisions                   |
+| Examinations Officer | Exam sessions, question banks, examination entries, moderation              |
+| Librarian            | Library catalogue, borrowing, returns, reservations                         |
+| ICT Support          | Devices, accounts support, network, labs, incidents                         |
+| Student              | Profile, registration, timetable, attendance, learning, results, fees       |
+| Parent               | Authorized linked-student progress, announcements and permitted fees        |
+| Student Affairs      | Authorized student support, welfare and case management                     |
+| QA Officer           | Quality audits, compliance, evidence, improvement plans                     |
+
+Other workspaces should include Procurement, Stores, Reception, Security, Hostel, Transport, Communications, Alumni and external partners.
+
+## **3. Student portal: complete feature list**
+
+The student portal is one of the most important workspaces.
+
+[Student Portal -Dashboard by Hadassah Ekanem on Dribbble](https://images.openai.com/static-rsc-4/UdXG2_wJoG1fD9JG3NpyoJ3bh7nRGK91IA94f_j5wGox5q0wcb4x4foKvTSWO6woaVmT3yRGwaItlCEyMRO96MeLRaUvVKfT_DMULIJgyhtpEIKKsFWx5LkDkdpolwIR_kaRiqx7FCN_74DlpExwJc9OdBEQjikncz37A2aSgC8?purpose=inline)
+
+[Smart Course Selection & Scheduling Platform – A Student-Centric Approach](https://images.openai.com/static-rsc-4/zBpJJnLGk2Ef7-sNG2y1QDKeoFUZR79u-imQqY6JpcVRKyjkEvqMPT9OoSf1EySWTqVTKYAE_UYiarQoG13ZTvzRZMaDslKx_YQTqptrrQ8fOZkocwDTYRwgCcS_9kLyYCueOmYGl_yL8UUW9Soyr5lYxLmgcPvKmKnEbW3qAR8?purpose=inline)
+
+[mElimu Reviews 2025: Details, Pricing, & Features | G2](https://images.openai.com/static-rsc-4/q9fP9hHhBzujHw_ERZyo-Kyjl5aUFT1y7XuVusB8tsU41myvmB_hF2zSusINok8W3GVesGdWlPzHgetu4cE46GfLGsERIsayljk4Kv2IJTWZwhJ6cfNa7gYqOugv2p7xEIywJxDsPaCZkiAeOB3SDpchU4Cysws9H9O2BtXyyc0?purpose=inline)
+
+12
+
+**Student home dashboard**
+
+- Student name and registration number.
+- Profile completion.
+- Current programme, department and campus.
+- Current academic year and semester.
+- Registration status.
+- Outstanding tasks and deadlines.
+- Announcements and notifications.
+- Academic progress summary.
+- Quick links to important services.
+
+**Student services**
+
+1. View and update permitted personal details.
+2. Manage emergency contacts.
+3. View guardian relationships and consent settings.
+4. Request correction of personal records.
+5. Download admission letters.
+6. View student identification information.
+7. Register academic units.
+8. Request unit changes.
+9. View semester registration history.
+10. View class timetable.
+11. View attendance.
+12. Submit assignments.
+13. Take online assessments.
+14. View examination timetable.
+15. View results after authorized publication.
+16. View transcripts and academic history.
+17. View invoices and payment history.
+18. Download payment receipts.
+19. Submit support tickets.
+20. Access the digital library.
+21. View learning materials.
+22. Apply for deferment.
+23. Apply for programme transfer.
+24. Apply for resumption.
+25. Request withdrawal.
+26. Apply for accommodation.
+27. Submit approved welfare requests.
+28. Access career and internship services.
+29. Download eligible documents.
+30. Receive notifications.
+
+## **4. Staff portal: complete feature list**
+
+**Shared staff services**
+
+- Staff profile.
+- Employment details.
+- Department and position.
+- Personal documents.
+- Work calendar.
+- Notifications.
+- Leave applications.
+- Attendance.
+- Task management.
+- Internal communications.
+- Helpdesk.
+- Training and professional development.
+- Authorized reports.
+
+**Lecturer workspace**
+
+- My classes.
+- My students.
+- Timetable.
+- Class attendance.
+- Lesson plans.
+- Schemes of work.
+- Session plans.
+- Learning materials.
+- Assignment creation.
+- Question bank.
+- Assessment creation.
+- Practical assessment.
+- Marking and rubrics.
+- Results submission.
+- Moderation feedback.
+- Academic progress reports.
+
+**Administrative workspace**
+
+- Student registration.
+- Admissions approvals.
+- User invitations.
+- Department management.
+- Course and curriculum configuration.
+- Academic calendars.
+- Examination administration.
+- Finance approvals.
+- Document approvals.
+- Staff management.
+- Institutional reports.
+
+## **5. Complete database architecture**
+
+Your existing project has been reported to contain approximately 135 Prisma models, 130 enums and 30 route modules. The right approach is to audit and extend that database—not create another independent schema.
+
+### **Database domains**
+
+| Domain           | Core entities                                      |
+| ---------------- | -------------------------------------------------- |
+| Institution      | Institution, Campus, Department, Office            |
+| Identity         | User, Account, Session, RefreshToken               |
+| Authorization    | Role, Permission, UserRole, RolePermission         |
+| Registration     | PortalRegistration, Invitation, Approval           |
+| Admissions       | Application, Applicant, AdmissionDecision          |
+| SIS              | StudentProfile, Guardian, StudentStatusHistory     |
+| Academics        | Programme, Course, AcademicUnit, Curriculum        |
+| Academic periods | AcademicYear, Semester, Intake                     |
+| Registration     | AcademicRegistration, AcademicRegistrationUnit     |
+| Timetable        | Timetable, ClassSession, Room, Allocation          |
+| Attendance       | AttendanceSession, AttendanceRecord                |
+| LMS              | CourseSpace, Lesson, LearningMaterial              |
+| Assignments      | Assignment, Submission, Feedback                   |
+| Examinations     | ExaminationBody, ExamSession, ExamEntry            |
+| Assessment       | Question, QuestionOption, Assessment, Attempt      |
+| Marking          | MarkingScheme, Rubric, Mark, Moderation            |
+| Results          | Result, Grade, Approval, Publication               |
+| Certification    | Certificate, Transcript, Verification              |
+| Finance          | Account, Invoice, Payment, Receipt, Journal        |
+| Procurement      | Supplier, PurchaseRequest, PurchaseOrder           |
+| Inventory        | Item, StockMovement, Store                         |
+| Assets           | Asset, MaintenanceRecord, Allocation               |
+| HR               | Employee, Contract, Leave, Payroll                 |
+| Documents        | ManagedDocument, DocumentVersion, DocumentApproval |
+| Signatures       | SignatureRequest, SignatureRecord                  |
+| Notifications    | Notification, Delivery, Preference                 |
+| Library          | Book, Copy, Loan, Reservation                      |
+| Hostel           | Hostel, Room, Allocation                           |
+| Student affairs  | SupportCase, WelfareRequest, DisciplinaryCase      |
+| Elections        | Election, Candidate, Vote                          |
+| Communications   | Announcement, Campaign, Template                   |
+| Support          | Ticket, TicketMessage, KnowledgeArticle            |
+| AI               | AIConversation, AIMessage, AIUsage, AIJob          |
+| CMS              | Page, Menu, Banner, Media, FAQ                     |
+| Events           | Event, Venue, Booking                              |
+| Alumni           | AlumniProfile, AlumniEngagement                    |
+| Transport        | Vehicle, Driver, Route, Trip                       |
+| Security         | Incident, Visitor, AccessEvent                     |
+| QA               | Audit, Finding, CorrectiveAction                   |
+| Analytics        | Report, Metric, Dashboard                          |
+| Integrations     | Provider, CredentialReference, Webhook             |
+| Mobile           | PushDevice, SyncRecord                             |
+| Data governance  | Consent, RetentionPolicy, DataRequest              |
+| Operations       | Job, SystemEvent, BackupRecord                     |
+
+### **Database design rules**
+
+1. Central `User` model; never create parallel user tables for different portals.
+2. Unique registration numbers generated transactionally.
+3. Explicit foreign keys and indexes.
+4. Campus and department scope on relevant records.
+5. Use Decimal for monetary values, not floating-point.
+6. Store timestamps consistently in UTC.
+7. Keep immutable academic and financial transaction history.
+8. Separate sensitive records and access permissions.
+9. Use object storage for document files.
+10. Maintain audit events for critical changes.
+11. Use transactions for approvals and financial operations.
+12. Add retention and deletion policies.
+13. Use idempotency keys for external payment callbacks.
+14. Keep secrets in a secure secrets manager or environment configuration.
+15. Reconcile all new models with existing schema before migration.
+
+## **6. Complete implementation roadmap**
+
+The implementation should be delivered in controlled phases. Every phase should produce working, testable functionality.
+
+## **Delivery roadmap**
+
+Suggested sequence, not a claim of completed work.
+
+1. **Phase 0 — Repository audit and architecture**
+
+   Foundation
+   - Inspect existing API, web and mobile structure.
+   - Audit Prisma models, enums and migrations.
+   - Inventory all existing endpoints.
+   - Map current features to target catalogue.
+   - Identify duplicated models and incomplete modules.
+   - Define shared API response and error standards.
+   - Establish test and migration procedures.
+2. **Phase 1 — Identity and security**
+   - Central authentication.
+   - Single portal login.
+   - Password recovery.
+   - MFA and trusted devices.
+   - Rotating refresh sessions.
+   - Role and permission management.
+   - User invitations and account activation.
+   - Security audit and session revocation.
+3. **Phase 2 — Institutional governance**
+   - Institution and campus setup.
+   - Departments and offices.
+   - Academic and administrative hierarchy.
+   - Workflow engine.
+   - Approval authority.
+   - Audit management.
+4. **Phase 3 — Public website and CMS**
+   - Homepage and navigation.
+   - Institutional pages.
+   - Programme catalogue.
+   - Admissions information.
+   - Events, gallery and downloads.
+   - Public enquiries and chatbot.
+   - SEO and accessibility.
+5. **Phase 4 — User registration and admissions**
+   - Manual student registration.
+   - Staff registration.
+   - Parent and guardian registration.
+   - Admissions application.
+   - Approval workflows.
+   - Registration-number generation.
+   - Portal invitations.
+6. **Phase 5 — Student Information System**
+   - Student profiles.
+   - Student lifecycle.
+   - Academic history.
+   - Transfers and deferments.
+   - Guardian access.
+   - Student services.
+7. **Phase 6 — Academic structure**
+   - Campuses and departments.
+   - Programmes and courses.
+   - Academic units.
+   - Curriculum versions.
+   - Academic years and semesters.
+   - Prerequisites and study modes.
+8. **Phase 7 — Academic registration and timetable**
+   - Unit selection.
+   - Registration approval.
+   - Add/drop and change requests.
+   - Class groups.
+   - Timetable scheduling.
+   - Room allocation.
+   - Conflict detection.
+9. **Phase 8 — Attendance and teaching**
+   - QR and manual attendance.
+   - Authorized biometric integration.
+   - Lecturer workspace.
+   - Teaching plans.
+   - Attendance reports.
+   - Substitution and session records.
+10. **Phase 9 — LMS and digital library**
+    - Learning spaces.
+    - Lessons and materials.
+    - Assignments.
+    - Quizzes.
+    - Discussions.
+    - Library circulation.
+    - E-books and resources.
+11. **Phase 10 — Examinations and assessment**
+    - Examination bodies.
+    - Examination sessions.
+    - Question bank.
+    - Assessment engine.
+    - Online and practical exams.
+    - Marking and moderation.
+    - Results approval and publication.
+12. **Phase 11 — Certification**
+    - Completion checks.
+    - Graduation eligibility.
+    - Transcript generation.
+    - Certificate generation.
+    - QR verification.
+    - Exam body integration where authorized.
+13. **Phase 12 — Finance and payments**
+    - Fee structures.
+    - Invoices and balances.
+    - M-Pesa Daraja.
+    - Bank payments.
+    - Receipts.
+    - Reconciliation.
+    - Accounting and financial reports.
+14. **Phase 13 — HR and payroll**
+    - Employee records.
+    - Recruitment.
+    - Contracts.
+    - Leave.
+    - Attendance.
+    - Payroll.
+    - Performance and training.
+15. **Phase 14 — Documents and signatures**
+    - Document uploads.
+    - Version control.
+    - Approval workflows.
+    - Electronic signatures.
+    - Cryptographic verification.
+    - Retention and archives.
+16. **Phase 15 — Procurement and assets**
+    - Supplier management.
+    - Procurement requests.
+    - Purchase orders.
+    - Stores and stock.
+    - Asset registers.
+    - Maintenance.
+17. **Phase 16 — Campus services**
+    - Hostel and accommodation.
+    - Student affairs.
+    - Elections.
+    - Transport.
+    - Security.
+    - Facilities.
+    - Events.
+18. **Phase 17 — Communication and notifications**
+    - In-app notifications.
+    - Email and SMS.
+    - Mobile push.
+    - Announcement campaigns.
+    - Delivery tracking.
+    - Notification preferences.
+19. **Phase 18 — Quality assurance and accreditation**
+    - Accreditation records.
+    - Curriculum compliance.
+    - Internal quality audits.
+    - Corrective actions.
+    - Institutional performance.
+    - Evidence repositories.
+20. **Phase 19 — AI and support centre**
+    - AI student assistant.
+    - Lecturer assistant.
+    - Institutional knowledge base.
+    - IT helpdesk.
+    - AI question generation.
+    - AI-assisted marking.
+    - Human approval and usage controls.
+21. **Phase 20 — Mobile application**
+    - Student mobile portal.
+    - Staff mobile portal.
+    - Notifications.
+    - Timetable.
+    - Attendance.
+    - Offline learning content.
+    - Secure synchronization.
+22. **Phase 21 — Analytics and reporting**
+    - Executive dashboards.
+    - Academic performance.
+    - Admissions trends.
+    - Financial reports.
+    - HR reports.
+    - Student progression.
+    - Quality and compliance.
+23. **Phase 22 — Production deployment**
+    - Security testing.
+    - Performance testing.
+    - Backup and recovery.
+    - Monitoring and alerting.
+    - Data migration.
+    - Staff training.
+    - User acceptance testing.
+    - Production launch.
+
+## **7. Delivery priorities**
+
+Not all modules should be implemented at once. The recommended priorities are:
+
+**Priority 1 — Core operations**
+
+Critical
+
+Authentication, users, admissions, student registration, SIS, academic structure, academic registration and finance.
+
+**Priority 2 — Teaching and assessment**
+
+High
+
+Timetables, attendance, LMS, examinations, marking, results and certification.
+
+**Priority 3 — Institutional operations**
+
+High
+
+HR, procurement, inventory, documents, signatures, communication and QA.
+
+**Priority 4 — Advanced services**
+
+Expansion
+
+AI, mobile, advanced analytics, alumni, transport, elections and integrations.
+
+## **8. Frontend application structure**
+
+Recommended structure:
+
+```
+hitech-college-website/
+└── apps/
+    ├── api/
+    │   ├── prisma/
+    │   │   ├── schema.prisma
+    │   │   ├── migrations/
+    │   │   └── seed.ts
+    │   └── src/
+    │       ├── config/
+    │       ├── middleware/
+    │       ├── shared/
+    │       ├── modules/
+    │       │   ├── auth/
+    │       │   ├── users/
+    │       │   ├── permissions/
+    │       │   ├── institution/
+    │       │   ├── admissions/
+    │       │   ├── sis/
+    │       │   ├── academics/
+    │       │   ├── registration/
+    │       │   ├── timetable/
+    │       │   ├── attendance/
+    │       │   ├── lms/
+    │       │   ├── examinations/
+    │       │   ├── assessment/
+    │       │   ├── results/
+    │       │   ├── certification/
+    │       │   ├── finance/
+    │       │   ├── hr/
+    │       │   ├── documents/
+    │       │   ├── signatures/
+    │       │   ├── notifications/
+    │       │   ├── communications/
+    │       │   ├── library/
+    │       │   ├── procurement/
+    │       │   ├── inventory/
+    │       │   ├── hostel/
+    │       │   ├── student-affairs/
+    │       │   ├── quality-assurance/
+    │       │   ├── integrations/
+    │       │   └── reports/
+    │       └── server.ts
+    │
+    ├── web/
+    │   └── src/
+    │       ├── app/
+    │       ├── components/
+    │       ├── layouts/
+    │       ├── modules/
+    │       ├── routes/
+    │       ├── services/
+    │       ├── hooks/
+    │       ├── permissions/
+    │       ├── styles/
+    │       └── main.tsx
+    │
+    └── mobile/
+        └── src/
+            ├── app/
+            ├── components/
+            ├── features/
+            ├── navigation/
+            ├── services/
+            ├── storage/
+            └── theme/
+```
+
+This is the target organization. Preserve the existing project conventions if the repository already has equivalent modules.
+
+## **9. UI and design standards**
+
+**HI-TECH College design system**
+
+**Navy**
+
+\#102D50 — navigation and headings
+
+**Blue**
+
+\#1769AA — primary actions and links
+
+**Red**
+
+\#B83232 — important alerts and institutional accents
+
+**Cream**
+
+\#F5EBDD — warm surfaces and highlights
+
+**Light background**
+
+\#F4F7FB — page background
+
+**Typography:** Inter.
+
+**Components:** Lucide icons, responsive sidebar, top navigation, data tables, cards, modals, drawers, searchable dropdowns, forms, tabs, charts and notification centre.
+
+**Accessibility:** keyboard navigation, screen-reader labels, visible focus, sufficient contrast, responsive text and reduced-motion support.
+
+### **Every module should include**
+
+- Dashboard overview.
+- Search and filters.
+- Create, view, edit and permitted delete/archive actions.
+- Detail pages.
+- Data validation.
+- Approval workflows where needed.
+- Permission-based buttons.
+- Pagination and sorting.
+- Export where authorized.
+- Notifications.
+- Audit history.
+- Empty, loading and error states.
+- Mobile-responsive design.
+- Automated tests.
+
+## **10. External integrations**
+
+| Integration        | Purpose                                    | Requirement                              |
+| ------------------ | ------------------------------------------ | ---------------------------------------- |
+| M-Pesa Daraja      | STK Push, C2B, payment confirmation        | Approved Daraja credentials              |
+| Email provider     | Invitations, receipts, alerts              | SMTP/API credentials                     |
+| SMS provider       | OTPs and student alerts                    | SMS account and sender configuration     |
+| Push notifications | Mobile alerts                              | Expo/APNs/FCM configuration              |
+| Examination bodies | Exam entries and results                   | Approved API or controlled file exchange |
+| Microsoft 365      | Email and productivity integration         | OAuth application and permissions        |
+| Google Workspace   | Email and calendar integration             | OAuth application and permissions        |
+| Video conferencing | Online classes                             | Provider credentials                     |
+| AI provider        | Assistant, marking and question generation | API key, model and usage policy          |
+| Object storage     | Documents and media                        | Secure storage credentials               |
+| Payment/banking    | Reconciliation                             | Authorized provider integration          |
+
+Do not assume that every external institution or examining body exposes an API. Provide CSV, Excel or controlled manual exchange as fallback where necessary.
+
+## **11. Security, privacy and compliance plan**
+
+This must be a core workstream, not a final add-on.
+
+**Identity and access**
+
+- MFA for privileged users.
+- Strong password policies.
+- Secure session rotation and revocation.
+- Login rate limiting.
+- Record-level access control.
+- Separation of duties.
+- Privileged-operation audit trails.
+
+**Data protection**
+
+- Data classification.
+- Purpose limitation and data minimization.
+- Retention schedules.
+- Data correction requests.
+- Data-subject access requests.
+- Consent management where consent is the appropriate legal basis.
+- Secure third-party data sharing.
+- Breach detection and response.
+- Encryption and backup recovery.
+
+The ODPC identifies rights such as being informed, accessing personal data, objecting to processing and correcting inaccurate information. Its guidance also emphasizes privacy governance, security safeguards and impact assessments.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://odpc.go.ke\&sz=32)
+
+ODPC+3
+
+
+
+For high-risk processing, assess whether a Data Protection Impact Assessment is required before implementation. This is especially important when considering biometrics, sensitive student welfare information, profiling and AI processing.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.odpc.go.ke\&sz=32)
+
+ODPC+1
+
+
+
+Useful official resources:
+
+- [TVETA Accreditation Handbook](https://www.tveta.go.ke/wp-content/uploads/2023/10/TVET-Accreditation-Handbook-compressed.pdf?utm_source=chatgpt.com)
+- [TVETA institution application process](https://www.tveta.go.ke/institution-application-process/?utm_source=chatgpt.com)
+- [TVETA standards and accreditation downloads](https://www.tveta.go.ke/downloads/?utm_source=chatgpt.com)
+- [ODPC Guidance Notes for Data Protection Policies](https://odpc.go.ke/wp-content/uploads/2026/07/ODPC-%E2%80%93-Guidance-Note-for-Data-Protection-Policies.pdf?utm_source=chatgpt.com)
+- [ODPC data subject rights](https://odpc.go.ke/rights-of-a-data-subject/?utm_source=chatgpt.com)
+
+## **12. Testing and quality assurance plan**
+
+Every phase should pass these checks before the next phase is accepted.
+
+| Test category         | Required checks                                            |
+| --------------------- | ---------------------------------------------------------- |
+| Unit tests            | Services, validation, calculations and utilities           |
+| API tests             | Authentication, endpoints, permissions and errors          |
+| Database tests        | Constraints, transactions, migrations and indexes          |
+| UI tests              | Forms, tables, navigation and responsive states            |
+| Security tests        | Unauthorized access, IDOR, injection, CSRF and rate limits |
+| Workflow tests        | Approval, rejection, delegation and audit history          |
+| Integration tests     | M-Pesa, email, SMS and external services                   |
+| Performance tests     | Search, reports, concurrency and large datasets            |
+| Recovery tests        | Backup restoration and disaster recovery                   |
+| User acceptance tests | Actual workflows for each user role                        |
+
+### **Definition of done for each module**
+
+A module is not complete merely because its dashboard exists.
+
+It must have:
+
+1. Database models and migration.
+2. API endpoints and validation.
+3. Authentication and authorization.
+4. Frontend pages and working controls.
+5. Error handling and logging.
+6. Audit trail where appropriate.
+7. Automated tests.
+8. Successful Prisma validation.
+9. Successful TypeScript compilation.
+10. Documentation and deployment instructions.
+
+## **13. Repository implementation and release process**
+
+For your existing project, use this development cycle:
+
+```
+# Work from the actual project repository
+cd hitech-college-website/apps
+
+# Inspect project structure
+find api/src/modules -maxdepth 2 -type f | sort
+find web/src/modules -maxdepth 2 -type f | sort
+
+# Inspect database schema
+npx prisma format --schema api/prisma/schema.prisma
+npx prisma validate --schema api/prisma/schema.prisma
+
+# After implementing one database slice
+npx prisma migrate dev --schema api/prisma/schema.prisma \
+  --name descriptive_module_name
+
+npx prisma generate --schema api/prisma/schema.prisma
+
+# Compile API
+cd api
+npx tsc --noEmit
+
+# Compile web
+cd ../web
+npx tsc --noEmit
+```
+
+The exact commands may need adjustment to the existing package scripts and workspace configuration.
+
+**Git release approach**
+
+```
+git checkout develop
+
+git add .
+git commit -m "feat(sis): implement student information management"
+
+git status
+```
+
+Commit each tested module separately. Do not bundle unrelated migrations and features into one large commit.
+
+## **14. Project tracking and implementation status**
+
+Use one central feature register for the entire platform. Each feature should have:
+
+- Feature ID.
+- Module.
+- Feature description.
+- Priority.
+- Existing implementation status.
+- Backend status.
+- Database status.
+- Frontend status.
+- Test status.
+- Dependencies.
+- Assigned developer.
+- Acceptance criteria.
+- Release version.
+
+Suggested status definitions:
+
+| Status      | Meaning                                            |
+| ----------- | -------------------------------------------------- |
+| Planned     | Not implemented                                    |
+| Existing    | Already present in source; requires verification   |
+| Prototype   | UI or partial implementation                       |
+| In progress | Currently being developed                          |
+| Blocked     | Waiting for credentials, dependencies or decisions |
+| Testing     | Implementation complete, tests in progress         |
+| Verified    | Acceptance criteria passed                         |
+| Released    | Included in a deployed release                     |
+
+The existing capability map's 131 features should be imported into this register and reconciled against the expanded master catalogue. That avoids losing existing functionality or creating duplicate work.
+
+## **15. Recommended first implementation sprint**
+
+The next practical step is not to write all 84 functional modules at once. It is to establish a verified baseline, then implement the highest-value foundation.
+
+## **Sprint 1 — Platform baseline**
+
+Recommended starting point
+
+**Sprint checklist**
+
+# **0/10**
+
+Inspect the existing monorepo and package scripts
+
+Audit all 135 reported Prisma models and 130 enums
+
+Inspect all 30 reported route modules
+
+Map existing features against the master catalogue
+
+Identify existing User, Session, Role and Permission models
+
+Review current admissions, SIS and academic registration models
+
+Identify duplicate or incomplete models
+
+Create a verified implementation backlog
+
+Define shared API, validation and error-handling conventions
+
+Run baseline Prisma validation and TypeScript checks
+
+&#x20;Copy sprint checklist
+
+**My recommendation:** Start with Sprint 1 and then complete the platform in dependency order. This prevents duplicate database models, broken authentication, conflicting permissions and expensive rework.
+
+The master plan now covers the entire college platform. The implementation should continue module by module, with actual repository inspection and verified tests at each stage.

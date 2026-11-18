@@ -55,7 +55,7 @@ import { registrationService } from '../services/registrationService';
 import { studentPortalService } from '../services/studentPortalService';
 import { PortalRole } from '../types';
 
-export type ShellRoleKey = Exclude<PortalRole, 'website' | 'student' | 'lecturer'>;
+export type ShellRoleKey = Exclude<PortalRole, 'website' | 'student' | 'lecturer' | 'staff'>;
 
 export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
   const erpState = collegeErpService.getState();
@@ -111,6 +111,15 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
             icon: Users,
             group: 'Academic Records',
             gradientClass: 'bg-blue-700',
+          },
+          {
+            id: 'academic_reg',
+            label: 'Semester Unit Registrations',
+            description: 'Live Cloud SQL trimester unit registration, fee clearance & Registrar approvals',
+            keywords: 'semester trimester units credits fee threshold academic registration',
+            icon: BookOpen,
+            group: 'Academic Records',
+            gradientClass: 'bg-indigo-700',
           },
           {
             id: 'requests',
@@ -1227,7 +1236,7 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
       return {
         role,
         portalTitle: 'Master Architecture Blueprint',
-        portalSubtitle: 'Complete 47-Module Digital Specification, 63 Question Types & RBAC Matrix',
+        portalSubtitle: 'Complete 84-Module Digital Specification, 44 DB Domains, 63 Question Types & RBAC Matrix',
         userName: 'Lead Systems Architect',
         userRegNo: 'HCA/ADMIN/2026/000',
         userTitle: 'Enterprise Architecture & Delivery Lead',
@@ -1237,7 +1246,7 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
         quickStats: [
           {
             label: 'System Modules',
-            value: '47 Blueprints',
+            value: '84 Modules',
             toneClass: 'text-[#092c60]',
           },
           {
@@ -1246,8 +1255,8 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
             toneClass: 'text-blue-700',
           },
           {
-            label: 'Active ERP Portals',
-            value: '19 Portals',
+            label: 'Database Domains',
+            value: '44 Domains',
             toneClass: 'text-emerald-700',
           },
           {
@@ -1259,7 +1268,7 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
         navItems: [
           {
             id: 'modules',
-            label: '47 Modules Directory',
+            label: '84 Modules & Register',
             description: 'Browse full technical & functional scope of every college module',
             keywords: 'modules specification directory features',
             icon: Layers,

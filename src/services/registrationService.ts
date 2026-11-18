@@ -480,6 +480,58 @@ class RegistrationService {
       })
     );
   }
+
+  /**
+   * Mirrors database-committed bulk student records into the Central Issuance Register
+   */
+  public recordCommittedStudentIssuances(
+    committed: Array<{
+      id: string;
+      registrationNumber: string;
+      fullName: string;
+      email: string;
+      programmeName: string;
+      campusName: string;
+      intakeName: string;
+      issuedAt: string;
+    }>
+  ): RegistrationIssuance[] {
+    const added: RegistrationIssuance[] = [];
+    for (const item of committed) {
+      const exists = this.issuances.some(
+        (existing) =>
+          existing.registrationNumber.toUpperCase() === item.registrationNumber.toUpperCase()
+      );
+      if (exists) continue;
+
+      const parsed = this.parseAndValidate(item.registrationNumber);
+      const issuance: RegistrationIssuance = {
+        id: `iss-bulk-${item.id}`,
+        registrationNumber: item.registrationNumber,
+        institutionCode: parsed.institutionCode ?? 'HCA',
+        recordType: 'STU',
+        year: parsed.year ?? 2026,
+        sequenceNumber: parsed.sequenceNumber ?? 1,
+        recipientName: item.fullName,
+        identifierReference: item.email,
+        department: 'Academic Registry & Student Records',
+        programmeOrRole: item.programmeName,
+        campus: item.campusName,
+        issuedBy: 'Registrar Bulk CSV Import (Cloud SQL)',
+        issuedAt: item.issuedAt || new Date().toISOString(),
+        status: 'ACTIVE',
+        metadata: { intake: item.intakeName, persistedInPostgres: true },
+      };
+      this.issuances.unshift(issuance);
+      added.push(issuance);
+    }
+
+    if (added.length > 0) {
+      this.syncSequencesFromIssuances();
+      this.saveIssuances();
+    }
+    return added;
+  }
 }
 
 export const registrationService = new RegistrationService();

@@ -1,44 +1,60 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
   Clock,
   Download,
-  Eye,
   Lock,
   Mail,
   MapPin,
+  Moon,
   Printer,
+  RefreshCw,
+  Scale,
   Search,
   Send,
   ShieldCheck,
   Smartphone,
-  Sparkles,
+  Sun,
+  Trash2,
   UploadCloud,
   Users,
 } from 'lucide-react';
 import studentAvatarUrl from '../../../assets/images/student_profile_portrait_1794587291385.jpg';
 import campusHeroUrl from '../../../assets/images/campus_hero_banner_1794587290452.jpg';
+import { useTheme } from '../../../context/ThemeContext';
 import { aiSupportCentreService } from '../../../services/aiSupportCentreService';
 import { engagementService } from '../../../services/engagementService';
 import { examAssessmentService } from '../../../services/examAssessmentService';
 import { hostelsService } from '../../../services/hostelsService';
 import {
   downloadStudentDocument,
+  PortalOnboardingStage,
+  StudentAppealItem,
   studentPortalService,
   StudentPortalSection,
 } from '../../../services/studentPortalService';
+import {
+  Phase4ModuleSkeleton,
+  PortalButton,
+  PortalCard,
+  PortalConfirmDialog,
+  PortalEmptyState,
+  PortalPageHeader,
+  PortalStatus,
+  PortalToolbar,
+  SkeletonCardList,
+} from '../../../components/ui/PortalUI';
 import { SupportTicketCategory } from '../../../types/aiSupportCentre';
 import { SupportRequestCategory } from '../../../types/hostels';
-import { FeeTransaction } from '../../../types';
 import StudentAcademicExtras from './StudentAcademicExtras';
-import FeeReceiptModal from '../../../components/FeeReceiptModal';
-import MpesaStkPromptModal from '../../../components/MpesaStkPromptModal';
-import StudentCbtExamModal from '../../../components/StudentCbtExamModal';
+import CloudSqlAcademicRegistrationCard from './CloudSqlAcademicRegistrationCard';
+import MobileStudentCompanion, { MobileCompanionTab } from './MobileStudentCompanion';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
+  mobileInitialTab?: MobileCompanionTab;
   onBackToDashboard: () => void;
   onNavigate: (section: StudentPortalSection) => void;
   onNotify: (type: 'ok' | 'err', message: string) => void;
@@ -116,8 +132,12 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
     subtitle: 'Accepted at campus security gates, computer labs, library desk, and exam halls',
   },
   documents: {
-    title: 'Official Student Documents',
-    subtitle: 'Download certified admission letters, fee statements, exam permits, and handbooks',
+    title: 'Official Student Documents & Uploads',
+    subtitle: 'Download certified letters and upload/replace Registrar verification documents',
+  },
+  appeals: {
+    title: 'Academic Appeals & Remarking',
+    subtitle: 'Submit formal grade remarking, attendance correction, fee waiver, or missed exam reviews',
   },
   support: {
     title: 'Student Support, Hostels & Welfare',
@@ -135,16 +155,22 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
     title: 'HI-TECH College Campus Directory',
     subtitle: 'Nairobi Main Campus facilities, laboratories, operating hours, and student handbook',
   },
+  'mobile-companion': {
+    title: 'Mobile Student Companion',
+    subtitle: 'Touch-first schedule, e-learning, library, assignments, documents, exams, support & M-Pesa',
+  },
 };
 
 export default function StudentSubPages({
   activeSection,
+  mobileInitialTab,
   onBackToDashboard,
   onNavigate,
   onNotify,
   onRefresh,
   onSwitchPortal,
 }: StudentSubPagesProps) {
+  const { theme, setTheme, textScale, setTextScale, reducedMotion, setReducedMotion } = useTheme();
   const state = studentPortalService.getState();
   const fin = studentPortalService.getFinancialSummary();
   const resources = studentPortalService.getStaticResources();
@@ -155,6 +181,7 @@ export default function StudentSubPages({
 
   // Profile state
   const [contactForm, setContactForm] = useState(state.contact);
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Record<string, string>>({});
 
   // Course change & academic leave / deferment state
   const [unitChangeForm, setUnitChangeForm] = useState({
@@ -172,6 +199,7 @@ export default function StudentSubPages({
   const [dayFilter, setDayFilter] = useState<string>('ALL');
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [submissionText, setSubmissionText] = useState('');
+  const [submissionFile, setSubmissionFile] = useState<{ fileName: string; fileSize: string } | null>(null);
 
   // M-Pesa payment state
   const [mpesaPhone, setMpesaPhone] = useState('0712345678');
@@ -180,6 +208,68 @@ export default function StudentSubPages({
 
   // Library search
   const [libraryQuery, setLibraryQuery] = useState('');
+
+  // Documents search & upload state
+  const [docSearch, setDocSearch] = useState('');
+  const [showDocUpload, setShowDocUpload] = useState(false);
+  const [replaceDocId, setReplaceDocId] = useState<string | null>(null);
+  const [uploadDocType, setUploadDocType] = useState('KCSE Result Slip / Certificate');
+  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadFileSize, setUploadFileSize] = useState<string | undefined>(undefined);
+
+  // Phase 4 module transition & refresh skeleton states
+  const PHASE_4_SECTIONS = new Set<StudentPortalSection>([
+    'examinations',
+    'results',
+    'timetable',
+    'calendar',
+    'library',
+    'documents',
+    'notifications',
+    'appeals',
+    'finance',
+    'receipts',
+    'course-registration',
+    'mobile-companion',
+  ]);
+  const [phase4Transitioning, setPhase4Transitioning] = useState(false);
+  const [syncingSection, setSyncingSection] = useState<StudentPortalSection | null>(null);
+  const [docsRefreshing, setDocsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (reducedMotion || !PHASE_4_SECTIONS.has(activeSection)) {
+      setPhase4Transitioning(false);
+      return;
+    }
+    setPhase4Transitioning(true);
+    const timer = window.setTimeout(() => {
+      setPhase4Transitioning(false);
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [activeSection, reducedMotion]);
+
+  const triggerSectionSync = (section: StudentPortalSection, notice: string) => {
+    setSyncingSection(section);
+    window.setTimeout(() => {
+      setSyncingSection(null);
+      onRefresh();
+      onNotify('ok', notice);
+    }, 320);
+  };
+
+  // Academic Appeals state
+  const [appealSearch, setAppealSearch] = useState('');
+  const [appealCatFilter, setAppealCatFilter] = useState<'ALL' | StudentAppealItem['category']>('ALL');
+  const [appealsRefreshing, setAppealsRefreshing] = useState(false);
+  const [showAppealForm, setShowAppealForm] = useState(false);
+  const [appealForm, setAppealForm] = useState({
+    category: 'GRADE_REMARKING' as StudentAppealItem['category'],
+    unitCode: state.units[0]?.code ?? 'CSC 301',
+    subject: '',
+    evidenceRef: '',
+    reason: '',
+  });
+  const [withdrawAppealTarget, setWithdrawAppealTarget] = useState<StudentAppealItem | null>(null);
 
   // Support tab & forms
   const [supportTab, setSupportTab] = useState<'tickets' | 'lecturers' | 'welfare'>('tickets');
@@ -217,36 +307,23 @@ export default function StudentSubPages({
   // Settings & Guardian form
   const [newPassword, setNewPassword] = useState('');
   const [guardianEmail, setGuardianEmail] = useState('');
-
-  // Interactive Modal States
-  const [isCbtModalOpen, setIsCbtModalOpen] = useState(false);
-  const [selectedReceiptForModal, setSelectedReceiptForModal] = useState<FeeTransaction | null>(null);
-  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
+  const [revokeGuardianTarget, setRevokeGuardianTarget] = useState<{ id: string; parentName: string } | null>(null);
 
   if (activeSection === 'dashboard') return null;
 
   const meta = SECTION_META[activeSection];
 
   const SectionShellHeader = (rightAction?: React.ReactNode) => (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="flex items-start sm:items-center gap-3.5">
-        <button
-          type="button"
-          onClick={onBackToDashboard}
-          className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
-        >
-          <ArrowLeft size={15} /> Dashboard
-        </button>
-        <div>
-          <p className="text-[11px] font-medium text-slate-500">
-            Student Portal / {meta.title}
-          </p>
-          <h2 className="text-lg font-bold text-[#092c60] leading-tight mt-0.5">{meta.title}</h2>
-          <p className="text-xs text-slate-600 mt-0.5">{meta.subtitle}</p>
-        </div>
-      </div>
-      {rightAction && <div className="shrink-0">{rightAction}</div>}
-    </div>
+    <PortalPageHeader
+      title={meta.title}
+      description={meta.subtitle}
+      breadcrumbSection={`STUDENT PORTAL / ${meta.title.toUpperCase()}`}
+    >
+      <PortalButton variant="secondary" onClick={onBackToDashboard}>
+        <ArrowLeft size={15} /> Dashboard
+      </PortalButton>
+      {rightAction}
+    </PortalPageHeader>
   );
 
   if (
@@ -266,13 +343,74 @@ export default function StudentSubPages({
     );
   }
 
-  // 1. PROFILE
-  if (activeSection === 'profile') {
+  if (
+    PHASE_4_SECTIONS.has(activeSection) &&
+    (phase4Transitioning || syncingSection === activeSection)
+  ) {
     return (
       <div className="space-y-5">
         {SectionShellHeader()}
+        <Phase4ModuleSkeleton section={activeSection} />
+      </div>
+    );
+  }
+
+  if (activeSection === 'mobile-companion') {
+    return (
+      <MobileStudentCompanion
+        headerBlock={SectionShellHeader()}
+        initialTab={mobileInitialTab}
+        onNavigate={onNavigate}
+        onNotify={onNotify}
+        onRefresh={onRefresh}
+        onSwitchPortal={onSwitchPortal}
+      />
+    );
+  }
+
+  // 1. PROFILE & ONBOARDING
+  if (activeSection === 'profile') {
+    const completion = studentPortalService.getProfileCompletion(contactForm);
+    const onboardingStages: PortalOnboardingStage[] = [
+      'INVITED',
+      'PENDING',
+      'INCOMPLETE',
+      'SUBMITTED',
+      'RETURNED',
+      'VERIFIED',
+      'SUSPENDED',
+      'GRADUATED',
+    ];
+
+    return (
+      <div className="space-y-5">
+        {SectionShellHeader()}
+
+        {state.onboardingReviewerNote && (
+          <div
+            role={state.onboardingStage === 'RETURNED' || state.onboardingStage === 'SUSPENDED' ? 'alert' : 'status'}
+            className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+              state.onboardingStage === 'RETURNED' || state.onboardingStage === 'SUSPENDED'
+                ? 'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200'
+                : 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200'
+            }`}
+          >
+            <div>
+              <strong className="font-mono uppercase block">
+                Onboarding Notice · {state.onboardingStage}
+              </strong>
+              <span>{state.onboardingReviewerNote}</span>
+            </div>
+            {state.onboardingDraftSavedAt && (
+              <span className="font-mono text-[11px] shrink-0">
+                Draft saved {new Date(state.onboardingDraftSavedAt).toLocaleString()}
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-4">
               <img
                 src={studentAvatarUrl}
@@ -281,111 +419,342 @@ export default function StudentSubPages({
                 className="w-20 h-20 rounded-xl object-cover border border-slate-200 shrink-0"
               />
               <div>
-                <h3 className="text-base font-bold text-slate-900">{profile.fullName}</h3>
-                <p className="text-xs font-mono font-semibold text-[#0866d7] mt-0.5">{regNo}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{profile.programme}</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{profile.fullName}</h3>
+                <p className="text-xs font-mono font-semibold text-[#0866d7] dark:text-blue-400 mt-0.5">{regNo}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{profile.programme}</p>
               </div>
             </div>
 
-            <div className="border-t border-slate-100 pt-4 space-y-2.5 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-slate-800 dark:text-slate-100">
+                  Profile &amp; Onboarding Completion
+                </span>
+                <span className="font-mono font-bold text-[#0866d7] dark:text-blue-400 tabular-nums">
+                  {completion.percent}% ({completion.completedCount}/{completion.totalCount})
+                </span>
+              </div>
+              <progress
+                value={completion.percent}
+                max={100}
+                aria-label={`Profile and onboarding completion ${completion.percent} percent`}
+                className="w-full h-2.5 rounded-full overflow-hidden accent-[#0866d7] bg-slate-200 dark:bg-slate-700"
+              />
+              {completion.missingFields.length > 0 ? (
+                <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                  Missing: {completion.missingFields.join(', ')}
+                </p>
+              ) : (
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                  All required contact, Next of Kin, and document items are complete.
+                </p>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5 text-xs">
               <div className="flex justify-between gap-2">
-                <span className="text-slate-500">Admission Number</span>
-                <span className="font-mono font-semibold text-slate-900">{profile.admissionNumber}</span>
+                <span className="text-slate-600 dark:text-slate-300">Admission Number</span>
+                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{profile.admissionNumber}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-slate-500">KCSE / National ID</span>
-                <span className="font-mono font-semibold text-slate-900">{profile.nationalId}</span>
+                <span className="text-slate-600 dark:text-slate-300">KCSE / National ID</span>
+                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{profile.nationalId}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-slate-500">Department</span>
-                <span className="font-medium text-slate-900 text-right">{profile.department}</span>
+                <span className="text-slate-600 dark:text-slate-300">Department</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100 text-right">{profile.department}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-slate-500">Campus</span>
-                <span className="font-medium text-slate-900">{profile.campus}</span>
+                <span className="text-slate-600 dark:text-slate-300">Campus</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{profile.campus}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-slate-500">Academic Status</span>
-                <span className="font-semibold text-emerald-700">{profile.status}</span>
+                <span className="text-slate-600 dark:text-slate-300">Academic Status</span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{profile.status}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">Onboarding Stage</span>
+                <PortalStatus status={state.onboardingStage} />
               </div>
             </div>
           </div>
 
           <form
+            noValidate
             onSubmit={(e) => {
               e.preventDefault();
-              const res = studentPortalService.updateContactDetails(contactForm);
-              if (!res.ok) return onNotify('err', res.error ?? 'Could not save profile changes.');
-              onNotify('ok', 'Contact details and Next of Kin updated cleanly.');
+              const res = studentPortalService.submitOnboardingProfile(contactForm);
+              if (!res.ok) {
+                setProfileFieldErrors(res.fieldErrors ?? {});
+                onNotify('err', res.error ?? 'Could not submit profile changes.');
+                return;
+              }
+              setProfileFieldErrors({});
+              onNotify('ok', 'Contact details and Next of Kin validated and submitted.');
               onRefresh();
             }}
-            className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 space-y-4"
+            className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4"
           >
-            <h3 className="text-sm font-bold text-slate-900">Contact &amp; Next of Kin Information</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Contact, Residence &amp; Next of Kin Onboarding
+              </h3>
+              {state.onboardingDraftSavedAt && (
+                <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300">
+                  Last saved: {new Date(state.onboardingDraftSavedAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            {Object.keys(profileFieldErrors).length > 0 && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-xs text-red-900 dark:text-red-200"
+              >
+                Please fix the {Object.keys(profileFieldErrors).length} highlighted field(s) below before submitting. Use <strong>Save Draft</strong> if you need to pause with partial information.
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Student Email Address</label>
+                <label htmlFor="profile-email" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Student Email Address
+                </label>
                 <input
+                  id="profile-email"
                   type="email"
-                  required
                   value={contactForm.email}
-                  onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0866d7]"
+                  aria-invalid={Boolean(profileFieldErrors.email)}
+                  aria-describedby={profileFieldErrors.email ? 'profile-email-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, email: e.target.value });
+                    if (profileFieldErrors.email) setProfileFieldErrors({ ...profileFieldErrors, email: '' });
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:border-[#0866d7] ${
+                    profileFieldErrors.email ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
                 />
+                {profileFieldErrors.email && (
+                  <p id="profile-email-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.email}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Mobile Phone Number</label>
+                <label htmlFor="profile-phone" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Mobile Phone Number
+                </label>
                 <input
+                  id="profile-phone"
                   type="text"
-                  required
                   value={contactForm.phoneNumber}
-                  onChange={(e) => setContactForm({ ...contactForm, phoneNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:outline-none focus:border-[#0866d7]"
+                  aria-invalid={Boolean(profileFieldErrors.phoneNumber)}
+                  aria-describedby={profileFieldErrors.phoneNumber ? 'profile-phone-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, phoneNumber: e.target.value });
+                    if (profileFieldErrors.phoneNumber) {
+                      setProfileFieldErrors({ ...profileFieldErrors, phoneNumber: '' });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono focus:border-[#0866d7] ${
+                    profileFieldErrors.phoneNumber ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
                 />
+                {profileFieldErrors.phoneNumber && (
+                  <p id="profile-phone-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.phoneNumber}
+                  </p>
+                )}
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-slate-600 font-medium mb-1">Current Residence Address</label>
+                <label htmlFor="profile-residence" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Current Residence Address
+                </label>
                 <input
+                  id="profile-residence"
                   type="text"
-                  required
                   value={contactForm.residenceAddress}
-                  onChange={(e) => setContactForm({ ...contactForm, residenceAddress: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0866d7]"
+                  aria-invalid={Boolean(profileFieldErrors.residenceAddress)}
+                  aria-describedby={profileFieldErrors.residenceAddress ? 'profile-residence-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, residenceAddress: e.target.value });
+                    if (profileFieldErrors.residenceAddress) {
+                      setProfileFieldErrors({ ...profileFieldErrors, residenceAddress: '' });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:border-[#0866d7] ${
+                    profileFieldErrors.residenceAddress ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
                 />
+                {profileFieldErrors.residenceAddress && (
+                  <p id="profile-residence-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.residenceAddress}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Next of Kin Full Name</label>
+                <label htmlFor="profile-kin-name" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Next of Kin Full Name
+                </label>
                 <input
+                  id="profile-kin-name"
                   type="text"
-                  required
                   value={contactForm.nextOfKinName}
-                  onChange={(e) => setContactForm({ ...contactForm, nextOfKinName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-[#0866d7]"
+                  aria-invalid={Boolean(profileFieldErrors.nextOfKinName)}
+                  aria-describedby={profileFieldErrors.nextOfKinName ? 'profile-kin-name-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, nextOfKinName: e.target.value });
+                    if (profileFieldErrors.nextOfKinName) {
+                      setProfileFieldErrors({ ...profileFieldErrors, nextOfKinName: '' });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:border-[#0866d7] ${
+                    profileFieldErrors.nextOfKinName ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
                 />
+                {profileFieldErrors.nextOfKinName && (
+                  <p id="profile-kin-name-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.nextOfKinName}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-slate-600 font-medium mb-1">Next of Kin Phone</label>
+                <label htmlFor="profile-kin-relation" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Next of Kin Relationship
+                </label>
                 <input
+                  id="profile-kin-relation"
                   type="text"
-                  required
-                  value={contactForm.nextOfKinPhone}
-                  onChange={(e) => setContactForm({ ...contactForm, nextOfKinPhone: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:outline-none focus:border-[#0866d7]"
+                  placeholder="e.g. Mother / Guardian"
+                  value={contactForm.nextOfKinRelation}
+                  aria-invalid={Boolean(profileFieldErrors.nextOfKinRelation)}
+                  aria-describedby={profileFieldErrors.nextOfKinRelation ? 'profile-kin-rel-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, nextOfKinRelation: e.target.value });
+                    if (profileFieldErrors.nextOfKinRelation) {
+                      setProfileFieldErrors({ ...profileFieldErrors, nextOfKinRelation: '' });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:border-[#0866d7] ${
+                    profileFieldErrors.nextOfKinRelation ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
                 />
+                {profileFieldErrors.nextOfKinRelation && (
+                  <p id="profile-kin-rel-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.nextOfKinRelation}
+                  </p>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="profile-kin-phone" className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                  Next of Kin Emergency Phone
+                </label>
+                <input
+                  id="profile-kin-phone"
+                  type="text"
+                  value={contactForm.nextOfKinPhone}
+                  aria-invalid={Boolean(profileFieldErrors.nextOfKinPhone)}
+                  aria-describedby={profileFieldErrors.nextOfKinPhone ? 'profile-kin-phone-err' : undefined}
+                  onChange={(e) => {
+                    setContactForm({ ...contactForm, nextOfKinPhone: e.target.value });
+                    if (profileFieldErrors.nextOfKinPhone) {
+                      setProfileFieldErrors({ ...profileFieldErrors, nextOfKinPhone: '' });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono focus:border-[#0866d7] ${
+                    profileFieldErrors.nextOfKinPhone ? 'border-red-500 dark:border-red-400' : 'border-slate-300 dark:border-slate-700'
+                  }`}
+                />
+                {profileFieldErrors.nextOfKinPhone && (
+                  <p id="profile-kin-phone-err" className="text-red-700 dark:text-red-400 font-medium mt-1">
+                    {profileFieldErrors.nextOfKinPhone}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span className="text-xs text-slate-500">
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-xs text-slate-600 dark:text-slate-300">
                 Official Registration Number and Programme edits require Registrar approval.
               </span>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#092c60] hover:bg-[#061f46] text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 transition-colors"
-              >
-                Save Contact Updates
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <PortalButton
+                  variant="secondary"
+                  onClick={() => {
+                    studentPortalService.saveOnboardingDraft(contactForm);
+                    setProfileFieldErrors({});
+                    onNotify('ok', 'Onboarding draft saved. You may resume later without losing progress.');
+                    onRefresh();
+                  }}
+                >
+                  Save Draft
+                </PortalButton>
+                <PortalButton type="submit">
+                  Submit Profile for Verification
+                </PortalButton>
+              </div>
             </div>
           </form>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <PortalCard
+            title="Submission & Verification History"
+            description="Chronological record of saved drafts, profile submissions, and Registrar reviews."
+          >
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+              {state.onboardingSubmissions.map((entry) => (
+                <div key={entry.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <PortalStatus status={entry.stage} />
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{entry.actor}</span>
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-200">{entry.summary}</p>
+                    {entry.reviewerNote && (
+                      <p className="text-amber-700 dark:text-amber-300 font-medium">Note: {entry.reviewerNote}</p>
+                    )}
+                  </div>
+                  <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 shrink-0">
+                    {new Date(entry.timestampIso).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </PortalCard>
+
+          <PortalCard
+            title="Onboarding Lifecycle Standing Switcher (QA Preview)"
+            description="Simulate all 8 portal standing states on the Student Dashboard readiness banner."
+          >
+            <div className="flex flex-wrap gap-2">
+              {onboardingStages.map((stage) => (
+                <button
+                  key={stage}
+                  type="button"
+                  aria-pressed={state.onboardingStage === stage}
+                  onClick={() => {
+                    const note =
+                      stage === 'RETURNED'
+                        ? 'Registrar requested clearer copy of National ID front & back and updated Next of Kin phone.'
+                        : stage === 'SUSPENDED'
+                        ? 'Administrative hold placed pending Academic Registry clearance interview.'
+                        : undefined;
+                    studentPortalService.setOnboardingStage(stage, note);
+                    onNotify('ok', `Portal onboarding standing set to ${stage}.`);
+                    onRefresh();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-colors ${
+                    state.onboardingStage === stage
+                      ? 'bg-[#092c60] text-white border-[#092c60] dark:bg-blue-600 dark:border-blue-600'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {stage}
+                </button>
+              ))}
+            </div>
+          </PortalCard>
         </div>
       </div>
     );
@@ -407,61 +776,61 @@ export default function StudentSubPages({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Programme Track</span>
-            <strong className="block text-base font-bold text-[#092c60] mt-1">{profile.programme}</strong>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Programme Track</span>
+            <strong className="block text-base font-bold text-[#092c60] dark:text-white mt-1">{profile.programme}</strong>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Semester Credit Load</span>
-            <strong className="block text-base font-bold text-slate-900 font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Semester Credit Load</span>
+            <strong className="block text-base font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-1">
               {totalCredits} Credits · {state.units.length} Units
             </strong>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Average Attendance</span>
-            <strong className="block text-base font-bold text-emerald-700 font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Average Attendance</span>
+            <strong className="block text-base font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums mt-1">
               {profile.attendanceRate}% (Exam Eligible)
             </strong>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Cumulative GPA</span>
-            <strong className="block text-base font-bold text-amber-700 font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Cumulative GPA</span>
+            <strong className="block text-base font-bold text-amber-700 dark:text-amber-400 font-mono tabular-nums mt-1">
               {profile.gpa.toFixed(2)} / 4.00
             </strong>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">11-Step Admission &amp; Academic Onboarding</h3>
-            <div className="divide-y divide-slate-100">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">11-Step Admission &amp; Academic Onboarding</h3>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {state.onboardingSteps.map((step) => (
                 <div key={step.stepNumber} className="py-2.5 flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                    <span className="font-medium text-slate-800">
+                    <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-medium text-slate-800 dark:text-slate-100">
                       {step.stepNumber}. {step.title}
                     </span>
                   </div>
-                  <span className="text-slate-500 whitespace-nowrap shrink-0">{step.owner}</span>
+                  <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap shrink-0">{step.owner}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">Enrolled Curriculum &amp; Lecturers</h3>
-            <div className="divide-y divide-slate-100">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Enrolled Curriculum &amp; Lecturers</h3>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {state.units.map((u) => (
                 <div key={u.code} className="py-3 flex items-center justify-between gap-3 text-xs">
                   <div>
-                    <p className="font-mono font-bold text-[#092c60]">{u.code} · {u.credits} Credits</p>
-                    <p className="font-semibold text-slate-900">{u.title}</p>
-                    <p className="text-slate-500">{u.lecturerName}</p>
+                    <p className="font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code} · {u.credits} Credits</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{u.title}</p>
+                    <p className="text-slate-600 dark:text-slate-300">{u.lecturerName}</p>
                   </div>
                   <div className="text-right font-mono tabular-nums shrink-0">
-                    <strong className="text-emerald-700 block">{u.attendance}% Att.</strong>
-                    <span className="text-slate-500">Current: {u.grade ?? 'In Progress'}</span>
+                    <strong className="text-emerald-700 dark:text-emerald-400 block">{u.attendance}% Att.</strong>
+                    <span className="text-slate-600 dark:text-slate-300">Current: {u.grade ?? 'In Progress'}</span>
                   </div>
                 </div>
               ))}
@@ -478,18 +847,21 @@ export default function StudentSubPages({
       <div className="space-y-5">
         {SectionShellHeader()}
 
+        {/* Live Cloud SQL Academic Registration & Fee Clearance (FEAT-016) */}
+        <CloudSqlAcademicRegistrationCard onNotify={onNotify} />
+
         {/* Semester Nominal Roll Reporting */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
           <div>
             <p className="font-mono text-[#0866d7] font-semibold">
               NOMINAL ROLL · {profile.academicYear} · {profile.semester}
             </p>
-            <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
               {state.semesterReported
                 ? `Semester Reporting Confirmed (${new Date(state.semesterReportedAt).toLocaleDateString()})`
                 : 'Semester Nominal Roll Reporting Required'}
             </h3>
-            <p className="text-slate-500 mt-0.5">
+            <p className="text-slate-600 dark:text-slate-300 mt-0.5">
               All continuing and admitted students confirm session attendance on the Academic Registry nominal roll each semester.
             </p>
           </div>
@@ -502,7 +874,7 @@ export default function StudentSubPages({
             }}
             className={`px-4 py-2 font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               state.semesterReported
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                 : 'bg-[#092c60] text-white hover:bg-[#061f46]'
             }`}
           >
@@ -512,18 +884,18 @@ export default function StudentSubPages({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Registered Units — {profile.academicYear} · {profile.semester}
               </h3>
-              <span className="text-xs font-mono tabular-nums text-emerald-700 font-semibold">
+              <span className="text-xs font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
                 {state.units.length} Active Units
               </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <tr>
                     <th className="py-2.5 px-4 font-semibold">Code</th>
                     <th className="py-2.5 px-4 font-semibold">Course Title</th>
@@ -532,14 +904,14 @@ export default function StudentSubPages({
                     <th className="py-2.5 px-4 font-semibold text-right">Attendance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {state.units.map((u) => (
-                    <tr key={u.code} className="hover:bg-slate-50/70">
-                      <td className="py-3 px-4 font-mono font-bold text-[#092c60] whitespace-nowrap">{u.code}</td>
-                      <td className="py-3 px-4 font-medium text-slate-900">{u.title}</td>
-                      <td className="py-3 px-4 text-slate-600">{u.lecturerName}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums">{u.credits}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-700 font-semibold">
+                    <tr key={u.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+                      <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400 whitespace-nowrap">{u.code}</td>
+                      <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{u.title}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{u.lecturerName}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">{u.credits}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
                         {u.attendance}%
                       </td>
                     </tr>
@@ -558,10 +930,10 @@ export default function StudentSubPages({
               onNotify('ok', 'Unit change request submitted for Registrar review.');
               onRefresh();
             }}
-            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs"
           >
-            <h3 className="text-sm font-bold text-slate-900">Request Unit Add / Drop / Swap</h3>
-            <p className="text-slate-500">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Request Unit Add / Drop / Swap</h3>
+            <p className="text-slate-600 dark:text-slate-300">
               Enrolled units cannot be altered directly after census date; submit a change request to the Registrar.
             </p>
             <select
@@ -569,7 +941,7 @@ export default function StudentSubPages({
               onChange={(e) =>
                 setUnitChangeForm({ ...unitChangeForm, action: e.target.value as 'ADD' | 'DROP' | 'SWAP' })
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
             >
               <option value="ADD">Add Elective Unit</option>
               <option value="SWAP">Swap Enrolled Unit</option>
@@ -578,7 +950,7 @@ export default function StudentSubPages({
             <select
               value={unitChangeForm.unitCode}
               onChange={(e) => setUnitChangeForm({ ...unitChangeForm, unitCode: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
             >
               <option value="AI 310 — Applied Machine Learning">AI 310 — Applied Machine Learning</option>
               <option value="IOT 305 — Embedded IoT Systems">IOT 305 — Embedded IoT Systems</option>
@@ -590,7 +962,7 @@ export default function StudentSubPages({
               placeholder="Academic reason for Registrar approval..."
               value={unitChangeForm.reason}
               onChange={(e) => setUnitChangeForm({ ...unitChangeForm, reason: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
             />
             <button
               type="submit"
@@ -600,15 +972,15 @@ export default function StudentSubPages({
             </button>
 
             {state.unitChanges.length > 0 && (
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <h4 className="font-bold text-slate-800">Submitted Requests ({state.unitChanges.length})</h4>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <h4 className="font-bold text-slate-800 dark:text-slate-100">Submitted Requests ({state.unitChanges.length})</h4>
                 {state.unitChanges.map((req) => (
-                  <div key={req.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <div key={req.id} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
                     <div className="flex justify-between font-mono text-[11px]">
-                      <span className="font-bold text-[#092c60]">{req.action}</span>
-                      <span className="text-amber-700 font-semibold">{req.status}</span>
+                      <span className="font-bold text-[#092c60] dark:text-blue-300">{req.action}</span>
+                      <span className="text-amber-700 dark:text-amber-400 font-semibold">{req.status}</span>
                     </div>
-                    <p className="font-medium text-slate-800 mt-0.5">{req.unitCode}</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">{req.unitCode}</p>
                   </div>
                 ))}
               </div>
@@ -617,12 +989,12 @@ export default function StudentSubPages({
         </div>
 
         {/* Academic Leave, Deferment & Campus Transfer */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 text-xs">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Academic Leave, Semester Deferment &amp; Campus Transfer
             </h3>
-            <p className="text-slate-500 mt-0.5">
+            <p className="text-slate-600 dark:text-slate-300 mt-0.5">
               Submit formal requests to the Academic Dean and Registrar for temporary leave, intake deferment, or campus transfer.
             </p>
           </div>
@@ -639,7 +1011,7 @@ export default function StudentSubPages({
             className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end"
           >
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Request Type</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Request Type</label>
               <select
                 value={defermentForm.type}
                 onChange={(e) =>
@@ -648,7 +1020,7 @@ export default function StudentSubPages({
                     type: e.target.value as 'ACADEMIC_LEAVE' | 'DEFERMENT' | 'CAMPUS_TRANSFER',
                   })
                 }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 <option value="ACADEMIC_LEAVE">Academic Leave (1 Semester)</option>
                 <option value="DEFERMENT">Semester Deferment</option>
@@ -656,11 +1028,11 @@ export default function StudentSubPages({
               </select>
             </div>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Effective Semester / Intake</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Effective Semester / Intake</label>
               <select
                 value={defermentForm.targetSemester}
                 onChange={(e) => setDefermentForm({ ...defermentForm, targetSemester: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 <option value="2026 / Semester 2">2026 / Semester 2 (May Intake)</option>
                 <option value="2026 / Semester 3">2026 / Semester 3 (Sept Intake)</option>
@@ -668,14 +1040,14 @@ export default function StudentSubPages({
               </select>
             </div>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Official Reason</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Official Reason</label>
               <input
                 type="text"
                 required
                 placeholder="State medical, financial, or academic reason..."
                 value={defermentForm.reason}
                 onChange={(e) => setDefermentForm({ ...defermentForm, reason: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
             </div>
             <button
@@ -687,16 +1059,16 @@ export default function StudentSubPages({
           </form>
 
           {state.defermentRequests.length > 0 && (
-            <div className="divide-y divide-slate-100 border-t border-slate-100 pt-2">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-2">
               {state.defermentRequests.map((req) => (
                 <div key={req.id} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <p className="font-mono font-bold text-[#092c60]">
+                    <p className="font-mono font-bold text-[#102D50] dark:text-blue-400">
                       {req.type.replace('_', ' ')} · {req.targetSemester}
                     </p>
-                    <p className="text-slate-700">{req.reason}</p>
+                    <p className="text-slate-700 dark:text-slate-200">{req.reason}</p>
                   </div>
-                  <span className="font-mono font-semibold text-amber-700 whitespace-nowrap">
+                  <span className="font-mono font-semibold text-amber-700 dark:text-amber-400 whitespace-nowrap">
                     {req.status.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -716,14 +1088,18 @@ export default function StudentSubPages({
 
     return (
       <div className="space-y-5">
-        {SectionShellHeader()}
+        {SectionShellHeader(
+          <PortalButton variant="secondary" onClick={() => window.print()}>
+            <Printer size={14} /> Print Timetable
+          </PortalButton>
+        )}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <CalendarDays size={16} className="text-[#0866d7]" /> Weekly Lecture &amp; Lab Schedule
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <CalendarDays size={16} className="text-[#0866d7] dark:text-blue-400" /> Weekly Lecture &amp; Lab Schedule
             </h3>
-            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
               {days.map((day) => (
                 <button
                   key={day}
@@ -731,8 +1107,8 @@ export default function StudentSubPages({
                   onClick={() => setDayFilter(day)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 transition-colors ${
                     dayFilter === day
-                      ? 'bg-white text-[#092c60] font-semibold shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-[#092c60] dark:text-white font-semibold shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {day === 'ALL' ? 'Full Week' : day}
@@ -741,21 +1117,21 @@ export default function StudentSubPages({
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredUnits.map((u) => (
               <div
                 key={u.code}
                 className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div className="space-y-0.5">
-                  <p className="font-mono font-bold text-[#0866d7]">
+                  <p className="font-mono font-bold text-[#0866d7] dark:text-blue-400">
                     {u.day} · {u.time} · {u.code}
                   </p>
-                  <strong className="text-sm text-slate-900 block">{u.title}</strong>
-                  <span className="text-slate-500">{u.lecturerName}</span>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{u.title}</strong>
+                  <span className="text-slate-600 dark:text-slate-300">{u.lecturerName}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-700 font-medium shrink-0">
-                  <MapPin size={14} className="text-slate-400" />
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-medium shrink-0">
+                  <MapPin size={14} className="text-slate-600 dark:text-slate-300" aria-hidden="true" />
                   <span>{u.room}</span>
                 </div>
               </div>
@@ -764,18 +1140,23 @@ export default function StudentSubPages({
         </div>
 
         {/* Assignment Submission Panel */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900">Active Assignments &amp; Submissions</h3>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Active Assignments &amp; Submissions</h3>
           <div className="space-y-3">
             {state.assignments.map((asg) => (
-              <div key={asg.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3 text-xs">
+              <div key={asg.id} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/70 space-y-3 text-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <p className="font-mono text-[#092c60] font-bold">
+                    <p className="font-mono text-[#092c60] dark:text-blue-300 font-bold">
                       {asg.unitCode} · {asg.dueLabel} · {asg.status}
                     </p>
-                    <h4 className="text-sm font-bold text-slate-900 mt-0.5">{asg.title}</h4>
-                    <p className="text-slate-500">Lecturer: {asg.lecturerName}</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">{asg.title}</h4>
+                    <p className="text-slate-600 dark:text-slate-300">Lecturer: {asg.lecturerName}</p>
+                    {asg.attachmentName && (
+                      <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 mt-1">
+                        Attached file: {asg.attachmentName} ({asg.attachmentSize})
+                      </p>
+                    )}
                   </div>
                   {asg.status === 'PENDING' ? (
                     <button
@@ -783,13 +1164,14 @@ export default function StudentSubPages({
                       onClick={() => {
                         setActiveSubmissionId(activeSubmissionId === asg.id ? null : asg.id);
                         setSubmissionText('');
+                        setSubmissionFile(null);
                       }}
                       className="px-3.5 py-2 bg-[#0866d7] hover:bg-[#0652b3] text-white font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                     >
                       <UploadCloud size={14} /> Submit Assignment
                     </button>
                   ) : (
-                    <span className="font-mono font-semibold text-emerald-700 whitespace-nowrap shrink-0">
+                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap shrink-0">
                       {asg.scoreLabel ?? 'Submitted for Grading'}
                     </span>
                   )}
@@ -799,29 +1181,68 @@ export default function StudentSubPages({
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      const res = studentPortalService.submitAssignment(asg.id, submissionText);
+                      const res = studentPortalService.submitAssignment(
+                        asg.id,
+                        submissionText,
+                        submissionFile ?? undefined
+                      );
                       if (!res.ok) return onNotify('err', res.error ?? 'Submission failed');
                       setActiveSubmissionId(null);
                       setSubmissionText('');
+                      setSubmissionFile(null);
                       onNotify('ok', `Assignment submitted for ${asg.unitCode}.`);
                       onRefresh();
                     }}
-                    className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-200"
+                    className="space-y-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-700"
                   >
-                    <input
-                      type="text"
-                      required
-                      placeholder="Enter Git repository URL, lab report file ref, or brief note..."
-                      value={submissionText}
-                      onChange={(e) => setSubmissionText(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
-                    >
-                      Confirm Submission
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter Git repository URL, lab summary, or note..."
+                        aria-label="Assignment submission note or link"
+                        value={submissionText}
+                        onChange={(e) => setSubmissionText(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
+                      />
+                      <label className="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0">
+                        <UploadCloud size={14} aria-hidden="true" />
+                        <span>{submissionFile ? 'Replace File' : 'Attach Lab File'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.zip,.txt,.png,.jpg"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            const sizeLabel =
+                              f.size >= 1024 * 1024
+                                ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+                                : `${Math.max(1, Math.round(f.size / 1024))} KB`;
+                            setSubmissionFile({ fileName: f.name, fileSize: sizeLabel });
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
+                      >
+                        Confirm Submission
+                      </button>
+                    </div>
+                    {submissionFile && (
+                      <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+                        <span className="font-mono truncate">
+                          Selected: {submissionFile.fileName} ({submissionFile.fileSize})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSubmissionFile(null)}
+                          className="font-semibold underline shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
                   </form>
                 )}
               </div>
@@ -837,21 +1258,20 @@ export default function StudentSubPages({
     return (
       <div className="space-y-5">
         {SectionShellHeader(
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsCbtModalOpen(true)}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-sm transition"
+          <div className="flex flex-wrap items-center gap-2">
+            <PortalButton
+              variant="secondary"
+              onClick={() => triggerSectionSync('examinations', 'Examination schedule and CBT permits synchronized.')}
             >
-              <Sparkles size={14} className="text-amber-300" /> Start Interactive CBT Exam
-            </button>
+              <RefreshCw size={14} /> Sync Exams
+            </PortalButton>
             {onSwitchPortal && (
               <button
                 type="button"
                 onClick={() => onSwitchPortal('examination')}
                 className="px-3.5 py-2 bg-[#0866d7] hover:bg-[#0652b3] text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
               >
-                Open Full CBT Workspace
+                Open CBT Exam Runner
               </button>
             )}
             <button
@@ -870,10 +1290,10 @@ export default function StudentSubPages({
           </div>
         )}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Examination Hall Clearance Status</h3>
-            <p className="text-slate-600 mt-1">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Examination Hall Clearance Status</h3>
+            <p className="text-slate-600 dark:text-slate-300 mt-1">
               Attendance Standing: <strong className="font-mono">{profile.attendanceRate}%</strong> (Minimum 75% met) · Fee Clearance:{' '}
               <strong className="font-mono tabular-nums">{fin.percentPaid}%</strong> (Balance KES {fin.balance.toLocaleString()})
             </p>
@@ -887,15 +1307,15 @@ export default function StudentSubPages({
               Clear Remaining Balance
             </button>
           ) : (
-            <span className="font-semibold text-emerald-700 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
               <CheckCircle2 size={15} /> 100% Exam Cleared
             </span>
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-3 px-4 font-semibold">Code</th>
                 <th className="py-3 px-4 font-semibold">Examination Paper</th>
@@ -904,16 +1324,16 @@ export default function StudentSubPages({
                 <th className="py-3 px-4 font-semibold">Venue</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {resources.exams.map((ex) => (
                 <tr key={ex.id}>
-                  <td className="py-3 px-4 font-mono font-bold text-[#092c60]">{ex.courseCode}</td>
-                  <td className="py-3 px-4 font-medium text-slate-900">{ex.courseTitle}</td>
-                  <td className="py-3 px-4 font-mono text-slate-600">{ex.examBody}</td>
-                  <td className="py-3 px-4 font-mono tabular-nums text-slate-700">
+                  <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{ex.courseCode}</td>
+                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{ex.courseTitle}</td>
+                  <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-300">{ex.examBody}</td>
+                  <td className="py-3 px-4 font-mono tabular-nums text-slate-700 dark:text-slate-200">
                     {ex.examDate} · {ex.time}
                   </td>
-                  <td className="py-3 px-4 text-slate-600">{ex.room}</td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{ex.room}</td>
                 </tr>
               ))}
             </tbody>
@@ -921,16 +1341,16 @@ export default function StudentSubPages({
         </div>
 
         {/* Live CBT Assessments from Examination Engine */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Online CBT Assessments &amp; Attempts (Examination Engine)
             </h3>
             {onSwitchPortal && (
               <button
                 type="button"
                 onClick={() => onSwitchPortal('examination')}
-                className="text-xs font-bold text-[#0866d7] hover:underline"
+                className="text-xs font-bold text-[#0866d7] dark:text-blue-400 hover:underline"
               >
                 Open Full CBT Workspace
               </button>
@@ -946,52 +1366,30 @@ export default function StudentSubPages({
                     a.studentRegNo.toUpperCase() === regNo.toUpperCase()
                 );
               return (
-                <div key={asm.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                <div key={asm.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-mono font-bold text-[#0866d7]">
+                    <p className="font-mono font-bold text-[#0866d7] dark:text-blue-400">
                       {asm.unitCode} · {asm.assessmentKind} · {asm.durationMinutes} mins
                     </p>
-                    <strong className="text-slate-900 block mt-0.5">{asm.title}</strong>
-                    <span className="text-slate-500">
+                    <strong className="text-slate-900 dark:text-slate-100 block mt-0.5">{asm.title}</strong>
+                    <span className="text-slate-600 dark:text-slate-300">
                       Status: {myAttempt ? `${myAttempt.moderationStatus} (Score: ${myAttempt.totalAwarded}/${myAttempt.maxPossibleMarks})` : asm.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  {onSwitchPortal && (
                     <button
                       type="button"
-                      onClick={() => setIsCbtModalOpen(true)}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1"
+                      onClick={() => onSwitchPortal('examination')}
+                      className="px-3 py-1.5 bg-[#092c60] text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
                     >
-                      <Sparkles size={13} /> {myAttempt ? 'Retake CBT Mock' : 'Take CBT Mock'}
+                      {myAttempt ? 'Review Attempt' : 'Start CBT'}
                     </button>
-                    {onSwitchPortal && (
-                      <button
-                        type="button"
-                        onClick={() => onSwitchPortal('examination')}
-                        className="px-3 py-1.5 bg-[#092c60] hover:bg-[#061f46] text-white font-semibold rounded-lg text-xs whitespace-nowrap"
-                      >
-                        {myAttempt ? 'Review Engine' : 'Exam Workspace'}
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
-
-        {/* STUDENT CBT EXAM MODAL */}
-        <StudentCbtExamModal
-          isOpen={isCbtModalOpen}
-          studentRegNo={regNo}
-          studentName={profile.fullName}
-          programme={profile.programme}
-          onClose={() => setIsCbtModalOpen(false)}
-          onFinished={(s, m) => {
-            onNotify('ok', `CBT Exam submitted successfully! You scored ${s}/${m} marks.`);
-            onRefresh();
-          }}
-        />
       </div>
     );
   }
@@ -1018,27 +1416,27 @@ export default function StudentSubPages({
           </button>
         )}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div>
-            <p className="font-mono text-[#0866d7] font-semibold">
+            <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
               {trx?.issuanceReference ?? 'TRX-2026-0001'} · Code {trx?.verificationCode ?? 'VRF-HCA-99210-2026'}
             </p>
-            <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
               Issued by {trx?.issuedBy ?? 'Dr. Kiprop Chemweno (Registrar)'}
             </h3>
-            <p className="text-slate-500 mt-0.5">
+            <p className="text-slate-600 dark:text-slate-300 mt-0.5">
               Approved examination marks are permanently locked and cannot be altered from student accounts.
             </p>
           </div>
           <div className="text-left sm:text-right font-mono tabular-nums shrink-0">
-            <span className="text-slate-500 block">Cumulative GPA</span>
-            <strong className="text-xl font-bold text-[#092c60]">{profile.gpa.toFixed(2)} / 4.00</strong>
+            <span className="text-slate-600 dark:text-slate-300 block">Cumulative GPA</span>
+            <strong className="text-xl font-bold text-[#092c60] dark:text-blue-300">{profile.gpa.toFixed(2)} / 4.00</strong>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-3 px-4 font-semibold">Unit Code</th>
                 <th className="py-3 px-4 font-semibold">Course Title</th>
@@ -1047,14 +1445,14 @@ export default function StudentSubPages({
                 <th className="py-3 px-4 font-semibold text-right">Grade</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {state.units.map((u) => (
                 <tr key={u.code}>
-                  <td className="py-3 px-4 font-mono font-bold text-[#092c60]">{u.code}</td>
-                  <td className="py-3 px-4 font-medium text-slate-900">{u.title}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums">{u.credits}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold">{u.score ?? '-'}%</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700">{u.grade ?? '-'}</td>
+                  <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code}</td>
+                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{u.title}</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">{u.credits}</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">{u.score ?? '-'}%</td>
+                  <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">{u.grade ?? '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -1088,21 +1486,21 @@ export default function StudentSubPages({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Semester Total Billed</span>
-            <strong className="block text-xl font-bold text-slate-900 font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Semester Total Billed</span>
+            <strong className="block text-xl font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-1">
               KES {fin.totalBilled.toLocaleString()}
             </strong>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Verified Payments ({fin.percentPaid}%)</span>
-            <strong className="block text-xl font-bold text-emerald-700 font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Verified Payments ({fin.percentPaid}%)</span>
+            <strong className="block text-xl font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums mt-1">
               KES {fin.totalPaid.toLocaleString()}
             </strong>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <span className="text-slate-500">Outstanding Balance</span>
-            <strong className="block text-xl font-bold text-[#092c60] font-mono tabular-nums mt-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+            <span className="text-slate-600 dark:text-slate-300">Outstanding Balance</span>
+            <strong className="block text-xl font-bold text-[#092c60] dark:text-blue-300 font-mono tabular-nums mt-1">
               KES {fin.balance.toLocaleString()}
             </strong>
           </div>
@@ -1112,54 +1510,63 @@ export default function StudentSubPages({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              setIsMpesaModalOpen(true);
+              setMpesaPending(true);
+              const numericAmount = Number(mpesaAmount);
+              window.setTimeout(() => {
+                const res = studentPortalService.recordMpesaPayment(mpesaPhone, numericAmount);
+                setMpesaPending(false);
+                if (!res.ok) return onNotify('err', res.error ?? 'M-Pesa settlement failed.');
+                const updated = studentPortalService.getFinancialSummary();
+                setMpesaAmount(String(updated.balance > 0 ? updated.balance : 1000));
+                onNotify('ok', `M-Pesa payment settled! Verified Receipt ${res.receiptNumber} posted.`);
+                onRefresh();
+              }, 500);
             }}
-            className="bg-white border border-slate-200 rounded-xl p-5 space-y-3.5 text-xs"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3.5 text-xs"
           >
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Smartphone size={16} className="text-emerald-600" /> Lipa na M-Pesa Online (STK Push)
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Smartphone size={16} className="text-emerald-600 dark:text-emerald-400" /> Lipa na M-Pesa Online (STK Push)
             </h3>
-            <p className="text-slate-500">
+            <p className="text-slate-600 dark:text-slate-300">
               Verified callbacks post an immutable receipt immediately and update your dashboard fee balance.
             </p>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">M-Pesa Phone Number</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">M-Pesa Phone Number</label>
               <input
                 type="text"
                 required
                 value={mpesaPhone}
                 onChange={(e) => setMpesaPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
               />
             </div>
             <div>
-              <label className="block text-slate-600 font-medium mb-1">Amount to Pay (KES)</label>
+              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Amount to Pay (KES)</label>
               <input
                 type="number"
                 min={100}
                 required
                 value={mpesaAmount}
                 onChange={(e) => setMpesaAmount(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono font-bold"
               />
             </div>
             <button
               type="submit"
               disabled={mpesaPending}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg disabled:opacity-60 transition-colors"
             >
-              <Smartphone size={14} />
               {mpesaPending ? 'Processing M-Pesa Callback...' : 'Send M-Pesa Payment Prompt'}
             </button>
           </form>
 
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900">Verified Tuition Receipts (Read-Only Ledger)</h3>
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Verified Tuition Receipts (Read-Only Ledger)</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <tr>
                     <th className="py-2.5 px-4 font-semibold">Receipt</th>
                     <th className="py-2.5 px-4 font-semibold">Channel / Ref</th>
@@ -1168,25 +1575,18 @@ export default function StudentSubPages({
                     <th className="py-2.5 px-4 font-semibold text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {state.transactions.map((tx) => (
                     <tr key={tx.id}>
-                      <td className="py-3 px-4 font-mono font-bold text-[#092c60] whitespace-nowrap">{tx.receiptNumber}</td>
-                      <td className="py-3 px-4 font-mono text-slate-600 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400 whitespace-nowrap">{tx.receiptNumber}</td>
+                      <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                         {tx.paymentMethod} · {tx.referenceNumber}
                       </td>
-                      <td className="py-3 px-4 text-slate-700">{tx.description}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 whitespace-nowrap">
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-200">{tx.description}</td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                         KES {tx.amount.toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedReceiptForModal(tx)}
-                          className="text-[#0866d7] font-semibold hover:underline inline-flex items-center gap-1"
-                        >
-                          <Eye size={12} /> View Receipt
-                        </button>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => {
@@ -1196,9 +1596,9 @@ export default function StudentSubPages({
                             );
                             onNotify('ok', `Downloaded receipt ${tx.receiptNumber}.`);
                           }}
-                          className="text-slate-500 hover:text-slate-700"
+                          className="text-[#0866d7] dark:text-blue-400 font-semibold hover:underline"
                         >
-                          TXT
+                          Download
                         </button>
                       </td>
                     </tr>
@@ -1210,14 +1610,14 @@ export default function StudentSubPages({
         </div>
 
         {/* Itemized Semester Fee Structure & Sponsorship Status */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden text-xs">
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden text-xs">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Itemized Semester Fee Structure Invoice ({profile.academicYear} · {profile.semester})
               </h3>
-              <p className="text-slate-500 mt-0.5">
-                Funding Status: <strong className="text-slate-800">{state.sponsorshipStatus}</strong>
+              <p className="text-slate-600 dark:text-slate-300 mt-0.5">
+                Funding Status: <strong className="text-slate-800 dark:text-slate-100">{state.sponsorshipStatus}</strong>
               </p>
             </div>
             <button
@@ -1231,30 +1631,30 @@ export default function StudentSubPages({
                 );
                 onNotify('ok', 'Itemized semester fee invoice downloaded.');
               }}
-              className="px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              className="px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               <Download size={14} /> Download Fee Invoice
             </button>
           </div>
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">Vote Head</th>
                 <th className="py-2.5 px-4 font-semibold">Fee Description</th>
                 <th className="py-2.5 px-4 font-semibold text-right">Billed Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {state.feeStructure.map((line) => (
                 <tr key={line.code}>
-                  <td className="py-2.5 px-4 font-mono font-bold text-[#092c60]">{line.code}</td>
-                  <td className="py-2.5 px-4 text-slate-800">{line.voteHead}</td>
-                  <td className="py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900">
+                  <td className="py-2.5 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{line.code}</td>
+                  <td className="py-2.5 px-4 text-slate-800 dark:text-slate-200">{line.voteHead}</td>
+                  <td className="py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                     KES {line.amount.toLocaleString()}.00
                   </td>
                 </tr>
               ))}
-              <tr className="bg-slate-50 font-bold text-[#092c60]">
+              <tr className="bg-slate-50 dark:bg-slate-800/80 font-bold text-[#092c60] dark:text-blue-300">
                 <td className="py-3 px-4 font-mono">TOTAL</td>
                 <td className="py-3 px-4">Approved Semester Vote Heads</td>
                 <td className="py-3 px-4 text-right font-mono tabular-nums">
@@ -1264,36 +1664,6 @@ export default function StudentSubPages({
             </tbody>
           </table>
         </div>
-
-        {/* SAFARICOM M-PESA STK PHONE PROMPT MODAL */}
-        <MpesaStkPromptModal
-          isOpen={isMpesaModalOpen}
-          phone={mpesaPhone}
-          amount={Number(mpesaAmount) || 0}
-          accountReference={regNo}
-          onConfirm={(code) => {
-            setIsMpesaModalOpen(false);
-            setMpesaPending(true);
-            const numericAmount = Number(mpesaAmount);
-            const res = studentPortalService.recordMpesaPayment(mpesaPhone, numericAmount);
-            setMpesaPending(false);
-            if (!res.ok) return onNotify('err', res.error ?? 'M-Pesa settlement failed.');
-            if (res.transaction) {
-              setSelectedReceiptForModal(res.transaction);
-            }
-            const updated = studentPortalService.getFinancialSummary();
-            setMpesaAmount(String(updated.balance > 0 ? updated.balance : 1000));
-            onNotify('ok', `M-Pesa payment settled! Receipt ${res.receiptNumber} generated.`);
-            onRefresh();
-          }}
-          onCancel={() => setIsMpesaModalOpen(false)}
-        />
-
-        {/* OFFICIAL FEE RECEIPT MODAL */}
-        <FeeReceiptModal
-          transaction={selectedReceiptForModal}
-          onClose={() => setSelectedReceiptForModal(null)}
-        />
       </div>
     );
   }
@@ -1310,24 +1680,33 @@ export default function StudentSubPages({
     return (
       <div className="space-y-5">
         {SectionShellHeader(
-          <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
-            <Search size={14} className="text-slate-400" />
-            <input
-              type="text"
-              value={libraryQuery}
-              onChange={(e) => setLibraryQuery(e.target.value)}
-              placeholder="Filter library catalogue..."
-              className="text-xs outline-none w-48"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-1.5 focus-within:ring-2 focus-within:ring-[#1769AA]/25">
+              <Search size={14} className="text-slate-500 dark:text-slate-400" aria-hidden="true" />
+              <input
+                type="text"
+                value={libraryQuery}
+                onChange={(e) => setLibraryQuery(e.target.value)}
+                placeholder="Filter library catalogue..."
+                aria-label="Filter library catalogue"
+                className="text-xs bg-transparent w-48 text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:placeholder:text-slate-300"
+              />
+            </div>
+            <PortalButton
+              variant="secondary"
+              onClick={() => triggerSectionSync('library', 'Library holdings and loan records synchronized.')}
+            >
+              <RefreshCw size={14} /> Sync Catalogue
+            </PortalButton>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Physical Library Catalogue &amp; Active Loans ({resources.loans.length} Loaned)
             </h3>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredBooks.map((b) => {
                 const reserved = resources.loans.some(
                   (l) => l.barcode === b.barcode && l.status === 'BORROWED'
@@ -1335,8 +1714,8 @@ export default function StudentSubPages({
                 return (
                   <div key={b.id} className="py-3 flex items-center justify-between gap-3 text-xs">
                     <div>
-                      <strong className="text-slate-900 block">{b.title}</strong>
-                      <span className="text-slate-500">
+                      <strong className="text-slate-900 dark:text-slate-100 block">{b.title}</strong>
+                      <span className="text-slate-600 dark:text-slate-300">
                         {b.author} · {b.shelfLocation} · {b.availableCopies}/{b.totalCopies} available
                       </span>
                     </div>
@@ -1349,7 +1728,7 @@ export default function StudentSubPages({
                         onNotify('ok', `Hold placed on "${b.title}" for circulation desk pickup.`);
                         onRefresh();
                       }}
-                      className="px-3 py-1.5 border border-slate-300 rounded-lg font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap shrink-0"
+                      className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 whitespace-nowrap shrink-0"
                     >
                       {reserved ? 'Borrowed / Hold' : 'Reserve Book'}
                     </button>
@@ -1359,16 +1738,16 @@ export default function StudentSubPages({
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">Digital E-Books &amp; Lecture Manuals</h3>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Digital E-Books &amp; Lecture Manuals</h3>
             <div className="space-y-3">
               {resources.digitalResources.map((doc) => (
-                <div key={doc.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-                  <p className="font-mono text-[#0866d7] font-semibold">
+                <div key={doc.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                  <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
                     {doc.type} · {doc.fileFormat} ({doc.fileSize}) · {doc.publishYear}
                   </p>
-                  <strong className="text-sm text-slate-900 block">{doc.title}</strong>
-                  <p className="text-slate-600">{doc.description}</p>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{doc.title}</strong>
+                  <p className="text-slate-600 dark:text-slate-300">{doc.description}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -1444,9 +1823,9 @@ export default function StudentSubPages({
     );
   }
 
-  // 10. DOCUMENTS
+  // 10. DOCUMENTS & VERIFICATION UPLOADS
   if (activeSection === 'documents') {
-    const docs = [
+    const officialDocs = [
       {
         title: 'Official Admission Letter',
         file: `Admission_${profile.admissionNumber}.txt`,
@@ -1468,29 +1847,481 @@ export default function StudentSubPages({
         body: 'HI-TECH COLLEGE ACADEMIC CODE: 75% minimum class attendance, 100% final fee clearance, zero tolerance for exam malpractice, Kenya Data Protection Act compliance.',
       },
     ];
+
+    const filteredUploads = state.uploadedDocuments.filter(
+      (d) =>
+        !docSearch.trim() ||
+        d.docType.toLowerCase().includes(docSearch.toLowerCase()) ||
+        d.fileName.toLowerCase().includes(docSearch.toLowerCase())
+    );
+
     return (
       <div className="space-y-5">
-        {SectionShellHeader()}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {docs.map((doc) => (
-            <div key={doc.title} className="bg-white border border-slate-200 rounded-xl p-5 flex items-center justify-between gap-4">
+        {SectionShellHeader(
+          <PortalButton
+            onClick={() => {
+              setReplaceDocId(null);
+              setShowDocUpload((v) => !v);
+            }}
+          >
+            <UploadCloud size={15} /> {showDocUpload ? 'Close Upload Form' : 'Upload Document'}
+          </PortalButton>
+        )}
+
+        {showDocUpload && (
+          <PortalCard
+            title={replaceDocId ? 'Replace Verification Document' : 'Upload Admission / Compliance Document'}
+            description="PDF, JPG, PNG, or DOCX evidence forwarded directly to the Registrar verification queue."
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const res = studentPortalService.uploadOrReplaceDocument(
+                  replaceDocId,
+                  uploadDocType,
+                  uploadFileName,
+                  uploadFileSize
+                );
+                if (!res.ok) return onNotify('err', res.error ?? 'Upload failed');
+                onNotify(
+                  'ok',
+                  replaceDocId
+                    ? `Document "${uploadFileName}" replaced and queued for Registrar audit.`
+                    : `Document "${uploadFileName}" uploaded successfully.`
+                );
+                setUploadFileName('');
+                setUploadFileSize(undefined);
+                setReplaceDocId(null);
+                setShowDocUpload(false);
+                onRefresh();
+              }}
+              className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end text-xs"
+            >
               <div>
-                <h3 className="text-sm font-bold text-slate-900">{doc.title}</h3>
-                <p className="text-xs font-mono text-slate-500 mt-0.5">{doc.file}</p>
+                <label htmlFor="doc-category-select" className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Document Category
+                </label>
+                <select
+                  id="doc-category-select"
+                  value={uploadDocType}
+                  onChange={(e) => setUploadDocType(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                >
+                  <option value="KCSE Result Slip / Certificate">KCSE Result Slip / Certificate</option>
+                  <option value="National ID / Birth Certificate">National ID / Birth Certificate</option>
+                  <option value="Medical & Insurance Fitness Form">Medical &amp; Insurance Fitness Form</option>
+                  <option value="Industrial Attachment Insurance Letter">Attachment Insurance Letter</option>
+                </select>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  downloadStudentDocument(doc.file, doc.body);
-                  onNotify('ok', `Downloaded ${doc.title}.`);
-                }}
-                className="px-3.5 py-2 bg-[#092c60] hover:bg-[#061f46] text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              <div>
+                <label htmlFor="doc-file-picker" className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Choose File from Device
+                </label>
+                <input
+                  id="doc-file-picker"
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const sizeLabel =
+                      f.size >= 1024 * 1024
+                        ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+                        : `${Math.max(1, Math.round(f.size / 1024))} KB`;
+                    setUploadFileName(f.name);
+                    setUploadFileSize(sizeLabel);
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-[#092c60] file:text-white file:text-xs file:font-semibold"
+                />
+              </div>
+              <div>
+                <label htmlFor="doc-file-ref" className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  File Name / Reference
+                </label>
+                <input
+                  id="doc-file-ref"
+                  type="text"
+                  required
+                  placeholder="e.g. KCSE_Certified_Slip_2026.pdf"
+                  value={uploadFileName}
+                  onChange={(e) => setUploadFileName(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono"
+                />
+              </div>
+              <PortalButton type="submit">
+                <UploadCloud size={15} /> {replaceDocId ? 'Submit Replacement' : 'Submit to Registrar'}
+              </PortalButton>
+            </form>
+          </PortalCard>
+        )}
+
+        <PortalCard
+          title="Official Certified College Downloads"
+          description="Instant official records signed for your academic registration."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {officialDocs.map((doc) => (
+              <div
+                key={doc.title}
+                className="bg-[#F4F7FB] dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between gap-4"
               >
-                <Download size={14} /> Download
-              </button>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {doc.title}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-600 dark:text-slate-300 mt-0.5 truncate">
+                    {doc.file}
+                  </p>
+                </div>
+                <PortalButton
+                  onClick={() => {
+                    downloadStudentDocument(doc.file, doc.body);
+                    onNotify('ok', `Downloaded ${doc.title}.`);
+                  }}
+                >
+                  <Download size={14} /> Download
+                </PortalButton>
+              </div>
+            ))}
+          </div>
+        </PortalCard>
+
+        <PortalCard
+          title="Uploaded Admission & Verification Documents"
+          description="Monitor Registrar verification status, download copies, or replace outdated files."
+        >
+          <PortalToolbar
+            search={docSearch}
+            onSearch={setDocSearch}
+            placeholder="Filter uploaded documents by type or filename..."
+            isRefreshing={docsRefreshing}
+            onRefresh={() => {
+              setDocsRefreshing(true);
+              window.setTimeout(() => {
+                setDocsRefreshing(false);
+                onRefresh();
+                onNotify('ok', 'Verification document queue synchronized.');
+              }, 320);
+            }}
+            onAdd={() => {
+              setReplaceDocId(null);
+              setUploadFileName('');
+              setUploadFileSize(undefined);
+              setShowDocUpload(true);
+            }}
+            addLabel="Upload Document"
+          />
+
+          {docsRefreshing ? (
+            <SkeletonCardList
+              items={3}
+              columns={1}
+              showMeta
+              label="Refreshing verification documents..."
+            />
+          ) : filteredUploads.length === 0 ? (
+            <PortalEmptyState
+              title="No matching documents found"
+              description="Try clearing your search filter or upload a required compliance file."
+              actionLabel="Upload New Document"
+              onAction={() => setShowDocUpload(true)}
+            />
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+              {filteredUploads.map((ud) => (
+                <div
+                  key={ud.id}
+                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div className="space-y-0.5 min-w-0">
+                    <strong className="text-sm text-slate-900 dark:text-slate-100 block truncate">
+                      {ud.docType}
+                    </strong>
+                    <p className="font-mono text-slate-600 dark:text-slate-300">
+                      {ud.fileName}
+                      {ud.fileSize ? ` (${ud.fileSize})` : ''} · Uploaded {ud.uploadedAt} · {ud.verifiedBy}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <PortalStatus status={ud.verificationStatus} />
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => {
+                        downloadStudentDocument(
+                          ud.fileName.endsWith('.txt') ? ud.fileName : `${ud.fileName}.txt`,
+                          `HI-TECH COLLEGE VERIFICATION DOCUMENT RECORD\nStudent: ${profile.fullName} (${regNo})\nDocument Type: ${ud.docType}\nFile Name: ${ud.fileName}\nUploaded: ${ud.uploadedAt}\nStatus: ${ud.verificationStatus}\nVerified By: ${ud.verifiedBy}\n`
+                        );
+                        onNotify('ok', `Downloaded record for ${ud.fileName}.`);
+                      }}
+                    >
+                      <Download size={13} /> Download
+                    </PortalButton>
+                    <PortalButton
+                      variant="secondary"
+                      onClick={() => {
+                        setReplaceDocId(ud.id);
+                        setUploadDocType(ud.docType);
+                        setUploadFileName(ud.fileName);
+                        setUploadFileSize(ud.fileSize);
+                        setShowDocUpload(true);
+                      }}
+                    >
+                      Replace
+                    </PortalButton>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </PortalCard>
+      </div>
+    );
+  }
+
+  // 10B. ACADEMIC APPEALS & REMARKING
+  if (activeSection === 'appeals') {
+    const filteredAppeals = state.appeals.filter((ap) => {
+      const catOk = appealCatFilter === 'ALL' || ap.category === appealCatFilter;
+      const q = appealSearch.trim().toLowerCase();
+      const textOk =
+        !q ||
+        ap.subject.toLowerCase().includes(q) ||
+        ap.unitCode.toLowerCase().includes(q) ||
+        ap.reason.toLowerCase().includes(q);
+      return catOk && textOk;
+    });
+
+    const categories: { value: 'ALL' | StudentAppealItem['category']; label: string }[] = [
+      { value: 'ALL', label: 'All Appeals' },
+      { value: 'GRADE_REMARKING', label: 'Grade Remarking' },
+      { value: 'ATTENDANCE_CORRECTION', label: 'Attendance' },
+      { value: 'EXAM_MISSED', label: 'Missed Exam' },
+      { value: 'FEE_WAIVER_REVIEW', label: 'Fee Review' },
+    ];
+
+    return (
+      <div className="space-y-5">
+        {SectionShellHeader(
+          <PortalButton onClick={() => setShowAppealForm((v) => !v)}>
+            <Scale size={15} /> {showAppealForm ? 'Close Appeal Form' : 'Submit New Appeal'}
+          </PortalButton>
+        )}
+
+        {showAppealForm && (
+          <PortalCard
+            title="File Formal Academic Appeal"
+            description="Appeals are routed directly to the Academic Registrar & Examinations Board."
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const res = studentPortalService.submitAppeal(appealForm);
+                if (!res.ok) return onNotify('err', res.error ?? 'Could not submit appeal');
+                onNotify('ok', `Academic appeal "${appealForm.subject}" filed for Registrar review.`);
+                setAppealForm({ ...appealForm, subject: '', evidenceRef: '', reason: '' });
+                setShowAppealForm(false);
+                onRefresh();
+              }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs"
+            >
+              <div>
+                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Appeal Category
+                </label>
+                <select
+                  value={appealForm.category}
+                  onChange={(e) =>
+                    setAppealForm({
+                      ...appealForm,
+                      category: e.target.value as StudentAppealItem['category'],
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                >
+                  <option value="GRADE_REMARKING">Examination / CAT Grade Remarking</option>
+                  <option value="ATTENDANCE_CORRECTION">Class Attendance Roll Correction</option>
+                  <option value="EXAM_MISSED">Special / Supplementary Exam (Missed)</option>
+                  <option value="FEE_WAIVER_REVIEW">Late Fee Penalty Waiver Review</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Course Unit / Reference
+                </label>
+                <select
+                  value={appealForm.unitCode}
+                  onChange={(e) => setAppealForm({ ...appealForm, unitCode: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                >
+                  {state.units.map((u) => (
+                    <option key={u.code} value={u.code}>
+                      {u.code} — {u.title}
+                    </option>
+                  ))}
+                  <option value="GENERAL">General Institutional Matter</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Appeal Subject
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Concise summary of the appeal..."
+                  value={appealForm.subject}
+                  onChange={(e) => setAppealForm({ ...appealForm, subject: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Supporting Evidence Filename
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Lab_SignIn_Proof.pdf"
+                  value={appealForm.evidenceRef}
+                  onChange={(e) => setAppealForm({ ...appealForm, evidenceRef: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-mono text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Detailed Justification (Min 10 characters)
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Provide factual dates, lecturer session details, or assessment evidence..."
+                  value={appealForm.reason}
+                  onChange={(e) => setAppealForm({ ...appealForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div className="sm:col-span-2 flex justify-end gap-2 pt-1">
+                <PortalButton variant="secondary" onClick={() => setShowAppealForm(false)}>
+                  Cancel
+                </PortalButton>
+                <PortalButton type="submit">Submit Appeal to Registrar</PortalButton>
+              </div>
+            </form>
+          </PortalCard>
+        )}
+
+        <PortalCard
+          title={`My Submitted Appeals (${state.appeals.length})`}
+          description="Track review status or withdraw pending appeals before final determination."
+        >
+          <PortalToolbar
+            search={appealSearch}
+            onSearch={setAppealSearch}
+            placeholder="Search appeals by unit code, title, or detail..."
+            isRefreshing={appealsRefreshing}
+            onRefresh={() => {
+              setAppealsRefreshing(true);
+              window.setTimeout(() => {
+                setAppealsRefreshing(false);
+                onRefresh();
+                onNotify('ok', 'Appeals register synchronized.');
+              }, 350);
+            }}
+            onAdd={() => setShowAppealForm(true)}
+            addLabel="New Appeal"
+          />
+
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setAppealCatFilter(cat.value)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                  appealCatFilter === cat.value
+                    ? 'bg-[#102D50] text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {appealsRefreshing ? (
+            <SkeletonCardList
+              items={3}
+              columns={1}
+              showMeta
+              label="Synchronizing appeals register..."
+            />
+          ) : filteredAppeals.length === 0 ? (
+            <PortalEmptyState
+              title="No appeals match your filters"
+              description="You can submit a new academic remarking, attendance correction, or special exam appeal anytime."
+              actionLabel="File an Appeal"
+              onAction={() => setShowAppealForm(true)}
+            />
+          ) : (
+            <div className="space-y-3 text-xs">
+              {filteredAppeals.map((ap) => (
+                <div
+                  key={ap.id}
+                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-[#F4F7FB] dark:bg-slate-800/70 space-y-2"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="font-mono font-bold text-[#1769AA] dark:text-blue-400">
+                        {ap.unitCode} · {ap.category.replace(/_/g, ' ')} ·{' '}
+                        {new Date(ap.submittedAt).toLocaleDateString()}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 dark:text-white mt-0.5">
+                        {ap.subject}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <PortalStatus status={ap.status} />
+                      {ap.status !== 'Approved' && (
+                        <PortalButton
+                          variant="danger"
+                          onClick={() => setWithdrawAppealTarget(ap)}
+                        >
+                          <Trash2 size={14} /> Withdraw
+                        </PortalButton>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300">{ap.reason}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/70 dark:border-slate-700">
+                    <span>Evidence: {ap.evidenceRef}</span>
+                    {ap.reviewerComment && (
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                        Outcome: {ap.reviewerComment}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </PortalCard>
+
+        <PortalConfirmDialog
+          isOpen={Boolean(withdrawAppealTarget)}
+          title="Withdraw Academic Appeal?"
+          message={`Are you sure you want to withdraw "${withdrawAppealTarget?.subject}"? This action cannot be undone once removed from the Registrar review queue.`}
+          confirmLabel="Yes, Withdraw Appeal"
+          cancelLabel="Keep Appeal"
+          onConfirm={() => {
+            if (withdrawAppealTarget) {
+              const res = studentPortalService.cancelAppeal(withdrawAppealTarget.id);
+              if (!res.ok) onNotify('err', res.error ?? 'Could not withdraw appeal');
+              else onNotify('ok', `Withdrew appeal "${withdrawAppealTarget.subject}".`);
+            }
+            setWithdrawAppealTarget(null);
+            onRefresh();
+          }}
+          onCancel={() => setWithdrawAppealTarget(null)}
+        />
       </div>
     );
   }
@@ -1505,12 +2336,14 @@ export default function StudentSubPages({
     return (
       <div className="space-y-5">
         {SectionShellHeader(
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
             <button
               type="button"
               onClick={() => setSupportTab('tickets')}
               className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
-                supportTab === 'tickets' ? 'bg-white text-[#092c60] font-semibold shadow-sm' : 'text-slate-600'
+                supportTab === 'tickets'
+                  ? 'bg-white dark:bg-slate-900 text-[#092c60] dark:text-white font-semibold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300'
               }`}
             >
               Helpdesk Tickets
@@ -1519,7 +2352,9 @@ export default function StudentSubPages({
               type="button"
               onClick={() => setSupportTab('lecturers')}
               className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
-                supportTab === 'lecturers' ? 'bg-white text-[#092c60] font-semibold shadow-sm' : 'text-slate-600'
+                supportTab === 'lecturers'
+                  ? 'bg-white dark:bg-slate-900 text-[#092c60] dark:text-white font-semibold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300'
               }`}
             >
               Message Lecturer
@@ -1528,7 +2363,9 @@ export default function StudentSubPages({
               type="button"
               onClick={() => setSupportTab('welfare')}
               className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
-                supportTab === 'welfare' ? 'bg-white text-[#092c60] font-semibold shadow-sm' : 'text-slate-600'
+                supportTab === 'welfare'
+                  ? 'bg-white dark:bg-slate-900 text-[#092c60] dark:text-white font-semibold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300'
               }`}
             >
               Hostels &amp; Welfare
@@ -1552,13 +2389,13 @@ export default function StudentSubPages({
                 onNotify('ok', `Support ticket ${res.ticketRef} created cleanly.`);
                 onRefresh();
               }}
-              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs"
             >
-              <h3 className="text-sm font-bold text-slate-900">Raise Student Helpdesk Ticket</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Raise Student Helpdesk Ticket</h3>
               <select
                 value={ticketForm.category}
                 onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value as SupportTicketCategory })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 <option value="EXAMS_RESULTS">Examinations, CATs &amp; Results</option>
                 <option value="FEES_INVOICING">Finance, Invoicing &amp; Fee Receipt</option>
@@ -1574,7 +2411,7 @@ export default function StudentSubPages({
                 placeholder="Ticket subject"
                 value={ticketForm.subject}
                 onChange={(e) => setTicketForm({ ...ticketForm, subject: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <textarea
                 rows={3}
@@ -1582,23 +2419,23 @@ export default function StudentSubPages({
                 placeholder="Describe your request clearly..."
                 value={ticketForm.description}
                 onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <button type="submit" className="px-4 py-2 bg-[#092c60] text-white font-semibold rounded-lg">
                 Submit Support Ticket
               </button>
             </form>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs">
-              <h3 className="text-sm font-bold text-slate-900">My Active Support Tickets ({myTickets.length})</h3>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">My Active Support Tickets ({myTickets.length})</h3>
               {myTickets.map((t) => (
-                <div key={t.id} className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-                  <div className="flex justify-between font-mono text-slate-500">
-                    <span className="font-bold text-[#092c60]">{t.ticketRef}</span>
+                <div key={t.id} className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex justify-between font-mono text-slate-600 dark:text-slate-300">
+                    <span className="font-bold text-[#092c60] dark:text-blue-300">{t.ticketRef}</span>
                     <span>{t.status} · Priority {t.priority}</span>
                   </div>
-                  <strong className="text-slate-900 block">{t.subject}</strong>
-                  <p className="text-slate-600">{t.description}</p>
+                  <strong className="text-slate-900 dark:text-slate-100 block">{t.subject}</strong>
+                  <p className="text-slate-600 dark:text-slate-300">{t.description}</p>
                 </div>
               ))}
             </div>
@@ -1616,13 +2453,13 @@ export default function StudentSubPages({
                 onNotify('ok', `Message sent to ${msgForm.unitCode} lecturer.`);
                 onRefresh();
               }}
-              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs"
             >
-              <h3 className="text-sm font-bold text-slate-900">Message Unit Lecturer</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Message Unit Lecturer</h3>
               <select
                 value={msgForm.unitCode}
                 onChange={(e) => setMsgForm({ ...msgForm, unitCode: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 {state.units.map((u) => (
                   <option key={u.code} value={u.code}>
@@ -1636,7 +2473,7 @@ export default function StudentSubPages({
                 placeholder="Subject"
                 value={msgForm.subject}
                 onChange={(e) => setMsgForm({ ...msgForm, subject: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <textarea
                 rows={3}
@@ -1644,7 +2481,7 @@ export default function StudentSubPages({
                 placeholder="Write your academic message..."
                 value={msgForm.body}
                 onChange={(e) => setMsgForm({ ...msgForm, body: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <button
                 type="submit"
@@ -1654,17 +2491,17 @@ export default function StudentSubPages({
               </button>
             </form>
 
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800">
               {state.messages.map((m) => (
                 <div key={m.id} className="p-4 space-y-1 text-xs">
-                  <div className="flex justify-between font-mono text-slate-500">
+                  <div className="flex justify-between font-mono text-slate-600 dark:text-slate-300">
                     <span>
                       {m.direction === 'OUTBOUND' ? `To ${m.recipientName}` : `From ${m.recipientName}`} · {m.unitCode}
                     </span>
                     <span>{new Date(m.sentAt).toLocaleDateString()}</span>
                   </div>
-                  <strong className="text-sm text-slate-900 block">{m.subject}</strong>
-                  <p className="text-slate-600">{m.body}</p>
+                  <strong className="text-sm text-slate-900 dark:text-slate-100 block">{m.subject}</strong>
+                  <p className="text-slate-600 dark:text-slate-300">{m.body}</p>
                 </div>
               ))}
             </div>
@@ -1690,13 +2527,13 @@ export default function StudentSubPages({
                 onNotify('ok', 'Hostel accommodation application submitted cleanly.');
                 onRefresh();
               }}
-              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs"
             >
-              <h3 className="text-sm font-bold text-slate-900">Apply for Campus Accommodation</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Apply for Campus Accommodation</h3>
               <select
                 value={hostelApp.hostelId}
                 onChange={(e) => setHostelApp({ ...hostelApp, hostelId: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 {studentHostels.map((h) => (
                   <option key={h.id} value={h.id}>
@@ -1709,13 +2546,13 @@ export default function StudentSubPages({
                   type="date"
                   value={hostelApp.startDate}
                   onChange={(e) => setHostelApp({ ...hostelApp, startDate: e.target.value })}
-                  className="px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
                 />
                 <input
                   type="date"
                   value={hostelApp.endDate}
                   onChange={(e) => setHostelApp({ ...hostelApp, endDate: e.target.value })}
-                  className="px-3 py-2 border border-slate-300 rounded-lg font-mono"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
                 />
               </div>
               <textarea
@@ -1724,20 +2561,20 @@ export default function StudentSubPages({
                 placeholder="Room preference or medical/proximity note..."
                 value={hostelApp.reason}
                 onChange={(e) => setHostelApp({ ...hostelApp, reason: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <button type="submit" className="px-4 py-2 bg-[#092c60] text-white font-semibold rounded-lg">
                 Submit Hostel Application
               </button>
 
               {(myAllocs.length > 0 || myHostelApps.length > 0) && (
-                <div className="pt-3 border-t border-slate-100 space-y-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
                   {myAllocs.map((al) => {
                     const hostel = hostelsState.hostels.find((h) => h.id === al.hostelId);
                     const room = hostelsState.rooms.find((r) => r.id === al.roomId);
                     const bed = hostelsState.beds.find((b) => b.id === al.bedId);
                     return (
-                      <div key={al.id} className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">
+                      <div key={al.id} className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
                         <strong>
                           {hostel?.name ?? al.hostelId} · Room {room?.roomCode ?? al.roomId} · Bed {bed?.bedCode ?? al.bedId}
                         </strong>
@@ -1746,9 +2583,9 @@ export default function StudentSubPages({
                     );
                   })}
                   {myHostelApps.map((ap) => (
-                    <div key={ap.id} className="flex justify-between py-1 font-mono text-[11px]">
+                    <div key={ap.id} className="flex justify-between py-1 font-mono text-[11px] text-slate-700 dark:text-slate-200">
                       <span>{ap.reference}</span>
-                      <span className="text-[#0866d7] font-bold">{ap.status}</span>
+                      <span className="text-[#0866d7] dark:text-blue-400 font-bold">{ap.status}</span>
                     </div>
                   ))}
                 </div>
@@ -1771,13 +2608,13 @@ export default function StudentSubPages({
                 onNotify('ok', 'Confidential welfare request sent to Student Services.');
                 onRefresh();
               }}
-              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs"
             >
-              <h3 className="text-sm font-bold text-slate-900">Confidential Counselling &amp; Welfare</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Confidential Counselling &amp; Welfare</h3>
               <select
                 value={welfareForm.category}
                 onChange={(e) => setWelfareForm({ ...welfareForm, category: e.target.value as SupportRequestCategory })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               >
                 <option value="COUNSELLING">Confidential Counselling Appointment</option>
                 <option value="ACCOMMODATION_WELFARE">Accommodation &amp; Residence Welfare</option>
@@ -1791,7 +2628,7 @@ export default function StudentSubPages({
                 placeholder="Confidential request subject"
                 value={welfareForm.subject}
                 onChange={(e) => setWelfareForm({ ...welfareForm, subject: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <textarea
                 rows={2}
@@ -1799,18 +2636,18 @@ export default function StudentSubPages({
                 placeholder="Private note for college counsellor..."
                 value={welfareForm.description}
                 onChange={(e) => setWelfareForm({ ...welfareForm, description: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
               />
               <button type="submit" className="px-4 py-2 bg-[#092c60] text-white font-semibold rounded-lg">
                 Submit Confidential Request
               </button>
 
               {myWelfare.length > 0 && (
-                <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
                   {myWelfare.map((w) => (
-                    <div key={w.id} className="flex justify-between font-mono text-[11px] text-slate-700">
+                    <div key={w.id} className="flex justify-between font-mono text-[11px] text-slate-700 dark:text-slate-200">
                       <span>{w.caseRef} · {w.subject}</span>
-                      <span className="font-bold text-[#092c60]">{w.status}</span>
+                      <span className="font-bold text-[#092c60] dark:text-blue-300">{w.status}</span>
                     </div>
                   ))}
                 </div>
@@ -1824,67 +2661,215 @@ export default function StudentSubPages({
 
   // 12. NOTIFICATIONS CENTER
   if (activeSection === 'notifications') {
+    const getNotificationTarget = (category: string, title: string): StudentPortalSection => {
+      const lower = title.toLowerCase();
+      if (category === 'FINANCE' || lower.includes('fee') || lower.includes('receipt')) return 'finance';
+      if (category === 'CAREERS' || lower.includes('attachment')) return 'attachment';
+      if (category === 'WELFARE' || lower.includes('hostel')) return 'support';
+      if (category === 'SECURITY') return 'settings';
+      if (lower.includes('exam') || lower.includes('cat') || lower.includes('practical')) return 'examinations';
+      return 'timetable';
+    };
+
     return (
       <div className="space-y-5">
         {SectionShellHeader(
-          <button
-            type="button"
-            onClick={() => {
-              engagementService.markAllRead();
-              onNotify('ok', 'All notifications marked read.');
-              onRefresh();
-            }}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
-          >
-            Mark All Read
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <PortalButton
+              variant="secondary"
+              onClick={() => triggerSectionSync('notifications', 'Notifications feed synchronized.')}
+            >
+              <RefreshCw size={14} /> Refresh
+            </PortalButton>
+            <button
+              type="button"
+              onClick={() => {
+                engagementService.markAllRead();
+                onNotify('ok', 'All notifications marked read.');
+                onRefresh();
+              }}
+              className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
+            >
+              Mark All Read
+            </button>
+          </div>
         )}
-        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
-          {engState.notifications.map((n) => (
-            <div key={n.id} className="p-4 flex items-center justify-between gap-4 text-xs">
-              <div>
-                <p className="font-mono text-slate-400">
-                  {n.category} · {new Date(n.createdAt).toLocaleString()}
-                </p>
-                <strong className={`block mt-0.5 ${n.read ? 'text-slate-600' : 'text-slate-900'}`}>
-                  {n.title}
-                </strong>
-                <p className="text-slate-600 mt-0.5">{n.message}</p>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800">
+          {engState.notifications.map((n) => {
+            const targetSection = getNotificationTarget(n.category, n.title);
+            return (
+              <div key={n.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                <div>
+                  <p className="font-mono text-slate-600 dark:text-slate-300">
+                    <span className="font-bold text-[#1769AA] dark:text-blue-400">{n.category}</span> ·{' '}
+                    {new Date(n.createdAt).toLocaleString()}
+                  </p>
+                  <strong
+                    className={`block mt-0.5 text-sm ${
+                      n.read ? 'text-slate-700 dark:text-slate-200' : 'text-slate-900 dark:text-white'
+                    }`}
+                  >
+                    {n.title}
+                  </strong>
+                  <p className="text-slate-600 dark:text-slate-300 mt-0.5">{n.message}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      engagementService.markNotificationRead(n.id);
+                      onRefresh();
+                      onNavigate(targetSection);
+                    }}
+                    className="px-3 py-1.5 bg-[#102D50] hover:bg-[#1769AA] text-white rounded-lg font-semibold whitespace-nowrap"
+                  >
+                    Open Section
+                  </button>
+                  {!n.read && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        engagementService.markNotificationRead(n.id);
+                        onRefresh();
+                      }}
+                      className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-semibold whitespace-nowrap"
+                    >
+                      Mark Read
+                    </button>
+                  )}
+                </div>
               </div>
-              {!n.read && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    engagementService.markNotificationRead(n.id);
-                    onRefresh();
-                  }}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg font-semibold shrink-0"
-                >
-                  Mark Read
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  // 13. SETTINGS, GUARDIAN CONSENT & AUDIT LOG
+  // 13. SETTINGS, APPEARANCE, GUARDIAN LINKING & AUDIT LOG
   if (activeSection === 'settings') {
     return (
       <div className="space-y-5">
         {SectionShellHeader()}
+
+        {/* Appearance Theme, Text Scale & Motion Card */}
+        <PortalCard
+          title="Portal Appearance & Accessibility"
+          description="Switch cleanly between Light and Dark themes, adjust reading text scale, or reduce motion animations across all modules."
+        >
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                aria-pressed={theme === 'light'}
+                onClick={() => setTheme('light')}
+                className={`p-4 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  theme === 'light'
+                    ? 'border-[#1769AA] bg-[#eef4fd] text-[#102D50]'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white text-[#E8B44A] border border-slate-200 flex items-center justify-center">
+                    <Sun size={18} />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-bold">Light Mode</strong>
+                    <span className="text-[11px] opacity-85">Bright crisp university workspace</span>
+                  </div>
+                </div>
+                {theme === 'light' && <PortalStatus status="Approved" />}
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+                className={`p-4 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  theme === 'dark'
+                    ? 'border-[#1769AA] bg-slate-800 text-white'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#102D50] text-[#E8B44A] flex items-center justify-center">
+                    <Moon size={18} />
+                  </div>
+                  <div>
+                    <strong className="block text-sm font-bold">Dark Mode</strong>
+                    <span className="text-[11px] opacity-85">Reduced-glare evening study theme</span>
+                  </div>
+                </div>
+                {theme === 'dark' && <PortalStatus status="Approved" />}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <strong className="block text-slate-900 dark:text-white">Portal Text Size</strong>
+                  <span className="text-slate-600 dark:text-slate-300">Adjust base reading scale</span>
+                </div>
+                <div className="inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                  {(
+                    [
+                      { id: 'standard', label: 'Standard' },
+                      { id: 'comfortable', label: 'Comfortable' },
+                      { id: 'large', label: 'Large' },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      aria-pressed={textScale === opt.id}
+                      onClick={() => {
+                        setTextScale(opt.id);
+                        onNotify('ok', `Text scale updated to ${opt.label}.`);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                        textScale === opt.id
+                          ? 'bg-[#102D50] text-white'
+                          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 cursor-pointer">
+                <span>
+                  <strong className="block text-slate-900 dark:text-white">Reduce Portal Motion</strong>
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Disable smooth scrolling and UI transitions for accessibility
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={reducedMotion}
+                  onChange={(e) => {
+                    setReducedMotion(e.target.checked);
+                    onNotify('ok', `Reduced motion ${e.target.checked ? 'enabled' : 'disabled'}.`);
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        </PortalCard>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck size={16} className="text-[#092c60]" /> Account Security &amp; Alerts
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <ShieldCheck size={16} className="text-[#1769AA] dark:text-blue-400" /> Account Security &amp; Alerts
             </h3>
 
-            <label className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 cursor-pointer">
               <span>
-                <strong className="block text-slate-900">Multi-Factor Verification (MFA)</strong>
-                <span className="text-slate-500">Require OTP code when downloading transcripts or altering contacts</span>
+                <strong className="block text-slate-900 dark:text-white">Multi-Factor Verification (MFA)</strong>
+                <span className="text-slate-600 dark:text-slate-300">
+                  Require OTP code when downloading transcripts or altering contacts
+                </span>
               </span>
               <input
                 type="checkbox"
@@ -1897,10 +2882,12 @@ export default function StudentSubPages({
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 cursor-pointer">
               <span>
-                <strong className="block text-slate-900">SMS Examination &amp; Fee Alerts</strong>
-                <span className="text-slate-500">Send instant transactional alerts to {state.contact.phoneNumber}</span>
+                <strong className="block text-slate-900 dark:text-white">SMS Examination &amp; Fee Alerts</strong>
+                <span className="text-slate-600 dark:text-slate-300">
+                  Send instant transactional alerts to {state.contact.phoneNumber}
+                </span>
               </span>
               <input
                 type="checkbox"
@@ -1930,25 +2917,22 @@ export default function StudentSubPages({
                 placeholder="New password (min 8 chars)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg"
+                className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
               />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#092c60] text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
-              >
-                Rotate Password
-              </button>
+              <PortalButton type="submit">Rotate Password</PortalButton>
             </form>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Users size={16} className="text-[#0866d7]" /> Student-Authorized Guardian Access
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users size={16} className="text-[#1769AA] dark:text-blue-400" /> Student-Authorized Guardian Access
             </h3>
-            <label className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 cursor-pointer">
               <span>
-                <strong className="block text-slate-900">Allow Parent / Guardian Portal Access</strong>
-                <span className="text-slate-500">1-year consent window · revocable anytime by student</span>
+                <strong className="block text-slate-900 dark:text-white">Allow Parent / Guardian Portal Access</strong>
+                <span className="text-slate-600 dark:text-slate-300">
+                  1-year consent window · revocable anytime by student
+                </span>
               </span>
               <input
                 type="checkbox"
@@ -1978,31 +2962,27 @@ export default function StudentSubPages({
                 placeholder="guardian.email@example.co.ke"
                 value={guardianEmail}
                 onChange={(e) => setGuardianEmail(e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg"
+                className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
               />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#0866d7] text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
-              >
-                Invite Guardian
-              </button>
+              <PortalButton type="submit">Invite Guardian</PortalButton>
             </form>
 
             <div className="space-y-1.5">
               {engState.guardianLinks.map((lnk) => (
-                <div key={lnk.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div
+                  key={lnk.id}
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between"
+                >
                   <span>
-                    <strong className="text-slate-900">{lnk.parentName}</strong> ({lnk.status})
+                    <strong className="text-slate-900 dark:text-white">{lnk.parentName}</strong> ({lnk.status})
                   </span>
                   {lnk.status === 'ACTIVE' && (
                     <button
                       type="button"
-                      onClick={() => {
-                        engagementService.revokeGuardianLink(lnk.id, 'Revoked by student in Settings');
-                        onNotify('ok', `Revoked guardian access for ${lnk.parentName}.`);
-                        onRefresh();
-                      }}
-                      className="text-red-700 font-semibold hover:underline"
+                      onClick={() =>
+                        setRevokeGuardianTarget({ id: lnk.id, parentName: lnk.parentName })
+                      }
+                      className="text-red-600 dark:text-red-400 font-semibold hover:underline"
                     >
                       Revoke
                     </button>
@@ -2013,21 +2993,44 @@ export default function StudentSubPages({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Lock size={15} className="text-[#092c60]" /> Student Security Audit History
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Lock size={15} className="text-[#1769AA] dark:text-blue-400" /> Student Security Audit History
           </h3>
           <div className="space-y-1.5 max-h-52 overflow-y-auto text-xs font-mono">
             {state.auditLog.map((ev) => (
-              <div key={ev.id} className="py-1.5 border-b border-slate-100 flex flex-wrap gap-2 text-slate-600">
-                <span className="text-slate-400 tabular-nums">{new Date(ev.timestampIso).toLocaleTimeString()}</span>
-                <span className="font-bold text-[#092c60]">{ev.module}</span>
-                <span className="text-slate-800">{ev.action}</span>
+              <div
+                key={ev.id}
+                className="py-1.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 text-slate-600 dark:text-slate-300"
+              >
+                <span className="text-slate-600 dark:text-slate-300 tabular-nums">{new Date(ev.timestampIso).toLocaleTimeString()}</span>
+                <span className="font-bold text-[#102D50] dark:text-blue-400">{ev.module}</span>
+                <span className="text-slate-800 dark:text-slate-100">{ev.action}</span>
                 <span>— {ev.detail}</span>
               </div>
             ))}
           </div>
         </div>
+
+        <PortalConfirmDialog
+          isOpen={Boolean(revokeGuardianTarget)}
+          title="Revoke Guardian Portal Access?"
+          message={`Are you sure you want to revoke portal visibility for ${revokeGuardianTarget?.parentName}? They will no longer view your fees, grades, or attendance unless re-invited.`}
+          confirmLabel="Revoke Access"
+          cancelLabel="Keep Access"
+          onConfirm={() => {
+            if (revokeGuardianTarget) {
+              engagementService.revokeGuardianLink(
+                revokeGuardianTarget.id,
+                'Revoked by student in Settings'
+              );
+              onNotify('ok', `Revoked guardian access for ${revokeGuardianTarget.parentName}.`);
+            }
+            setRevokeGuardianTarget(null);
+            onRefresh();
+          }}
+          onCancel={() => setRevokeGuardianTarget(null)}
+        />
       </div>
     );
   }
@@ -2036,7 +3039,7 @@ export default function StudentSubPages({
   return (
     <div className="space-y-5">
       {SectionShellHeader()}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
         <div className="min-h-[240px]">
           <img
             src={campusHeroUrl}
@@ -2046,15 +3049,15 @@ export default function StudentSubPages({
           />
         </div>
         <div className="p-6 space-y-3 text-xs">
-          <p className="font-semibold text-[#0866d7]">Nairobi Main Campus · Innovation &amp; ICT Centre</p>
-          <h3 className="text-lg font-bold text-[#092c60]">HI-TECH College Academic &amp; Student Services</h3>
-          <p className="text-slate-600 leading-relaxed">
+          <p className="font-semibold text-[#0866d7] dark:text-blue-400">Nairobi Main Campus · Innovation &amp; ICT Centre</p>
+          <h3 className="text-lg font-bold text-[#092c60] dark:text-white">HI-TECH College Academic &amp; Student Services</h3>
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             TVET-registered and KNEC/CDACC/KASNEB accredited examination centre equipping learners in Software Engineering, Cybersecurity, Cloud Computing, and Business Systems.
           </p>
-          <div className="pt-2 space-y-1.5 text-slate-700 font-medium">
-            <div className="flex items-center gap-2"><Clock size={14} className="text-[#0866d7]" /> Mon – Sat: 07:30 AM – 08:30 PM EAT</div>
-            <div className="flex items-center gap-2"><MapPin size={14} className="text-[#0866d7]" /> Innovation Hub, Academic Wing, Nairobi</div>
-            <div className="flex items-center gap-2"><Mail size={14} className="text-[#0866d7]" /> registrar@hitech.ac.ke</div>
+          <div className="pt-2 space-y-1.5 text-slate-700 dark:text-slate-200 font-medium">
+            <div className="flex items-center gap-2"><Clock size={14} className="text-[#0866d7] dark:text-blue-400" /> Mon – Sat: 07:30 AM – 08:30 PM EAT</div>
+            <div className="flex items-center gap-2"><MapPin size={14} className="text-[#0866d7] dark:text-blue-400" /> Innovation Hub, Academic Wing, Nairobi</div>
+            <div className="flex items-center gap-2"><Mail size={14} className="text-[#0866d7] dark:text-blue-400" /> registrar@hitech.ac.ke</div>
           </div>
         </div>
       </div>

@@ -8,10 +8,6 @@ import {
   Plus,
   ArrowRight,
   Clock,
-  CheckCircle2,
-  AlertCircle,
-  GraduationCap,
-  Sparkles,
 } from "lucide-react";
 import { lecturerApi } from "../services/lecturerApi";
 
@@ -32,9 +28,23 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
 
   if (loading || !data) {
     return (
-      <div className="p-8 text-center text-slate-500 text-sm">
-        <div className="inline-block animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-2"></div>
-        <p>Loading Lecturer / Trainer workspace...</p>
+      <div className="space-y-6" role="status" aria-label="Loading Lecturer and Trainer workspace">
+        <div className="h-24 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-col justify-center gap-2">
+          <div className="h-4 w-48 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3 w-72 max-w-full rounded bg-slate-100 dark:bg-slate-800/70" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-28 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col justify-between"
+            >
+              <div className="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-800" />
+              <div className="h-3 w-24 rounded bg-slate-100 dark:bg-slate-800/70" />
+              <div className="h-6 w-14 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -77,22 +87,36 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
     },
   ];
 
+  const resolveNotificationTab = (title: string): string => {
+    const t = title.toLowerCase();
+    if (t.includes("timetable") || t.includes("schedule") || t.includes("venue")) return "timetable";
+    if (t.includes("exam") || t.includes("cat") || t.includes("assessment") || t.includes("mark")) return "assessments";
+    if (t.includes("attendance") || t.includes("register")) return "attendance";
+    if (t.includes("lab") || t.includes("fault")) return "laboratories";
+    return "courses";
+  };
+
   return (
     <div className="space-y-6">
       {/* PAGE HEADING */}
       <div className="page-heading">
         <div>
-          <span className="eyebrow">MODULE 18 · LECTURER &amp; TRAINER PORTAL</span>
+          <span className="eyebrow">Lecturer &amp; Trainer Portal</span>
           <h1>Good day, {data.lecturer.name}</h1>
           <p>Manage your teaching operations, student registers, assessments, and laboratory allocations.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="primary-button" onClick={() => onNavigate("lessons")}>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => onNavigate("lessons")}
+          >
             <Plus size={16} />
             Create Lesson Plan
           </button>
           <button
+            type="button"
             className="secondary-button"
             onClick={() => onNavigate("attendance")}
           >
@@ -105,25 +129,29 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
       {/* LECTURER WELCOME BANNER */}
       <section className="lecturer-welcome">
         <div>
-          <span>AUTHORITATIVE STAFF IDENTITY</span>
+          <span>Authoritative Staff Identity</span>
           <h2>{data.lecturer.registrationNumber}</h2>
           <p>
-            Linked Central Staff Identity: <strong className="text-amber-300 font-mono">{data.lecturer.staffRegistrationNumber}</strong> · {data.lecturer.department}
+            Linked Central Staff Identity:{" "}
+            <strong className="text-amber-300 font-mono">{data.lecturer.staffRegistrationNumber}</strong>
+            {" · "}
+            {data.lecturer.department}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col sm:items-end gap-2">
           <span className="status-label">{data.lecturer.employmentStatus}</span>
-          <span className="text-xs text-blue-200">HI-TECH College Academic Year 2025/2026</span>
+          <span className="text-xs text-blue-100">HI-TECH College · Academic Year 2025/2026</span>
         </div>
       </section>
 
       {/* STAT GRID */}
-      <section className="stat-grid">
+      <section className="stat-grid" aria-label="Teaching summary metrics">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <article
-              className="stat-card cursor-pointer hover:border-blue-400 transition"
+            <button
+              type="button"
+              className="stat-card cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1769aa]"
               key={stat.title}
               onClick={() => onNavigate(stat.tab)}
             >
@@ -132,7 +160,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
               </div>
               <p>{stat.title}</p>
               <h2>{stat.value}</h2>
-            </article>
+            </button>
           );
         })}
       </section>
@@ -146,7 +174,9 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
               <h3>Teaching Workspace Quick Actions</h3>
               <p>Instant shortcuts to daily academic responsibilities</p>
             </div>
-            <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">Semester 1</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+              Semester 1
+            </span>
           </div>
 
           <div className="quick-actions">
@@ -160,9 +190,13 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
               { label: "Laboratory Equipment & Faults", tab: "laboratories" },
               { label: "Schedule Online Class", tab: "online_classes" },
             ].map((item) => (
-              <button key={item.label} onClick={() => onNavigate(item.tab)}>
+              <button
+                type="button"
+                key={item.label}
+                onClick={() => onNavigate(item.tab)}
+              >
                 <span>{item.label}</span>
-                <ArrowRight size={15} className="text-slate-400" />
+                <ArrowRight size={15} className="text-slate-500 dark:text-slate-300 shrink-0" />
               </button>
             ))}
           </div>
@@ -175,18 +209,25 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
               <h3>Institutional Notifications</h3>
               <p>Academic &amp; departmental announcements</p>
             </div>
-            <span className="text-xs text-slate-500 font-mono">3 Unread</span>
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-mono tabular-nums whitespace-nowrap">
+              {data.notifications.length} Notices
+            </span>
           </div>
 
           <div className="space-y-1">
             {data.notifications.map((item: any) => (
-              <div className="notification-item" key={item.id}>
-                <Clock size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                <div>
+              <button
+                type="button"
+                className="notification-item"
+                key={item.id}
+                onClick={() => onNavigate(resolveNotificationTab(item.title ?? ""))}
+              >
+                <Clock size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
                   <strong>{item.title}</strong>
                   <p>{item.message}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </section>

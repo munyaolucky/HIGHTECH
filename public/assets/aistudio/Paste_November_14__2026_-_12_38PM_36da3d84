@@ -1,0 +1,1799 @@
+# **Phase 4: Complete Registration Workspace UI**
+
+Now we move to the React frontend for HI-TECH College. The workspace will support student registration, staff onboarding, parent/guardian registration, contractors, alumni and other users from one central screen.
+
+The design uses the college's blue, red and cream identity, with a responsive sidebar, registration dashboard, searchable records, multi-step forms, approval statuses and permission-aware actions.
+
+**Frontend scope:** this slice implements the interactive registration interface and local form state. It does not yet create database records or send invitations; those actions will be connected to the API in the next integration stage.
+
+## **1. File structure**
+
+```
+apps/web/src/
+├── modules/
+│   └── registration/
+│       ├── RegistrationWorkspace.tsx
+│       ├── registration.types.ts
+│       ├── registration.config.ts
+│       └── registration.css
+```
+
+## **2. Registration types**
+
+File: `apps/web/src/modules/registration/registration.types.ts`
+
+```
+
+export type RegistrationCategory =
+  | "STUDENT"
+  | "STAFF"
+  | "PARENT"
+  | "ALUMNI"
+  | "CONTRACTOR"
+  | "PARTNER"
+  | "GUEST";
+
+export type RegistrationStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "CHANGES_REQUESTED"
+  | "APPROVED"
+  | "INVITED"
+  | "ACTIVATED"
+  | "REJECTED"
+  | "SUSPENDED";
+
+export interface RegistrationRecord {
+  id: string;
+  registrationNumber: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  category: RegistrationCategory;
+  department: string;
+  campus: string;
+  status: RegistrationStatus;
+  createdAt: string;
+}
+
+export interface RegistrationFormData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  identificationNumber: string;
+  gender: string;
+  campusId: string;
+  departmentId: string;
+  programmeId: string;
+  intake: string;
+  studyMode: string;
+  employmentType: string;
+  jobTitle: string;
+  studentNumber: string;
+  relationship: string;
+  notes: string;
+}
+
+export const EMPTY_REGISTRATION: RegistrationFormData = {
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  dateOfBirth: "",
+  identificationNumber: "",
+  gender: "",
+  campusId: "",
+  departmentId: "",
+  programmeId: "",
+  intake: "",
+  studyMode: "FULL_TIME",
+  employmentType: "",
+  jobTitle: "",
+  studentNumber: "",
+  relationship: "",
+  notes: "",
+};
+
+```
+
+## **3. Registration workspace**
+
+File: `apps/web/src/modules/registration/RegistrationWorkspace.tsx`
+
+This component includes:
+
+- Dashboard statistics.
+- Registration category selection.
+- Searchable registration directory.
+- Seven-step student wizard.
+- Staff and other-user-specific fields.
+- Required-field validation.
+- Draft and submit actions.
+- Approval and invitation status display.
+- Permission-aware action visibility.
+
+```
+
+import { useMemo, useState } from "react";
+import {
+  Search, Plus, GraduationCap, Users, UserPlus,
+  FileSpreadsheet, ClipboardCheck, Clock3, CheckCircle2,
+  XCircle, ChevronRight, ChevronLeft, LayoutDashboard,
+  Building2, ShieldCheck, Mail, Eye, Pencil, Filter,
+  FileText, UserRound, BriefcaseBusiness
+} from "lucide-react";
+
+import {
+  EMPTY_REGISTRATION,
+  type RegistrationCategory,
+  type RegistrationFormData,
+  type RegistrationRecord,
+  type RegistrationStatus,
+} from "./registration.types";
+
+import "./registration.css";
+
+type Props = {
+  permissions: string[];
+  onCreate?: (
+    category: RegistrationCategory,
+    data: RegistrationFormData,
+    submit: boolean
+  ) => Promise<void>;
+};
+
+const initialRecords: RegistrationRecord[] = [
+  {
+    id: "REG-001",
+    registrationNumber: "HCA/STU/2026/0001",
+    fullName: "Sample Student",
+    email: "student@example.com",
+    phone: "+254700000001",
+    category: "STUDENT",
+    department: "ICT",
+    campus: "Kitengela",
+    status: "UNDER_REVIEW",
+    createdAt: "2026-11-10",
+  },
+  {
+    id: "REG-002",
+    registrationNumber: "HCA/STAFF/2026/0001",
+    fullName: "Sample Lecturer",
+    email: "lecturer@example.com",
+    phone: "+254700000002",
+    category: "STAFF",
+    department: "Academic",
+    campus: "Kitengela",
+    status: "APPROVED",
+    createdAt: "2026-11-11",
+  },
+  {
+    id: "REG-003",
+    registrationNumber: "HCA/PAR/2026/0001",
+    fullName: "Sample Guardian",
+    email: "guardian@example.com",
+    phone: "+254700000003",
+    category: "PARENT",
+    department: "—",
+    campus: "Kitengela",
+    status: "INVITED",
+    createdAt: "2026-11-12",
+  },
+];
+
+const categories: {
+  id: RegistrationCategory;
+  label: string;
+  description: string;
+  icon: typeof GraduationCap;
+}[] = [
+  {
+    id: "STUDENT",
+    label: "Student",
+    description: "Admissions and academic enrolment",
+    icon: GraduationCap,
+  },
+  {
+    id: "STAFF",
+    label: "Staff",
+    description: "Lecturers and non-teaching employees",
+    icon: BriefcaseBusiness,
+  },
+  {
+    id: "PARENT",
+    label: "Parent / Guardian",
+    description: "Verified student relationships",
+    icon: Users,
+  },
+  {
+    id: "ALUMNI",
+    label: "Alumni",
+    description: "Former students",
+    icon: UserRound,
+  },
+  {
+    id: "CONTRACTOR",
+    label: "Contractor",
+    description: "Approved external workers",
+    icon: Building2,
+  },
+  {
+    id: "PARTNER",
+    label: "Partner",
+    description: "Partner institutions and organizations",
+    icon: ShieldCheck,
+  },
+  {
+    id: "GUEST",
+    label: "Guest",
+    description: "Temporary visitor access",
+    icon: UserPlus,
+  },
+];
+
+const steps = [
+  "Personal details",
+  "Contact details",
+  "Institution details",
+  "Academic / Employment",
+  "Relationships",
+  "Documents",
+  "Review",
+];
+
+const statusLabels: Record<RegistrationStatus, string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "Submitted",
+  UNDER_REVIEW: "Under review",
+  CHANGES_REQUESTED: "Changes requested",
+  APPROVED: "Approved",
+  INVITED: "Invitation sent",
+  ACTIVATED: "Activated",
+  REJECTED: "Rejected",
+  SUSPENDED: "Suspended",
+};
+
+function StatusBadge({ status }: { status: RegistrationStatus }) {
+  return (
+    <span className={`registration-status status-${status.toLowerCase()}`}>
+      <span className="status-dot" />
+      {statusLabels[status]}
+    </span>
+  );
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="registration-field">
+      <span>
+        {label} {required && <b className="required">*</b>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+export default function RegistrationWorkspace({
+  permissions,
+  onCreate,
+}: Props) {
+  const [records, setRecords] = useState(initialRecords);
+  const [category, setCategory] =
+    useState<RegistrationCategory>("STUDENT");
+  const [form, setForm] =
+    useState<RegistrationFormData>(EMPTY_REGISTRATION);
+  const [step, setStep] = useState(0);
+  const [view, setView] = useState<"dashboard" | "create" | "directory">(
+    "dashboard"
+  );
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("ALL");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [selectedRecord, setSelectedRecord] =
+    useState<RegistrationRecord | null>(null);
+
+  const can = (permission: string) =>
+    permissions.includes(permission);
+
+  const canCreate = can("users.registration.create");
+  const canView = can("users.registration.view");
+  const canApprove = can("users.registration.approve");
+  const canActivate = can("users.registration.activate");
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((record) => {
+      const query = search.toLowerCase();
+
+      const matchesSearch =
+        record.fullName.toLowerCase().includes(query) ||
+        record.registrationNumber.toLowerCase().includes(query) ||
+        record.email.toLowerCase().includes(query);
+
+      const matchesFilter =
+        filter === "ALL" || record.status === filter;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [records, search, filter]);
+
+  const stats = {
+    total: records.length,
+    pending: records.filter((r) =>
+      ["SUBMITTED", "UNDER_REVIEW"].includes(r.status)
+    ).length,
+    approved: records.filter((r) =>
+      ["APPROVED", "INVITED", "ACTIVATED"].includes(r.status)
+    ).length,
+    drafts: records.filter((r) => r.status === "DRAFT").length,
+  };
+
+  function update<K extends keyof RegistrationFormData>(
+    key: K,
+    value: RegistrationFormData[K]
+  ) {
+    setForm((previous) => ({ ...previous, [key]: value }));
+    setError("");
+  }
+
+  function startRegistration(type: RegistrationCategory) {
+    if (!canCreate) return;
+
+    setCategory(type);
+    setForm(EMPTY_REGISTRATION);
+    setStep(0);
+    setError("");
+    setSuccess("");
+    setView("create");
+  }
+
+  function validateStep() {
+    if (step === 0) {
+      if (!form.firstName.trim() || !form.lastName.trim()) {
+        return "Enter the first name and last name.";
+      }
+    }
+
+    if (step === 1) {
+      if (!form.phone.trim()) {
+        return "Enter a contact phone number.";
+      }
+
+      if (
+        form.email &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
+      ) {
+        return "Enter a valid email address.";
+      }
+    }
+
+    if (category === "STUDENT" && step === 3) {
+      if (!form.programmeId || !form.campusId) {
+        return "Select a programme and campus.";
+      }
+    }
+
+    if (category === "STAFF" && step === 3) {
+      if (!form.jobTitle.trim() || !form.departmentId) {
+        return "Enter the job title and department.";
+      }
+    }
+
+    if (category === "PARENT" && step === 4) {
+      if (!form.studentNumber.trim() || !form.relationship) {
+        return "Enter the student's number and relationship.";
+      }
+    }
+
+    return "";
+  }
+
+  function nextStep() {
+    const validation = validateStep();
+
+    if (validation) {
+      setError(validation);
+      return;
+    }
+
+    setStep((current) => Math.min(current + 1, steps.length - 1));
+  }
+
+  async function saveRegistration(submit: boolean) {
+    if (!canCreate || saving) return;
+
+    const validation = validateStep();
+    if (validation) {
+      setError(validation);
+      return;
+    }
+
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setError("First name and last name are required.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      if (!onCreate) {
+        throw new Error(
+          "Registration API is not connected yet. Connect the onCreate handler."
+        );
+      }
+
+      await onCreate(category, form, submit);
+
+      setSuccess(
+        submit
+          ? "Registration submitted successfully."
+          : "Registration draft saved successfully."
+      );
+
+      setView("dashboard");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save registration."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const fullName = [
+    form.firstName,
+    form.middleName,
+    form.lastName,
+  ].filter(Boolean).join(" ");
+
+  return (
+    <main className="registration-workspace">
+      <header className="registration-topbar">
+        <div>
+          <div className="registration-eyebrow">
+            HI-TECH COLLEGE / ADMINISTRATION
+          </div>
+          <h1>User Registration</h1>
+          <p>Manage institutional records and portal onboarding.</p>
+        </div>
+
+        <div className="registration-top-actions">
+          <span className="registration-campus">
+            <Building2 size={16} /> Kitengela Campus
+          </span>
+          {canCreate && (
+            <button
+              className="reg-button reg-button-primary"
+              onClick={() => setView("create")}
+            >
+              <Plus size={17} /> New registration
+            </button>
+          )}
+        </div>
+      </header>
+
+      <nav className="registration-tabs">
+        <button
+          className={view === "dashboard" ? "active" : ""}
+          onClick={() => setView("dashboard")}
+        >
+          <LayoutDashboard size={16} /> Overview
+        </button>
+        {canView && (
+          <button
+            className={view === "directory" ? "active" : ""}
+            onClick={() => setView("directory")}
+          >
+            <Users size={16} /> User directory
+          </button>
+        )}
+        {canCreate && (
+          <button
+            className={view === "create" ? "active" : ""}
+            onClick={() => setView("create")}
+          >
+            <UserPlus size={16} /> Register user
+          </button>
+        )}
+      </nav>
+
+      {error && (
+        <div className="registration-alert alert-error" role="alert">
+          <XCircle size={18} /> {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="registration-alert alert-success" role="status">
+          <CheckCircle2 size={18} /> {success}
+        </div>
+      )}
+
+      {view === "dashboard" && (
+        <>
+          <section className="registration-stats">
+            <article className="registration-stat">
+              <span>Total records</span>
+              <strong>{stats.total}</strong>
+              <Users size={21} />
+            </article>
+            <article className="registration-stat">
+              <span>Awaiting review</span>
+              <strong>{stats.pending}</strong>
+              <Clock3 size={21} />
+            </article>
+            <article className="registration-stat">
+              <span>Approved / active</span>
+              <strong>{stats.approved}</strong>
+              <CheckCircle2 size={21} />
+            </article>
+            <article className="registration-stat">
+              <span>Drafts</span>
+              <strong>{stats.drafts}</strong>
+              <FileText size={21} />
+            </article>
+          </section>
+
+          <section className="registration-panel">
+            <div className="registration-section-heading">
+              <div>
+                <h2>Create a registration</h2>
+                <p>Select the type of institutional record.</p>
+              </div>
+            </div>
+
+            <div className="registration-category-grid">
+              {categories.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={item.id}
+                    className="registration-category-card"
+                    disabled={!canCreate}
+                    onClick={() => startRegistration(item.id)}
+                  >
+                    <span className="category-icon">
+                      <Icon size={22} />
+                    </span>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                    <ChevronRight size={17} className="category-arrow" />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="registration-panel">
+            <div className="registration-section-heading">
+              <div>
+                <h2>Recent registrations</h2>
+                <p>Latest records in this workspace.</p>
+              </div>
+              {canView && (
+                <button
+                  className="reg-button reg-button-outline"
+                  onClick={() => setView("directory")}
+                >
+                  View all
+                </button>
+              )}
+            </div>
+            <RegistrationTable
+              records={records.slice(0, 5)}
+              onSelect={setSelectedRecord}
+            />
+          </section>
+        </>
+      )}
+
+      {view === "directory" && canView && (
+        <section className="registration-panel">
+          <div className="registration-section-heading">
+            <div>
+              <h2>User directory</h2>
+              <p>Search registration records you are authorized to view.</p>
+            </div>
+          </div>
+
+          <div className="registration-toolbar">
+            <div className="registration-search">
+              <Search size={17} />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search name, number or email..."
+              />
+            </div>
+
+            <select
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              aria-label="Filter registration status"
+            >
+              <option value="ALL">All statuses</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option value={value} key={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <RegistrationTable
+            records={filteredRecords}
+            onSelect={setSelectedRecord}
+          />
+        </section>
+      )}
+
+      {view === "create" && canCreate && (
+        <section className="registration-panel registration-form-panel">
+          <div className="registration-section-heading">
+            <div>
+              <span className="registration-eyebrow">NEW RECORD</span>
+              <h2>{categories.find((item) => item.id === category)?.label} registration</h2>
+              <p>Complete the required information before submission.</p>
+            </div>
+            <button
+              className="reg-button reg-button-outline"
+              onClick={() => setView("dashboard")}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div className="registration-stepper">
+            {steps.map((name, index) => (
+              <button
+                key={name}
+                className={index === step ? "current" : index < step ? "completed" : ""}
+                onClick={() => index < step && setStep(index)}
+                disabled={index > step}
+              >
+                <span>{index < step ? "✓" : index + 1}</span>
+                <small>{name}</small>
+              </button>
+            ))}
+          </div>
+
+          <div className="registration-form-content">
+            {step === 0 && (
+              <div className="registration-form-grid">
+                <Field label="First name" required>
+                  <input value={form.firstName} onChange={(e) => update("firstName", e.target.value)} />
+                </Field>
+                <Field label="Middle name">
+                  <input value={form.middleName} onChange={(e) => update("middleName", e.target.value)} />
+                </Field>
+                <Field label="Last name" required>
+                  <input value={form.lastName} onChange={(e) => update("lastName", e.target.value)} />
+                </Field>
+                <Field label="Date of birth">
+                  <input type="date" value={form.dateOfBirth} onChange={(e) => update("dateOfBirth", e.target.value)} />
+                </Field>
+                <Field label="Identification number">
+                  <input value={form.identificationNumber} onChange={(e) => update("identificationNumber", e.target.value)} />
+                </Field>
+                <Field label="Gender">
+                  <select value={form.gender} onChange={(e) => update("gender", e.target.value)}>
+                    <option value="">Select</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="MALE">Male</option>
+                    <option value="OTHER">Other</option>
+                    <option value="NOT_DISCLOSED">Prefer not to say</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="registration-form-grid">
+                <Field label="Email address">
+                  <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
+                </Field>
+                <Field label="Phone number" required>
+                  <input value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="+254..." />
+                </Field>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="registration-form-grid">
+                <Field label="Campus" required>
+                  <select value={form.campusId} onChange={(e) => update("campusId", e.target.value)}>
+                    <option value="">Select campus</option>
+                    <option value="KITENGELA">Kitengela Campus</option>
+                  </select>
+                </Field>
+                <Field label="Department">
+                  <select value={form.departmentId} onChange={(e) => update("departmentId", e.target.value)}>
+                    <option value="">Select department</option>
+                    <option value="ICT">ICT</option>
+                    <option value="BUSINESS">Business</option>
+                    <option value="HOSPITALITY">Hospitality</option>
+                    <option value="ACADEMIC">Academic Office</option>
+                    <option value="ADMINISTRATION">Administration</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {step === 3 && category === "STUDENT" && (
+              <div className="registration-form-grid">
+                <Field label="Programme" required>
+                  <select value={form.programmeId} onChange={(e) => update("programmeId", e.target.value)}>
+                    <option value="">Select programme</option>
+                    <option value="ICT">Information Communication Technology</option>
+                    <option value="COMPUTER_SCIENCE">Computer Science</option>
+                    <option value="BUSINESS">Business Management</option>
+                    <option value="HOSPITALITY">Hospitality</option>
+                  </select>
+                </Field>
+                <Field label="Intake">
+                  <select value={form.intake} onChange={(e) => update("intake", e.target.value)}>
+                    <option value="">Select intake</option>
+                    <option value="JANUARY_2027">January 2027</option>
+                    <option value="MAY_2027">May 2027</option>
+                    <option value="SEPTEMBER_2027">September 2027</option>
+                  </select>
+                </Field>
+                <Field label="Study mode">
+                  <select value={form.studyMode} onChange={(e) => update("studyMode", e.target.value)}>
+                    <option value="FULL_TIME">Full time</option>
+                    <option value="PART_TIME">Part time</option>
+                    <option value="ONLINE">Online</option>
+                    <option value="HYBRID">Hybrid</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {step === 3 && category === "STAFF" && (
+              <div className="registration-form-grid">
+                <Field label="Job title" required>
+                  <input value={form.jobTitle} onChange={(e) => update("jobTitle", e.target.value)} placeholder="e.g. Lecturer" />
+                </Field>
+                <Field label="Employment type">
+                  <select value={form.employmentType} onChange={(e) => update("employmentType", e.target.value)}>
+                    <option value="">Select employment type</option>
+                    <option value="PERMANENT">Permanent</option>
+                    <option value="CONTRACT">Contract</option>
+                    <option value="PART_TIME">Part time</option>
+                    <option value="TEMPORARY">Temporary</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {step === 3 && !["STUDENT", "STAFF"].includes(category) && (
+              <div className="registration-form-grid">
+                <Field label="Organization / role">
+                  <input value={form.jobTitle} onChange={(e) => update("jobTitle", e.target.value)} />
+                </Field>
+                <Field label="Additional reference">
+                  <input value={form.notes} onChange={(e) => update("notes", e.target.value)} />
+                </Field>
+              </div>
+            )}
+
+            {step === 4 && category === "PARENT" && (
+              <div className="registration-form-grid">
+                <Field label="Student registration number" required>
+                  <input value={form.studentNumber} onChange={(e) => update("studentNumber", e.target.value)} placeholder="HCA/STU/2026/0001" />
+                </Field>
+                <Field label="Relationship" required>
+                  <select value={form.relationship} onChange={(e) => update("relationship", e.target.value)}>
+                    <option value="">Select relationship</option>
+                    <option value="PARENT">Parent</option>
+                    <option value="GUARDIAN">Legal guardian</option>
+                    <option value="SPONSOR">Sponsor</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {step === 4 && category !== "PARENT" && (
+              <div className="registration-info-card">
+                <Users size={20} />
+                <div>
+                  <strong>Relationship and authorization</strong>
+                  <p>
+                    Any related person, sponsoring organization or host
+                    must be verified before access is granted.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="registration-upload-placeholder">
+                <FileSpreadsheet size={30} />
+                <strong>Supporting documents</strong>
+                <p>
+                  Document upload will be connected to the secure file
+                  storage service. Allowed file types and size limits
+                  must be enforced by the API.
+                </p>
+                <span>Uploads are not enabled in this UI slice.</span>
+              </div>
+            )}
+
+            {step === 6 && (
+              <div className="registration-review">
+                <div className="registration-review-heading">
+                  <ClipboardCheck size={23} />
+                  <div>
+                    <strong>Review registration</strong>
+                    <p>Check the details before saving or submitting.</p>
+                  </div>
+                </div>
+                <dl>
+                  <div><dt>Full name</dt><dd>{fullName || "—"}</dd></div>
+                  <div><dt>Category</dt><dd>{category}</dd></div>
+                  <div><dt>Email</dt><dd>{form.email || "—"}</dd></div>
+                  <div><dt>Phone</dt><dd>{form.phone || "—"}</dd></div>
+                  <div><dt>Campus</dt><dd>{form.campusId || "—"}</dd></div>
+                  <div><dt>Department</dt><dd>{form.departmentId || "—"}</dd></div>
+                  {category === "STUDENT" && (
+                    <div><dt>Programme</dt><dd>{form.programmeId || "—"}</dd></div>
+                  )}
+                  {category === "STAFF" && (
+                    <div><dt>Job title</dt><dd>{form.jobTitle || "—"}</dd></div>
+                  )}
+                </dl>
+                <div className="registration-info-card">
+                  <ShieldCheck size={20} />
+                  <p>
+                    Submission sends the record for authorized review.
+                    It does not automatically activate portal access.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="registration-form-footer">
+            <button
+              className="reg-button reg-button-outline"
+              disabled={step === 0 || saving}
+              onClick={() => setStep((current) => current - 1)}
+            >
+              <ChevronLeft size={17} /> Previous
+            </button>
+
+            <div>
+              <button
+                className="reg-button reg-button-outline"
+                disabled={saving}
+                onClick={() => saveRegistration(false)}
+              >
+                Save draft
+              </button>
+
+              {step < steps.length - 1 ? (
+                <button className="reg-button reg-button-primary" onClick={nextStep}>
+                  Continue <ChevronRight size={17} />
+                </button>
+              ) : (
+                <button
+                  className="reg-button reg-button-primary"
+                  disabled={saving}
+                  onClick={() => saveRegistration(true)}
+                >
+                  {saving ? "Submitting..." : "Submit for approval"}
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {selectedRecord && (
+        <div className="registration-modal-backdrop" role="presentation">
+          <section
+            className="registration-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="record-title"
+          >
+            <button
+              className="registration-modal-close"
+              aria-label="Close record details"
+              onClick={() => setSelectedRecord(null)}
+            >
+              ×
+            </button>
+            <span className="registration-eyebrow">REGISTRATION RECORD</span>
+            <h2 id="record-title">{selectedRecord.fullName}</h2>
+            <p>{selectedRecord.registrationNumber}</p>
+            <StatusBadge status={selectedRecord.status} />
+            <dl>
+              <div><dt>Category</dt><dd>{selectedRecord.category}</dd></div>
+              <div><dt>Email</dt><dd>{selectedRecord.email}</dd></div>
+              <div><dt>Phone</dt><dd>{selectedRecord.phone}</dd></div>
+              <div><dt>Campus</dt><dd>{selectedRecord.campus}</dd></div>
+              <div><dt>Department</dt><dd>{selectedRecord.department}</dd></div>
+            </dl>
+            <div className="registration-modal-actions">
+              {canApprove && selectedRecord.status === "UNDER_REVIEW" && (
+                <>
+                  <button className="reg-button reg-button-primary" disabled>
+                    Approval API required
+                  </button>
+                  <button className="reg-button reg-button-outline" disabled>
+                    Request changes
+                  </button>
+                </>
+              )}
+              {canActivate && selectedRecord.status === "APPROVED" && (
+                <button className="reg-button reg-button-primary" disabled>
+                  Invitation API required
+                </button>
+              )}
+              <button
+                className="reg-button reg-button-outline"
+                onClick={() => setSelectedRecord(null)}
+              >
+                Close
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function RegistrationTable({
+  records,
+  onSelect,
+}: {
+  records: RegistrationRecord[];
+  onSelect: (record: RegistrationRecord) => void;
+}) {
+  if (!records.length) {
+    return (
+      <div className="registration-empty">
+        <Search size={25} />
+        <strong>No registrations found</strong>
+        <p>Try changing your search or filter.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="registration-table-wrap">
+      <table className="registration-table">
+        <thead>
+          <tr>
+            <th>Person</th>
+            <th>Registration number</th>
+            <th>Category</th>
+            <th>Campus</th>
+            <th>Status</th>
+            <th aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((record) => (
+            <tr key={record.id}>
+              <td>
+                <strong>{record.fullName}</strong>
+                <small>{record.email}</small>
+              </td>
+              <td>{record.registrationNumber}</td>
+              <td>{record.category}</td>
+              <td>{record.campus}</td>
+              <td><StatusBadge status={record.status} /></td>
+              <td>
+                <button
+                  className="registration-icon-button"
+                  aria-label={`View ${record.fullName}`}
+                  onClick={() => onSelect(record)}
+                >
+                  <Eye size={17} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+```
+
+## **4. Responsive styling**
+
+File: `apps/web/src/modules/registration/registration.css`
+
+```
+
+.registration-workspace {
+  --reg-navy: #102d50;
+  --reg-blue: #1769aa;
+  --reg-red: #b83232;
+  --reg-cream: #fffaf0;
+  --reg-bg: #f4f7fb;
+  --reg-border: #e2e8f0;
+  --reg-muted: #64748b;
+  min-height: 100vh;
+  padding: 28px;
+  background: var(--reg-bg);
+  color: #172b45;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.registration-workspace * {
+  box-sizing: border-box;
+}
+
+.registration-topbar,
+.registration-section-heading,
+.registration-top-actions,
+.registration-form-footer,
+.registration-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.registration-topbar {
+  margin-bottom: 24px;
+}
+
+.registration-topbar h1 {
+  margin: 5px 0;
+  color: var(--reg-navy);
+  font-size: clamp(25px, 3vw, 32px);
+  font-weight: 750;
+}
+
+.registration-topbar p,
+.registration-section-heading p {
+  margin: 5px 0 0;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+.registration-eyebrow {
+  color: var(--reg-blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.registration-campus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--reg-navy);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.registration-tabs {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--reg-border);
+}
+
+.registration-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--reg-muted);
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.registration-tabs button.active {
+  border-bottom-color: var(--reg-blue);
+  color: var(--reg-blue);
+}
+
+.registration-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.registration-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 20px;
+  border: 1px solid var(--reg-border);
+  border-radius: 15px;
+  background: white;
+}
+
+.registration-stat span {
+  color: var(--reg-muted);
+  font-size: 12px;
+}
+
+.registration-stat strong {
+  color: var(--reg-navy);
+  font-size: 29px;
+}
+
+.registration-stat svg {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  color: var(--reg-blue);
+}
+
+.registration-panel {
+  margin-bottom: 22px;
+  padding: 23px;
+  border: 1px solid var(--reg-border);
+  border-radius: 17px;
+  background: white;
+  box-shadow: 0 5px 20px rgb(16 45 80 / 4%);
+}
+
+.registration-section-heading {
+  margin-bottom: 20px;
+}
+
+.registration-section-heading h2 {
+  margin: 0;
+  color: var(--reg-navy);
+  font-size: 19px;
+}
+
+.registration-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.registration-category-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 145px;
+  padding: 17px;
+  border: 1px solid var(--reg-border);
+  border-radius: 13px;
+  background: white;
+  color: var(--reg-navy);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, transform .18s ease,
+    box-shadow .18s ease;
+}
+
+.registration-category-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--reg-blue);
+  box-shadow: 0 8px 22px rgb(23 105 170 / 9%);
+}
+
+.registration-category-card:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.category-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eaf3fb;
+  color: var(--reg-blue);
+}
+
+.registration-category-card strong {
+  font-size: 14px;
+}
+
+.registration-category-card small {
+  max-width: 90%;
+  color: var(--reg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.category-arrow {
+  position: absolute;
+  top: 21px;
+  right: 16px;
+  color: var(--reg-muted);
+}
+
+.reg-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.reg-button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.reg-button-primary {
+  background: var(--reg-blue);
+  color: white;
+}
+
+.reg-button-primary:hover:not(:disabled) {
+  background: var(--reg-navy);
+}
+
+.reg-button-outline {
+  border-color: var(--reg-border);
+  background: white;
+  color: var(--reg-navy);
+}
+
+.reg-button-outline:hover:not(:disabled) {
+  border-color: var(--reg-blue);
+  background: #f4f8fc;
+}
+
+.registration-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+
+.registration-search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid var(--reg-border);
+  border-radius: 9px;
+  color: var(--reg-muted);
+}
+
+.registration-search input {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+.registration-toolbar select,
+.registration-field input,
+.registration-field select {
+  min-height: 43px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--reg-border);
+  border-radius: 9px;
+  background: white;
+  color: var(--reg-navy);
+  font: inherit;
+  font-size: 13px;
+}
+
+.registration-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.registration-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.registration-table th {
+  padding: 13px 12px;
+  background: #f7f9fc;
+  color: var(--reg-muted);
+  font-size: 10px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.registration-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #edf1f5;
+  white-space: nowrap;
+}
+
+.registration-table td strong,
+.registration-table td small {
+  display: block;
+}
+
+.registration-table td strong {
+  color: var(--reg-navy);
+}
+
+.registration-table td small {
+  margin-top: 4px;
+  color: var(--reg-muted);
+}
+
+.registration-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 30px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-approved,
+.status-activated {
+  background: #e9f8ef;
+  color: #177245;
+}
+
+.status-invited,
+.status-submitted,
+.status-under_review {
+  background: #fff5df;
+  color: #96630b;
+}
+
+.status-rejected,
+.status-suspended {
+  background: #fdecec;
+  color: #a12b2b;
+}
+
+.status-changes_requested {
+  background: #f4eaff;
+  color: #7041a6;
+}
+
+.registration-icon-button,
+.registration-modal-close {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--reg-border);
+  border-radius: 8px;
+  background: white;
+  color: var(--reg-blue);
+  cursor: pointer;
+}
+
+.registration-stepper {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(70px, 1fr));
+  gap: 5px;
+  margin: 28px 0;
+  overflow-x: auto;
+}
+
+.registration-stepper button {
+  display: flex;
+  min-width: 70px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--reg-muted);
+}
+
+.registration-stepper button span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--reg-border);
+  border-radius: 50%;
+  background: white;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.registration-stepper button.current span {
+  border-color: var(--reg-blue);
+  background: var(--reg-blue);
+  color: white;
+}
+
+.registration-stepper button.completed span {
+  border-color: #177245;
+  background: #e9f8ef;
+  color: #177245;
+}
+
+.registration-stepper button small {
+  font-size: 10px;
+  text-align: center;
+}
+
+.registration-form-content {
+  min-height: 235px;
+  padding: 12px 0 28px;
+}
+
+.registration-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.registration-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--reg-navy);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.required {
+  color: var(--reg-red);
+}
+
+.registration-form-footer {
+  padding-top: 18px;
+  border-top: 1px solid var(--reg-border);
+}
+
+.registration-form-footer > div {
+  display: flex;
+  gap: 9px;
+}
+
+.registration-info-card,
+.registration-review-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d9e8f5;
+  border-radius: 11px;
+  background: #f3f8fd;
+  color: var(--reg-blue);
+}
+
+.registration-info-card p {
+  margin: 0;
+  color: #415c77;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.registration-upload-placeholder,
+.registration-empty {
+  display: flex;
+  min-height: 190px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 13px;
+  color: var(--reg-muted);
+  text-align: center;
+}
+
+.registration-upload-placeholder strong,
+.registration-empty strong {
+  color: var(--reg-navy);
+}
+
+.registration-upload-placeholder p {
+  max-width: 440px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.registration-upload-placeholder span {
+  color: var(--reg-red);
+  font-size: 11px;
+}
+
+.registration-review dl,
+.registration-modal dl {
+  margin: 18px 0;
+}
+
+.registration-review dl div,
+.registration-modal dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 12px;
+}
+
+.registration-review dt,
+.registration-modal dt {
+  color: var(--reg-muted);
+}
+
+.registration-review dd,
+.registration-modal dd {
+  margin: 0;
+  color: var(--reg-navy);
+  font-weight: 650;
+  text-align: right;
+}
+
+.registration-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.alert-error {
+  background: #fdecec;
+  color: #a12b2b;
+}
+
+.alert-success {
+  background: #e9f8ef;
+  color: #177245;
+}
+
+.registration-modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 30 50 / 55%);
+}
+
+.registration-modal {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 26px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 20px 70px rgb(0 0 0 / 20%);
+}
+
+.registration-modal h2 {
+  margin-bottom: 5px;
+  color: var(--reg-navy);
+}
+
+.registration-modal > p {
+  color: var(--reg-muted);
+  font-size: 12px;
+}
+
+.registration-modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 21px;
+}
+
+.registration-modal-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .registration-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registration-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .registration-workspace {
+    padding: 15px;
+  }
+
+  .registration-topbar,
+  .registration-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .registration-top-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .registration-stats {
+    gap: 9px;
+  }
+
+  .registration-stat {
+    padding: 14px;
+  }
+
+  .registration-stat strong {
+    font-size: 24px;
+  }
+
+  .registration-category-grid,
+  .registration-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-panel {
+    padding: 16px;
+  }
+
+  .registration-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .registration-form-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .registration-form-footer > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .registration-form-footer > button {
+    width: 100%;
+  }
+
+  .registration-stepper {
+    grid-template-columns: repeat(7, 90px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-category-card,
+  .reg-button {
+    transition: none;
+  }
+}
+
+```
+
+## **5. Mount the workspace in the application**
+
+In your existing registration route, import the component and connect it to the authenticated user's permissions.
+
+Example:
+
+```
+
+import RegistrationWorkspace from
+  "../modules/registration/RegistrationWorkspace";
+
+export default function RegistrationPage() {
+  const permissions = [
+    "users.registration.view",
+    "users.registration.create",
+  ];
+
+  return (
+    <RegistrationWorkspace
+      permissions={permissions}
+      onCreate={async (category, data, submit) => {
+        const response = await fetch("/api/registrations", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category,
+            ...data,
+            action: submit ? "SUBMIT" : "SAVE_DRAFT",
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Registration could not be saved.");
+        }
+      }}
+    />
+  );
+}
+
+```
+
+The permissions above are illustrative. In production, obtain them from the authenticated session or permissions endpoint. Never hardcode permissions to authorize a user.
+
+## **6. Important corrections before production**
+
+| Area              | Required next improvement                          |
+| ----------------- | -------------------------------------------------- |
+| Registration data | Replace illustrative records with API data         |
+| Permissions       | Server-side role and record-scope checks           |
+| Student numbers   | Atomic number generation on the API                |
+| Staff numbers     | Separate employee-number sequence                  |
+| Documents         | Secure upload, validation and malware scanning     |
+| Approvals         | Actual approval endpoints and separation of duties |
+| Invitations       | Secure, expiring, single-use activation tokens     |
+| Duplicate checks  | Server-side identity and contact validation        |
+| Parent accounts   | Verify parent-student relationship                 |
+| Bulk registration | Preview, validate and approve imports              |
+| Audit             | Record every sensitive registration action         |
+
+Also, the current example uses demonstration campus, department and programme options. Replace these with database-driven lists. The document-upload screen and approval buttons are deliberately not active yet.
+
+## **7. Next implementation phase**
+
+## **Phase 5 — Registration API integration**
+
+Next development slice
+
+1. Student registration API and automatic student number generation.
+2. Staff registration API and employee number generation.
+3. Parent, alumni, contractor and guest registration.
+4. Registration approval and rejection workflows.
+5. Secure account creation and invitation activation.
+6. Audit history and duplicate detection.
+
+**Before integrating with your actual application**, share `apps/api/prisma/schema.prisma`, your existing authentication middleware and the current web route structure. This will allow the next code slice to match your existing models and permissions instead of introducing conflicting ones.
+
+I have provided the frontend source, but it has not been run against your repository or verified with your TypeScript configuration.
+
+🛡️Audit registration workflow weeklyTap to set up

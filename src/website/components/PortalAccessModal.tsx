@@ -178,8 +178,20 @@ export default function PortalAccessModal({
                 </button>
               </form>
 
-              {/* Instant 1-Click Demo Shortcut */}
-              <div className="pt-2 border-t border-slate-200">
+              {/* Instant 1-Click Demo Shortcut & Unified Portal Sign In */}
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onSwitchToERP("portal-login");
+                  }}
+                  className="w-full bg-[#0f274a] hover:bg-[#1769AA] text-white py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Unified Portal Login (Email / Reg No + Google SSO + MFA)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
                 <button
                   onClick={handleDemoLogin}
                   disabled={isLoggingIn}
@@ -296,10 +308,27 @@ export default function PortalAccessModal({
         </div>
 
         {/* Modal Footer with Staff & Administration Links */}
-        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex flex-col gap-2 text-[11px] text-slate-500">
-          <span className="font-medium">Sign in to another institutional user dashboard:</span>
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold text-blue-700">
+        <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex flex-col gap-2 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-semibold text-slate-700">
+              Sign in to Staff &amp; Institutional Workspaces:
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("activate-account");
+              }}
+              className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-bold"
+            >
+              <KeyRound className="w-3 h-3" />
+              <span>Activate Invited Account</span>
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 font-semibold text-blue-700">
             {[
+              { role: "staff", label: "Staff Portal (21 Roles)" },
+              { role: "manual-registration", label: "Manual Registration" },
               { role: "lecturer", label: "Lecturer" },
               { role: "registrar", label: "Registrar" },
               { role: "finance", label: "Finance" },
@@ -309,6 +338,7 @@ export default function PortalAccessModal({
               { role: "hostels", label: "Hostels" },
               { role: "hr", label: "HR & Staff" },
               { role: "generator", label: "Reg Generator" },
+              { role: "catalogue", label: "Feature Blueprint" },
             ].map((item) => (
               <button
                 key={item.role}
@@ -317,7 +347,11 @@ export default function PortalAccessModal({
                   onClose();
                   onSwitchToERP(item.role);
                 }}
-                className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition"
+                className={`px-2 py-0.5 rounded border transition ${
+                  item.role === "staff"
+                    ? "bg-[#153b70] text-white border-[#153b70] hover:bg-[#0f274a]"
+                    : "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800"
+                }`}
               >
                 {item.label}
               </button>

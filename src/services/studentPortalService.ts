@@ -36,10 +36,12 @@ export type StudentPortalSection =
   | 'campus-life'
   | 'student-id'
   | 'documents'
+  | 'appeals'
   | 'support'
   | 'notifications'
   | 'settings'
-  | 'college-information';
+  | 'college-information'
+  | 'mobile-companion';
 
 export interface StudentContactSettings {
   phoneNumber: string;
@@ -53,6 +55,25 @@ export interface StudentContactSettings {
   highContrastMode: boolean;
 }
 
+export type PortalOnboardingStage =
+  | 'INVITED'
+  | 'PENDING'
+  | 'INCOMPLETE'
+  | 'SUBMITTED'
+  | 'RETURNED'
+  | 'VERIFIED'
+  | 'SUSPENDED'
+  | 'GRADUATED';
+
+export interface OnboardingSubmissionEntry {
+  id: string;
+  stage: PortalOnboardingStage;
+  summary: string;
+  reviewerNote?: string;
+  actor: string;
+  timestampIso: string;
+}
+
 export interface StudentAssignmentTask {
   id: string;
   unitCode: string;
@@ -62,6 +83,8 @@ export interface StudentAssignmentTask {
   lecturerName: string;
   status: 'PENDING' | 'SUBMITTED' | 'GRADED';
   submissionNote?: string;
+  attachmentName?: string;
+  attachmentSize?: string;
   submittedAt?: string;
   scoreLabel?: string;
 }
@@ -153,9 +176,35 @@ export interface StudentAuditEntry {
   timestampIso: string;
 }
 
+export interface StudentAppealItem {
+  id: string;
+  category: 'GRADE_REMARKING' | 'ATTENDANCE_CORRECTION' | 'FEE_WAIVER_REVIEW' | 'EXAM_MISSED';
+  unitCode: string;
+  subject: string;
+  evidenceRef: string;
+  reason: string;
+  status: 'Under Review' | 'Approved' | 'Rejected' | 'Pending';
+  submittedAt: string;
+  reviewerComment?: string;
+}
+
+export interface StudentUploadedDocument {
+  id: string;
+  docType: string;
+  fileName: string;
+  fileSize?: string;
+  uploadedAt: string;
+  verificationStatus: 'Approved' | 'Under Review' | 'Pending';
+  verifiedBy: string;
+}
+
 export interface StudentPortalState {
   profile: StudentProfile;
   contact: StudentContactSettings;
+  onboardingStage: PortalOnboardingStage;
+  onboardingReviewerNote?: string;
+  onboardingDraftSavedAt?: string;
+  onboardingSubmissions: OnboardingSubmissionEntry[];
   semesterReported: boolean;
   semesterReportedAt: string;
   semesterTotalBilled: number;
@@ -174,6 +223,8 @@ export interface StudentPortalState {
   reservedBookIds: string[];
   messages: LecturerMessageItem[];
   onboardingSteps: OnboardingStepItem[];
+  appeals: StudentAppealItem[];
+  uploadedDocuments: StudentUploadedDocument[];
   auditLog: StudentAuditEntry[];
 }
 
@@ -269,6 +320,47 @@ const INITIAL_MESSAGES: LecturerMessageItem[] = [
   },
 ];
 
+const INITIAL_APPEALS: StudentAppealItem[] = [
+  {
+    id: 'apl-1',
+    category: 'ATTENDANCE_CORRECTION',
+    unitCode: 'SWE 304',
+    subject: 'Medical Excusal for Week 6 Cloud Lab',
+    evidenceRef: 'CLINIC_NOTE_2026_104.pdf',
+    reason: 'Attended outpatient clinic on Tuesday afternoon; signed lecturer excusal attached.',
+    status: 'Approved',
+    submittedAt: '2026-10-20T11:30:00Z',
+    reviewerComment: 'Verified against medical clinic slip. Session excused by HOD.',
+  },
+];
+
+const INITIAL_UPLOADED_DOCS: StudentUploadedDocument[] = [
+  {
+    id: 'udoc-1',
+    docType: 'KCSE Official Result Slip',
+    fileName: 'Amina_Wanjiku_KCSE_2023.pdf',
+    uploadedAt: '2026-01-08',
+    verificationStatus: 'Approved',
+    verifiedBy: 'Academic Registrar',
+  },
+  {
+    id: 'udoc-2',
+    docType: 'National Identification Card (Front & Back)',
+    fileName: 'National_ID_39104218.pdf',
+    uploadedAt: '2026-01-08',
+    verificationStatus: 'Approved',
+    verifiedBy: 'Admissions Desk',
+  },
+  {
+    id: 'udoc-3',
+    docType: 'Signed Medical & Student Code Declaration',
+    fileName: 'Medical_Fitness_Form_2026.pdf',
+    uploadedAt: '2026-01-10',
+    verificationStatus: 'Under Review',
+    verifiedBy: 'Dean of Students Desk',
+  },
+];
+
 function buildInitialState(): StudentPortalState {
   const ownTransactions = collegeErpService.getStudentTransactions(
     INITIAL_STUDENT_PROFILE.registrationNumber
@@ -288,6 +380,18 @@ function buildInitialState(): StudentPortalState {
       smsAlertsEnabled: true,
       highContrastMode: false,
     },
+    onboardingStage: 'VERIFIED',
+    onboardingReviewerNote: undefined,
+    onboardingDraftSavedAt: '2026-01-12T08:40:00Z',
+    onboardingSubmissions: [
+      {
+        id: 'onb-init-1',
+        stage: 'VERIFIED',
+        summary: 'Student contact profile, Next of Kin details, and Registrar identity verification approved.',
+        actor: 'Dr. Kiprop Chemweno (Academic Registrar)',
+        timestampIso: '2026-01-12T08:45:00Z',
+      },
+    ],
     semesterReported: true,
     semesterReportedAt: '2026-01-12T08:45:00Z',
     semesterTotalBilled,
@@ -321,6 +425,8 @@ function buildInitialState(): StudentPortalState {
     reservedBookIds: [],
     messages: INITIAL_MESSAGES,
     onboardingSteps: INITIAL_ONBOARDING,
+    appeals: INITIAL_APPEALS,
+    uploadedDocuments: INITIAL_UPLOADED_DOCS,
     auditLog: [
       {
         id: 'aud-init-1',
@@ -341,7 +447,17 @@ function loadState(): StudentPortalState {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
       return seed;
     }
-    return JSON.parse(raw) as StudentPortalState;
+    const parsed = JSON.parse(raw) as Partial<StudentPortalState>;
+    const defaults = buildInitialState();
+    return {
+      ...defaults,
+      ...parsed,
+      contact: { ...defaults.contact, ...(parsed.contact ?? {}) },
+      onboardingStage: parsed.onboardingStage ?? defaults.onboardingStage,
+      onboardingSubmissions: parsed.onboardingSubmissions ?? defaults.onboardingSubmissions,
+      appeals: parsed.appeals ?? defaults.appeals,
+      uploadedDocuments: parsed.uploadedDocuments ?? defaults.uploadedDocuments,
+    };
   } catch {
     return buildInitialState();
   }
@@ -531,20 +647,168 @@ export const studentPortalService = {
     return { ok: true };
   },
 
-  updateContactDetails(patch: Partial<StudentContactSettings>): { ok: boolean; error?: string } {
+  getProfileCompletion(candidateContact?: Partial<StudentContactSettings>): {
+    percent: number;
+    completedCount: number;
+    totalCount: number;
+    missingFields: string[];
+  } {
     const state = loadState();
-    if (patch.phoneNumber !== undefined && patch.phoneNumber.trim().length < 9) {
-      return { ok: false, error: 'Enter a valid Kenyan phone number.' };
-    }
-    if (patch.email !== undefined && !patch.email.includes('@')) {
-      return { ok: false, error: 'Enter a valid student email address.' };
-    }
+    const contact = { ...state.contact, ...(candidateContact ?? {}) };
+    const hasKcseDoc = state.uploadedDocuments.some((d) =>
+      d.docType.toLowerCase().includes('kcse')
+    );
+    const hasIdDoc = state.uploadedDocuments.some((d) =>
+      d.docType.toLowerCase().includes('national id')
+    );
+
+    const checklist: [string, boolean][] = [
+      ['Student Email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim())],
+      ['Mobile Phone', contact.phoneNumber.trim().length >= 9],
+      ['Residence Address', contact.residenceAddress.trim().length >= 5],
+      ['Next of Kin Full Name', contact.nextOfKinName.trim().length >= 3],
+      ['Next of Kin Relationship', contact.nextOfKinRelation.trim().length >= 3],
+      ['Next of Kin Phone', contact.nextOfKinPhone.trim().length >= 9],
+      ['KCSE Result Slip', hasKcseDoc],
+      ['National ID Copy', hasIdDoc],
+    ];
+
+    const completedCount = checklist.filter(([, ok]) => ok).length;
+    const totalCount = checklist.length;
+    const missingFields = checklist.filter(([, ok]) => !ok).map(([label]) => label);
+    return {
+      percent: Math.round((completedCount / totalCount) * 100),
+      completedCount,
+      totalCount,
+      missingFields,
+    };
+  },
+
+  saveOnboardingDraft(patch: Partial<StudentContactSettings>): { ok: boolean; savedAt: string } {
+    const state = loadState();
+    const savedAt = new Date().toISOString();
     state.contact = { ...state.contact, ...patch };
-    if (patch.phoneNumber) state.profile.phoneNumber = patch.phoneNumber.trim();
-    if (patch.email) state.profile.email = patch.email.trim();
-    appendAudit(state, 'Profile', 'CONTACT_UPDATED', 'Updated personal contact or Next-of-Kin record');
+    if (patch.phoneNumber?.trim()) state.profile.phoneNumber = patch.phoneNumber.trim();
+    if (patch.email?.trim()) state.profile.email = patch.email.trim();
+    state.onboardingDraftSavedAt = savedAt;
+    if (
+      state.onboardingStage === 'INVITED' ||
+      state.onboardingStage === 'PENDING' ||
+      state.onboardingStage === 'RETURNED'
+    ) {
+      state.onboardingStage = 'INCOMPLETE';
+    }
+    appendAudit(state, 'Profile', 'ONBOARDING_DRAFT_SAVED', 'Saved partial profile & Next-of-Kin draft');
+    saveState(state);
+    return { ok: true, savedAt };
+  },
+
+  submitOnboardingProfile(patch: Partial<StudentContactSettings>): {
+    ok: boolean;
+    error?: string;
+    fieldErrors?: Record<string, string>;
+  } {
+    const state = loadState();
+    const merged: StudentContactSettings = { ...state.contact, ...patch };
+    const fieldErrors: Record<string, string> = {};
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(merged.email.trim())) {
+      fieldErrors.email = 'Enter a valid student email address (e.g. name@students.hitech.ac.ke).';
+    }
+    if (merged.phoneNumber.replace(/\s+/g, '').length < 9) {
+      fieldErrors.phoneNumber = 'Enter a valid Kenyan mobile phone number (minimum 9 digits).';
+    }
+    if (merged.residenceAddress.trim().length < 5) {
+      fieldErrors.residenceAddress = 'Enter your current residential estate, street, or town (minimum 5 characters).';
+    }
+    if (merged.nextOfKinName.trim().length < 3) {
+      fieldErrors.nextOfKinName = 'Enter the full legal name of your parent or Next of Kin.';
+    }
+    if (merged.nextOfKinRelation.trim().length < 3) {
+      fieldErrors.nextOfKinRelation = 'Specify relationship (e.g. Mother, Father, Guardian, Spouse).';
+    }
+    if (merged.nextOfKinPhone.replace(/\s+/g, '').length < 9) {
+      fieldErrors.nextOfKinPhone = 'Enter a reachable Next of Kin emergency phone number (minimum 9 digits).';
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return {
+        ok: false,
+        error: `Please correct ${Object.keys(fieldErrors).length} highlighted field(s) before submitting your profile.`,
+        fieldErrors,
+      };
+    }
+
+    state.contact = {
+      ...merged,
+      email: merged.email.trim(),
+      phoneNumber: merged.phoneNumber.trim(),
+      residenceAddress: merged.residenceAddress.trim(),
+      nextOfKinName: merged.nextOfKinName.trim(),
+      nextOfKinRelation: merged.nextOfKinRelation.trim(),
+      nextOfKinPhone: merged.nextOfKinPhone.trim(),
+    };
+    state.profile.email = state.contact.email;
+    state.profile.phoneNumber = state.contact.phoneNumber;
+
+    const nextStage: PortalOnboardingStage =
+      state.onboardingStage === 'VERIFIED' ? 'VERIFIED' : 'SUBMITTED';
+    state.onboardingStage = nextStage;
+    state.onboardingReviewerNote =
+      nextStage === 'SUBMITTED'
+        ? 'Submitted to Academic Registrar for verification.'
+        : state.onboardingReviewerNote;
+
+    state.onboardingSubmissions.unshift({
+      id: `onb-${Date.now()}`,
+      stage: nextStage,
+      summary:
+        nextStage === 'VERIFIED'
+          ? 'Updated verified contact and Next-of-Kin record.'
+          : 'Submitted complete personal and Next-of-Kin onboarding profile for Registrar verification.',
+      actor: state.profile.fullName,
+      timestampIso: new Date().toISOString(),
+    });
+    appendAudit(
+      state,
+      'Profile',
+      nextStage === 'VERIFIED' ? 'CONTACT_UPDATED' : 'ONBOARDING_SUBMITTED',
+      'Submitted validated student contact & Next-of-Kin record'
+    );
     saveState(state);
     return { ok: true };
+  },
+
+  setOnboardingStage(stage: PortalOnboardingStage, reviewerNote?: string): { ok: boolean } {
+    const state = loadState();
+    state.onboardingStage = stage;
+    state.onboardingReviewerNote = reviewerNote;
+    if (stage === 'SUSPENDED') {
+      state.profile.status = 'SUSPENDED';
+    } else if (stage === 'GRADUATED') {
+      state.profile.status = 'GRADUATED';
+    } else if (stage === 'VERIFIED') {
+      state.profile.status = 'ACTIVE';
+    }
+    state.onboardingSubmissions.unshift({
+      id: `onb-${Date.now()}`,
+      stage,
+      summary: `Onboarding / portal standing set to ${stage}.`,
+      reviewerNote,
+      actor: 'Academic Registry Workflow',
+      timestampIso: new Date().toISOString(),
+    });
+    appendAudit(state, 'Profile', 'ONBOARDING_STAGE_CHANGED', `Portal onboarding stage updated to ${stage}`);
+    saveState(state);
+    return { ok: true };
+  },
+
+  updateContactDetails(patch: Partial<StudentContactSettings>): {
+    ok: boolean;
+    error?: string;
+    fieldErrors?: Record<string, string>;
+  } {
+    return this.submitOnboardingProfile(patch);
   },
 
   updateSecurityFlags(patch: {
@@ -587,18 +851,32 @@ export const studentPortalService = {
     return { ok: true };
   },
 
-  submitAssignment(assignmentId: string, submissionNote: string): { ok: boolean; error?: string } {
-    if (submissionNote.trim().length < 6) {
-      return { ok: false, error: 'Provide a submission summary or repository/document link.' };
+  submitAssignment(
+    assignmentId: string,
+    submissionNote: string,
+    attachment?: { fileName: string; fileSize: string }
+  ): { ok: boolean; error?: string } {
+    const trimmedNote = submissionNote.trim();
+    if (trimmedNote.length < 6 && !attachment?.fileName) {
+      return { ok: false, error: 'Provide a submission note (6+ chars), repository URL, or attach a lab/report file.' };
     }
     const state = loadState();
     const target = state.assignments.find((a) => a.id === assignmentId);
     if (!target) return { ok: false, error: 'Assignment record not found.' };
     if (target.status !== 'PENDING') return { ok: false, error: 'Assignment was already submitted.' };
     target.status = 'SUBMITTED';
-    target.submissionNote = submissionNote.trim();
+    target.submissionNote = trimmedNote || `Uploaded file: ${attachment?.fileName}`;
+    if (attachment?.fileName) {
+      target.attachmentName = attachment.fileName;
+      target.attachmentSize = attachment.fileSize;
+    }
     target.submittedAt = new Date().toISOString();
-    appendAudit(state, 'Assignments', 'ASSIGNMENT_SUBMITTED', `${target.unitCode}: ${target.title}`);
+    appendAudit(
+      state,
+      'Assignments',
+      'ASSIGNMENT_SUBMITTED',
+      `${target.unitCode}: ${target.title}${attachment?.fileName ? ` (${attachment.fileName})` : ''}`
+    );
     saveState(state);
     return { ok: true };
   },
@@ -732,6 +1010,83 @@ export const studentPortalService = {
       sentAt: new Date().toISOString(),
     });
     appendAudit(state, 'Communication', 'LECTURER_MESSAGED', `Sent message to ${recipientName} (${unitCode})`);
+    saveState(state);
+    return { ok: true };
+  },
+
+  submitAppeal(input: {
+    category: StudentAppealItem['category'];
+    unitCode: string;
+    subject: string;
+    evidenceRef: string;
+    reason: string;
+  }): { ok: boolean; error?: string } {
+    if (!input.subject.trim() || input.reason.trim().length < 10) {
+      return { ok: false, error: 'Provide a clear appeal subject and detailed academic justification (min 10 chars).' };
+    }
+    const state = loadState();
+    state.appeals.unshift({
+      id: `apl-${Date.now()}`,
+      category: input.category,
+      unitCode: input.unitCode.trim() || 'GENERAL',
+      subject: input.subject.trim(),
+      evidenceRef: input.evidenceRef.trim() || 'Student_Statement_2026.pdf',
+      reason: input.reason.trim(),
+      status: 'Under Review',
+      submittedAt: new Date().toISOString(),
+    });
+    appendAudit(state, 'Appeals', 'APPEAL_SUBMITTED', `${input.category} · ${input.unitCode}: ${input.subject}`);
+    saveState(state);
+    return { ok: true };
+  },
+
+  cancelAppeal(appealId: string): { ok: boolean; error?: string } {
+    const state = loadState();
+    const target = state.appeals.find((a) => a.id === appealId);
+    if (!target) return { ok: false, error: 'Appeal record not found.' };
+    if (target.status === 'Approved') {
+      return { ok: false, error: 'Approved academic appeals cannot be withdrawn.' };
+    }
+    state.appeals = state.appeals.filter((a) => a.id !== appealId);
+    appendAudit(state, 'Appeals', 'APPEAL_WITHDRAWN', `Withdrew appeal: ${target.subject}`);
+    saveState(state);
+    return { ok: true };
+  },
+
+  uploadOrReplaceDocument(
+    docId: string | null,
+    docType: string,
+    fileName: string,
+    fileSize?: string
+  ): { ok: boolean; error?: string } {
+    if (!fileName.trim() || !docType.trim()) {
+      return { ok: false, error: 'Specify document category and select a file or reference.' };
+    }
+    const state = loadState();
+    const today = new Date().toISOString().slice(0, 10);
+    if (docId) {
+      const existing = state.uploadedDocuments.find((d) => d.id === docId);
+      if (existing) {
+        existing.fileName = fileName.trim();
+        existing.fileSize = fileSize ?? existing.fileSize;
+        existing.uploadedAt = today;
+        existing.verificationStatus = 'Under Review';
+        existing.verifiedBy = 'Pending Registrar Audit';
+        appendAudit(state, 'Documents', 'DOCUMENT_REPLACED', `Replaced ${existing.docType} (${fileName.trim()})`);
+        saveState(state);
+        return { ok: true };
+      }
+    }
+    state.uploadedDocuments.unshift({
+      id: `udoc-${Date.now()}`,
+      docType: docType.trim(),
+      fileName: fileName.trim(),
+      fileSize,
+      uploadedAt: today,
+      verificationStatus: 'Pending',
+      verifiedBy: 'Awaiting Admissions Queue',
+    });
+    appendAudit(state, 'Documents', 'DOCUMENT_UPLOADED', `Uploaded ${docType.trim()} (${fileName.trim()})`);
     saveState(state);
     return { ok: true };
   },

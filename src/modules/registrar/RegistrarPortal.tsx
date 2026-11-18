@@ -10,12 +10,14 @@ import {
   Building2,
   FileCheck,
   ClipboardCheck,
+  BookOpen,
 } from "lucide-react";
 import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
 import { registrationService } from "../../services/registrationService";
 import { studentPortalService } from "../../services/studentPortalService";
 import { PortalRole, TranscriptRecord } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import SemesterRegistrationTab from "./SemesterRegistrationTab";
 
 interface RegistrarPortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -23,7 +25,7 @@ interface RegistrarPortalProps {
 
 export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps) {
   const [activeTab, setActiveTab] = useSyncedPortalTab<
-    "students" | "requests" | "transcripts" | "certificates" | "verification"
+    "students" | "academic_reg" | "requests" | "transcripts" | "certificates" | "verification"
   >("registrar", "students");
   const [transcripts, setTranscripts] = useState<TranscriptRecord[]>(
     () => collegeErpService.getState().transcripts
@@ -159,6 +161,16 @@ export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps
           <Users size={16} /> Enrolled Registry ({enrolledStudents.length})
         </button>
         <button
+          onClick={() => setActiveTab("academic_reg")}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 ${
+            activeTab === "academic_reg"
+              ? "border-blue-600 text-blue-800"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <BookOpen size={16} /> Semester Unit Registrations
+        </button>
+        <button
           onClick={() => setActiveTab("requests")}
           className={`pb-3 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 ${
             activeTab === "requests"
@@ -199,6 +211,9 @@ export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps
           <FileCheck size={16} /> Document Verification Desk
         </button>
       </div>
+
+      {/* SEMESTER ACADEMIC REGISTRATIONS TAB (CLOUD SQL FEAT-016) */}
+      {activeTab === "academic_reg" && <SemesterRegistrationTab />}
 
       {/* STUDENTS TAB */}
       {activeTab === "students" && (

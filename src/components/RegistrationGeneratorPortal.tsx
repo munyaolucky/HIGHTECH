@@ -17,6 +17,7 @@ import {
   QrCode,
   FileCheck,
   Building2,
+  FileSpreadsheet,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -24,8 +25,12 @@ import {
   VALID_RECORD_TYPES,
 } from "../services/registrationService";
 import { RegistrationRecordType, RegistrationIssuance } from "../types";
+import BulkStudentCsvImport, {
+  type BulkCommittedStudent,
+} from "../modules/registration/BulkStudentCsvImport";
 
 export default function RegistrationGeneratorPortal() {
+  const [activeMode, setActiveMode] = useState<"single" | "bulk-csv">("single");
   const [selectedType, setSelectedType] = useState<RegistrationRecordType>("STAFF");
   const [year, setYear] = useState<number>(2026);
   const [institutionCode, setInstitutionCode] = useState<string>("HCA");
@@ -159,8 +164,56 @@ export default function RegistrationGeneratorPortal() {
         </div>
       </div>
 
-      {/* GENERATOR + LIVE STATUS GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* MODE SWITCHER BAR */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveMode("single")}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeMode === "single"
+                ? "bg-[#102D50] text-white shadow-xs"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            <Hash size={15} />
+            <span>Single Issuance &amp; Sequence Matrix</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveMode("bulk-csv")}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeMode === "bulk-csv"
+                ? "bg-[#102D50] text-white shadow-xs"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            <FileSpreadsheet size={15} />
+            <span>Bulk Student CSV Import</span>
+            <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-[#102D50]">
+              Registrar Batch
+            </span>
+          </button>
+        </div>
+
+        <span className="text-xs text-slate-500 px-2">
+          Total Ledger Issuances: <strong className="text-[#102D50]">{issuances.length}</strong>
+        </span>
+      </div>
+
+      {activeMode === "bulk-csv" ? (
+        <BulkStudentCsvImport
+          academicYear={year}
+          onYearChange={setYear}
+          onStudentsCommitted={(students: BulkCommittedStudent[]) => {
+            registrationService.recordCommittedStudentIssuances(students);
+            refreshData();
+          }}
+        />
+      ) : (
+        /* GENERATOR + LIVE STATUS GRID */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* GENERATOR CARD (7 cols) */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -492,6 +545,7 @@ export default function RegistrationGeneratorPortal() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ISSUED NUMBERS AUDIT REGISTER */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
