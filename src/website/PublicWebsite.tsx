@@ -17,27 +17,40 @@ import PublicGovernancePages from "./pages/PublicGovernancePages";
 import CollegeChatbot from "./components/CollegeChatbot";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import PublicVerifyEnquireModals from "./components/PublicVerifyEnquireModals";
+import { StaffDirectoryPage } from "../modules/website/staff/StaffDirectoryPage";
+import { StaffProfilePage } from "../modules/website/staff/StaffProfilePage";
+import { DepartmentsPage } from "../modules/website/departments/DepartmentsPage";
+import { DepartmentProfilePage } from "../modules/website/departments/DepartmentProfilePage";
 import { CourseProgramme } from "../types";
 import { COURSES_CATALOGUE } from "../data/college";
 
 interface PublicWebsiteProps {
   initialPage?: string;
+  initialSlug?: string;
   initialPortalModalOpen?: boolean;
-  onPageChange?: (page: string) => void;
+  onPageChange?: (page: string, slug?: string) => void;
   onSwitchToERP: (role: string) => void;
   onLaunchStudentDashboard: () => void;
 }
 
 export default function PublicWebsite({
   initialPage = "home",
+  initialSlug,
   initialPortalModalOpen = false,
   onPageChange,
   onSwitchToERP,
   onLaunchStudentDashboard,
 }: PublicWebsiteProps) {
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [selectedSlug, setSelectedSlug] = useState<string | undefined>(initialSlug);
+  const [staffCategoryFilter, setStaffCategoryFilter] = useState<string | undefined>(undefined);
+  const [academicsLevelFilter, setAcademicsLevelFilter] = useState<string | undefined>(undefined);
+  const [academicsDeptFilter, setAcademicsDeptFilter] = useState<string | undefined>(undefined);
   const [selectedCourse, setSelectedCourse] = useState<CourseProgramme | null>(
     COURSES_CATALOGUE[0]
+  );
+  const [preferredProgrammeTitle, setPreferredProgrammeTitle] = useState<string | undefined>(
+    undefined
   );
   const [isPortalModalOpen, setIsPortalModalOpen] = useState(initialPortalModalOpen);
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
@@ -46,7 +59,8 @@ export default function PublicWebsite({
 
   React.useEffect(() => {
     setCurrentPage(initialPage);
-  }, [initialPage]);
+    setSelectedSlug(initialSlug);
+  }, [initialPage, initialSlug]);
 
   React.useEffect(() => {
     if (initialPortalModalOpen) {
@@ -54,9 +68,31 @@ export default function PublicWebsite({
     }
   }, [initialPortalModalOpen]);
 
-  const handleNavigate = (page: string) => {
+  const handleNavigate = (
+    page: string,
+    slugOrOptions?:
+      | string
+      | {
+          slug?: string;
+          categoryFilter?: string;
+          levelFilter?: string;
+          departmentFilter?: string;
+        }
+  ) => {
+    const options =
+      typeof slugOrOptions === "string"
+        ? { slug: slugOrOptions }
+        : slugOrOptions ?? {};
+
     setCurrentPage(page);
-    onPageChange?.(page);
+    setSelectedSlug(options.slug);
+    setStaffCategoryFilter(options.categoryFilter);
+    setAcademicsLevelFilter(options.levelFilter);
+    setAcademicsDeptFilter(options.departmentFilter);
+    if (page !== "apply") {
+      setPreferredProgrammeTitle(undefined);
+    }
+    onPageChange?.(page, options.slug);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -69,9 +105,23 @@ export default function PublicWebsite({
 
   const handleApplyCourse = (course: CourseProgramme) => {
     setSelectedCourse(course);
+    setPreferredProgrammeTitle(course.title);
     setCurrentPage("apply");
     onPageChange?.("apply");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleApplyProgrammeTitle = (programmeTitle?: string) => {
+    if (programmeTitle) {
+      const matched = COURSES_CATALOGUE.find(
+        (c) =>
+          c.title.toLowerCase().includes(programmeTitle.toLowerCase()) ||
+          programmeTitle.toLowerCase().includes(c.title.toLowerCase())
+      );
+      if (matched) setSelectedCourse(matched);
+      setPreferredProgrammeTitle(programmeTitle);
+    }
+    handleNavigate("apply");
   };
 
   return (
@@ -79,7 +129,7 @@ export default function PublicWebsite({
       {/* Global Header */}
       <WebsiteHeader
         currentPage={currentPage}
-        onNavigate={handleNavigate}
+        onNavigate={(page, options) => handleNavigate(page, options)}
         onOpenPortalModal={() => setIsPortalModalOpen(true)}
         onSwitchToERP={onSwitchToERP}
       />
@@ -88,7 +138,7 @@ export default function PublicWebsite({
       <main className="flex-1">
         {currentPage === "home" && (
           <Home
-            onNavigate={handleNavigate}
+            onNavigate={(page) => handleNavigate(page)}
             onSelectCourse={handleSelectCourse}
             onOpenPortalModal={() => setIsPortalModalOpen(true)}
           />
@@ -96,13 +146,49 @@ export default function PublicWebsite({
 
         {currentPage === "about" && (
           <About
-            onNavigate={handleNavigate}
+            onNavigate={(page) => handleNavigate(page)}
             onOpenPortalModal={() => setIsPortalModalOpen(true)}
+          />
+        )}
+
+        {currentPage === "departments" && (
+          <DepartmentsPage
+            onSelectDepartment={(slug) => handleNavigate("department-details", slug)}
+            onSelectStaff={(slug) => handleNavigate("staff-details", slug)}
+          />
+        )}
+
+        {currentPage === "department-details" && selectedSlug && (
+          <DepartmentProfilePage
+            slug={selectedSlug}
+            onBackToDepartments={() => handleNavigate("departments")}
+            onSelectStaff={(slug) => handleNavigate("staff-details", slug)}
+            onSelectDepartment={(slug) => handleNavigate("department-details", slug)}
+            onApplyForProgramme={handleApplyProgrammeTitle}
+          />
+        )}
+
+        {currentPage === "our-staff" && (
+          <StaffDirectoryPage
+            initialCategory={staffCategoryFilter}
+            onSelectStaff={(slug) => handleNavigate("staff-details", slug)}
+            onSelectDepartment={(slug) => handleNavigate("department-details", slug)}
+          />
+        )}
+
+        {currentPage === "staff-details" && selectedSlug && (
+          <StaffProfilePage
+            slug={selectedSlug}
+            onBackToDirectory={() => handleNavigate("our-staff")}
+            onSelectDepartment={(slug) => handleNavigate("department-details", slug)}
+            onEnquireAboutProgramme={() => setEnquireModalOpen(true)}
           />
         )}
 
         {currentPage === "academics" && (
           <Academics
+            initialDepartment={academicsDeptFilter}
+            initialLevel={academicsLevelFilter}
             onSelectCourse={handleSelectCourse}
             onApplyCourse={handleApplyCourse}
           />
@@ -118,7 +204,7 @@ export default function PublicWebsite({
 
         {currentPage === "admissions" && (
           <Admissions
-            onNavigate={handleNavigate}
+            onNavigate={(page) => handleNavigate(page)}
             onOpenPortalModal={() => setIsPortalModalOpen(true)}
           />
         )}
@@ -126,12 +212,15 @@ export default function PublicWebsite({
         {currentPage === "apply" && (
           <Apply
             selectedCourse={selectedCourse}
+            initialProgrammeName={preferredProgrammeTitle}
             onNavigateToPortalGuide={() => handleNavigate("portal-guide")}
             onLaunchStudentDashboard={onLaunchStudentDashboard}
           />
         )}
 
-        {currentPage === "campus-life" && <CampusLife />}
+        {(currentPage === "campus-life" ||
+          currentPage === "campus" ||
+          currentPage === "student-life") && <CampusLife />}
 
         {currentPage === "news" && <News />}
 
@@ -152,13 +241,18 @@ export default function PublicWebsite({
 
         {(currentPage === "verify" ||
           currentPage === "privacy-policy" ||
+          currentPage === "cookie-policy" ||
           currentPage === "terms" ||
           currentPage === "accessibility" ||
-          currentPage === "fees") && (
+          currentPage === "fees" ||
+          currentPage === "sitemap" ||
+          currentPage === "not-found") && (
           <PublicGovernancePages
             page={currentPage}
-            onNavigate={handleNavigate}
+            onNavigate={(page) => handleNavigate(page)}
             onOpenPortalModal={() => setIsPortalModalOpen(true)}
+            onOpenCookieSettings={() => setCookieSettingsOpen(true)}
+            onSwitchToERP={onSwitchToERP}
           />
         )}
       </main>
@@ -195,6 +289,7 @@ export default function PublicWebsite({
       <CookieConsentBanner
         externalOpen={cookieSettingsOpen}
         onExternalClose={() => setCookieSettingsOpen(false)}
+        onNavigate={(page) => handleNavigate(page)}
       />
 
       {/* Public Credential Verify & Admissions CRM Enquiry (/?verify=CODE, /?enquire=1) */}

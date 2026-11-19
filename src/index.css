@@ -5,8 +5,9 @@
   --hitech-navy: #102d50;
   --hitech-blue: #1769aa;
   --hitech-gold: #e8b44a;
-  --hitech-red: #dc2626;
-  --hitech-cream: #f4f7fb;
+  --hitech-red: #b83232;
+  --hitech-cream: #f5ebdd;
+  --hitech-bg: #f4f7fb;
   --surface: #ffffff;
   --surface-subtle: #f8fafc;
   --border-subtle: #e2e8f0;
@@ -14,6 +15,15 @@
   --text-secondary: #475569;
   --skeleton-base: #e2e8f0;
   --skeleton-sheen: rgba(255, 255, 255, 0.72);
+  --portal-bg: #f4f7fb;
+  --portal-surface: #ffffff;
+  --portal-surface-muted: #f8fafc;
+  --portal-border: #dce4ef;
+  --portal-text: #102d50;
+  --portal-text-muted: #4b5e76;
+  --portal-radius-sm: 10px;
+  --portal-radius-md: 12px;
+  --portal-radius-lg: 16px;
 }
 
 .dark {
@@ -24,6 +34,12 @@
   --text-secondary: #cbd5e1;
   --skeleton-base: #1e293b;
   --skeleton-sheen: rgba(148, 163, 184, 0.16);
+  --portal-bg: #0b1424;
+  --portal-surface: #0f172a;
+  --portal-surface-muted: #1e293b;
+  --portal-border: #334155;
+  --portal-text: #f8fafc;
+  --portal-text-muted: #cbd5e1;
 }
 
 @layer base {

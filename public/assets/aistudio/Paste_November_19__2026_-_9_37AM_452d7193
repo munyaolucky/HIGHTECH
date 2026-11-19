@@ -1,0 +1,1537 @@
+Below is the complete **HI-TECH College website footer implementation** using React, TypeScript and CSS. It follows the design reference, including the navy, red, cream and gold colour scheme.
+
+It includes:
+
+- College logo and institutional description.
+- College statistics and social media.
+- Quick links and academic services.
+- Contact information and campus image.
+- Newsletter subscription interface.
+- Student and staff portal links.
+- Accreditation section.
+- Privacy, terms and accessibility links.
+- Responsive mobile navigation.
+- Floating Dr.IT chatbot and back-to-top button.
+
+## **1. Create&#x20;**`Footer.tsx`
+
+**Path:** `apps/web/src/components/layout/Footer.tsx`
+
+```
+
+import React, { FormEvent, useState } from "react";
+import {
+  GraduationCap,
+  BookOpen,
+  BriefcaseBusiness,
+  Cpu,
+  Monitor,
+  Building2,
+  Headset,
+  Award,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  ChevronRight,
+  ArrowRight,
+  ArrowUp,
+  MessageCircle,
+  Facebook,
+  Linkedin,
+  Youtube,
+  Send,
+  ShieldCheck,
+  Menu,
+  X,
+  Newspaper,
+  Users,
+  LockKeyhole,
+} from "lucide-react";
+import "./Footer.css";
+
+interface FooterProps {
+  onSubscribe?: (email: string) => Promise<void> | void;
+  onChatOpen?: () => void;
+}
+
+const quickLinks = [
+  { label: "Home", href: "/" },
+  { label: "About Us", href: "/about" },
+  { label: "Academics", href: "/academics" },
+  { label: "Admissions", href: "/admissions" },
+  { label: "Campus", href: "/campus" },
+  { label: "Student Life", href: "/student-life" },
+  { label: "Digital Library", href: "/library" },
+  { label: "Careers", href: "/careers" },
+  { label: "Gallery", href: "/gallery" },
+  { label: "FAQs", href: "/faqs" },
+  { label: "Contact Us", href: "/contact" },
+];
+
+const services = [
+  { label: "ICT & Computing", href: "/academics/ict", icon: Monitor },
+  { label: "AI & Machine Learning", href: "/academics/ai", icon: Cpu },
+  { label: "Business Management", href: "/academics/business", icon: BriefcaseBusiness },
+  { label: "Engineering & Technology", href: "/academics/engineering", icon: Building2 },
+  { label: "E-Learning Portal", href: "/elearning", icon: BookOpen },
+  { label: "Library Services", href: "/library", icon: BookOpen },
+  { label: "Student Support", href: "/student-support", icon: Headset },
+  { label: "Certifications (KNEC/KASNEB/TVET)", href: "/certifications", icon: Award },
+];
+
+const socialLinks = [
+  { label: "Facebook", href: "https://facebook.com/", icon: Facebook },
+  { label: "LinkedIn", href: "https://linkedin.com/", icon: Linkedin },
+  { label: "YouTube", href: "https://youtube.com/", icon: Youtube },
+  { label: "Telegram", href: "https://t.me/", icon: Send },
+];
+
+export default function Footer({
+  onSubscribe,
+  onChatOpen,
+}: FooterProps) {
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleSubscribe = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!email.trim()) {
+      setMessage("Please enter your email address.");
+      return;
+    }
+
+    if (!onSubscribe) {
+      setMessage("Newsletter subscription is not yet connected.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await onSubscribe(email.trim());
+      setMessage("Thank you! Your subscription was received.");
+      setEmail("");
+    } catch {
+      setMessage("Subscription failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <>
+      <footer className="ht-footer">
+        {/* Decorative top edge */}
+        <div className="ht-footer-wave" aria-hidden="true" />
+
+        <div className="ht-footer-main">
+          <div className="ht-footer-grid">
+
+            {/* COLLEGE INFORMATION */}
+            <section className="ht-footer-brand">
+              <a href="/" className="ht-brand" aria-label="HI-TECH College homepage">
+                <div className="ht-brand-emblem">
+                  <GraduationCap size={54} strokeWidth={1.6} />
+                  <span>HI-TECH</span>
+                </div>
+
+                <div className="ht-brand-text">
+                  <div className="ht-brand-name">
+                    HI-TECH <span>COLLEGE</span>
+                  </div>
+                  <p>Excellence in Technology, Skills & Innovation</p>
+                </div>
+              </a>
+
+              <p className="ht-footer-description">
+                Empowering Next-Generation Digital Innovators & Leaders.
+                Providing government-accredited diploma and certificate
+                programmes in Computing, Artificial Intelligence, Business
+                Management, and Engineering with high-fidelity digital
+                campus infrastructure.
+              </p>
+
+              {/* College statistics */}
+              <div className="ht-footer-stats">
+                <div className="ht-stat">
+                  <GraduationCap />
+                  <strong>3,850+</strong>
+                  <span>Enrolled Students</span>
+                </div>
+
+                <div className="ht-stat">
+                  <Award />
+                  <strong>98.4%</strong>
+                  <span>Success Rate</span>
+                </div>
+
+                <div className="ht-stat">
+                  <BookOpen />
+                  <strong>37+</strong>
+                  <span>Programmes</span>
+                </div>
+              </div>
+
+              {/* Social media */}
+              <div className="ht-social-section">
+                <strong>Follow Us:</strong>
+                <div className="ht-social-links">
+                  {socialLinks.map(({ label, href, icon: Icon }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className={`ht-social ht-social-${label.toLowerCase()}`}
+                    >
+                      <Icon size={21} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* QUICK LINKS */}
+            <section className="ht-footer-column">
+              <h3 className="ht-footer-heading">
+                <GraduationCap />
+                Quick Links
+              </h3>
+
+              <ul className="ht-footer-links">
+                {quickLinks.map((link) => (
+                  <li key={link.label}>
+                    <a href={link.href}>
+                      <ChevronRight size={16} />
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* SERVICES */}
+            <section className="ht-footer-column">
+              <h3 className="ht-footer-heading">
+                <Building2 />
+                Our Services
+              </h3>
+
+              <ul className="ht-service-links">
+                {services.map(({ label, href, icon: Icon }) => (
+                  <li key={label}>
+                    <a href={href}>
+                      <Icon size={22} />
+                      <span>{label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* CONTACT AND NEWSLETTER */}
+            <section className="ht-footer-contact">
+              <h3 className="ht-footer-heading">
+                <Phone />
+                Contact Us
+              </h3>
+
+              <div className="ht-contact-list">
+                <div className="ht-contact-item">
+                  <span className="ht-contact-icon">
+                    <MapPin />
+                  </span>
+                  <p>
+                    <strong>HI-TECH College</strong>
+                    <br />
+                    Kitengela Campus,
+                    <br />
+                    P.O. Box 1849-00100 Nairobi, Kenya
+                  </p>
+                </div>
+
+                <div className="ht-contact-item">
+                  <span className="ht-contact-icon">
+                    <Phone />
+                  </span>
+                  <p>
+                    <a href="tel:+254207801200">
+                      +254 (0) 20 780 1200
+                    </a>
+                    <br />
+                    <a href="tel:+254772345678">
+                      +254 772 345 678
+                    </a>
+                  </p>
+                </div>
+
+                <div className="ht-contact-item">
+                  <span className="ht-contact-icon">
+                    <Mail />
+                  </span>
+                  <p>
+                    <a href="mailto:info@hitech.ac.ke">
+                      info@hitech.ac.ke
+                    </a>
+                  </p>
+                </div>
+
+                <div className="ht-contact-item">
+                  <span className="ht-contact-icon">
+                    <Clock />
+                  </span>
+                  <p>
+                    Mon - Fri: 7:30 AM - 6:00 PM
+                    <br />
+                    Sat: 8:00 AM - 2:00 PM
+                  </p>
+                </div>
+              </div>
+
+              {/* Campus image */}
+              <div className="ht-footer-campus">
+                <img
+                  src="/images/campus/campus-students.jpg"
+                  alt="HI-TECH College campus and students"
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+                <div className="ht-campus-overlay">
+                  <Building2 size={19} />
+                  <span>Explore Our Campus</span>
+                  <a href="/campus" aria-label="Explore our campus">
+                    <ArrowRight size={19} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Newsletter */}
+              <div className="ht-newsletter">
+                <div className="ht-newsletter-title">
+                  <Newspaper size={27} />
+                  <div>
+                    <h4>Subscribe to Our Newsletter</h4>
+                    <p>Get the latest updates and academic news.</p>
+                  </div>
+                </div>
+
+                <form
+                  className="ht-newsletter-form"
+                  onSubmit={handleSubscribe}
+                >
+                  <label className="ht-visually-hidden" htmlFor="ht-newsletter-email">
+                    Email address
+                  </label>
+
+                  <input
+                    id="ht-newsletter-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    disabled={submitting}
+                  />
+
+                  <button type="submit" disabled={submitting}>
+                    {submitting ? "Sending..." : "Subscribe"}
+                    <ArrowRight size={19} />
+                  </button>
+                </form>
+
+                {message && (
+                  <p className="ht-newsletter-message" role="status">
+                    {message}
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* PORTAL ACCESS STRIP */}
+        <div className="ht-footer-portals">
+          <div className="ht-portal-content">
+            <div>
+              <span className="ht-portal-label">
+                <LockKeyhole size={15} />
+                STUDENT & STAFF PORTALS
+              </span>
+              <a href="/portal/login" className="ht-portal-button ht-student-login">
+                Student Portal Login
+                <ArrowRight size={17} />
+              </a>
+              <a href="/portal/access-guide" className="ht-portal-button">
+                How to Access Portal Guide
+                <ArrowRight size={17} />
+              </a>
+            </div>
+
+            <div className="ht-staff-access">
+              <a href="/portal/staff/login">Staff Portal Login</a>
+              <a href="/portal/activate">Activate Invited Account</a>
+              <a href="/portal/registration">Manual User Registration Desk</a>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM BAR */}
+        <div className="ht-footer-bottom">
+          <div className="ht-footer-bottom-inner">
+            <p className="ht-copyright">
+              © {new Date().getFullYear()} HI-TECH College of Technology
+              & Applied Sciences. All Rights Reserved.
+              <br />
+              Reg No: TVETA/PUBLIC/0291/2026.
+            </p>
+
+            <nav className="ht-legal-links" aria-label="Legal links">
+              <a href="/verify">Verify Certificate</a>
+              <a href="/fees">Fees Structure</a>
+              <a href="/admissions/enquiry">Admissions Enquiry</a>
+              <a href="/privacy">Privacy Policy</a>
+              <a href="/terms">Terms & Conditions</a>
+              <a href="/accessibility">Accessibility</a>
+              <a href="/sitemap">Sitemap</a>
+            </nav>
+
+            <div className="ht-accreditations">
+              <div>
+                <ShieldCheck />
+                <span><strong>TVETA</strong>Approved</span>
+              </div>
+              <div>
+                <Award />
+                <span><strong>KNEC</strong>Registered</span>
+              </div>
+              <div>
+                <ShieldCheck />
+                <span><strong>ISO</strong>Certified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll to top */}
+        <button
+          type="button"
+          className="ht-back-to-top"
+          onClick={scrollToTop}
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <ArrowUp size={23} />
+        </button>
+      </footer>
+
+      {/* MOBILE CHAT BUTTON */}
+      <button
+        type="button"
+        className="ht-chat-button"
+        onClick={onChatOpen ?? (() => window.dispatchEvent(
+          new CustomEvent("hitech:open-chat")
+        ))}
+        aria-label="Open Dr.IT support chatbot"
+      >
+        <span className="ht-chat-icon">
+          <MessageCircle size={23} />
+        </span>
+        <span>
+          <strong>HI-TECH SUPPORT</strong>
+          <small>Ask Questions & Admissions</small>
+        </span>
+        <span className="ht-chat-status" />
+      </button>
+    </>
+  );
+}
+
+```
+
+## **2. Create&#x20;**`Footer.css`
+
+**Path:** `apps/web/src/components/layout/Footer.css`
+
+```
+
+:root {
+  --ht-navy: #061b3d;
+  --ht-navy-light: #0c2851;
+  --ht-red: #e30620;
+  --ht-cream: #fffaf0;
+  --ht-gold: #ffc928;
+  --ht-white: #ffffff;
+  --ht-muted: #c5d0e1;
+  --ht-green: #07966d;
+}
+
+.ht-footer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--ht-white);
+  background: var(--ht-navy);
+  font-family: Inter, Arial, sans-serif;
+}
+
+.ht-footer * {
+  box-sizing: border-box;
+}
+
+.ht-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ht-footer a:focus-visible,
+.ht-footer button:focus-visible,
+.ht-footer input:focus-visible {
+  outline: 3px solid var(--ht-gold);
+  outline-offset: 4px;
+}
+
+/* Decorative top border */
+
+.ht-footer-wave {
+  height: 43px;
+  position: relative;
+  background: var(--ht-cream);
+  overflow: hidden;
+}
+
+.ht-footer-wave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ht-red);
+  clip-path: polygon(0 58%, 22% 100%, 48% 65%, 70% 0, 100% 70%, 100% 100%, 0 100%);
+}
+
+.ht-footer-wave::after {
+  content: "";
+  position: absolute;
+  inset: 9px 0 0;
+  background: var(--ht-navy);
+  clip-path: polygon(0 0, 23% 100%, 49% 66%, 70% 0, 100% 70%, 100% 100%, 0 100%);
+}
+
+/* Main layout */
+
+.ht-footer-main {
+  width: min(100% - 64px, 1800px);
+  margin: 0 auto;
+  padding: 50px 0 44px;
+}
+
+.ht-footer-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 0.8fr 1fr 1.65fr;
+  gap: 38px;
+  align-items: start;
+}
+
+/* Brand */
+
+.ht-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.ht-brand-emblem {
+  width: 94px;
+  min-width: 94px;
+  height: 112px;
+  border: 3px solid var(--ht-white);
+  border-radius: 45% 45% 48% 48%;
+  background: linear-gradient(145deg, #173c6b, #061b3d);
+  color: var(--ht-gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-shadow: 0 0 0 3px rgba(255, 201, 40, 0.25);
+}
+
+.ht-brand-emblem span {
+  font-size: 11px;
+  font-weight: 900;
+  color: white;
+  background: var(--ht-red);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.ht-brand-name {
+  font-size: clamp(23px, 2vw, 35px);
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  white-space: nowrap;
+}
+
+.ht-brand-name span {
+  color: var(--ht-red);
+}
+
+.ht-brand-text p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ht-muted);
+}
+
+.ht-footer-description {
+  color: #dce5f2;
+  line-height: 1.75;
+  font-size: 13px;
+  margin: 0 0 26px;
+  max-width: 520px;
+}
+
+/* Statistics */
+
+.ht-footer-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 17px;
+  padding: 15px 5px;
+  background: rgba(255,255,255,.035);
+}
+
+.ht-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  padding: 5px;
+}
+
+.ht-stat + .ht-stat {
+  border-left: 1px solid rgba(255,255,255,.45);
+}
+
+.ht-stat svg {
+  width: 29px;
+  height: 29px;
+  color: var(--ht-gold);
+}
+
+.ht-stat strong {
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.ht-stat span {
+  font-size: 11px;
+  color: var(--ht-muted);
+}
+
+/* Social links */
+
+.ht-social-section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 17px;
+  margin-top: 25px;
+}
+
+.ht-social-section > strong {
+  font-size: 15px;
+}
+
+.ht-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+
+.ht-social {
+  width: 41px;
+  height: 41px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #173c6b;
+  transition: transform .25s, background .25s;
+}
+
+.ht-social:hover {
+  transform: translateY(-5px);
+}
+
+.ht-social-facebook { background: #1877f2; }
+.ht-social-linkedin { background: #0879ae; }
+.ht-social-youtube { background: #e30620; }
+.ht-social-telegram { background: #229ed9; }
+.ht-social-x { background: #151515; }
+
+/* Column headings */
+
+.ht-footer-heading {
+  min-height: 50px;
+  border-bottom: 1px solid rgba(255,255,255,.3);
+  border-left: 5px solid var(--ht-red);
+  padding: 5px 0 13px 14px;
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.ht-footer-heading svg {
+  width: 25px;
+  height: 25px;
+  color: var(--ht-white);
+}
+
+/* Quick links */
+
+.ht-footer-links,
+.ht-service-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ht-footer-links li {
+  margin-bottom: 12px;
+}
+
+.ht-footer-links a {
+  color: #e1e9f4;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color .2s, transform .2s;
+}
+
+.ht-footer-links a:hover {
+  color: var(--ht-gold);
+  transform: translateX(5px);
+}
+
+.ht-footer-links a svg {
+  color: var(--ht-gold);
+  flex-shrink: 0;
+}
+
+/* Services */
+
+.ht-service-links li {
+  margin-bottom: 17px;
+}
+
+.ht-service-links a {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e1e9f4;
+  transition: color .2s;
+}
+
+.ht-service-links a:hover {
+  color: var(--ht-gold);
+}
+
+.ht-service-links svg {
+  color: var(--ht-gold);
+  flex-shrink: 0;
+}
+
+/* Contact */
+
+.ht-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.ht-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.ht-contact-item p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #e1e9f4;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ht-contact-item p strong {
+  color: white;
+}
+
+.ht-contact-item a:hover {
+  color: var(--ht-gold);
+}
+
+.ht-contact-icon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  background: var(--ht-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ht-contact-icon svg {
+  width: 17px;
+  height: 17px;
+  color: white;
+}
+
+/* Campus image */
+
+.ht-footer-campus {
+  height: 170px;
+  margin-top: 27px;
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.3);
+  background: #173c6b;
+}
+
+.ht-footer-campus img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ht-campus-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,.88));
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ht-campus-overlay a {
+  margin-left: auto;
+  display: flex;
+}
+
+/* Newsletter */
+
+.ht-newsletter {
+  border-left: 2px solid rgba(255,255,255,.25);
+  margin-top: 24px;
+  padding: 10px 0 0 15px;
+}
+
+.ht-newsletter-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 15px;
+}
+
+.ht-newsletter-title > svg {
+  color: var(--ht-gold);
+  flex-shrink: 0;
+}
+
+.ht-newsletter-title h4 {
+  margin: 0 0 5px;
+  font-size: 16px;
+}
+
+.ht-newsletter-title p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ht-muted);
+}
+
+.ht-newsletter-form {
+  display: flex;
+  gap: 10px;
+}
+
+.ht-newsletter-form input {
+  width: 100%;
+  min-width: 0;
+  height: 45px;
+  padding: 0 15px;
+  border-radius: 9px;
+  border: 1px solid #c9d4e4;
+  background: #fff;
+  color: #15233b;
+  font-size: 13px;
+}
+
+.ht-newsletter-form button {
+  border: 0;
+  border-radius: 9px;
+  padding: 0 17px;
+  background: var(--ht-red);
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+  transition: background .2s, transform .2s;
+}
+
+.ht-newsletter-form button:hover {
+  background: #b80019;
+  transform: translateY(-2px);
+}
+
+.ht-newsletter-form button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.ht-newsletter-message {
+  font-size: 12px;
+  color: var(--ht-gold);
+  margin: 10px 0 0;
+}
+
+.ht-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Portal strip */
+
+.ht-footer-portals {
+  border-top: 1px solid rgba(255,255,255,.15);
+  background: #08162a;
+  padding: 22px 32px;
+}
+
+.ht-portal-content {
+  max-width: 1800px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+}
+
+.ht-portal-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ht-gold);
+  margin-bottom: 12px;
+}
+
+.ht-portal-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  min-width: 210px;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  padding: 12px 15px;
+  border: 1px solid #28518d;
+  border-radius: 8px;
+  background: #102b52;
+  font-size: 12px;
+  font-weight: 700;
+  transition: .2s;
+}
+
+.ht-portal-button:hover {
+  background: #193d70;
+  border-color: var(--ht-gold);
+}
+
+.ht-student-login {
+  background: var(--ht-red);
+  border-color: var(--ht-red);
+}
+
+.ht-student-login:hover {
+  background: #b80019;
+}
+
+.ht-staff-access {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.ht-staff-access a {
+  color: var(--ht-muted);
+  font-size: 12px;
+  transition: color .2s;
+}
+
+.ht-staff-access a:hover {
+  color: var(--ht-gold);
+}
+
+/* Bottom bar */
+
+.ht-footer-bottom {
+  border-top: 3px solid var(--ht-gold);
+  background: #061323;
+  padding: 20px 32px;
+}
+
+.ht-footer-bottom-inner {
+  max-width: 1800px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.ht-copyright {
+  color: var(--ht-muted);
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 0;
+  flex: 1.2;
+}
+
+.ht-legal-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1.5;
+}
+
+.ht-legal-links a {
+  color: var(--ht-muted);
+  font-size: 11px;
+  border-right: 1px solid rgba(255,255,255,.4);
+  padding-right: 12px;
+}
+
+.ht-legal-links a:last-child {
+  border: 0;
+}
+
+.ht-legal-links a:hover {
+  color: var(--ht-gold);
+}
+
+.ht-accreditations {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.ht-accreditations > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ht-accreditations svg {
+  width: 30px;
+  height: 30px;
+  color: var(--ht-gold);
+}
+
+.ht-accreditations span {
+  display: flex;
+  flex-direction: column;
+  font-size: 9px;
+  color: var(--ht-muted);
+}
+
+.ht-accreditations strong {
+  color: white;
+  font-size: 12px;
+}
+
+/* Back to top */
+
+.ht-back-to-top {
+  position: absolute;
+  right: 30px;
+  top: 44%;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.5);
+  background: #173c6b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: .2s;
+  z-index: 5;
+}
+
+.ht-back-to-top:hover {
+  background: var(--ht-red);
+  transform: translateY(-4px);
+}
+
+/* Dr.IT chatbot */
+
+.ht-chat-button {
+  position: fixed;
+  right: 25px;
+  bottom: 22px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 18px 10px 11px;
+  border: 1px solid var(--ht-gold);
+  border-radius: 40px;
+  background: #087c60;
+  color: white;
+  box-shadow: 0 7px 25px rgba(0,0,0,.3);
+  cursor: pointer;
+  transition: transform .2s, background .2s;
+}
+
+.ht-chat-button:hover {
+  background: #05694f;
+  transform: translateY(-4px);
+}
+
+.ht-chat-icon {
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: var(--ht-gold);
+  color: var(--ht-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ht-chat-button > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 3px;
+}
+
+.ht-chat-button strong {
+  font-size: 11px;
+  color: var(--ht-gold);
+}
+
+.ht-chat-button small {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ht-chat-status {
+  position: absolute;
+  right: 12px;
+  top: 7px;
+  height: 9px;
+  width: 9px;
+  background: #20e58b;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(32,229,139,.2);
+}
+
+/* Tablet */
+
+@media (max-width: 1150px) {
+  .ht-footer-grid {
+    grid-template-columns: 1.3fr 1fr;
+    gap: 40px;
+  }
+
+  .ht-footer-brand {
+    grid-column: 1 / 2;
+  }
+
+  .ht-footer-contact {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 35px;
+  }
+
+  .ht-footer-contact > .ht-footer-heading {
+    grid-column: 1 / -1;
+  }
+
+  .ht-footer-campus {
+    margin-top: 0;
+    height: 190px;
+  }
+
+  .ht-newsletter {
+    grid-column: 1 / -1;
+  }
+
+  .ht-footer-bottom-inner {
+    flex-wrap: wrap;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .ht-footer-wave {
+    height: 27px;
+  }
+
+  .ht-footer-main {
+    width: min(100% - 34px, 520px);
+    padding: 35px 0 30px;
+  }
+
+  .ht-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .ht-footer-brand,
+  .ht-footer-contact {
+    grid-column: auto;
+  }
+
+  .ht-brand {
+    gap: 12px;
+  }
+
+  .ht-brand-emblem {
+    width: 68px;
+    min-width: 68px;
+    height: 82px;
+  }
+
+  .ht-brand-emblem svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .ht-brand-emblem span {
+    font-size: 9px;
+  }
+
+  .ht-brand-name {
+    font-size: clamp(19px, 5vw, 27px);
+    white-space: normal;
+  }
+
+  .ht-brand-text p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .ht-footer-description {
+    font-size: 12px;
+  }
+
+  .ht-footer-stats {
+    padding: 11px 3px;
+  }
+
+  .ht-stat strong {
+    font-size: 19px;
+  }
+
+  .ht-stat span {
+    font-size: 9px;
+  }
+
+  .ht-social-section {
+    justify-content: flex-start;
+  }
+
+  .ht-footer-heading {
+    font-size: 18px;
+  }
+
+  .ht-footer-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 12px;
+  }
+
+  .ht-footer-links li {
+    margin-bottom: 9px;
+  }
+
+  .ht-service-links li {
+    margin-bottom: 14px;
+  }
+
+  .ht-footer-contact {
+    display: block;
+  }
+
+  .ht-footer-campus {
+    height: 190px;
+    margin-top: 25px;
+  }
+
+  .ht-newsletter {
+    margin-top: 25px;
+    padding-left: 12px;
+  }
+
+  .ht-newsletter-form {
+    flex-direction: column;
+  }
+
+  .ht-newsletter-form input,
+  .ht-newsletter-form button {
+    width: 100%;
+    height: 46px;
+  }
+
+  .ht-footer-portals {
+    padding: 22px 17px;
+  }
+
+  .ht-portal-content {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ht-portal-button {
+    display: flex !important;
+    width: 100%;
+    margin: 0 0 10px;
+  }
+
+  .ht-staff-access {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ht-footer-bottom {
+    padding: 23px 17px 85px;
+  }
+
+  .ht-footer-bottom-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 19px;
+  }
+
+  .ht-legal-links {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .ht-accreditations {
+    flex-wrap: wrap;
+  }
+
+  .ht-back-to-top {
+    right: 16px;
+    top: auto;
+    bottom: 20px;
+    width: 39px;
+    height: 39px;
+  }
+
+  .ht-chat-button {
+    right: 12px;
+    bottom: 72px;
+    padding: 8px 13px 8px 8px;
+  }
+
+  .ht-chat-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Small mobile */
+
+@media (max-width: 380px) {
+  .ht-brand-name {
+    font-size: 19px;
+  }
+
+  .ht-brand-emblem {
+    width: 58px;
+    min-width: 58px;
+    height: 72px;
+  }
+
+  .ht-stat strong {
+    font-size: 16px;
+  }
+
+  .ht-social-section {
+    gap: 10px;
+  }
+
+  .ht-social {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* Reduced motion accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .ht-footer *,
+  .ht-footer *::before,
+  .ht-footer *::after,
+  .ht-chat-button {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+```
+
+## **3. Install the icon library**
+
+From `apps/web`:
+
+```
+npm install lucide-react
+```
+
+## **4. Add the footer to your website**
+
+In your main layout, for example `apps/web/src/layouts/PublicLayout.tsx`:
+
+```
+
+import React from "react";
+import Footer from "../components/layout/Footer";
+
+interface PublicLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function PublicLayout({ children }: PublicLayoutProps) {
+  return (
+    <div className="public-layout">
+      <main>{children}</main>
+
+      <Footer
+        onChatOpen={() => {
+          window.dispatchEvent(
+            new CustomEvent("hitech:open-chat")
+          );
+        }}
+      />
+    </div>
+  );
+}
+
+```
+
+## **5. Campus image**
+
+Create this folder:
+
+```
+apps/web/public/images/campus/
+```
+
+Add your real college campus photograph as:
+
+```
+campus-students.jpg
+```
+
+The footer will display this image in the Contact Us column.
+
+## **6. Recommended project structure**
+
+```
+
+apps/web/
+├── public/
+│   └── images/
+│       └── campus/
+│           └── campus-students.jpg
+│
+└── src/
+    ├── components/
+    │   └── layout/
+    │       ├── Footer.tsx
+    │       └── Footer.css
+    │
+    └── layouts/
+        └── PublicLayout.tsx
+
+```
+
+## **7. Important production integrations**
+
+| Feature                  | Integration required                 |
+| ------------------------ | ------------------------------------ |
+| Newsletter               | Express API + PostgreSQL             |
+| Student login            | `/portal/login`                      |
+| Staff login              | `/portal/staff/login`                |
+| Account activation       | Invitation activation API            |
+| Certificate verification | Verification module                  |
+| Dr.IT chatbot            | Existing AI Support Centre           |
+| Social media             | Official college URLs                |
+| Accreditation            | Verify official registration details |
+
+**Two important corrections before production:**
+
+- The accreditation badges and registration number should only display verified institutional credentials. Do not use an ISO certification badge unless the college holds that certification.
+- The newsletter currently provides the frontend interface. It needs a backend subscription endpoint before it can save subscribers.
+
+## **8. Run the website**
+
+```
+cd apps/web
+npm install
+npm install lucide-react
+npm run dev
+```
+
+Then inspect the footer at desktop, tablet and mobile widths.
+
+**Next recommended development step:** Connect this footer to the existing HI-TECH College backend, newsletter API, Dr.IT chatbot, portal authentication and actual institutional data rather than leaving the links as standalone placeholders.

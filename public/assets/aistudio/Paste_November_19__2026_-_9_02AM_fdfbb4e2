@@ -1,0 +1,3112 @@
+HI-TECH College Staff & Student Portal — Code Implementation
+We will begin with the actual frontend foundation for both portals, using React + TypeScript + Vite inside hitech-college-website/apps/web.
+
+This first code slice includes:
+- Shared portal shell.
+- Staff dashboard.
+- Student dashboard.
+- Responsive desktop sidebar.
+- Mobile bottom navigation.
+- Mobile menu drawer.
+- Role-specific menus.
+- Dashboard statistic cards.
+- Timetable and upcoming activities.
+- Quick actions.
+- Notifications.
+- Accessible navigation.
+- Blue, red and cream HI-TECH theme.
+- Reusable components for subsequent modules.
+Slice 1 — Shared portal UI and dashboards
+
+This is a starter implementation, not yet integrated or verified against the actual repository files. Existing components, packages and routes must be reconciled before replacing them.
+1. Folder structure
+Create or adapt the following inside hitech-college-website/apps/web/src/.
+
+src/
+├── components/
+│   └── portal/
+│       ├── PortalShell.tsx
+│       ├── PortalSidebar.tsx
+│       ├── PortalHeader.tsx
+│       ├── MobileNav.tsx
+│       ├── StatCard.tsx
+│       ├── QuickActions.tsx
+│       ├── TimetableWidget.tsx
+│       ├── ActivityPanel.tsx
+│       └── PortalPage.tsx
+├── modules/
+│   ├── staff/
+│   │   └── StaffDashboard.tsx
+│   └── student/
+│       └── StudentDashboard.tsx
+├── data/
+│   └── portal-config.ts
+├── types/
+│   └── portal.ts
+├── styles/
+│   └── portal.css
+└── App.tsx
+
+
+
+2. Shared portal types
+src/types/portal.ts
+
+export type PortalRole =
+  | "STUDENT"
+  | "LECTURER"
+  | "PRINCIPAL"
+  | "REGISTRAR"
+  | "FINANCE_OFFICER"
+  | "HR_OFFICER"
+  | "LIBRARIAN"
+  | "ADMIN"
+  | "SUPER_ADMIN"
+  | "DEPARTMENT_HEAD"
+  | "EXAMINATION_OFFICER";
+
+export interface PortalUser {
+  id: string;
+  name: string;
+  email: string;
+  registrationNumber?: string;
+  staffNumber?: string;
+  role: PortalRole;
+  department?: string;
+  campus?: string;
+  avatarUrl?: string;
+}
+
+export interface PortalMenuItem {
+  id: string;
+  label: string;
+  icon: string;
+  path: string;
+  permission?: string;
+  children?: PortalMenuItem[];
+}
+
+export interface DashboardStat {
+  id: string;
+  title: string;
+  value: string | number;
+  description?: string;
+  icon: string;
+  trend?: string;
+}
+
+export interface TimetableEntry {
+  id: string;
+  subject: string;
+  unitCode?: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  instructor?: string;
+  status?: "UPCOMING" | "ONGOING" | "COMPLETED";
+}
+
+export interface DashboardActivity {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  type: "assignment" | "notice" | "exam" | "payment" | "task";
+  status?: string;
+}
+
+
+
+3. Portal configuration and navigation
+src/data/portal-config.ts
+
+import type { PortalMenuItem, PortalRole } from "../types/portal";
+
+export const studentMenu: PortalMenuItem[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "LayoutDashboard",
+    path: "/portal/student/dashboard",
+  },
+  {
+    id: "profile",
+    label: "My Profile",
+    icon: "UserRound",
+    path: "/portal/student/profile",
+  },
+  {
+    id: "registration",
+    label: "Registration",
+    icon: "ClipboardList",
+    path: "/portal/student/registration",
+  },
+  {
+    id: "courses",
+    label: "My Courses",
+    icon: "BookOpen",
+    path: "/portal/student/courses",
+  },
+  {
+    id: "timetable",
+    label: "Timetable",
+    icon: "CalendarDays",
+    path: "/portal/student/timetable",
+  },
+  {
+    id: "attendance",
+    label: "Attendance",
+    icon: "CalendarCheck",
+    path: "/portal/student/attendance",
+  },
+  {
+    id: "assignments",
+    label: "Assignments",
+    icon: "FileText",
+    path: "/portal/student/assignments",
+  },
+  {
+    id: "examinations",
+    label: "Examinations",
+    icon: "GraduationCap",
+    path: "/portal/student/examinations",
+  },
+  {
+    id: "results",
+    label: "Results",
+    icon: "ChartNoAxesColumn",
+    path: "/portal/student/results",
+  },
+  {
+    id: "finance",
+    label: "Fees & Payments",
+    icon: "Wallet",
+    path: "/portal/student/finance",
+  },
+  {
+    id: "elearning",
+    label: "E-Learning",
+    icon: "MonitorPlay",
+    path: "/portal/student/elearning",
+  },
+  {
+    id: "library",
+    label: "Digital Library",
+    icon: "Library",
+    path: "/portal/student/library",
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    icon: "FolderOpen",
+    path: "/portal/student/documents",
+  },
+  {
+    id: "communication",
+    label: "Communication",
+    icon: "MessageSquare",
+    path: "/portal/student/messages",
+  },
+  {
+    id: "support",
+    label: "Support Centre",
+    icon: "LifeBuoy",
+    path: "/portal/student/support",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "Settings",
+    path: "/portal/student/settings",
+  },
+];
+
+export const staffMenu: PortalMenuItem[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "LayoutDashboard",
+    path: "/portal/staff/dashboard",
+  },
+  {
+    id: "profile",
+    label: "My Profile",
+    icon: "UserRound",
+    path: "/portal/staff/profile",
+  },
+  {
+    id: "teaching",
+    label: "Teaching",
+    icon: "BookOpen",
+    path: "/portal/staff/teaching",
+  },
+  {
+    id: "classes",
+    label: "My Classes",
+    icon: "Users",
+    path: "/portal/staff/classes",
+  },
+  {
+    id: "students",
+    label: "Students",
+    icon: "GraduationCap",
+    path: "/portal/staff/students",
+  },
+  {
+    id: "timetable",
+    label: "Timetable",
+    icon: "CalendarDays",
+    path: "/portal/staff/timetable",
+  },
+  {
+    id: "attendance",
+    label: "Attendance",
+    icon: "CalendarCheck",
+    path: "/portal/staff/attendance",
+  },
+  {
+    id: "materials",
+    label: "Learning Materials",
+    icon: "FolderOpen",
+    path: "/portal/staff/materials",
+  },
+  {
+    id: "assignments",
+    label: "Assignments",
+    icon: "FileText",
+    path: "/portal/staff/assignments",
+  },
+  {
+    id: "examinations",
+    label: "Examinations",
+    icon: "GraduationCap",
+    path: "/portal/staff/examinations",
+  },
+  {
+    id: "marks",
+    label: "Marks & Results",
+    icon: "ChartNoAxesColumn",
+    path: "/portal/staff/marks",
+  },
+  {
+    id: "communication",
+    label: "Communication",
+    icon: "MessageSquare",
+    path: "/portal/staff/messages",
+  },
+  {
+    id: "leave",
+    label: "Leave & Requests",
+    icon: "BriefcaseBusiness",
+    path: "/portal/staff/leave",
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    icon: "ChartBar",
+    path: "/portal/staff/reports",
+  },
+  {
+    id: "support",
+    label: "Support Centre",
+    icon: "LifeBuoy",
+    path: "/portal/staff/support",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "Settings",
+    path: "/portal/staff/settings",
+  },
+];
+
+export const roleLabels: Record<PortalRole, string> = {
+  STUDENT: "Student",
+  LECTURER: "Lecturer",
+  PRINCIPAL: "Principal",
+  REGISTRAR: "Registrar",
+  FINANCE_OFFICER: "Finance Officer",
+  HR_OFFICER: "HR Officer",
+  LIBRARIAN: "Librarian",
+  ADMIN: "Administrator",
+  SUPER_ADMIN: "Super Admin",
+  DEPARTMENT_HEAD: "Department Head",
+  EXAMINATION_OFFICER: "Examination Officer",
+};
+
+export const isStudentRole = (role: PortalRole) =>
+  role === "STUDENT";
+
+export const isStaffRole = (role: PortalRole) =>
+  role !== "STUDENT";
+
+
+
+
+4. Shared icon component
+We use lucide-react for icons.
+src/components/portal/PortalIcon.tsx
+
+import {
+  LayoutDashboard,
+  UserRound,
+  ClipboardList,
+  BookOpen,
+  CalendarDays,
+  CalendarCheck,
+  FileText,
+  GraduationCap,
+  ChartNoAxesColumn,
+  Wallet,
+  MonitorPlay,
+  Library,
+  FolderOpen,
+  MessageSquare,
+  LifeBuoy,
+  Settings,
+  Users,
+  BriefcaseBusiness,
+  ChartBar,
+  Bell,
+  Search,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  ShieldCheck,
+  Clock,
+  CheckCircle2,
+  CircleAlert,
+  CircleHelp,
+  Upload,
+  Plus,
+  ArrowUpRight,
+  ArrowRight,
+  CreditCard,
+  Download,
+  Home,
+  BookMarked,
+  Mail,
+  CalendarClock,
+  UserPlus,
+  ListChecks,
+  FileCheck,
+  CircleDollarSign,
+  Smartphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+  CircleUser,
+  Circle,
+  LoaderCircle,
+  RefreshCw,
+  Send,
+  GraduationCap as Graduation,
+  Building2,
+  Star,
+  Eye,
+  EyeOff,
+  CircleCheck,
+  CircleX,
+  Laptop,
+  Printer,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Filter,
+  SlidersHorizontal,
+  Bookmark,
+  ExternalLink,
+  LockKeyhole,
+  Wifi,
+  WifiOff,
+  Headphones,
+  MessageCircle,
+  Heart,
+  MapPin,
+  CalendarPlus,
+  FileUp,
+  CircleCheckBig,
+  TrendingUp,
+  TrendingDown,
+  Sun,
+  Moon,
+  Sparkles,
+  CircleMinus,
+  AlertTriangle,
+  Check,
+  KeyRound,
+  FileSearch,
+  Receipt,
+  BadgeCheck,
+  UserCog,
+  ClipboardCheck,
+  type LucideIcon,
+} from "lucide-react";
+
+const iconMap: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  UserRound,
+  ClipboardList,
+  BookOpen,
+  CalendarDays,
+  CalendarCheck,
+  FileText,
+  GraduationCap,
+  ChartNoAxesColumn,
+  Wallet,
+  MonitorPlay,
+  Library,
+  FolderOpen,
+  MessageSquare,
+  LifeBuoy,
+  Settings,
+  Users,
+  BriefcaseBusiness,
+  ChartBar,
+  Bell,
+  Search,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  ShieldCheck,
+  Clock,
+  CheckCircle2,
+  CircleAlert,
+  CircleHelp,
+  Upload,
+  Plus,
+  ArrowUpRight,
+  ArrowRight,
+  CreditCard,
+  Download,
+  Home,
+  BookMarked,
+  Mail,
+  CalendarClock,
+  UserPlus,
+  ListChecks,
+  FileCheck,
+  CircleDollarSign,
+  Smartphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+  CircleUser,
+  Circle,
+  LoaderCircle,
+  RefreshCw,
+  Send,
+  Building2,
+  Star,
+  Eye,
+  EyeOff,
+  CircleCheck,
+  CircleX,
+  Laptop,
+  Printer,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Filter,
+  SlidersHorizontal,
+  Bookmark,
+  ExternalLink,
+  LockKeyhole,
+  Wifi,
+  WifiOff,
+  Headphones,
+  MessageCircle,
+  Heart,
+  MapPin,
+  CalendarPlus,
+  FileUp,
+  CircleCheckBig,
+  TrendingUp,
+  TrendingDown,
+  Sun,
+  Moon,
+  Sparkles,
+  CircleMinus,
+  AlertTriangle,
+  Check,
+  KeyRound,
+  FileSearch,
+  Receipt,
+  BadgeCheck,
+  UserCog,
+  ClipboardCheck,
+};
+
+interface PortalIconProps {
+  name: string;
+  size?: number;
+  className?: string;
+}
+
+export function PortalIcon({
+  name,
+  size = 20,
+  className,
+}: PortalIconProps) {
+  const Icon = iconMap[name] ?? CircleHelp;
+
+  return (
+    <Icon
+      size={size}
+      className={className}
+      aria-hidden="true"
+      strokeWidth={1.8}
+    />
+  );
+}
+
+
+
+5. Portal sidebar
+src/components/portal/PortalSidebar.tsx
+
+import { NavLink } from "react-router-dom";
+import { PortalIcon } from "./PortalIcon";
+import type { PortalMenuItem, PortalRole } from "../../types/portal";
+import { roleLabels, isStudentRole } from "../../data/portal-config";
+
+interface Props {
+  role: PortalRole;
+  menu: PortalMenuItem[];
+  collapsed: boolean;
+  onToggle: () => void;
+  onClose?: () => void;
+}
+
+export function PortalSidebar({
+  role,
+  menu,
+  collapsed,
+  onToggle,
+  onClose,
+}: Props) {
+  const student = isStudentRole(role);
+
+  return (
+    <aside
+      className={`portal-sidebar ${collapsed ? "collapsed" : ""}`}
+      aria-label="Main navigation"
+    >
+      <div className="sidebar-brand">
+        <div className="brand-logo">H</div>
+
+        {!collapsed && (
+          <div className="brand-text">
+            <strong>HI-TECH</strong>
+            <span>COLLEGE</span>
+          </div>
+        )}
+
+        <button
+          className="sidebar-collapse-button"
+          onClick={onToggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <PortalIcon
+            name={collapsed ? "PanelLeftOpen" : "PanelLeftClose"}
+            size={18}
+          />
+        </button>
+      </div>
+
+      <div className="sidebar-user">
+        <div className="user-avatar">
+          {student ? "S" : "T"}
+        </div>
+
+        {!collapsed && (
+          <div className="sidebar-user-details">
+            <strong>{roleLabels[role]}</strong>
+            <span>HI-TECH Portal</span>
+          </div>
+        )}
+      </div>
+
+      <div className="sidebar-section-label">
+        {!collapsed && "WORKSPACE"}
+      </div>
+
+      <nav className="sidebar-menu">
+        {menu.map((item) => (
+          <NavLink
+            key={item.id}
+            to={item.path}
+            onClick={onClose}
+            title={collapsed ? item.label : undefined}
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? "active" : ""}`
+            }
+          >
+            <PortalIcon name={item.icon} size={19} />
+
+            {!collapsed && (
+              <span className="sidebar-link-label">
+                {item.label}
+              </span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {!collapsed && (
+        <div className="sidebar-footer">
+          <div className="sidebar-footer-card">
+            <PortalIcon name="LifeBuoy" size={20} />
+            <div>
+              <strong>Need assistance?</strong>
+              <span>Contact Support Centre</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+
+
+6. Header
+src/components/portal/PortalHeader.tsx
+
+import { useState } from "react";
+import { PortalIcon } from "./PortalIcon";
+import type { PortalUser } from "../../types/portal";
+import { roleLabels } from "../../data/portal-config";
+
+interface Props {
+  user: PortalUser;
+  onMenuClick: () => void;
+  onLogout?: () => void;
+}
+
+export function PortalHeader({
+  user,
+  onMenuClick,
+  onLogout,
+}: Props) {
+  const [showProfile, setShowProfile] = useState(false);
+
+  return (
+    <header className="portal-header">
+      <button
+        className="mobile-menu-button"
+        onClick={onMenuClick}
+        aria-label="Open navigation menu"
+      >
+        <PortalIcon name="Menu" size={22} />
+      </button>
+
+      <div className="header-search">
+        <PortalIcon name="Search" size={18} />
+
+        <input
+          type="search"
+          placeholder="Search portal..."
+          aria-label="Search portal"
+        />
+
+        <span className="search-shortcut">Ctrl K</span>
+      </div>
+
+      <div className="header-actions">
+        <button
+          className="header-icon-button"
+          aria-label="Help and support"
+          title="Help and support"
+        >
+          <PortalIcon name="LifeBuoy" />
+        </button>
+
+        <button
+          className="header-icon-button notification-button"
+          aria-label="Notifications"
+          title="Notifications"
+        >
+          <PortalIcon name="Bell" />
+          <span className="notification-dot" />
+        </button>
+
+        <div className="header-profile-container">
+          <button
+            className="header-profile-button"
+            onClick={() => setShowProfile((v) => !v)}
+            aria-expanded={showProfile}
+            aria-haspopup="menu"
+          >
+            <div className="user-avatar header-avatar">
+              {user.name
+                .split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase()}
+            </div>
+
+            <div className="header-profile-details">
+              <strong>{user.name}</strong>
+              <span>{roleLabels[user.role]}</span>
+            </div>
+
+            <PortalIcon name="ChevronDown" size={16} />
+          </button>
+
+          {showProfile && (
+            <div className="profile-dropdown" role="menu">
+              <div className="profile-dropdown-header">
+                <strong>{user.name}</strong>
+                <span>{user.email}</span>
+              </div>
+
+              <button role="menuitem">
+                <PortalIcon name="UserRound" size={17} />
+                My Profile
+              </button>
+
+              <button role="menuitem">
+                <PortalIcon name="Settings" size={17} />
+                Settings
+              </button>
+
+              <button role="menuitem">
+                <PortalIcon name="ShieldCheck" size={17} />
+                Security
+              </button>
+
+              <button
+                role="menuitem"
+                className="logout-menu-item"
+                onClick={() => {
+                  setShowProfile(false);
+                  onLogout?.();
+                }}
+              >
+                <PortalIcon name="LogOut" size={17} />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
+
+7. Mobile navigation
+src/components/portal/MobileNav.tsx
+
+import { NavLink } from "react-router-dom";
+import { PortalIcon } from "./PortalIcon";
+import type { PortalMenuItem } from "../../types/portal";
+
+interface Props {
+  items: PortalMenuItem[];
+}
+
+export function MobileNav({ items }: Props) {
+  const preferred = [
+    "dashboard",
+    "courses",
+    "attendance",
+    "communication",
+    "settings",
+  ];
+
+  const visibleItems = preferred
+    .map((id) => items.find((item) => item.id === id))
+    .filter((item): item is PortalMenuItem => Boolean(item));
+
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+      {visibleItems.map((item) => (
+        <NavLink
+          key={item.id}
+          to={item.path}
+          className={({ isActive }) =>
+            `mobile-nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <PortalIcon name={item.icon} size={21} />
+          <span>{item.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+
+
+8. Dashboard statistic card
+src/components/portal/StatCard.tsx
+
+import { PortalIcon } from "./PortalIcon";
+import type { DashboardStat } from "../../types/portal";
+
+interface Props {
+  stat: DashboardStat;
+}
+
+export function StatCard({ stat }: Props) {
+  return (
+    <article className="dashboard-stat-card">
+      <div className="stat-card-top">
+        <div className="stat-icon">
+          <PortalIcon name={stat.icon} size={21} />
+        </div>
+
+        {stat.trend && (
+          <span className="stat-trend">
+            {stat.trend}
+          </span>
+        )}
+      </div>
+
+      <div className="stat-value">{stat.value}</div>
+
+      <div className="stat-title">{stat.title}</div>
+
+      {stat.description && (
+        <div className="stat-description">
+          {stat.description}
+        </div>
+      )}
+    </article>
+  );
+}
+
+
+
+9. Quick actions
+src/components/portal/QuickActions.tsx
+
+import { PortalIcon } from "./PortalIcon";
+
+export interface QuickAction {
+  id: string;
+  label: string;
+  icon: string;
+  path?: string;
+  onClick?: () => void;
+}
+
+interface Props {
+  actions: QuickAction[];
+}
+
+export function QuickActions({ actions }: Props) {
+  return (
+    <div className="quick-actions-grid">
+      {actions.map((action) => (
+        <button
+          key={action.id}
+          className="quick-action-card"
+          onClick={action.onClick}
+          type="button"
+        >
+          <div className="quick-action-icon">
+            <PortalIcon name={action.icon} size={23} />
+          </div>
+
+          <span>{action.label}</span>
+
+          <PortalIcon
+            name="ArrowUpRight"
+            size={16}
+            className="quick-action-arrow"
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
+
+10. Timetable widget
+src/components/portal/TimetableWidget.tsx
+
+import type { TimetableEntry } from "../../types/portal";
+
+interface Props {
+  entries: TimetableEntry[];
+}
+
+export function TimetableWidget({ entries }: Props) {
+  return (
+    <section className="portal-card timetable-card">
+      <div className="card-heading">
+        <div>
+          <h2>Today's timetable</h2>
+          <p>Scheduled learning activities</p>
+        </div>
+
+        <button className="text-button">
+          View timetable
+        </button>
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="empty-state">
+          <p>No classes scheduled for today.</p>
+        </div>
+      ) : (
+        <div className="timetable-list">
+          {entries.map((entry) => (
+            <article
+              className="timetable-entry"
+              key={entry.id}
+            >
+              <div className="timetable-time">
+                <strong>{entry.startTime}</strong>
+                <span>{entry.endTime}</span>
+              </div>
+
+              <div className="timetable-entry-content">
+                <strong>{entry.subject}</strong>
+
+                {entry.unitCode && (
+                  <span className="unit-code">
+                    {entry.unitCode}
+                  </span>
+                )}
+
+                <span className="timetable-location">
+                  {entry.location}
+                </span>
+
+                {entry.instructor && (
+                  <span className="timetable-instructor">
+                    {entry.instructor}
+                  </span>
+                )}
+              </div>
+
+              <div
+                className={`class-status ${
+                  entry.status?.toLowerCase() ?? "upcoming"
+                }`}
+              >
+                {entry.status ?? "UPCOMING"}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+
+
+11. Activity panel
+src/components/portal/ActivityPanel.tsx
+
+import type { DashboardActivity } from "../../types/portal";
+import { PortalIcon } from "./PortalIcon";
+
+interface Props {
+  activities: DashboardActivity[];
+}
+
+const activityIcons: Record<string, string> = {
+  assignment: "FileText",
+  notice: "Bell",
+  exam: "GraduationCap",
+  payment: "Wallet",
+  task: "ClipboardCheck",
+};
+
+interface Props {
+  activities: DashboardActivity[];
+}
+
+export function ActivityPanel({ activities }: Props) {
+  return (
+    <section className="portal-card activity-card">
+      <div className="card-heading">
+        <div>
+          <h2>Upcoming activities</h2>
+          <p>Important events and deadlines</p>
+        </div>
+      </div>
+
+      {activities.length === 0 ? (
+        <div className="empty-state">
+          <p>No upcoming activities.</p>
+        </div>
+      ) : (
+        <div className="activity-list">
+          {activities.map((activity) => (
+            <article
+              className="activity-item"
+              key={activity.id}
+            >
+              <div className="activity-icon">
+                <PortalIcon
+                  name={activityIcons[activity.type] ?? "FileText"}
+                />
+              </div>
+
+              <div className="activity-content">
+                <strong>{activity.title}</strong>
+                <p>{activity.description}</p>
+                <span>{activity.date}</span>
+              </div>
+
+              {activity.status && (
+                <span className="activity-status">
+                  {activity.status}
+                </span>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+
+
+12. Portal shell
+src/components/portal/PortalShell.tsx
+This component provides the common layout for both the Staff and Student Portals.
+
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import type { PortalRole, PortalUser } from "../../types/portal";
+import { staffMenu, studentMenu } from "../../data/portal-config";
+import { PortalSidebar } from "./PortalSidebar";
+import { PortalHeader } from "./PortalHeader";
+import { MobileNav } from "./MobileNav";
+
+interface Props {
+  user: PortalUser;
+  onLogout?: () => void;
+}
+
+export function PortalShell({ user, onLogout }: Props) {
+  const student = user.role === "STUDENT";
+
+  const menu = student ? studentMenu : staffMenu;
+
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setCollapsed((current) => !current);
+  };
+
+  return (
+    <div className="portal-layout">
+      <div
+        className={`portal-sidebar-wrapper ${
+          mobileMenuOpen ? "mobile-open" : ""
+        }`}
+      >
+        <PortalSidebar
+          role={user.role}
+          menu={menu}
+          collapsed={collapsed}
+          onToggle={toggleSidebar}
+          onClose={() => setMobileMenuOpen(false)}
+        />
+      </div>
+
+      {mobileMenuOpen && (
+        <button
+          className="mobile-sidebar-overlay"
+          aria-label="Close navigation"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <div
+        className={`portal-main ${
+          collapsed ? "sidebar-collapsed" : ""
+        }`}
+      >
+        <PortalHeader
+          user={user}
+          onMenuClick={() => setMobileMenuOpen(true)}
+          onLogout={onLogout}
+        />
+
+        <main className="portal-content" id="main-content">
+          <Outlet />
+        </main>
+
+        <footer className="portal-footer">
+          <span>HI-TECH College</span>
+          <span>Digital Academic & Certification Platform</span>
+        </footer>
+      </div>
+
+      <MobileNav items={menu} />
+    </div>
+  );
+}
+
+
+
+13. Page header
+src/components/portal/PortalPage.tsx
+
+import type { ReactNode } from "react";
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}
+
+export function PortalPage({
+  title,
+  subtitle,
+  children,
+  action,
+}: Props) {
+  return (
+    <div className="portal-page">
+      <div className="portal-page-heading">
+        <div>
+          <h1>{title}</h1>
+
+          {subtitle && (
+            <p className="portal-page-subtitle">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        {action && (
+          <div className="portal-page-actions">
+            {action}
+          </div>
+        )}
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+
+
+
+Part I — Staff Dashboard
+14. Staff dashboard code
+src/modules/staff/StaffDashboard.tsx
+
+import { PortalPage } from "../../components/portal/PortalPage";
+import { StatCard } from "../../components/portal/StatCard";
+import { QuickActions } from "../../components/portal/QuickActions";
+import { TimetableWidget } from "../../components/portal/TimetableWidget";
+import { ActivityPanel } from "../../components/portal/ActivityPanel";
+import type {
+  DashboardStat,
+  TimetableEntry,
+  DashboardActivity,
+} from "../../types/portal";
+
+const stats: DashboardStat[] = [
+  {
+    id: "classes",
+    title: "My Classes",
+    value: "8",
+    description: "Assigned classes",
+    icon: "BookOpen",
+  },
+  {
+    id: "students",
+    title: "My Students",
+    value: "240",
+    description: "Across assigned classes",
+    icon: "Users",
+  },
+  {
+    id: "tasks",
+    title: "Pending Tasks",
+    value: "12",
+    description: "Requires attention",
+    icon: "ClipboardList",
+  },
+  {
+    id: "attendance",
+    title: "Attendance",
+    value: "92%",
+    description: "Illustrative attendance",
+    icon: "CalendarCheck",
+  },
+];
+
+const timetable: TimetableEntry[] = [
+  {
+    id: "1",
+    subject: "Computer Applications",
+    unitCode: "CA101",
+    startTime: "08:00",
+    endTime: "10:00",
+    location: "Computer Lab 1",
+    status: "COMPLETED",
+  },
+  {
+    id: "2",
+    subject: "Computer Networking",
+    unitCode: "NET201",
+    startTime: "10:30",
+    endTime: "12:30",
+    location: "Room B12",
+    status: "UPCOMING",
+  },
+  {
+    id: "3",
+    subject: "ICT Practical",
+    unitCode: "ICT205",
+    startTime: "14:00",
+    endTime: "16:00",
+    location: "Computer Lab 2",
+    status: "UPCOMING",
+  },
+];
+
+const activities: DashboardActivity[] = [
+  {
+    id: "1",
+    title: "Networking Assignment",
+    description: "Review student submissions",
+    date: "20 November 2026",
+    type: "assignment",
+    status: "12 submissions",
+  },
+  {
+    id: "2",
+    title: "Department Meeting",
+    description: "Academic department meeting",
+    date: "21 November 2026",
+    type: "notice",
+  },
+  {
+    id: "3",
+    title: "CAT Moderation",
+    description: "Submit CAT marking for moderation",
+    date: "23 November 2026",
+    type: "task",
+    status: "Pending",
+  },
+];
+
+export default function StaffDashboard() {
+  return (
+    <PortalPage
+      title="Staff Dashboard"
+      subtitle="Your teaching, academic responsibilities and daily activities."
+    >
+      <section className="dashboard-welcome">
+        <div className="welcome-content">
+          <span className="welcome-label">
+            STAFF WORKSPACE
+          </span>
+
+          <h2>Welcome back!</h2>
+
+          <p>
+            Manage your classes, students, assessments and
+            academic responsibilities from one workspace.
+          </p>
+        </div>
+
+        <div className="welcome-decoration">
+          <div className="welcome-circle">
+            <span>H</span>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="stats-grid"
+        aria-label="Staff statistics"
+      >
+        {stats.map((stat) => (
+          <StatCard key={stat.id} stat={stat} />
+        ))}
+      </section>
+
+      <section className="dashboard-section">
+        <div className="section-heading">
+          <div>
+            <h2>Quick actions</h2>
+            <p>Frequently used staff services</p>
+          </div>
+        </div>
+
+        <QuickActions
+          actions={[
+            {
+              id: "attendance",
+              label: "Take Attendance",
+              icon: "CalendarCheck",
+            },
+            {
+              id: "materials",
+              label: "Upload Materials",
+              icon: "Upload",
+            },
+            {
+              id: "assessment",
+              label: "Create Assessment",
+              icon: "FileText",
+            },
+            {
+              id: "marks",
+              label: "Enter Marks",
+              icon: "ClipboardList",
+            },
+            {
+              id: "students",
+              label: "View Students",
+              icon: "Users",
+            },
+            {
+              id: "timetable",
+              label: "My Timetable",
+              icon: "CalendarDays",
+            },
+          ]}
+        />
+      </section>
+
+      <section className="dashboard-two-column">
+        <TimetableWidget entries={timetable} />
+        <ActivityPanel activities={activities} />
+      </section>
+    </PortalPage>
+  );
+}
+
+
+
+Dashboard data above is mock data for the UI. Replace it with API data before deployment.
+
+Part J — Student Dashboard
+15. Student dashboard code
+src/modules/student/StudentDashboard.tsx
+
+import { PortalPage } from "../../components/portal/PortalPage";
+import { StatCard } from "../../components/portal/StatCard";
+import { QuickActions } from "../../components/portal/QuickActions";
+import { TimetableWidget } from "../../components/portal/TimetableWidget";
+import { ActivityPanel } from "../../components/portal/ActivityPanel";
+import type {
+  DashboardStat,
+  TimetableEntry,
+  DashboardActivity,
+} from "../../types/portal";
+
+const stats: DashboardStat[] = [
+  {
+    id: "units",
+    title: "Registered Units",
+    value: "6",
+    description: "Current academic semester",
+    icon: "BookOpen",
+  },
+  {
+    id: "attendance",
+    title: "Attendance",
+    value: "94%",
+    description: "Illustrative attendance",
+    icon: "CalendarCheck",
+  },
+  {
+    id: "assignments",
+    title: "Assignments",
+    value: "8",
+    description: "Active assignments",
+    icon: "FileText",
+  },
+  {
+    id: "balance",
+    title: "Fee Balance",
+    value: "KES 12,500",
+    description: "Illustrative balance",
+    icon: "Wallet",
+  },
+];
+
+const timetable: TimetableEntry[] = [
+  {
+    id: "1",
+    subject: "Computer Applications",
+    unitCode: "CA101",
+    startTime: "08:00",
+    endTime: "10:00",
+    location: "Computer Lab 1",
+    instructor: "Lecturer",
+    status: "COMPLETED",
+  },
+  {
+    id: "2",
+    subject: "Computer Networking",
+    unitCode: "NET201",
+    startTime: "10:30",
+    endTime: "12:30",
+    location: "Room B12",
+    instructor: "Lecturer",
+    status: "UPCOMING",
+  },
+  {
+    id: "3",
+    subject: "ICT Practical",
+    unitCode: "ICT205",
+    startTime: "14:00",
+    endTime: "16:00",
+    location: "Computer Lab 2",
+    instructor: "Lecturer",
+    status: "UPCOMING",
+  },
+];
+
+const activities: DashboardActivity[] = [
+  {
+    id: "1",
+    title: "Networking Assignment",
+    description: "Submit your assignment",
+    date: "20 November 2026",
+    type: "assignment",
+    status: "Pending",
+  },
+  {
+    id: "2",
+    title: "Computer Applications CAT",
+    description: "Assessment scheduled",
+    date: "24 November 2026",
+    type: "exam",
+  },
+  {
+    id: "3",
+    title: "College Announcement",
+    description: "Academic calendar update",
+    date: "19 November 2026",
+    type: "notice",
+  },
+];
+
+export default function StudentDashboard() {
+  return (
+    <PortalPage
+      title="Student Dashboard"
+      subtitle="Your academic activities, courses and college services."
+    >
+      <section className="student-welcome">
+        <div>
+          <span className="welcome-label">
+            STUDENT WORKSPACE
+          </span>
+
+          <h2>Welcome back!</h2>
+
+          <p>
+            Your learning journey starts here.
+            Access your classes, assignments, results and college services.
+          </p>
+
+          <div className="student-identity">
+            <span>HCA/STU/2026/0001</span>
+            <span>Diploma in Information Technology</span>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="stats-grid"
+        aria-label="Student academic summary"
+      >
+        {stats.map((stat) => (
+          <StatCard key={stat.id} stat={stat} />
+        ))}
+      </section>
+
+      <section className="dashboard-section">
+        <div className="section-heading">
+          <div>
+            <h2>Quick access</h2>
+            <p>Access your frequently used services</p>
+          </div>
+        </div>
+
+        <QuickActions
+          actions={[
+            {
+              id: "registration",
+              label: "Register Units",
+              icon: "ClipboardList",
+            },
+            {
+              id: "assignments",
+              label: "Assignments",
+              icon: "FileText",
+            },
+            {
+              id: "results",
+              label: "View Results",
+              icon: "GraduationCap",
+            },
+            {
+              id: "finance",
+              label: "Pay Fees",
+              icon: "Wallet",
+            },
+            {
+              id: "library",
+              label: "Library",
+              icon: "Library",
+            },
+            {
+              id: "documents",
+              label: "My Documents",
+              icon: "FolderOpen",
+            },
+          ]}
+        />
+      </section>
+
+      <section className="dashboard-two-column">
+        <TimetableWidget entries={timetable} />
+        <ActivityPanel activities={activities} />
+      </section>
+    </PortalPage>
+  );
+}
+
+
+
+
+Part K — Responsive CSS
+16. Design system and layout CSS
+src/styles/portal.css
+
+:root {
+  --portal-navy: #102d50;
+  --portal-blue: #1769aa;
+  --portal-red: #b83232;
+  --portal-cream: #f5ebdd;
+  --portal-background: #f4f7fb;
+  --portal-surface: #ffffff;
+  --portal-border: #e4e9f0;
+  --portal-text: #1c2939;
+  --portal-muted: #64748b;
+  --portal-success: #15803d;
+  --portal-warning: #b45309;
+  --portal-danger: #b83232;
+  --portal-shadow: 0 4px 18px rgba(16, 45, 80, 0.06);
+  --portal-radius: 14px;
+  --portal-font: Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 76px;
+  --header-height: 68px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--portal-font);
+  color: var(--portal-text);
+}
+
+body {
+  margin: 0;
+  background: var(--portal-background);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+#main-content {
+  min-width: 0;
+}
+
+.portal-layout {
+  min-height: 100vh;
+}
+
+.portal-sidebar-wrapper {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  width: var(--sidebar-width);
+  transition: width 180ms ease;
+}
+
+.portal-sidebar-wrapper:has(.portal-sidebar.collapsed) {
+  width: var(--sidebar-collapsed-width);
+}
+
+.portal-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--portal-surface);
+  border-right: 1px solid var(--portal-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 180ms ease;
+}
+
+.portal-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--header-height);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--portal-border);
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--portal-navy);
+  color: white;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  color: var(--portal-navy);
+}
+
+.brand-text strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.brand-text span {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+}
+
+.sidebar-collapse-button {
+  border: 0;
+  background: transparent;
+  color: var(--portal-muted);
+  margin-left: auto;
+  padding: 7px;
+  border-radius: 8px;
+}
+
+.sidebar-collapse-button:hover {
+  background: var(--portal-background);
+  color: var(--portal-navy);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin: 12px;
+  border-radius: 12px;
+  background: var(--portal-background);
+}
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--portal-navy);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sidebar-user-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-user-details strong {
+  font-size: 13px;
+}
+
+.sidebar-user-details span {
+  color: var(--portal-muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.sidebar-section-label {
+  padding: 8px 20px;
+  color: var(--portal-muted);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #475569;
+  font-size: 13px;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sidebar-link:hover {
+  background: #eef4fb;
+  color: var(--portal-navy);
+}
+
+.sidebar-link.active {
+  background: var(--portal-navy);
+  color: white;
+}
+
+.sidebar-link-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.portal-sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.portal-sidebar.collapsed .sidebar-collapse-button {
+  display: none;
+}
+
+.portal-sidebar.collapsed .sidebar-user {
+  justify-content: center;
+  padding: 8px;
+}
+
+.portal-sidebar.collapsed .sidebar-menu {
+  padding: 8px;
+}
+
+.portal-sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+}
+
+.sidebar-footer-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--portal-cream);
+  color: var(--portal-navy);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.sidebar-footer-card div {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-footer-card strong {
+  font-size: 12px;
+}
+
+.sidebar-footer-card span {
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.portal-main {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  transition: margin-left 180ms ease;
+}
+
+.portal-main.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  height: var(--header-height);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: var(--portal-surface);
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, 40%);
+  padding: 10px 12px;
+  border: 1px solid var(--portal-border);
+  background: var(--portal-background);
+  border-radius: 10px;
+  color: var(--portal-muted);
+}
+
+.header-search input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  outline: none;
+  font-size: 13px;
+  color: var(--portal-text);
+}
+
+.header-search input:focus-visible {
+  outline: none;
+}
+
+.search-shortcut {
+  flex-shrink: 0;
+  font-size: 10px;
+  background: white;
+  padding: 3px 6px;
+  border: 1px solid var(--portal-border);
+  border-radius: 5px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-icon-button {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  color: var(--portal-navy);
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+}
+
+.header-icon-button:hover {
+  background: var(--portal-background);
+}
+
+.notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--portal-red);
+  border-radius: 50%;
+}
+
+.header-profile-container {
+  position: relative;
+}
+
+.header-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: var(--portal-text);
+  padding: 5px;
+  border-radius: 10px;
+}
+
+.header-profile-button:hover {
+  background: var(--portal-background);
+}
+
+.header-profile-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.header-profile-details strong {
+  font-size: 12px;
+}
+
+.header-profile-details span {
+  font-size: 11px;
+  color: var(--portal-muted);
+  margin-top: 3px;
+}
+
+.header-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 250px;
+  padding: 8px;
+  background: white;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  box-shadow: var(--portal-shadow);
+  z-index: 60;
+}
+
+.profile-dropdown-header {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-bottom: 1px solid var(--portal-border);
+  margin-bottom: 6px;
+}
+
+.profile-dropdown-header strong {
+  font-size: 13px;
+}
+
+.profile-dropdown-header span {
+  color: var(--portal-muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.profile-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--portal-text);
+}
+
+.profile-dropdown button:hover {
+  background: var(--portal-background);
+}
+
+.logout-menu-item {
+  border-top: 1px solid var(--portal-border) !important;
+  margin-top: 6px;
+  color: var(--portal-danger) !important;
+}
+
+.portal-content {
+  padding: 24px;
+  min-height: calc(100vh - var(--header-height) - 60px);
+}
+
+.portal-page {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.portal-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.portal-page-heading h1 {
+  color: var(--portal-navy);
+  font-size: 24px;
+  margin: 0;
+  font-weight: 750;
+}
+
+.portal-page-subtitle {
+  margin: 8px 0 0;
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.portal-page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-welcome,
+.student-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px;
+  border-radius: 18px;
+  background: var(--portal-navy);
+  color: white;
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dashboard-welcome h2,
+.student-welcome h2 {
+  font-size: 26px;
+  margin: 10px 0;
+}
+
+.dashboard-welcome p,
+.student-welcome p {
+  color: #d7e4f2;
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 550px;
+}
+
+.welcome-label {
+  color: #c6d8ed;
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  font-weight: 700;
+}
+
+.welcome-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: grid;
+  place-items: center;
+  font-size: 58px;
+  font-weight: 800;
+  color: white;
+}
+
+.student-welcome {
+  background: linear-gradient(135deg, var(--portal-navy), #1769aa);
+}
+
+.student-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.student-identity span {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: white;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.dashboard-stat-card {
+  background: var(--portal-surface);
+  border: 1px solid var(--portal-border);
+  border-radius: var(--portal-radius);
+  padding: 20px;
+  box-shadow: var(--portal-shadow);
+  min-width: 0;
+}
+
+.stat-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: var(--portal-blue);
+  background: #e9f2fc;
+}
+
+.stat-trend {
+  color: var(--portal-success);
+  font-size: 11px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 750;
+  margin-top: 18px;
+  color: var(--portal-navy);
+  overflow-wrap: anywhere;
+}
+
+.stat-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.stat-description {
+  color: var(--portal-muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.dashboard-section {
+  margin-bottom: 28px;
+}
+
+.section-heading,
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2,
+.card-heading h2 {
+  color: var(--portal-navy);
+  font-size: 16px;
+  margin: 0;
+}
+
+.section-heading p,
+.card-heading p {
+  color: var(--portal-muted);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  text-align: left;
+  background: white;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  color: var(--portal-text);
+  transition: transform 150ms ease, border 150ms ease;
+}
+
+.quick-action-card:hover {
+  border-color: var(--portal-blue);
+  transform: translateY(-2px);
+}
+
+.quick-action-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #edf4fb;
+  color: var(--portal-blue);
+}
+
+.quick-action-card > span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quick-action-arrow {
+  margin-left: auto;
+  color: var(--portal-muted);
+  flex-shrink: 0;
+}
+
+.dashboard-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.portal-card {
+  background: var(--portal-surface);
+  border: 1px solid var(--portal-border);
+  border-radius: var(--portal-radius);
+  padding: 20px;
+  box-shadow: var(--portal-shadow);
+  min-width: 0;
+}
+
+.text-button {
+  color: var(--portal-blue);
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.timetable-list,
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.timetable-entry {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.timetable-entry:last-child,
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.timetable-time {
+  display: flex;
+  flex-direction: column;
+  width: 65px;
+  flex-shrink: 0;
+  color: var(--portal-navy);
+}
+
+.timetable-time strong {
+  font-size: 12px;
+}
+
+.timetable-time span {
+  font-size: 11px;
+  color: var(--portal-muted);
+  margin-top: 5px;
+}
+
+.timetable-entry-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.timetable-entry-content strong {
+  font-size: 13px;
+}
+
+.unit-code,
+.timetable-location,
+.timetable-instructor {
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+
+.class-status {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #475569;
+}
+
+.class-status.completed {
+  background: #eaf7ee;
+  color: #166534;
+}
+
+.class-status.upcoming {
+  background: #eaf2fc;
+  color: var(--portal-blue);
+}
+
+.class-status.ongoing {
+  background: #fff5e6;
+  color: var(--portal-warning);
+}
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--portal-border);
+  align-items: flex-start;
+}
+
+.activity-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #edf4fb;
+  color: var(--portal-blue);
+}
+
+.activity-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-content strong {
+  font-size: 13px;
+}
+
+.activity-content p {
+  color: var(--portal-muted);
+  font-size: 11px;
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
+.activity-content span {
+  font-size: 10px;
+  color: var(--portal-blue);
+}
+
+.activity-status {
+  font-size: 10px;
+  color: var(--portal-warning);
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--portal-muted);
+  padding: 28px 12px;
+  font-size: 12px;
+}
+
+.portal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--portal-border);
+  background: white;
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+
+.mobile-menu-button {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--portal-navy);
+  padding: 8px;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+.mobile-sidebar-overlay {
+  display: none;
+}
+
+
+
+17. Responsive CSS — tablet and mobile
+Continue the same portal.css file.
+
+/* Tablet */
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .header-search {
+    width: min(300px, 35%);
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 60px;
+  }
+
+  .portal-sidebar-wrapper {
+    width: min(300px, 85vw);
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+    z-index: 50;
+  }
+
+  .portal-sidebar-wrapper.mobile-open {
+    transform: translateX(0);
+  }
+
+  .portal-sidebar-wrapper:has(.portal-sidebar.collapsed) {
+    width: min(300px, 85vw);
+  }
+
+  .portal-sidebar.collapsed {
+    width: 100%;
+  }
+
+  .portal-sidebar.collapsed .sidebar-brand {
+    justify-content: flex-start;
+    padding: 0 16px;
+  }
+
+  .portal-sidebar.collapsed .sidebar-collapse-button {
+    display: flex;
+  }
+
+  .portal-sidebar.collapsed .sidebar-user {
+    justify-content: flex-start;
+    padding: 16px;
+  }
+
+  .portal-sidebar.collapsed .sidebar-menu {
+    padding: 8px 12px;
+  }
+
+  .portal-sidebar.collapsed .sidebar-link {
+    justify-content: flex-start;
+    padding: 10px 12px;
+  }
+
+  .portal-sidebar.collapsed .sidebar-footer {
+    display: block;
+  }
+
+  .portal-sidebar-wrapper.mobile-open .portal-sidebar.collapsed
+    .sidebar-link-label,
+  .portal-sidebar-wrapper.mobile-open .portal-sidebar.collapsed
+    .brand-text,
+  .portal-sidebar-wrapper.mobile-open .portal-sidebar.collapsed
+    .sidebar-user-details {
+    display: block;
+  }
+
+  .mobile-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: block;
+    z-index: 45;
+    border: none;
+  }
+
+  .portal-main,
+  .portal-main.sidebar-collapsed {
+    margin-left: 0;
+  }
+
+  .portal-header {
+    padding: 0 12px;
+  }
+
+  .mobile-menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-search {
+    width: auto;
+    flex: 1;
+    margin: 0 10px;
+    padding: 8px;
+  }
+
+  .search-shortcut {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header-profile-details,
+  .header-profile-button > svg {
+    display: none;
+  }
+
+  .header-profile-button {
+    padding: 0;
+  }
+
+  .header-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .portal-content {
+    padding: 16px;
+    padding-bottom: 96px;
+  }
+
+  .portal-page-heading {
+    flex-direction: column;
+    margin-bottom: 20px;
+  }
+
+  .portal-page-heading h1 {
+    font-size: 21px;
+  }
+
+  .portal-page-subtitle {
+    font-size: 12px;
+  }
+
+  .dashboard-welcome,
+  .student-welcome {
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+
+  .dashboard-welcome h2,
+  .student-welcome h2 {
+    font-size: 22px;
+  }
+
+  .dashboard-welcome p,
+  .student-welcome p {
+    font-size: 12px;
+  }
+
+  .welcome-circle {
+    width: 90px;
+    height: 90px;
+    font-size: 36px;
+  }
+
+  .welcome-decoration {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .dashboard-stat-card {
+    padding: 15px;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    margin-top: 14px;
+  }
+
+  .stat-title {
+    font-size: 12px;
+  }
+
+  .stat-description {
+    font-size: 10px;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .quick-action-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .quick-action-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .quick-action-card > span {
+    font-size: 11px;
+  }
+
+  .quick-action-arrow {
+    display: none;
+  }
+
+  .dashboard-two-column {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .portal-card {
+    padding: 16px;
+  }
+
+  .timetable-entry {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .class-status {
+    margin-left: auto;
+  }
+
+  .activity-item {
+    flex-wrap: wrap;
+  }
+
+  .activity-status {
+    margin-left: 52px;
+  }
+
+  .portal-footer {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+    margin-bottom: 70px;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 35;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: 68px;
+    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+    background: white;
+    border-top: 1px solid var(--portal-border);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--portal-muted);
+    border-radius: 10px;
+    padding: 4px;
+    font-size: 10px;
+    min-width: 0;
+  }
+
+  .mobile-nav-item span {
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--portal-blue);
+    background: #edf4fb;
+    font-weight: 700;
+  }
+}
+
+/* Very small devices */
+
+@media (max-width: 374px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-search input {
+    font-size: 11px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .portal-content {
+    padding: 12px;
+  }
+}
+
+/* Reduced motion accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+
+Part L — App routing
+18. App entry and routes
+src/App.tsx
+This is a demonstration route setup. In the actual project, integrate with the existing authentication provider, protected route component and router rather than creating a second authentication system.
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import { PortalShell } from "./components/portal/PortalShell";
+import StaffDashboard from "./modules/staff/StaffDashboard";
+import StudentDashboard from "./modules/student/StudentDashboard";
+import type { PortalUser } from "./types/portal";
+
+import "./styles/portal.css";
+
+// Temporary UI preview only.
+// Replace this with the authenticated user from the existing auth provider.
+
+const demoStaff: PortalUser = {
+  id: "preview-staff",
+  name: "Staff Member",
+  email: "staff@example.test",
+  staffNumber: "HCA/STAFF/2026/0001",
+  role: "LECTURER",
+  department: "Information Technology",
+  campus: "Kitengela",
+};
+
+const demoStudent: PortalUser = {
+  id: "preview-student",
+  name: "Student Member",
+  email: "student@example.test",
+  registrationNumber: "HCA/STU/2026/0001",
+  role: "STUDENT",
+  department: "Information Technology",
+  campus: "Kitengela",
+};
+
+function StaffPortal() {
+  return (
+    <PortalShell user={demoStaff}>
+      <StaffDashboard />
+    </PortalShell>
+  );
+}
+
+function StudentPortal() {
+  return (
+    <PortalShell user={demoStudent}>
+      <StudentDashboard />
+    </PortalShell>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/portal/staff"
+          element={<StaffPortal />}
+        >
+          <Route
+            index
+            element={
+              <Navigate
+                to="/portal/staff/dashboard"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="dashboard"
+            element={<StaffDashboard />}
+          />
+        </Route>
+
+        <Route
+          path="/portal/student"
+          element={<StudentPortal />}
+        >
+          <Route
+            index
+            element={
+              <Navigate
+                to="/portal/student/dashboard"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="dashboard"
+            element={<StudentDashboard />}
+          />
+        </Route>
+
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to="/portal/student/dashboard"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <div style={{ padding: 40 }}>
+              <h1>404</h1>
+              <p>Page not found.</p>
+            </div>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+
+
+Important route correction
+The PortalShell above uses <Outlet />. Therefore the dashboard must be rendered through the child route, not independently inside StaffPortal or StudentPortal.
+
+Replace the two portal wrappers in App.tsx with:
+
+function StaffPortal() {
+  return (
+    <PortalShell user={demoStaff} />
+  );
+}
+
+function StudentPortal() {
+  return (
+    <PortalShell user={demoStudent} />
+  );
+}
+
+
+
+The complete routes will now render the dashboard correctly inside the shell.
+19. Application bootstrap
+src/main.tsx
+If the repository already has a main.tsx, retain the existing bootstrap and only add the relevant imports or adjustments.
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+import "./styles/portal.css";
+
+ReactDOM.createRoot(
+  document.getElementById("root")!
+).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
+
+Remove duplicate CSS imports if your existing bootstrap already imports the stylesheet.
+
+Part M — Dependencies and setup
+20. Dependencies
+The UI uses React Router and Lucide icons.
+
+If they are not already installed, run inside apps/web:
+npm install react-router-dom lucide-react
+
+
+If your project already uses React Router or Lucide, don't install duplicate versions.
+21. Verify the frontend
+From hitech-college-website/apps/web:
+npm run dev
+
+
+For production type checking and build:
+npx tsc --noEmit
+npm run build
+
+
+These commands have not been executed against your repository. This code has not yet been verified against your existing package versions, router, API or database.
+
+Part N — What the portal will look like
+
+
+
+
+
+Staff Desktop
+
+Teaching, students, attendance, marking and institutional services.
+
+
+
+
+
+
+
+Student Desktop
+
+Registration, courses, examinations, payments and learning resources.
+
+
+
+
+
+
+
+Staff Mobile
+
+Mobile-first teaching and administrative tasks.
+
+
+
+
+
+
+
+
+
+
+
+
+Student Mobile
+
+Learning, submissions, fees, timetable and student services.
+
+
+
+22. Next code slices
+Slice	Implementation
+01	Shared portal shell and dashboards — started above
+02	Authentication integration, protected routes and role-based redirects
+03	Staff profile, employment profile and staff directory
+04	Student profile, guardians, documents and student lifecycle
+05	Academic registration, unit selection and approvals
+06	Teaching, classes, timetable and attendance
+07	Assignments, examination builder, marking and results
+08	Student finance, M-Pesa integration and receipts
+09	HR, leave, staff requests and permissions
+10	Communication, notifications and chatbot
+11	Digital library, e-learning and downloads
+12	Reports, analytics and institutional dashboards
+13	Mobile application implementation
+14	Testing, accessibility and production deployment
+
+The next slice is Authentication Integration + Protected Portal Routes + Role-Based Access Control, with the real existing login and permission system preserved.
+
+I can continue writing the complete next slice, including the protected route code, auth provider integration contract, session handling, permissions and login redirect logic.

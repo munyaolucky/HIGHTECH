@@ -1,18 +1,33 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import CourseCard from "../components/CourseCard";
 import { COURSES_CATALOGUE } from "../../data/college";
 import { CourseProgramme } from "../../types";
 import { Search, Filter, BookOpen, Layers, Award, Sparkles } from "lucide-react";
 
 interface AcademicsProps {
+  initialDepartment?: string;
+  initialLevel?: string;
   onSelectCourse: (course: CourseProgramme) => void;
   onApplyCourse: (course: CourseProgramme) => void;
 }
 
-export default function Academics({ onSelectCourse, onApplyCourse }: AcademicsProps) {
+export default function Academics({
+  initialDepartment,
+  initialLevel,
+  onSelectCourse,
+  onApplyCourse,
+}: AcademicsProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("ALL");
-  const [selectedLevel, setSelectedLevel] = useState("ALL");
+  const [selectedDepartment, setSelectedDepartment] = useState(initialDepartment ?? "ALL");
+  const [selectedLevel, setSelectedLevel] = useState(initialLevel ?? "ALL");
+
+  useEffect(() => {
+    setSelectedDepartment(initialDepartment ?? "ALL");
+  }, [initialDepartment]);
+
+  useEffect(() => {
+    setSelectedLevel(initialLevel ?? "ALL");
+  }, [initialLevel]);
 
   const departments = [
     { id: "ALL", label: "All Departments" },

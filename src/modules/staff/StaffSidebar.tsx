@@ -229,7 +229,7 @@ export default function StaffSidebar({
         aria-current={isActive ? 'page' : undefined}
         className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
           isActive
-            ? 'bg-[#1769AA] font-semibold text-white shadow-xs'
+            ? 'bg-[#1769AA] border-l-4 border-[#F5EBDD] font-semibold text-white shadow-xs'
             : 'text-blue-100/90 hover:bg-white/10 hover:text-white'
         }`}
       >
@@ -255,17 +255,22 @@ export default function StaffSidebar({
           collapsed ? 'w-20' : 'w-72'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-16 items-center justify-between border-b-2 border-[#B83232] px-4">
           {!collapsed ? (
-            <div className="min-w-0">
-              <div className="text-base font-extrabold tracking-tight text-white truncate">
-                HI-TECH <span className="text-[#E8B44A]">COLLEGE</span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F5EBDD] text-sm font-black text-[#102D50]">
+                H
               </div>
-              <div className="text-[11px] text-blue-200/80 truncate">Staff Workspace</div>
+              <div className="min-w-0">
+                <div className="text-sm font-extrabold tracking-tight text-white truncate">
+                  HI-TECH COLLEGE
+                </div>
+                <div className="text-[11px] font-semibold text-[#F5EBDD] truncate">Staff Portal</div>
+              </div>
             </div>
           ) : (
-            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#E8B44A] text-xs font-black text-[#102D50]">
-              HC
+            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#F5EBDD] text-xs font-black text-[#102D50]">
+              H
             </div>
           )}
           <button

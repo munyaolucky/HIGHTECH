@@ -1,0 +1,1817 @@
+# **Slice 05 — Staff Student Directory & Student Profile Management**
+
+HI-TECH College Portal | Staff | Desktop + Mobile
+
+This module allows authorized staff to search, register, review and manage student records from a single workspace.
+
+[Progress Solution Technologies](https://images.openai.com/static-rsc-4/B-zI7j5tG1JGQjopf1cJuAZoT-J2AC-DEO4gTOd9EzxIBemuR86WQr9Nm6WBnVe5eMV8WAHWPrrwCmBjs3G0_VcRe0FwAzoNxPx-9SVA5B0K7svFOpyy3I3X2dMYIk5JUz-6235PwBpt1A0fwk1wfdCimE1igkSWHst_jSokn3U?purpose=inline)
+
+[NEDSIS | Inventra](https://images.openai.com/static-rsc-4/AmLwSx3-nU7qUgKgNOHUzREbGlEiWd4m5J7Af4PTDL7EgGl336CMS6X8g8-u3ek-o9j9MjN6pDZGND2IhqCqgb8x7EeqL3_bo-6BQioTlsKv4cLmN0NcPDCFxeeviy_EuTpg1odOpXzm4H0EDTPQRP9w_Y5dsaHVsr3v4bc3Fho?purpose=inline)
+
+## **1. Student directory module**
+
+The Student Directory should become the central entry point for authorized student administration.
+
+# **Students**
+
+Student administration workspace
+
+Register Student
+
+Total Students
+
+# **3,850**
+
+Illustrative
+
+Active
+
+# **3,210**
+
+Illustrative
+
+Pending Admission
+
+# **120**
+
+Illustrative
+
+Suspended
+
+# **24**
+
+Illustrative
+
+These numbers are sample UI values, not actual institutional records.
+
+## **2. Directory layout**
+
+Desktop
+
+**Student Directory**
+
+Students / Directory
+
+Search by name, reg no. or phone
+
+Course
+
+Campus
+
+Status
+
+Year
+
+**Student Name**
+
+HCA/STD/2026/001ICT | Active
+
+Profile · Records · Documents
+
+## **3. Student management capabilities**
+
+| Feature          | Description                                   |
+| ---------------- | --------------------------------------------- |
+| Search           | Name, registration number, email, telephone   |
+| Advanced filters | Programme, department, intake, campus, status |
+| Profile          | Complete authorized student record            |
+| Registration     | Staff-created student registration            |
+| Admission        | Admission status and documents                |
+| Academic         | Programme, units, semester, academic progress |
+| Attendance       | Attendance history and summaries              |
+| Assessments      | Assessment results with permission checks     |
+| Documents        | Upload, verify, review and download           |
+| Finance          | Authorized financial summary                  |
+| Communication    | Send permitted messages                       |
+| History          | Audit trail and record changes                |
+| Export           | Authorized CSV/PDF exports                    |
+| Bulk actions     | Approved bulk operations                      |
+
+## **4. Student types**
+
+### `src/modules/students/student-types.ts`
+
+```
+
+export type StudentStatus =
+  | "ACTIVE"
+  | "PENDING"
+  | "DEFERRED"
+  | "SUSPENDED"
+  | "COMPLETED"
+  | "WITHDRAWN";
+
+export interface StudentRecord {
+  id: string;
+  registrationNumber: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  programmeName: string;
+  departmentName?: string | null;
+  campusName?: string | null;
+  intake?: string | null;
+  academicYear?: string | null;
+  status: StudentStatus;
+  photoUrl?: string | null;
+  createdAt: string;
+}
+
+export interface StudentSearchParams {
+  q?: string;
+  programmeId?: string;
+  campusId?: string;
+  departmentId?: string;
+  status?: StudentStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface StudentListResponse {
+  items: StudentRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+```
+
+## **5. Student API service**
+
+### `src/modules/students/student-api.ts`
+
+```
+
+import type {
+  StudentListResponse,
+  StudentSearchParams,
+} from "./student-types";
+
+const API_BASE = "/api/students";
+
+function buildQuery(params: StudentSearchParams) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+
+  return query.toString();
+}
+
+async function request<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to retrieve student records.");
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export const studentApi = {
+  list(
+    params: StudentSearchParams
+  ): Promise<StudentListResponse> {
+    return request<StudentListResponse>(
+      `${API_BASE}?${buildQuery(params)}`
+    );
+  },
+};
+
+```
+
+API contract assumption
+
+The endpoint and response format above are proposed. Reuse the existing API client and student route if they already exist. The server must enforce permissions, validate query parameters and restrict which student fields can be returned.
+
+## **6. Student directory page**
+
+### `src/modules/students/StudentDirectoryPage.tsx`
+
+The directory includes search, status filtering, pagination, responsive table/cards and student profile links.
+
+```
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  UserPlus,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  Users,
+} from "lucide-react";
+
+import PortalPage from "../../components/portal/PortalPage";
+import { useAuth } from "../../auth/useAuth";
+
+import { studentApi } from "./student-api";
+import type {
+  StudentRecord,
+  StudentStatus,
+} from "./student-types";
+
+import "./students.css";
+
+const PAGE_SIZE = 20;
+
+const statusOptions: StudentStatus[] = [
+  "ACTIVE",
+  "PENDING",
+  "DEFERRED",
+  "SUSPENDED",
+  "COMPLETED",
+  "WITHDRAWN",
+];
+
+function statusLabel(status: StudentStatus) {
+  return status.replace(/_/g, " ");
+}
+
+export default function StudentDirectoryPage() {
+  const { hasPermission } = useAuth();
+
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const canRegister = hasPermission(
+    "student.registration.create"
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStudents() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await studentApi.list({
+          q: search || undefined,
+          status: status
+            ? (status as StudentStatus)
+            : undefined,
+          page,
+          pageSize: PAGE_SIZE,
+        });
+
+        if (cancelled) return;
+
+        setStudents(response.items);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Unable to load students. Please try again."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadStudents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [search, status, page]);
+
+  function handleSearch(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function handleStatus(value: string) {
+    setStatus(value);
+    setPage(1);
+  }
+
+  return (
+    <PortalPage
+      title="Student Directory"
+      subtitle="Search, review and manage student records."
+      action={
+        canRegister ? (
+          <Link
+            className="student-primary-button"
+            to="/portal/staff/students/register"
+          >
+            <UserPlus size={18} />
+            <span>Register Student</span>
+          </Link>
+        ) : undefined
+      }
+    >
+      <div className="student-directory">
+        <div className="student-directory-toolbar">
+          <div className="student-search">
+            <Search size={19} />
+
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search students..."
+              aria-label="Search students"
+            />
+          </div>
+
+          <select
+            value={status}
+            onChange={(e) => handleStatus(e.target.value)}
+            aria-label="Filter by student status"
+          >
+            <option value="">All statuses</option>
+
+            {statusOptions.map((option) => (
+              <option key={option} value={option}>
+                {statusLabel(option)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="student-directory-summary">
+          <div>
+            <Users size={20} />
+            <span>
+              <strong>{total}</strong> student records
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="student-refresh"
+            onClick={() => setPage((current) => current)}
+            aria-label="Refresh student records"
+          >
+            <RefreshCw size={17} />
+            Refresh
+          </button>
+        </div>
+
+        {error && (
+          <div className="student-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div
+            className="student-loading"
+            role="status"
+            aria-live="polite"
+          >
+            Loading student records...
+          </div>
+        ) : students.length === 0 ? (
+          <div className="student-empty">
+            <Users size={40} />
+            <h3>No students found</h3>
+            <p>
+              Try changing your search or filter.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="student-table-wrapper">
+              <table className="student-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Student</th>
+                    <th scope="col">Registration Number</th>
+                    <th scope="col">Programme</th>
+                    <th scope="col">Campus</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {students.map((student) => {
+                    const fullName = [
+                      student.firstName,
+                      student.middleName,
+                      student.lastName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <tr key={student.id}>
+                        <td>
+                          <div className="student-table-person">
+                            <div className="student-avatar">
+                              {student.photoUrl ? (
+                                <img
+                                  src={student.photoUrl}
+                                  alt=""
+                                />
+                              ) : (
+                                fullName
+                                  .slice(0, 1)
+                                  .toUpperCase()
+                              )}
+                            </div>
+
+                            <div>
+                              <strong>{fullName}</strong>
+                              <span>{student.email}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="student-reg-number">
+                            {student.registrationNumber}
+                          </span>
+                        </td>
+
+                        <td>{student.programmeName}</td>
+
+                        <td>
+                          {student.campusName || "—"}
+                        </td>
+
+                        <td>
+                          <span
+                            className={`student-status status-${student.status.toLowerCase()}`}
+                          >
+                            {statusLabel(student.status)}
+                          </span>
+                        </td>
+
+                        <td>
+                          <Link
+                            to={`/portal/staff/students/${encodeURIComponent(student.id)}`}
+                            className="student-view-link"
+                            aria-label={`View ${fullName}`}
+                          >
+                            <Eye size={17} />
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="student-mobile-list">
+              {students.map((student) => {
+                const fullName = [
+                  student.firstName,
+                  student.middleName,
+                  student.lastName,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                return (
+                  <article
+                    className="student-mobile-card"
+                    key={student.id}
+                  >
+                    <div className="student-table-person">
+                      <div className="student-avatar">
+                        {student.photoUrl ? (
+                          <img
+                            src={student.photoUrl}
+                            alt=""
+                          />
+                        ) : (
+                          fullName.slice(0, 1).toUpperCase()
+                        )}
+                      </div>
+
+                      <div>
+                        <strong>{fullName}</strong>
+                        <span>
+                          {student.registrationNumber}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="student-mobile-details">
+                      <span>Programme</span>
+                      <strong>{student.programmeName}</strong>
+                    </div>
+
+                    <div className="student-mobile-details">
+                      <span>Status</span>
+                      <span
+                        className={`student-status status-${student.status.toLowerCase()}`}
+                      >
+                        {statusLabel(student.status)}
+                      </span>
+                    </div>
+
+                    <Link
+                      to={`/portal/staff/students/${encodeURIComponent(student.id)}`}
+                      className="student-view-link student-mobile-view"
+                    >
+                      View profile
+                      <Eye size={17} />
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="student-pagination">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+
+            <div>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                aria-label="Next page"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </PortalPage>
+  );
+}
+
+```
+
+## **7. Student directory styling**
+
+### `src/modules/students/students.css`
+
+```
+
+.student-directory {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.student-directory-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.student-search {
+  flex: 1;
+  min-width: 220px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.student-search input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #102d50;
+}
+
+.student-directory-toolbar select {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #102d50;
+}
+
+.student-directory-toolbar input:focus,
+.student-directory-toolbar select:focus {
+  outline: 3px solid rgba(23, 105, 170, 0.2);
+  border-color: #1769aa;
+}
+
+.student-directory-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.student-directory-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.student-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: #1769aa;
+  color: #ffffff;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.student-primary-button:hover {
+  background: #102d50;
+}
+
+.student-primary-button:focus-visible,
+.student-view-link:focus-visible,
+.student-refresh:focus-visible {
+  outline: 3px solid #1769aa;
+  outline-offset: 3px;
+}
+
+.student-table-wrapper {
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.student-table th {
+  text-align: left;
+  padding: 16px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.student-table td {
+  padding: 16px;
+  color: #334155;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.student-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.student-table-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.student-table-person > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.student-table-person strong {
+  color: #102d50;
+  font-size: 13px;
+}
+
+.student-table-person span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.student-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #e2efff;
+  color: #102d50;
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.student-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-reg-number {
+  font-family: monospace;
+  font-size: 12px;
+  color: #102d50;
+}
+
+.student-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-deferred {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-suspended {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-completed {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.status-withdrawn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.student-view-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #145c96;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.student-view-link:hover {
+  text-decoration: underline;
+}
+
+.student-mobile-list {
+  display: none;
+}
+
+.student-mobile-card {
+  background: #ffffff;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.student-mobile-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.student-mobile-details > span:first-child {
+  color: #64748b;
+}
+
+.student-mobile-details strong {
+  color: #102d50;
+  text-align: right;
+}
+
+.student-mobile-view {
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  justify-content: space-between;
+}
+
+.student-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #475569;
+  font-size: 13px;
+}
+
+.student-pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
+.student-pagination button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  color: #102d50;
+  cursor: pointer;
+}
+
+.student-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.student-loading,
+.student-empty {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.student-empty h3 {
+  color: #102d50;
+}
+
+.student-error {
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+}
+
+@media (max-width: 768px) {
+  .student-table-wrapper {
+    display: none;
+  }
+
+  .student-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .student-directory-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-directory-toolbar select {
+    width: 100%;
+  }
+
+  .student-search {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-primary-button {
+    transition: none;
+  }
+}
+
+```
+
+## **8. Register student permission**
+
+Staff should be able to create a student record manually when authorized.
+
+The permission must be separate from student profile viewing.
+
+| Permission                     | Access                          |
+| ------------------------------ | ------------------------------- |
+| `student.profile.view`         | View directory                  |
+| `student.profile.view.details` | View full profile               |
+| `student.registration.create`  | Create student record           |
+| `student.registration.edit`    | Edit permitted fields           |
+| `student.registration.approve` | Approve registration            |
+| `student.status.manage`        | Change student status           |
+| `student.document.view`        | View student documents          |
+| `student.document.upload`      | Upload documents                |
+| `student.document.verify`      | Verify documents                |
+| `student.attendance.view`      | View attendance                 |
+| `student.academic.view`        | View academic history           |
+| `student.finance.summary.view` | View authorized finance summary |
+| `student.export`               | Export student records          |
+
+Sensitive access
+
+Financial balances, medical records, disciplinary records, counselling records, biometric data and identity documents should not be automatically included in the student profile response. Access should be separately authorized and logged.
+
+## **9. Route integration**
+
+Add the directory route to your existing staff routes.
+
+### **Proposed route update in&#x20;**`src/App.tsx`
+
+```
+
+import StudentDirectoryPage from "./modules/students/StudentDirectoryPage";
+
+// Add within the staff route group:
+
+<Route
+  path="students"
+  element={
+    <PermissionGate permission="student.profile.view">
+      <StudentDirectoryPage />
+    </PermissionGate>
+  }
+/>
+
+```
+
+If your `PermissionGate` uses a different API, adapt it to the existing guard. Do not create competing route permission systems.
+
+# **Slice 06 — Admissions & Student Registration Workflow**
+
+Admissions | Applications | Document verification | Approval | Registration number generation
+
+The admissions module manages the complete journey from application to approved student registration, portal activation and academic onboarding.
+
+[Salesforce Help](https://images.openai.com/static-rsc-4/L_YZjbs0QwcW-oi2wBoUH8FFROMrPcXBz1e4jafnd5OSEhQ44O927o52EhAHO0ZXo6ypZFaLxxbSkRGrvFa5T_pR2SsEyJ3cfe3t2nvEV_XBZ8qx2hLePu52KiTlU6qU_bDF59h7x0axI-sGZJJLEzZrojY_rk82XM7tXVnHX7s?purpose=inline)
+
+[Apanel - Streamlining Academic Processes](https://images.openai.com/static-rsc-4/sYMgyivMEzsRg17zSlrKm_fRD4trxJCo1BtXlNMnuub-vbIGMaKfV-0e1EO8Ab3qUic9Vvi6jpyTMg6G0SHWxR5ZVYy63gazaY9gHaQIryLbBJi4KDiBLp2G_cLway3qm7PeX8ln1Gf3iFNwtR1gOjMfoyMn308GlRxKvfpKovA?purpose=inline)
+
+[DreamApply Reviews & Ratings 2026 | TrustRadius](https://images.openai.com/static-rsc-4/83E22WcGMm0PUGo66DpnE-bAGxDVN34o55bs_zA-e5MlbVXYIQmfBKuub2iwDRgOoM2ci-4P_vRz1XtufDNfyhKljSiSNtqWDIwSaJxaf4CBOEc5vOIhFiOMuMpNxdPUD9tGpLg64PVyqiYWxNc7dqrTd5WAq1wfveVWphrc3k4?purpose=inline)
+
+8
+
+## **10. Admissions workflow**
+
+\#chatgpt-mermaid-\_r_257\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_257\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_257\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_257\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_257\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_257\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_257\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_257\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_257\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_257\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_257\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_257\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_257\_ p{margin:0;}#chatgpt-mermaid-\_r_257\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_257\_ .label text,#chatgpt-mermaid-\_r_257\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .node rect,#chatgpt-mermaid-\_r_257\_ .node circle,#chatgpt-mermaid-\_r_257\_ .node ellipse,#chatgpt-mermaid-\_r_257\_ .node polygon,#chatgpt-mermaid-\_r_257\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .rough-node .label text,#chatgpt-mermaid-\_r_257\_ .node .label text,#chatgpt-mermaid-\_r_257\_ .image-shape .label,#chatgpt-mermaid-\_r_257\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_257\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .rough-node .label,#chatgpt-mermaid-\_r_257\_ .node .label,#chatgpt-mermaid-\_r_257\_ .image-shape .label,#chatgpt-mermaid-\_r_257\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_257\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_257\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_257\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_257\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_257\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_257\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_257\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_257\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_257\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_257\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_257\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_257\_ .icon-shape,#chatgpt-mermaid-\_r_257\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_257\_ .icon-shape p,#chatgpt-mermaid-\_r_257\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_257\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_257\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_257\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_257\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_257\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_257\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_257\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_257\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_257\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_257\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_257\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_257\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_257\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_257\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_257\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_257\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_257\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .node rect,#chatgpt-mermaid-\_r_257\_ .node circle,#chatgpt-mermaid-\_r_257\_ .node ellipse,#chatgpt-mermaid-\_r_257\_ .node polygon,#chatgpt-mermaid-\_r_257\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_257\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_257\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_257\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_257\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_257\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Application receivedApplication reviewRequirements satisfied?Request missing documentsAdmission decisionAdmission offerAccept offerStudent registrationRegistration numbergeneratedPortal invitationStudent activationAcademic onboardingNoYes
+
+## **11. Admissions statuses**
+
+| Status             | Meaning                |
+| ------------------ | ---------------------- |
+| DRAFT              | Application started    |
+| SUBMITTED          | Application submitted  |
+| UNDER_REVIEW       | Admissions review      |
+| DOCUMENTS_REQUIRED | Missing documents      |
+| APPROVED           | Approved for admission |
+| OFFER_SENT         | Offer issued           |
+| OFFER_ACCEPTED     | Offer accepted         |
+| REJECTED           | Rejected               |
+| WITHDRAWN          | Withdrawn              |
+| REGISTERED         | Registered student     |
+
+## **12. Admissions menu**
+
+The admissions officer's menu should include:
+
+- Admissions Dashboard
+- New Applications
+- Application Review
+- Missing Documents
+- Approved Applicants
+- Admission Offers
+- Offer Acceptance
+- Registration
+- Student Creation
+- Intake Management
+- Admission Reports
+- Settings
+
+The student directory is different from the admissions register. An applicant should not automatically be a fully registered student until the required approval workflow is completed.
+
+## **13. Admissions module types**
+
+### `src/modules/admissions/admission-types.ts`
+
+```
+
+export type AdmissionStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "DOCUMENTS_REQUIRED"
+  | "APPROVED"
+  | "OFFER_SENT"
+  | "OFFER_ACCEPTED"
+  | "REJECTED"
+  | "WITHDRAWN"
+  | "REGISTERED";
+
+export interface AdmissionApplication {
+  id: string;
+  applicationNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  programmeName: string;
+  intakeName: string;
+  campusName: string;
+  status: AdmissionStatus;
+  submittedAt?: string;
+}
+
+export interface AdmissionListResponse {
+  items: AdmissionApplication[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+```
+
+## **14. Admissions API**
+
+### `src/modules/admissions/admission-api.ts`
+
+```
+
+import type {
+  AdmissionListResponse,
+  AdmissionStatus,
+} from "./admission-types";
+
+export interface AdmissionQuery {
+  q?: string;
+  status?: AdmissionStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+const API = "/api/admissions";
+
+function queryString(params: AdmissionQuery) {
+  const query = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") {
+      query.set(key, String(value));
+    }
+  }
+
+  return query.toString();
+}
+
+async function request<T>(
+  url: string,
+  init?: RequestInit
+): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(init?.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Admissions request failed.");
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export const admissionApi = {
+  list(
+    params: AdmissionQuery
+  ): Promise<AdmissionListResponse> {
+    return request(
+      `${API}?${queryString(params)}`
+    );
+  },
+};
+
+```
+
+## **15. Admissions dashboard**
+
+### `src/modules/admissions/AdmissionsPage.tsx`
+
+```
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  UserPlus,
+  Eye,
+  RefreshCw,
+} from "lucide-react";
+
+import PortalPage from "../../components/portal/PortalPage";
+import { admissionApi } from "./admission-api";
+import type {
+  AdmissionApplication,
+  AdmissionStatus,
+} from "./admission-types";
+
+import "./admissions.css";
+
+const PAGE_SIZE = 20;
+
+const statuses: AdmissionStatus[] = [
+  "SUBMITTED",
+  "UNDER_REVIEW",
+  "DOCUMENTS_REQUIRED",
+  "APPROVED",
+  "OFFER_SENT",
+  "OFFER_ACCEPTED",
+  "REJECTED",
+  "REGISTERED",
+];
+
+function label(status: AdmissionStatus) {
+  return status.replace(/_/g, " ");
+}
+
+export default function AdmissionsPage() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const [items, setItems] = useState<AdmissionApplication[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await admissionApi.list({
+          q: search || undefined,
+          status: status
+            ? (status as AdmissionStatus)
+            : undefined,
+          page,
+          pageSize: PAGE_SIZE,
+        });
+
+        if (cancelled) return;
+
+        setItems(response.items);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
+      } catch {
+        if (!cancelled) {
+          setError("Unable to load applications.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [search, status, page, refreshKey]);
+
+  return (
+    <PortalPage
+      title="Admissions"
+      subtitle="Review applications and manage the admission process."
+      action={
+        <Link
+          to="/portal/staff/admissions/new"
+          className="admission-primary-button"
+        >
+          <UserPlus size={18} />
+          New Application
+        </Link>
+      }
+    >
+      <section className="admissions-workspace">
+        <div className="admissions-toolbar">
+          <div className="admissions-search">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search applicants..."
+              aria-label="Search applicants"
+            />
+          </div>
+
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter application status"
+          >
+            <option value="">All statuses</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {label(s)}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className="admission-refresh"
+            onClick={() => setRefreshKey((v) => v + 1)}
+          >
+            <RefreshCw size={17} />
+            Refresh
+          </button>
+        </div>
+
+        <div className="admissions-total">
+          {total} application records
+        </div>
+
+        {error && (
+          <div className="admissions-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="admissions-loading" role="status">
+            Loading applications...
+          </div>
+        ) : items.length === 0 ? (
+          <div className="admissions-empty">
+            <h3>No applications found</h3>
+            <p>Change the filters or search terms.</p>
+          </div>
+        ) : (
+          <>
+            <div className="admissions-table-wrapper">
+              <table className="admissions-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Applicant</th>
+                    <th scope="col">Application No.</th>
+                    <th scope="col">Programme</th>
+                    <th scope="col">Intake</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div className="admission-person">
+                          <strong>
+                            {item.firstName} {item.lastName}
+                          </strong>
+                          <span>{item.email}</span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <code>{item.applicationNumber}</code>
+                      </td>
+
+                      <td>{item.programmeName}</td>
+
+                      <td>{item.intakeName}</td>
+
+                      <td>
+                        <span
+                          className={`admission-status status-${item.status.toLowerCase()}`}
+                        >
+                          {label(item.status)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <Link
+                          to={`/portal/staff/admissions/${encodeURIComponent(item.id)}`}
+                          className="admission-view"
+                        >
+                          <Eye size={17} />
+                          Review
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admissions-mobile-list">
+              {items.map((item) => (
+                <article
+                  key={item.id}
+                  className="admissions-mobile-card"
+                >
+                  <div>
+                    <strong>
+                      {item.firstName} {item.lastName}
+                    </strong>
+                    <span>{item.applicationNumber}</span>
+                  </div>
+
+                  <p>{item.programmeName}</p>
+
+                  <span
+                    className={`admission-status status-${item.status.toLowerCase()}`}
+                  >
+                    {label(item.status)}
+                  </span>
+
+                  <Link
+                    to={`/portal/staff/admissions/${encodeURIComponent(item.id)}`}
+                    className="admission-view"
+                  >
+                    Review application
+                    <Eye size={17} />
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="admissions-pagination">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+
+            <div>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((v) => v - 1)}
+              >
+                Previous
+              </button>
+
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((v) => v + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+    </PortalPage>
+  );
+}
+
+```
+
+## **16. Admissions CSS**
+
+### `src/modules/admissions/admissions.css`
+
+```
+
+.admissions-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admissions-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admissions-search {
+  flex: 1;
+  min-width: 220px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #64748b;
+}
+
+.admissions-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #102d50;
+}
+
+.admissions-toolbar select {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 12px;
+  color: #102d50;
+}
+
+.admission-primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: #1769aa;
+  color: #ffffff;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admission-primary-button:hover {
+  background: #102d50;
+}
+
+.admission-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.admissions-total {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admissions-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.admissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.admissions-table th {
+  padding: 16px;
+  text-align: left;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admissions-table td {
+  padding: 16px;
+  font-size: 13px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admissions-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.admission-person {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admission-person strong {
+  color: #102d50;
+}
+
+.admission-person span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.admission-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-submitted,
+.status-under_review {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-documents_required {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved,
+.status-offer_accepted,
+.status-registered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-offer_sent {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-withdrawn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.admission-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #145c96;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admission-view:hover {
+  text-decoration: underline;
+}
+
+.admissions-mobile-list {
+  display: none;
+}
+
+.admissions-mobile-card {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admissions-mobile-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admissions-mobile-card > div span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.admissions-mobile-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+}
+
+.admissions-mobile-card .admission-view {
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  justify-content: space-between;
+}
+
+.admissions-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.admissions-pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
+.admissions-pagination button {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #102d50;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admissions-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admissions-error {
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.admissions-loading,
+.admissions-empty {
+  padding: 40px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .admissions-toolbar {
+    flex-direction: column;
+  }
+
+  .admissions-search {
+    min-width: 0;
+  }
+
+  .admissions-toolbar select {
+    width: 100%;
+  }
+
+  .admissions-table-wrapper {
+    display: none;
+  }
+
+  .admissions-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+```
+
+## **17. Admissions route**
+
+Add the admissions page to the staff route tree.
+
+```
+
+import AdmissionsPage from "./modules/admissions/AdmissionsPage";
+
+// Within the staff route group:
+
+<Route
+  path="admissions"
+  element={
+    <PermissionGate permission="admission.view">
+      <AdmissionsPage />
+    </PermissionGate>
+  }
+/>
+
+```
+
+## **18. Admissions permissions**
+
+| Permission                     | Function                                |
+| ------------------------------ | --------------------------------------- |
+| `admission.view`               | View admissions                         |
+| `admission.application.create` | Create application                      |
+| `admission.application.edit`   | Edit permitted fields                   |
+| `admission.application.review` | Review application                      |
+| `admission.document.view`      | View submitted documents                |
+| `admission.document.verify`    | Verify documents                        |
+| `admission.approve`            | Approve applicants                      |
+| `admission.reject`             | Reject applicants                       |
+| `admission.offer.create`       | Issue offer                             |
+| `admission.offer.manage`       | Manage offer status                     |
+| `student.registration.create`  | Convert approved applicant into student |
+| `student.registration.approve` | Approve student registration            |
+| `admission.report.view`        | View admissions reports                 |
+| `admission.export`             | Export permitted admissions data        |
+
+Approval separation
+
+The system should support separation of duties. For example, application review, admission approval, student registration and financial clearance may be assigned to different officers according to the college policy. Approval permissions should not be automatically granted to all admission staff.
+
+## **19. What comes next**
+
+The next implementation slice will be **Slice 07 — Manual Student Registration & Student Profile Creation**.
+
+It will include:
+
+- Staff-assisted student registration form.
+- Student personal details.
+- Guardian/emergency contact.
+- Programme, department and campus.
+- Intake and academic year.
+- Admission reference.
+- Document checklist.
+- Registration number generation such as `HCA/STD/2026/001`.
+- Duplicate student detection.
+- Portal account creation.
+- Account activation invitation.
+- Registration approval workflow.
+- Registration audit trail.
+- Form validation and mobile layout.
+- Registration permissions by staff role.
+
+Implementation status: The directory and admissions UI code are proposals written in chat. No actual repository has been inspected, modified or tested yet.

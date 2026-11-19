@@ -65,8 +65,13 @@ router.get('/me', requirePortalAuth, (req, res) => {
     res.json({
       success: true,
       data: {
+        authenticated: true,
         ...req.portalUser,
         staffPermissions: req.staffUser?.permissions ?? [],
+        permissions: req.staffUser?.permissions ?? [],
+        roleTitle: req.staffUser?.roleTitle ?? undefined,
+        department: req.staffUser?.department ?? undefined,
+        campus: req.staffUser?.campus ?? undefined,
       },
     });
     return;
@@ -75,6 +80,7 @@ router.get('/me', requirePortalAuth, (req, res) => {
     res.json({
       success: true,
       data: {
+        authenticated: true,
         uid: req.staffUser.id,
         email: req.staffUser.email,
         registrationNumber: req.staffUser.employeeNumber,
@@ -85,7 +91,13 @@ router.get('/me', requirePortalAuth, (req, res) => {
         requiresProfileCompletion: false,
         mfaEnabled: false,
         destination: '/portal/staff',
+        campusId: req.staffUser.campusId,
+        departmentId: req.staffUser.departmentId,
+        roleTitle: req.staffUser.roleTitle,
+        department: req.staffUser.department,
+        campus: req.staffUser.campus,
         staffPermissions: req.staffUser.permissions,
+        permissions: req.staffUser.permissions,
       },
     });
     return;
@@ -155,20 +167,23 @@ router.post('/password/change', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.post('/complete-profile', requirePortalAuth, async (req, res) => {
+const handleCompleteProfile = async (req: Request, res: Response) => {
   try {
     if (!req.portalUser?.pgUserId) {
       throw new AuthHttpError(400, 'Profile completion requires an active portal session.');
     }
     const result = await authService.completeOnboardingProfile(req.portalUser.pgUserId, {
       fullName: req.body?.fullName,
-      phoneNumber: req.body?.phoneNumber,
+      phoneNumber: req.body?.phoneNumber ?? req.body?.phone,
       address: req.body?.address,
     });
     res.json({ success: true, data: result });
   } catch (err) {
     handleAuthError(res, err);
   }
-});
+};
+
+router.post('/complete-profile', requirePortalAuth, handleCompleteProfile);
+router.post('/profile/complete', requirePortalAuth, handleCompleteProfile);
 
 export default router;

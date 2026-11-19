@@ -44,10 +44,12 @@ import {
 import { COLLEGE_INFO } from "../../data/college";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
 import PlatformBaselineWorkspace from "./PlatformBaselineWorkspace";
+import ImplementationChecklistWorkspace from "./ImplementationChecklistWorkspace";
+import { TOTAL_CHECKLIST_ITEMS } from "../../data/implementationChecklist318";
 
 export default function MasterFeatureCataloguePortal() {
   const [activeTab, setActiveTab] = useSyncedPortalTab<
-    "register" | "sprint1" | "domains" | "modules" | "questions63" | "rbac" | "phases" | "budget" | "print_view"
+    "register" | "checklist" | "sprint1" | "domains" | "modules" | "questions63" | "rbac" | "phases" | "budget" | "print_view"
   >("catalogue", "register");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPart, setSelectedPart] = useState<string>("ALL");
@@ -229,6 +231,18 @@ export default function MasterFeatureCataloguePortal() {
           </button>
 
           <button
+            onClick={() => setActiveTab("checklist")}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 ${
+              activeTab === "checklist"
+                ? "bg-[#102D50] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <FileCheck2 className="w-4 h-4" />
+            <span>Master Checklist ({TOTAL_CHECKLIST_ITEMS})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("sprint1")}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 ${
               activeTab === "sprint1"
@@ -350,6 +364,13 @@ export default function MasterFeatureCataloguePortal() {
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
           />
+        </div>
+      )}
+
+      {/* MASTER IMPLEMENTATION CHECKLIST & PROGRESS TRACKER */}
+      {activeTab === "checklist" && (
+        <div className="no-print">
+          <ImplementationChecklistWorkspace />
         </div>
       )}
 

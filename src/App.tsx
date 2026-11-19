@@ -25,13 +25,19 @@ import AISupportCentrePortal from "./modules/ai-support/AISupportCentrePortal";
 import CampusServicesPortal from "./modules/campus-services/CampusServicesPortal";
 import ActivateAccountPage from "./modules/activation/ActivateAccountPage";
 import PortalLoginPage from "./modules/auth/PortalLoginPage";
+import StudentLoginPage from "./modules/auth/StudentLoginPage";
 import ForgotPasswordPage from "./modules/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./modules/auth/ResetPasswordPage";
+import ChangePasswordPage from "./modules/auth/ChangePasswordPage";
+import CompleteProfilePage from "./modules/auth/CompleteProfilePage";
 import AccountSecurityPage from "./modules/security/AccountSecurityPage";
 import StudentProfileDetailPage from "./modules/sis/StudentProfileDetailPage";
 import PublicWebsite from "./website/PublicWebsite";
 import UserPortalShell from "./components/UserPortalShell";
 import { ScrollProgressBar, ScrollToTopButton } from "./components/ScrollView";
+import { AuthProvider } from "./auth/AuthProvider";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { PortalRedirect } from "./auth/PortalRedirect";
 import { PortalShellProvider } from "./context/PortalShellContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { getPortalShellConfig, ShellRoleKey } from "./config/portalShellConfigs";
@@ -41,10 +47,16 @@ import { PortalRole } from "./types";
 const WEBSITE_PAGES = new Set([
   "home",
   "about",
+  "departments",
+  "department-details",
+  "our-staff",
+  "staff-details",
   "academics",
   "course-details",
   "admissions",
   "apply",
+  "campus",
+  "student-life",
   "campus-life",
   "news",
   "resources",
@@ -52,9 +64,12 @@ const WEBSITE_PAGES = new Set([
   "contact",
   "verify",
   "privacy-policy",
+  "cookie-policy",
   "terms",
   "accessibility",
   "fees",
+  "sitemap",
+  "not-found",
 ]);
 
 const PORTAL_ROLES = new Set<PortalRole>([
@@ -81,9 +96,22 @@ const PORTAL_ROLES = new Set<PortalRole>([
 ]);
 
 interface RouteState {
-  mode: "website" | "portal" | "activate" | "login" | "forgot-password" | "reset-password" | "security" | "sis-detail";
+  mode:
+    | "website"
+    | "portal"
+    | "activate"
+    | "login"
+    | "student-login"
+    | "forgot-password"
+    | "reset-password"
+    | "change-password"
+    | "complete-profile"
+    | "portal-redirect"
+    | "security"
+    | "sis-detail";
   role: PortalRole;
   websitePage: string;
+  websiteSlug?: string;
   staffInitialPath: string;
   authenticatedStaffRole?: StaffRole;
   openLoginModal: boolean;
@@ -117,6 +145,16 @@ function parseLocationToRoute(): RouteState {
     };
   }
 
+  if (pathname === "/portal/student/login") {
+    return {
+      mode: "student-login",
+      role: "website",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
   if (pathname === "/portal/login") {
     return {
       mode: "login",
@@ -145,6 +183,36 @@ function parseLocationToRoute(): RouteState {
       staffInitialPath: "/staff/dashboard",
       openLoginModal: false,
       resetToken: params.get("token") ?? undefined,
+    };
+  }
+
+  if (pathname === "/portal/change-password") {
+    return {
+      mode: "change-password",
+      role: "website",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname === "/portal/complete-profile") {
+    return {
+      mode: "complete-profile",
+      role: "website",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname === "/portal/dashboard" || pathname === "/portal") {
+    return {
+      mode: "portal-redirect",
+      role: "website",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
     };
   }
 
@@ -195,6 +263,34 @@ function parseLocationToRoute(): RouteState {
     }
   }
 
+  if (pathname.startsWith("/our-staff/")) {
+    const staffSlug = pathname.slice("/our-staff/".length).split("/")[0];
+    if (staffSlug) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "staff-details",
+        websiteSlug: decodeURIComponent(staffSlug),
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
+  if (pathname.startsWith("/departments/")) {
+    const deptSlug = pathname.slice("/departments/".length).split("/")[0];
+    if (deptSlug) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "department-details",
+        websiteSlug: decodeURIComponent(deptSlug),
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
   const slug = pathname === "/" ? "home" : pathname.slice(1);
   if (WEBSITE_PAGES.has(slug)) {
     return {
@@ -209,7 +305,7 @@ function parseLocationToRoute(): RouteState {
   return {
     mode: "website",
     role: "website",
-    websitePage: "home",
+    websitePage: "not-found",
     staffInitialPath: "/staff/dashboard",
     openLoginModal: false,
   };
@@ -278,6 +374,16 @@ export default function App() {
         navigateToWebsite("home", false);
         return;
       }
+      if (target === "student-login" || target === "/portal/student/login") {
+        pushUrl("/portal/student/login", {
+          mode: "student-login",
+          role: "website",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          openLoginModal: false,
+        });
+        return;
+      }
       if (target === "portal-login" || target === "/portal/login") {
         pushUrl("/portal/login", {
           mode: "login",
@@ -301,6 +407,36 @@ export default function App() {
       if (target === "/portal/reset-password") {
         pushUrl("/portal/reset-password", {
           mode: "reset-password",
+          role: "website",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          openLoginModal: false,
+        });
+        return;
+      }
+      if (target === "/portal/change-password") {
+        pushUrl("/portal/change-password", {
+          mode: "change-password",
+          role: "website",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          openLoginModal: false,
+        });
+        return;
+      }
+      if (target === "/portal/complete-profile") {
+        pushUrl("/portal/complete-profile", {
+          mode: "complete-profile",
+          role: "website",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          openLoginModal: false,
+        });
+        return;
+      }
+      if (target === "/portal/dashboard" || target === "/portal") {
+        pushUrl("/portal/dashboard", {
+          mode: "portal-redirect",
           role: "website",
           websitePage: "home",
           staffInitialPath: "/staff/dashboard",
@@ -397,104 +533,187 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <PortalShellProvider>
-        <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-[#102D50] dark:text-slate-100 flex flex-col font-sans transition-colors">
-          <ScrollProgressBar />
+      <AuthProvider>
+        <PortalShellProvider>
+          <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-[#102D50] dark:text-slate-100 flex flex-col font-sans transition-colors">
+            <ScrollProgressBar />
 
-          <div className="flex-1">
-            {route.mode === "activate" ? (
-              <ActivateAccountPage
-                initialToken={route.activationToken}
-                onNavigateToLogin={() => navigateToPortal("portal-login")}
-                onNavigateHome={() => navigateToWebsite("home", false)}
-              />
-            ) : route.mode === "login" ? (
-              <PortalLoginPage
-                onSuccessRedirect={(dest, userRole) => {
-                  const upperRole = userRole.toUpperCase() as StaffRole;
-                  const staffRole = STAFF_ACCOUNTS[upperRole] ? upperRole : undefined;
-                  navigateToPortal(dest, staffRole);
-                }}
-                onNavigateForgotPassword={() => navigateToPortal("/portal/forgot-password")}
-                onNavigateActivate={() => navigateToActivation()}
-                onNavigateHome={() => navigateToWebsite("home", false)}
-              />
-            ) : route.mode === "forgot-password" ? (
-              <ForgotPasswordPage onBackToLogin={() => navigateToPortal("portal-login")} />
-            ) : route.mode === "reset-password" ? (
-              <ResetPasswordPage
-                initialToken={route.resetToken}
-                onBackToLogin={() => navigateToPortal("portal-login")}
-              />
-            ) : route.mode === "security" ? (
-              <div className="mx-auto max-w-6xl p-4 md:p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => navigateToPortal("portal-login")}
-                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold"
-                  >
-                    Portal Sign-In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigateToWebsite("home", false)}
-                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold"
-                  >
-                    College Website
-                  </button>
-                </div>
-                <AccountSecurityPage />
-              </div>
-            ) : route.mode === "sis-detail" && route.sisStudentId ? (
-              <div className="mx-auto max-w-6xl p-4 md:p-8">
-                <StudentProfileDetailPage
-                  studentId={route.sisStudentId}
-                  onBack={() => navigateToPortal("staff")}
+            <div className="flex-1">
+              {route.mode === "activate" ? (
+                <ActivateAccountPage
+                  initialToken={route.activationToken}
+                  onNavigateToLogin={() => navigateToPortal("portal-login")}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
                 />
-              </div>
-            ) : route.mode === "website" || route.role === "website" ? (
-              <PublicWebsite
-                initialPage={route.websitePage}
-                initialPortalModalOpen={route.openLoginModal}
-                onPageChange={(page) => {
-                  const targetUrl = page === "home" ? "/" : `/${page}`;
-                  if (typeof window !== "undefined" && window.location.pathname !== targetUrl) {
-                    window.history.pushState({}, "", targetUrl);
-                  }
-                }}
-                onSwitchToERP={(target) => navigateToPortal(target)}
-                onLaunchStudentDashboard={() => navigateToPortal("student")}
-              />
-            ) : route.role === "student" ? (
-              <StudentDashboard
-                onSwitchPortal={(role) => navigateToPortal(role)}
-                onLogout={() => navigateToWebsite("home", false)}
-              />
-            ) : route.role === "staff" ? (
-              <StaffPortal
-                initialRole={route.authenticatedStaffRole}
-                initialPath={route.staffInitialPath}
-                onSwitchPortal={(role) => navigateToPortal(role)}
-                onOpenActivationPage={(token) => navigateToActivation(token)}
-                onLogout={() => navigateToWebsite("home", false)}
-              />
-            ) : route.role === "lecturer" ? (
-              <LecturerPortal onLogout={() => navigateToWebsite("home", false)} />
-            ) : (
-              <UserPortalShell
-                config={getPortalShellConfig(route.role as ShellRoleKey)}
-                onSwitchPortal={(role) => navigateToPortal(role)}
-                onLogout={() => navigateToWebsite("home", false)}
-              >
-                {renderShellPortalBody(route.role as ShellRoleKey)}
-              </UserPortalShell>
-            )}
-          </div>
+              ) : route.mode === "student-login" ? (
+                <StudentLoginPage
+                  onSuccessRedirect={(dest, userRole) => {
+                    const upperRole = userRole.toUpperCase() as StaffRole;
+                    const staffRole = STAFF_ACCOUNTS[upperRole] ? upperRole : undefined;
+                    navigateToPortal(dest, staffRole);
+                  }}
+                  onNavigateForgotPassword={() => navigateToPortal("/portal/forgot-password")}
+                  onNavigateActivate={() => navigateToActivation()}
+                  onNavigateApply={() => navigateToWebsite("apply", false)}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                  onNavigatePrivacy={() => navigateToWebsite("privacy-policy", false)}
+                  onNavigateTerms={() => navigateToWebsite("terms", false)}
+                  onNavigateContact={() => navigateToWebsite("contact", false)}
+                  onNavigateUnifiedLogin={() => navigateToPortal("portal-login")}
+                />
+              ) : route.mode === "login" ? (
+                <PortalLoginPage
+                  onSuccessRedirect={(dest, userRole) => {
+                    const upperRole = userRole.toUpperCase() as StaffRole;
+                    const staffRole = STAFF_ACCOUNTS[upperRole] ? upperRole : undefined;
+                    navigateToPortal(dest, staffRole);
+                  }}
+                  onNavigateForgotPassword={() => navigateToPortal("/portal/forgot-password")}
+                  onNavigateActivate={() => navigateToActivation()}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                />
+              ) : route.mode === "forgot-password" ? (
+                <ForgotPasswordPage onBackToLogin={() => navigateToPortal("portal-login")} />
+              ) : route.mode === "reset-password" ? (
+                <ResetPasswordPage
+                  initialToken={route.resetToken}
+                  onBackToLogin={() => navigateToPortal("portal-login")}
+                />
+              ) : route.mode === "change-password" ? (
+                <ProtectedRoute
+                  allowPasswordChange
+                  allowProfileCompletion
+                  onRedirect={(dest) => navigateToPortal(dest)}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                >
+                  <ChangePasswordPage
+                    onNavigate={(dest) => navigateToPortal(dest)}
+                    onNavigateHome={() => navigateToWebsite("home", false)}
+                  />
+                </ProtectedRoute>
+              ) : route.mode === "complete-profile" ? (
+                <ProtectedRoute
+                  allowProfileCompletion
+                  onRedirect={(dest) => navigateToPortal(dest)}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                >
+                  <CompleteProfilePage
+                    onNavigate={(dest) => navigateToPortal(dest)}
+                    onNavigateHome={() => navigateToWebsite("home", false)}
+                  />
+                </ProtectedRoute>
+              ) : route.mode === "portal-redirect" ? (
+                <PortalRedirect onRedirect={(dest) => navigateToPortal(dest)} />
+              ) : route.mode === "security" ? (
+                <ProtectedRoute
+                  onRedirect={(dest) => navigateToPortal(dest)}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                >
+                  <div className="mx-auto max-w-6xl p-4 md:p-8 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => navigateToPortal("/portal/dashboard")}
+                        className="min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold"
+                      >
+                        Return to Workspace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateToWebsite("home", false)}
+                        className="min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold"
+                      >
+                        College Website
+                      </button>
+                    </div>
+                    <AccountSecurityPage />
+                  </div>
+                </ProtectedRoute>
+              ) : route.mode === "sis-detail" && route.sisStudentId ? (
+                <div className="mx-auto max-w-6xl p-4 md:p-8">
+                  <StudentProfileDetailPage
+                    studentId={route.sisStudentId}
+                    onBack={() => navigateToPortal("staff")}
+                  />
+                </div>
+              ) : route.mode === "website" || route.role === "website" ? (
+                <PublicWebsite
+                  initialPage={route.websitePage}
+                  initialSlug={route.websiteSlug}
+                  initialPortalModalOpen={route.openLoginModal}
+                  onPageChange={(page, slug) => {
+                    const targetUrl =
+                      page === "home"
+                        ? "/"
+                        : page === "staff-details" && slug
+                        ? `/our-staff/${encodeURIComponent(slug)}`
+                        : page === "department-details" && slug
+                        ? `/departments/${encodeURIComponent(slug)}`
+                        : `/${page}`;
+                    if (typeof window !== "undefined" && window.location.pathname !== targetUrl) {
+                      window.history.pushState({}, "", targetUrl);
+                    }
+                  }}
+                  onSwitchToERP={(target) => navigateToPortal(target)}
+                  onLaunchStudentDashboard={() => navigateToPortal("student")}
+                />
+              ) : route.role === "student" ? (
+                <StudentDashboard
+                  onSwitchPortal={(role) => navigateToPortal(role)}
+                  onLogout={() => navigateToWebsite("home", false)}
+                />
+              ) : route.role === "staff" ? (
+                <StaffPortal
+                  initialRole={route.authenticatedStaffRole}
+                  initialPath={route.staffInitialPath}
+                  onSwitchPortal={(role) => navigateToPortal(role)}
+                  onOpenActivationPage={(token) => navigateToActivation(token)}
+                  onOpenPublicPreview={(publicPath) => {
+                    if (publicPath.startsWith("/our-staff/")) {
+                      const slug = publicPath.slice("/our-staff/".length);
+                      pushUrl(publicPath, {
+                        mode: "website",
+                        role: "website",
+                        websitePage: "staff-details",
+                        websiteSlug: decodeURIComponent(slug),
+                        staffInitialPath: "/staff/dashboard",
+                        openLoginModal: false,
+                      });
+                      return;
+                    }
+                    if (publicPath.startsWith("/departments/")) {
+                      const slug = publicPath.slice("/departments/".length);
+                      pushUrl(publicPath, {
+                        mode: "website",
+                        role: "website",
+                        websitePage: "department-details",
+                        websiteSlug: decodeURIComponent(slug),
+                        staffInitialPath: "/staff/dashboard",
+                        openLoginModal: false,
+                      });
+                      return;
+                    }
+                    navigateToWebsite(publicPath.replace(/^\//, "") || "home", false);
+                  }}
+                  onLogout={() => navigateToWebsite("home", false)}
+                />
+              ) : route.role === "lecturer" ? (
+                <LecturerPortal onLogout={() => navigateToWebsite("home", false)} />
+              ) : (
+                <UserPortalShell
+                  config={getPortalShellConfig(route.role as ShellRoleKey)}
+                  onSwitchPortal={(role) => navigateToPortal(role)}
+                  onLogout={() => navigateToWebsite("home", false)}
+                >
+                  {renderShellPortalBody(route.role as ShellRoleKey)}
+                </UserPortalShell>
+              )}
+            </div>
 
-          <ScrollToTopButton lifted={route.mode === "website"} />
-        </div>
-      </PortalShellProvider>
+            <ScrollToTopButton lifted={route.mode === "website"} />
+          </div>
+        </PortalShellProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

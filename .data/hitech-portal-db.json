@@ -321,7 +321,19 @@
         "users.view",
         "users.create",
         "users.update",
-        "reports.view"
+        "reports.view",
+        "website.content.view",
+        "website.staff.view",
+        "website.staff.create",
+        "website.staff.edit",
+        "website.staff.publish",
+        "website.staff.archive",
+        "website.department.view",
+        "website.department.create",
+        "website.department.edit",
+        "website.department.publish",
+        "website.department.assign_staff",
+        "website.content.approve"
       ],
       "documentPermissions": [
         "documents.view",
@@ -378,7 +390,19 @@
         "academics.view",
         "results.approve",
         "reports.view",
-        "reports.export"
+        "reports.export",
+        "website.content.view",
+        "website.staff.view",
+        "website.staff.create",
+        "website.staff.edit",
+        "website.staff.publish",
+        "website.staff.archive",
+        "website.department.view",
+        "website.department.create",
+        "website.department.edit",
+        "website.department.publish",
+        "website.department.assign_staff",
+        "website.content.approve"
       ],
       "documentPermissions": [
         "documents.view",
@@ -442,7 +466,13 @@
         "results.manage",
         "results.approve",
         "reports.view",
-        "reports.export"
+        "reports.export",
+        "website.content.view",
+        "website.staff.view",
+        "website.department.view",
+        "website.department.edit",
+        "website.department.assign_staff",
+        "website.content.approve"
       ],
       "documentPermissions": [
         "documents.view",
@@ -561,7 +591,11 @@
         "users.view",
         "hr.view",
         "hr.manage",
-        "reports.view"
+        "reports.view",
+        "website.content.view",
+        "website.staff.view",
+        "website.staff.create",
+        "website.staff.edit"
       ],
       "documentPermissions": [
         "documents.view",
@@ -763,7 +797,11 @@
         "academics.view",
         "examinations.manage",
         "results.approve",
-        "reports.view"
+        "reports.view",
+        "website.content.view",
+        "website.staff.view",
+        "website.department.view",
+        "website.department.edit"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1208,7 +1246,17 @@
         "staff.tasks.view",
         "staff.tasks.update",
         "staff.activity.view",
-        "reports.view"
+        "reports.view",
+        "website.content.view",
+        "website.staff.view",
+        "website.staff.create",
+        "website.staff.edit",
+        "website.staff.publish",
+        "website.department.view",
+        "website.department.create",
+        "website.department.edit",
+        "website.department.publish",
+        "website.department.assign_staff"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1417,8 +1465,8 @@
       "description": "Verify campus lab schedule extension and academic calendar addendum.",
       "dueAt": "2026-11-20",
       "status": "PENDING",
-      "createdAt": "2026-11-16T05:09:37.398Z",
-      "updatedAt": "2026-11-16T05:09:37.398Z"
+      "createdAt": "2026-11-19T06:27:20.007Z",
+      "updatedAt": "2026-11-19T06:27:20.007Z"
     },
     {
       "id": "tsk-seed-hod-1",
@@ -1428,8 +1476,8 @@
       "description": "Inspect ICT 2101 / AI 3102 draft submitted by Eng. Peter Kamau Njoroge.",
       "dueAt": "2026-11-18",
       "status": "URGENT",
-      "createdAt": "2026-11-16T05:09:37.398Z",
-      "updatedAt": "2026-11-16T05:09:37.398Z"
+      "createdAt": "2026-11-19T06:27:20.007Z",
+      "updatedAt": "2026-11-19T06:27:20.007Z"
     },
     {
       "id": "tsk-seed-lec-1",
@@ -1439,8 +1487,8 @@
       "description": "Verify CAT 1 & CAT 2 moderation entries for Nairobi Main Cohort.",
       "dueAt": "2026-11-19",
       "status": "IN_PROGRESS",
-      "createdAt": "2026-11-16T05:09:37.398Z",
-      "updatedAt": "2026-11-16T05:09:37.398Z"
+      "createdAt": "2026-11-19T06:27:20.007Z",
+      "updatedAt": "2026-11-19T06:27:20.007Z"
     }
   ],
   "staffAuditLogs": [
@@ -1471,54 +1519,6 @@
     }
   ],
   "documents": [
-    {
-      "id": "doc-1794805791171-t68n",
-      "referenceNumber": null,
-      "title": "Registry Memo 2026",
-      "category": "OFFICIAL_MEMO",
-      "confidentiality": "INTERNAL",
-      "status": "DRAFT",
-      "ownerId": "usr-reg-001",
-      "ownerName": "H. Oduor",
-      "createdById": "usr-reg-001",
-      "createdByName": "H. Oduor",
-      "departmentId": "dept-registry",
-      "departmentName": "Academic Registry & Student Records",
-      "campusId": "cmp-nairobi",
-      "campusName": "Nairobi Main Campus",
-      "recipientLabel": "Academic Registry",
-      "subjectLine": "UPLOADED RECORD — memo.pdf",
-      "bodyContent": "Uploaded institutional file \"memo.pdf\" (application/pdf, 2.0 KB). Verified clean and integrity-hashed.",
-      "metadataFields": {
-        "fileName": "memo.pdf",
-        "mimeType": "application/pdf",
-        "sizeBytes": "2048",
-        "checksumSha256": "8437bd520f8aa6f1ea4a8354fb71b05317fa23bc80624635a0e42a3c16355689",
-        "scanStatus": "VERIFIED_CLEAN"
-      },
-      "design": {
-        "fontFamily": "sans",
-        "fontSizePt": 11,
-        "accentColor": "navy",
-        "alignment": "left",
-        "showWatermark": false,
-        "watermarkText": "HI-TECH COLLEGE",
-        "showHeader": true,
-        "showFooter": true,
-        "showSignatureBlock": true,
-        "showQrBlock": true
-      },
-      "templateId": null,
-      "currentVersion": 1,
-      "verificationHash": null,
-      "issuedAt": null,
-      "issuedById": null,
-      "issuedByName": null,
-      "revokedReason": null,
-      "archivedAt": null,
-      "createdAt": "2026-11-16T05:09:51.171Z",
-      "updatedAt": "2026-11-16T05:09:51.171Z"
-    },
     {
       "id": "doc-seed-001",
       "referenceNumber": "HCA/DOC/2026/000001",
@@ -1656,25 +1656,6 @@
     }
   ],
   "documentVersions": [
-    {
-      "id": "ver-1794805791172",
-      "documentId": "doc-1794805791171-t68n",
-      "versionNumber": 1,
-      "title": "Registry Memo 2026",
-      "subjectLine": "UPLOADED RECORD — memo.pdf",
-      "bodyContent": "Uploaded institutional file \"memo.pdf\" (application/pdf, 2.0 KB). Verified clean and integrity-hashed.",
-      "metadataFields": {
-        "fileName": "memo.pdf",
-        "mimeType": "application/pdf",
-        "sizeBytes": "2048",
-        "checksumSha256": "8437bd520f8aa6f1ea4a8354fb71b05317fa23bc80624635a0e42a3c16355689",
-        "scanStatus": "VERIFIED_CLEAN"
-      },
-      "editedById": "usr-reg-001",
-      "editedByName": "H. Oduor",
-      "changeNote": "Initial draft created",
-      "createdAt": "2026-11-16T05:09:51.171Z"
-    },
     {
       "id": "ver-seed-1",
       "documentId": "doc-seed-001",
@@ -1923,16 +1904,6 @@
     }
   ],
   "documentAuditLogs": [
-    {
-      "id": "daud-1794805791172-vmul",
-      "documentId": "doc-1794805791171-t68n",
-      "actorId": "usr-reg-001",
-      "actorName": "H. Oduor",
-      "actorRole": "REGISTRAR",
-      "action": "DRAFT_CREATED",
-      "detail": "Created draft \"Registry Memo 2026\" (OFFICIAL_MEMO · INTERNAL).",
-      "createdAt": "2026-11-16T05:09:51.172Z"
-    },
     {
       "id": "daud-1",
       "documentId": "doc-seed-001",
@@ -2429,5 +2400,1766 @@
       "isConfidential": true,
       "createdAt": "2026-02-13T11:05:00.000Z"
     }
-  ]
+  ],
+  "websiteDepartments": [
+    {
+      "id": "wdept-ict",
+      "slug": "ict-computer-science",
+      "code": "ICT-CS",
+      "name": "ICT & Computer Science",
+      "shortDescription": "TVET CDACC & KNEC-accredited software engineering, networking, cybersecurity, and database administration programmes.",
+      "overview": "The Department of ICT & Computer Science prepares industry-ready software engineers, network architects, cloud administrators, and cybersecurity practitioners through hands-on project laboratories and structured industrial attachments across Kenya’s technology sector.",
+      "bannerImageUrl": "/src/assets/images/hitech_computing_lab_1794981896260.jpg",
+      "hodStaffProfileId": "wstaff-njeri-kamau",
+      "contactEmail": "ict@hitech.ac.ke",
+      "officeLocation": "Block B, 2nd Floor — Computing & Innovation Wing, Nairobi Main Campus",
+      "campusName": "Nairobi Main Campus & Westlands Technology Park",
+      "programmes": [
+        {
+          "code": "DICT-L6",
+          "title": "Diploma in Information Communication Technology (DICT Level 6)",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C- (Minus) or Certificate in ICT Level 5",
+          "studyModes": [
+            "Full-time",
+            "Evening",
+            "Weekend"
+          ],
+          "examiningBody": "TVET CDACC"
+        },
+        {
+          "code": "CICT-L5",
+          "title": "Certificate in Information Communication Technology (CICT Level 5)",
+          "level": "Certificate",
+          "duration": "1 Year (3 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade D (Plain)",
+          "studyModes": [
+            "Full-time",
+            "Evening"
+          ],
+          "examiningBody": "TVET CDACC"
+        },
+        {
+          "code": "CYB-L6",
+          "title": "Diploma in Cyber Security & Digital Forensics",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C- (Minus) with C- in English and Mathematics",
+          "studyModes": [
+            "Full-time",
+            "Part-time",
+            "Online"
+          ],
+          "examiningBody": "HI-TECH / CDACC"
+        }
+      ],
+      "facilities": [
+        "40-seat Software Engineering & Cloud Sandbox Lab",
+        "Cisco & MikroTik Enterprise Networking Rack Laboratory",
+        "Hardware Diagnostics & Preventive Maintenance Bench",
+        "High-speed redundant fiber campus intranet and digital resource repository"
+      ],
+      "learningOutcomes": [
+        "Architect and deploy secure full-stack web, mobile, and enterprise applications.",
+        "Administer Linux/Windows server infrastructure and relational PostgreSQL databases.",
+        "Configure switched/routed enterprise networks and perform security vulnerability audits."
+      ],
+      "careerOpportunities": [
+        "Full-Stack Software Developer",
+        "Network & Systems Administrator",
+        "Database Administrator (DBA)",
+        "Information Security Analyst",
+        "IT Support & Cloud Engineer"
+      ],
+      "announcements": [
+        {
+          "id": "ann-ict-1",
+          "title": "May & September 2026 DICT Level 6 Applications Open",
+          "date": "2026-04-02",
+          "summary": "Practical lab induction and coding bootcamp included for all new Level 5 & Level 6 entrants."
+        }
+      ],
+      "faqs": [
+        {
+          "question": "Do trainees need their own laptops from day one?",
+          "answer": "Every ICT student receives scheduled workstation access in our Nairobi and Westlands laboratories. Personal laptops are helpful for home practice but are not mandatory for practical assessments."
+        },
+        {
+          "question": "Is industrial attachment included in the Diploma programme?",
+          "answer": "Yes. All Level 6 Diploma trainees complete a supervised 12-week industrial attachment prior to graduation."
+        }
+      ],
+      "featured": true,
+      "displayOrder": 1,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:05:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-10T10:00:00.000Z",
+      "seoTitle": "Department of ICT & Computer Science | HI-TECH College Kenya",
+      "seoDescription": "Explore accredited DICT Level 6, Certificate in ICT, and Cybersecurity programmes at HI-TECH College."
+    },
+    {
+      "id": "wdept-business",
+      "slug": "business-management",
+      "code": "BUS-MGT",
+      "name": "Business & Management",
+      "shortDescription": "Strategic management, human resource leadership, supply chain operations, and entrepreneurship.",
+      "overview": "The Department of Business & Management equips future executives, supervisors, procurement officers, and entrepreneurs with practical financial, organizational, and digital commerce skills tailored to East African enterprises.",
+      "bannerImageUrl": "/src/assets/images/dept_business_finance_1795068915149.jpg",
+      "hodStaffProfileId": "wstaff-grace-nyambura",
+      "contactEmail": "business@hitech.ac.ke",
+      "officeLocation": "Block A, 3rd Floor — School of Business Studies, Nairobi Main Campus",
+      "campusName": "Nairobi Main Campus & Mombasa Coastal Campus",
+      "programmes": [
+        {
+          "code": "DBM-L6",
+          "title": "Diploma in Business Management",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C- (Minus) or equivalent Certificate",
+          "studyModes": [
+            "Full-time",
+            "Evening",
+            "Online"
+          ],
+          "examiningBody": "KNEC"
+        },
+        {
+          "code": "DSCM-L6",
+          "title": "Diploma in Supply Chain & Procurement Management",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C- (Minus)",
+          "studyModes": [
+            "Full-time",
+            "Evening"
+          ],
+          "examiningBody": "KNEC / TVET CDACC"
+        }
+      ],
+      "facilities": [
+        "Executive Case-Study Seminar Hall with Smart Projection",
+        "Enterprise Resource Planning (ERP) Simulation Desk",
+        "Student Entrepreneurship & Business Incubation Clinic"
+      ],
+      "learningOutcomes": [
+        "Formulate operational plans, budgets, and commercial strategies for SMEs and corporate firms.",
+        "Apply Kenya Public Procurement and Supply Chain regulatory frameworks."
+      ],
+      "careerOpportunities": [
+        "Business Operations Executive",
+        "Procurement & Supply Chain Officer",
+        "Human Resource Assistant",
+        "Enterprise Development Consultant"
+      ],
+      "announcements": [
+        {
+          "id": "ann-bus-1",
+          "title": "Evening Executive Classes for Working Professionals",
+          "date": "2026-03-18",
+          "summary": "Flexible 5:30 PM – 8:00 PM schedules available for Diploma in Business Management cohorts."
+        }
+      ],
+      "faqs": [
+        {
+          "question": "Can working students enroll in evening or online sessions?",
+          "answer": "Yes. We offer evening and hybrid delivery modes alongside full-time day classes."
+        }
+      ],
+      "featured": true,
+      "displayOrder": 2,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:10:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-08T10:00:00.000Z",
+      "seoTitle": "Department of Business & Management | HI-TECH College",
+      "seoDescription": "Accredited KNEC & CDACC Diploma courses in Business, HR, and Supply Chain Management."
+    },
+    {
+      "id": "wdept-accounting",
+      "slug": "accounting-finance",
+      "code": "ACC-FIN",
+      "name": "Accounting & Finance",
+      "shortDescription": "KASNEB Certified Public Accountants (CPA), ATD, CIFA tuition and computerized accounting practice.",
+      "overview": "Registered as an official KASNEB Accredited Tuition & Examination Centre, the Accounting & Finance department combines rigorous exam preparation with practical ERP accounting, taxation, and statutory audit tooling.",
+      "bannerImageUrl": "/src/assets/images/hitech_innovation_campus_1794981896251.jpg",
+      "hodStaffProfileId": "wstaff-daniel-kiprop",
+      "contactEmail": "accounting@hitech.ac.ke",
+      "officeLocation": "Block A, 2nd Floor — Finance & KASNEB Centre, Nairobi Main Campus",
+      "campusName": "Nairobi Main Campus",
+      "programmes": [
+        {
+          "code": "CPA-K",
+          "title": "Certified Public Accountants (CPA Foundation to Advanced)",
+          "level": "Professional",
+          "duration": "6 Months per Level",
+          "entryRequirements": "KCSE Mean Grade C+ (Plus) with C+ in English & Mathematics, or ATD",
+          "studyModes": [
+            "Full-time",
+            "Evening",
+            "Weekend"
+          ],
+          "examiningBody": "KASNEB"
+        },
+        {
+          "code": "ATD-K",
+          "title": "Accounting Technicians Diploma (ATD Levels I–III)",
+          "level": "Diploma",
+          "duration": "1.5 Years",
+          "entryRequirements": "KCSE Mean Grade C- (Minus)",
+          "studyModes": [
+            "Full-time",
+            "Evening"
+          ],
+          "examiningBody": "KASNEB"
+        }
+      ],
+      "facilities": [
+        "Sage, QuickBooks & SAP Business One Practice Lab",
+        "Quiet Revision & Past-Paper Research Lounge"
+      ],
+      "learningOutcomes": [
+        "Prepare IFRS-compliant financial statements, tax returns, and management cost reports.",
+        "Execute computerized bookkeeping, payroll reconciliation, and internal audit testing."
+      ],
+      "careerOpportunities": [
+        "Certified Public Accountant",
+        "Audit & Tax Associate",
+        "Financial Controller",
+        "Credit & Treasury Analyst"
+      ],
+      "announcements": [],
+      "faqs": [
+        {
+          "question": "Does HI-TECH College assist with KASNEB exam booking?",
+          "answer": "Yes, our Examinations & KASNEB Desk guides candidates through student registration and exemptions."
+        }
+      ],
+      "featured": true,
+      "displayOrder": 3,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:15:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-05T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-hospitality",
+      "slug": "hospitality-tourism",
+      "code": "HOS-TRM",
+      "name": "Hospitality & Tourism",
+      "shortDescription": "Hotel operations, culinary arts, front-office management, and eco-tourism management.",
+      "overview": "Training refined hospitality supervisors, culinary practitioners, and travel specialists for Kenya’s leading hotels, safari lodges, airlines, and coastal resorts.",
+      "bannerImageUrl": "/src/assets/images/campus_hero_banner_1794587290452.jpg",
+      "hodStaffProfileId": null,
+      "contactEmail": "hospitality@hitech.ac.ke",
+      "officeLocation": "Hospitality Demonstration Pavilion, Mombasa Coastal & Nairobi Campuses",
+      "campusName": "Mombasa Coastal Campus & Nairobi Main Campus",
+      "programmes": [
+        {
+          "code": "DHM-L6",
+          "title": "Diploma in Hospitality & Catering Management",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C- (Minus)",
+          "studyModes": [
+            "Full-time"
+          ],
+          "examiningBody": "TVET CDACC / KNEC"
+        },
+        {
+          "code": "TTM-L5",
+          "title": "Certificate in Tour Guiding & Travel Operations",
+          "level": "Certificate",
+          "duration": "1 Year (3 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade D (Plain)",
+          "studyModes": [
+            "Full-time"
+          ],
+          "examiningBody": "KNEC"
+        }
+      ],
+      "facilities": [
+        "Commercial Production Kitchen & Pastry Studio",
+        "Simulated Hotel Front-Desk & Reservations Suite",
+        "Coastal Eco-Tourism Field Immersion Programme"
+      ],
+      "learningOutcomes": [
+        "Manage hotel front-office, housekeeping, food production, and guest experience operations.",
+        "Design sustainable travel itineraries and event hospitality packages."
+      ],
+      "careerOpportunities": [
+        "Hotel Duty Manager",
+        "Executive Sous Chef",
+        "Tour & Travel Coordinator",
+        "Events & Banqueting Supervisor"
+      ],
+      "announcements": [],
+      "faqs": [],
+      "featured": false,
+      "displayOrder": 4,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:20:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-engineering",
+      "slug": "engineering-technical-studies",
+      "code": "ENG-TECH",
+      "name": "Engineering & Technical Studies",
+      "shortDescription": "Electrical power installation, telecommunications, solar PV systems, and mechatronics.",
+      "overview": "Combining NITA, TVET CDACC, and KNEC workshop competence standards, Engineering & Technical Studies develops licensed electrical technicians, embedded robotics engineers, and industrial automation specialists.",
+      "bannerImageUrl": "/src/assets/images/dept_engineering_lab_1795068915130.jpg",
+      "hodStaffProfileId": "wstaff-peter-kamau",
+      "contactEmail": "engineering@hitech.ac.ke",
+      "officeLocation": "Engineering Workshop Block, Westlands Technology Park Campus",
+      "campusName": "Westlands Technology Park Campus",
+      "programmes": [
+        {
+          "code": "DEE-L6",
+          "title": "Diploma in Electrical & Electronics Engineering (Power Option)",
+          "level": "Diploma",
+          "duration": "3 Years",
+          "entryRequirements": "KCSE Mean Grade C- (Minus) with C- in Mathematics and Physics",
+          "studyModes": [
+            "Full-time",
+            "Evening"
+          ],
+          "examiningBody": "KNEC / TVET CDACC"
+        },
+        {
+          "code": "SPV-L5",
+          "title": "Certificate in Solar PV & Renewable Energy Installation",
+          "level": "Certificate",
+          "duration": "1 Year",
+          "entryRequirements": "KCSE Mean Grade D (Plain)",
+          "studyModes": [
+            "Full-time"
+          ],
+          "examiningBody": "NITA / EPRA Aligned"
+        }
+      ],
+      "facilities": [
+        "Three-Phase Power & Motor Control Training Bay",
+        "Embedded Microcontrollers, PCB & Robotics Studio",
+        "EPRA-Aligned Solar Photovoltaic Roof Testbed"
+      ],
+      "learningOutcomes": [
+        "Design, wire, inspect, and commission domestic and industrial electrical installations safely.",
+        "Troubleshoot programmable logic controllers (PLCs), solar inverters, and sensor networks."
+      ],
+      "careerOpportunities": [
+        "Electrical Technician (EPRA T1/T2 pathway)",
+        "Industrial Automation Technician",
+        "Renewable Energy Field Engineer",
+        "Telecommunications Rig Specialist"
+      ],
+      "announcements": [],
+      "faqs": [],
+      "featured": true,
+      "displayOrder": 5,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:25:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-ai",
+      "slug": "artificial-intelligence-data-science",
+      "code": "AI-DS",
+      "name": "Artificial Intelligence & Data Science",
+      "shortDescription": "Applied machine learning, statistical data analytics, Python engineering, and responsible AI governance.",
+      "overview": "Positioned at HI-TECH’s Westlands Technology Park Campus, this flagship department delivers specialised training in data engineering, computer vision, natural language processing, and applied machine learning systems.",
+      "bannerImageUrl": "/src/assets/images/hitech_computing_lab_1794981896260.jpg",
+      "hodStaffProfileId": null,
+      "contactEmail": "ai@hitech.ac.ke",
+      "officeLocation": "AI & Applied Data Research Floor, Westlands Technology Park",
+      "campusName": "Westlands Technology Park Campus",
+      "programmes": [
+        {
+          "code": "AIML-L6",
+          "title": "Diploma in Artificial Intelligence & Machine Learning",
+          "level": "Diploma",
+          "duration": "2 Years (6 Trimesters)",
+          "entryRequirements": "KCSE Mean Grade C (Plain) with C in Mathematics or Physics",
+          "studyModes": [
+            "Full-time",
+            "Part-time",
+            "Online"
+          ],
+          "examiningBody": "HI-TECH Academic Board"
+        },
+        {
+          "code": "DSB-01",
+          "title": "Applied Data Analytics & Business Intelligence Intensive",
+          "level": "Short Course",
+          "duration": "12 Weeks",
+          "entryRequirements": "Open to graduates, analysts, and STEM diploma holders",
+          "studyModes": [
+            "Evening",
+            "Weekend",
+            "Online"
+          ],
+          "examiningBody": "HI-TECH Certification"
+        }
+      ],
+      "facilities": [
+        "GPU-Accelerated Machine Learning Compute Cluster",
+        "Kenya Open Data & Agritech Research Dataset Sandbox"
+      ],
+      "learningOutcomes": [
+        "Clean, model, and visualize large datasets using Python, Pandas, SQL, and Power BI.",
+        "Train, evaluate, and responsibly deploy supervised and deep learning models."
+      ],
+      "careerOpportunities": [
+        "Junior Machine Learning Engineer",
+        "Business Intelligence & Data Analyst",
+        "MLOps Systems Associate"
+      ],
+      "announcements": [],
+      "faqs": [],
+      "featured": true,
+      "displayOrder": 6,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:30:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-languages",
+      "slug": "languages-communication",
+      "code": "LNG-COM",
+      "name": "Languages & Communication",
+      "shortDescription": "Academic writing, corporate communication, French, German, Kiswahili, and public relations.",
+      "overview": "Empowering technical and business graduates with crisp workplace communication, multilingual proficiency, technical documentation mastery, and cross-cultural fluency for regional and international careers.",
+      "bannerImageUrl": "/src/assets/images/student_library_promo_1794587291004.jpg",
+      "hodStaffProfileId": null,
+      "contactEmail": "languages@hitech.ac.ke",
+      "officeLocation": "Learning Resource Wing, 1st Floor, Nairobi Main Campus",
+      "campusName": "Nairobi Main Campus",
+      "programmes": [
+        {
+          "code": "BCOM-S1",
+          "title": "Certificate in Corporate Communication & Public Speaking",
+          "level": "Short Course",
+          "duration": "8 Weeks",
+          "entryRequirements": "KCSE Certificate or working professionals",
+          "studyModes": [
+            "Evening",
+            "Online"
+          ],
+          "examiningBody": "HI-TECH Academic Board"
+        },
+        {
+          "code": "LNG-DEFR",
+          "title": "Foundational German & French for Technical Careers",
+          "level": "Short Course",
+          "duration": "14 Weeks per Level (A1/A2)",
+          "entryRequirements": "Open admission",
+          "studyModes": [
+            "Evening",
+            "Weekend"
+          ],
+          "examiningBody": "DELF / Goethe Aligned"
+        }
+      ],
+      "facilities": [
+        "Interactive Audio-Visual Language Listening Studio",
+        "Editorial & Technical Writing Clinic"
+      ],
+      "learningOutcomes": [
+        "Author clear technical manuals, grant proposals, and executive presentations.",
+        "Hold structured workplace conversations in English, Kiswahili, French, or German."
+      ],
+      "careerOpportunities": [
+        "Corporate Communications Officer",
+        "Technical Documentation Specialist",
+        "Multilingual Client Liaison"
+      ],
+      "announcements": [],
+      "faqs": [],
+      "featured": false,
+      "displayOrder": 7,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:35:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-professional",
+      "slug": "professional-certification",
+      "code": "PRO-CERT",
+      "name": "Professional Certification",
+      "shortDescription": "Vendor certifications in Cisco CCNA, AWS Cloud Practitioner, ICDL, Microsoft Azure, and CompTIA Security+.",
+      "overview": "Designed for career acceleration and employer upskilling, our Professional Certification Centre delivers bootcamps, exam vouchers, and lab-guided test readiness for global technology and finance credentials.",
+      "bannerImageUrl": "/src/assets/images/hitech_innovation_campus_1794981896251.jpg",
+      "hodStaffProfileId": null,
+      "contactEmail": "certifications@hitech.ac.ke",
+      "officeLocation": "Certification & CBT Testing Suite, Nairobi Main Campus",
+      "campusName": "All Campuses",
+      "programmes": [
+        {
+          "code": "ICDL-26",
+          "title": "International Certification of Digital Literacy (ICDL & Computer Packages)",
+          "level": "Short Course",
+          "duration": "6 Weeks",
+          "entryRequirements": "Open admission for school leavers and staff",
+          "studyModes": [
+            "Full-time",
+            "Evening",
+            "Weekend"
+          ],
+          "examiningBody": "ICDL / HI-TECH"
+        },
+        {
+          "code": "CCNA-PRO",
+          "title": "Cisco CCNA & Cloud Practitioner Dual Track",
+          "level": "Professional",
+          "duration": "12 Weeks",
+          "entryRequirements": "Basic IT knowledge or CICT student",
+          "studyModes": [
+            "Evening",
+            "Weekend",
+            "Online"
+          ],
+          "examiningBody": "Cisco / AWS Readiness"
+        }
+      ],
+      "facilities": [
+        "Proctored Computer-Based Testing (CBT) Centre",
+        "Live Cisco Routing & Cloud Lab Simulators"
+      ],
+      "learningOutcomes": [
+        "Pass international vendor exams on the first sitting with structured mock diagnostics."
+      ],
+      "careerOpportunities": [
+        "Certified Network Associate",
+        "Cloud Support Practitioner",
+        "Digital Productivity Specialist"
+      ],
+      "announcements": [],
+      "faqs": [],
+      "featured": false,
+      "displayOrder": 8,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-12T08:00:00.000Z",
+      "approvedAt": "2026-01-12T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-12T09:40:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wdept-draft-health",
+      "slug": "health-records-digital-health",
+      "code": "HLT-INF",
+      "name": "Health Records & Digital Health",
+      "shortDescription": "Draft curriculum for clinical health informatics, HL7/FHIR data systems, and hospital administration.",
+      "overview": "Currently undergoing TVET CDACC curriculum validation prior to public launch in the 2027 intake cycle.",
+      "bannerImageUrl": "/src/assets/images/hitech_innovation_campus_1794981896251.jpg",
+      "hodStaffProfileId": null,
+      "contactEmail": "healthinformatics@hitech.ac.ke",
+      "officeLocation": "Academic Planning Wing, Nairobi Main Campus",
+      "campusName": "Nairobi Main Campus",
+      "programmes": [],
+      "facilities": [],
+      "learningOutcomes": [],
+      "careerOpportunities": [],
+      "announcements": [],
+      "faqs": [],
+      "featured": false,
+      "displayOrder": 9,
+      "showOnPublicWebsite": false,
+      "status": "DRAFT",
+      "submittedAt": null,
+      "approvedAt": null,
+      "approvedById": null,
+      "approvedByName": null,
+      "publishedAt": null,
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-02-12T08:00:00.000Z",
+      "updatedAt": "2026-02-12T08:00:00.000Z"
+    }
+  ],
+  "websiteStaffProfiles": [
+    {
+      "id": "wstaff-principal-maina",
+      "slug": "dr-bernard-k-maina",
+      "fullName": "Dr. Bernard K. Maina",
+      "titlePrefix": "Dr.",
+      "officialTitle": "College Principal & Chief Executive",
+      "positionTitle": "College Principal",
+      "designation": "PhD (Information Systems), MBS",
+      "category": "College leadership",
+      "primaryDepartmentId": null,
+      "secondaryDepartmentIds": [
+        "wdept-ict"
+      ],
+      "photoUrl": "/src/assets/images/staff_principal_portrait_1795068915341.jpg",
+      "biography": "Dr. Bernard K. Maina leads HI-TECH College’s strategic academic expansion across Nairobi, Westlands, and Mombasa. With over 22 years in higher education governance and national TVET curriculum reform, he champions employer-aligned digital skills, TVETA quality assurance, and accessible career pathways for Kenyan youth.",
+      "academicQualifications": [
+        "PhD in Information Systems Governance, University of Nairobi",
+        "MSc in Software Engineering, Strathmore University",
+        "BSc in Computer Science, JKUAT"
+      ],
+      "professionalCertifications": [
+        "Lead Assessor — TVETA Institutional Quality Standards",
+        "Fellow, Kenya Institute of Management (FKIM)"
+      ],
+      "specializations": [
+        "Higher Education Governance",
+        "TVET Curriculum Strategy",
+        "Enterprise IT Policy"
+      ],
+      "subjectsTaught": [
+        "Executive Seminar in Technology Leadership"
+      ],
+      "publicEmail": "principal@hitech.ac.ke",
+      "officeLocation": "Chancery Suite, 4th Floor, HI-TECH Academic Towers, Nairobi",
+      "officeHours": "Tuesdays & Thursdays, 10:00 AM – 12:30 PM (by appointment)",
+      "linkedinUrl": "https://linkedin.com/in/bernard-maina-hitech",
+      "featured": true,
+      "displayOrder": 1,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-admin-001",
+      "approvedByName": "Grace Nyambura",
+      "publishedAt": "2026-01-10T09:10:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z",
+      "privatePhone": "+254 711 000 999",
+      "personalAddress": "Confidential Executive Residence, Karen",
+      "employmentContractType": "Permanent Executive Contract",
+      "salaryBandConfidential": "JG-EXEC-1"
+    },
+    {
+      "id": "wstaff-samuel-karanja",
+      "slug": "prof-samuel-karanja",
+      "fullName": "Dr. Samuel Karanja",
+      "titlePrefix": "Dr.",
+      "officialTitle": "Senior Advisor, Principal’s Office",
+      "positionTitle": "Director of Institutional Planning",
+      "designation": "PhD (Educational Technology)",
+      "category": "Principal's office",
+      "primaryDepartmentId": "wdept-ai",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/student_profile_portrait_1794587291385.jpg",
+      "biography": "Coordinates strategic industry partnerships, TVETA accreditation dossiers, and digital transformation initiatives directly within the Principal’s Office.",
+      "academicQualifications": [
+        "PhD Educational Technology, Kenyatta University",
+        "MEd Curriculum Studies"
+      ],
+      "professionalCertifications": [
+        "Certified Institutional Planner"
+      ],
+      "specializations": [
+        "Academic Accreditation",
+        "Industry Partnerships",
+        "EdTech Strategy"
+      ],
+      "subjectsTaught": [
+        "Research Methods & Academic Ethics"
+      ],
+      "publicEmail": "planning@hitech.ac.ke",
+      "officeLocation": "Principal’s Office Wing, Nairobi Main Campus",
+      "officeHours": "Mon & Wed, 9:00 AM – 1:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 2,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:15:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z",
+      "privatePhone": "+254 711 000 888"
+    },
+    {
+      "id": "wstaff-deputy-omondi",
+      "slug": "dr-dennis-omondi-otieno",
+      "fullName": "Dr. Dennis Omondi Otieno",
+      "titlePrefix": "Dr.",
+      "officialTitle": "Deputy Principal (Academic & Research Affairs)",
+      "positionTitle": "Deputy Principal",
+      "designation": "PhD (Applied Mathematics & Data Science)",
+      "category": "Deputy Principal",
+      "primaryDepartmentId": "wdept-ai",
+      "secondaryDepartmentIds": [
+        "wdept-ict"
+      ],
+      "photoUrl": "/src/assets/images/staff_lecturer_engineering_1795068915515.jpg",
+      "biography": "Oversees teaching excellence, examination moderation, applied AI research hubs, and trimester workload scheduling across all HI-TECH College campuses.",
+      "academicQualifications": [
+        "PhD Applied Mathematics, Maseno University",
+        "MSc Statistics"
+      ],
+      "professionalCertifications": [
+        "Senior Fellow, Higher Education Teaching"
+      ],
+      "specializations": [
+        "Statistical Modeling",
+        "Curriculum Quality",
+        "Academic Senate Chair"
+      ],
+      "subjectsTaught": [
+        "Applied Linear Algebra for Machine Learning"
+      ],
+      "publicEmail": "deputy.academics@hitech.ac.ke",
+      "officeLocation": "Block A, 4th Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Fri, 2:00 PM – 4:00 PM",
+      "linkedinUrl": "https://linkedin.com/in/dennis-otieno-hitech",
+      "featured": true,
+      "displayOrder": 3,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:20:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-registrar-wanjiru",
+      "slug": "dr-margaret-wanjiru-registrar",
+      "fullName": "Dr. Margaret Wanjiru",
+      "titlePrefix": "Dr.",
+      "officialTitle": "Chief Academic Registrar",
+      "positionTitle": "Academic Registrar",
+      "designation": "PhD (Education Administration)",
+      "category": "Registrar",
+      "primaryDepartmentId": null,
+      "secondaryDepartmentIds": [
+        "wdept-business"
+      ],
+      "photoUrl": "/src/assets/images/staff_registrar_director_1795068915251.jpg",
+      "biography": "Custodian of official academic records, student admissions verification, trimester unit registration, graduation clearance, and official cryptographic transcript certification.",
+      "academicQualifications": [
+        "PhD Education Administration, Moi University",
+        "MBA Strategic Management"
+      ],
+      "professionalCertifications": [
+        "Member, Association of Commonwealth Registrars"
+      ],
+      "specializations": [
+        "Academic Registry Governance",
+        "TVETA Compliance",
+        "Credential Authentication"
+      ],
+      "subjectsTaught": [
+        "Institutional Governance & Records Compliance"
+      ],
+      "publicEmail": "registrar@hitech.ac.ke",
+      "officeLocation": "Academic Registry Desk, Ground Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Fri, 8:30 AM – 4:30 PM",
+      "linkedinUrl": "https://linkedin.com/in/margaret-wanjiru-registrar",
+      "featured": true,
+      "displayOrder": 4,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:25:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-njeri-kamau",
+      "slug": "dr-njeri-kamau",
+      "fullName": "Dr. Njeri Kamau",
+      "titlePrefix": "Dr.",
+      "officialTitle": "Head of Department — ICT & Computer Science",
+      "positionTitle": "Head of Department",
+      "designation": "PhD (Computer Science)",
+      "category": "Heads of Departments",
+      "primaryDepartmentId": "wdept-ict",
+      "secondaryDepartmentIds": [
+        "wdept-ai"
+      ],
+      "photoUrl": "/src/assets/images/staff_hod_computing_1795068915093.jpg",
+      "biography": "Dr. Njeri Kamau leads the Department of ICT & Computer Science. Her teaching and applied research focus on distributed algorithms, cloud-native systems architecture, and scalable PostgreSQL database engineering.",
+      "academicQualifications": [
+        "PhD Computer Science, University of Cape Town",
+        "MSc Computer Science, University of Nairobi",
+        "BSc Informatics, Moi University"
+      ],
+      "professionalCertifications": [
+        "AWS Certified Solutions Architect",
+        "CDACC Registered Assessor"
+      ],
+      "specializations": [
+        "Distributed Systems",
+        "Algorithms & Data Structures",
+        "Database Architecture"
+      ],
+      "subjectsTaught": [
+        "Software Architecture & Design (ICT 2101)",
+        "Relational Databases & Cloud SQL (ICT 2104)"
+      ],
+      "publicEmail": "hod.ict@hitech.ac.ke",
+      "officeLocation": "Block B, Room B204 — Computing & Innovation Wing",
+      "officeHours": "Tue & Thu, 11:00 AM – 2:00 PM",
+      "linkedinUrl": "https://linkedin.com/in/njeri-kamau-cs",
+      "featured": true,
+      "displayOrder": 5,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:30:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z",
+      "privatePhone": "+254 722 998 111"
+    },
+    {
+      "id": "wstaff-peter-kamau",
+      "slug": "eng-peter-kamau-njoroge",
+      "fullName": "Eng. Peter Kamau Njoroge",
+      "titlePrefix": "Eng.",
+      "officialTitle": "Senior Lecturer & Acting HOD — Engineering & Technical Studies",
+      "positionTitle": "Senior Lecturer",
+      "designation": "MEng (Electrical & Mechatronics), EBK Registered",
+      "category": "Lecturers and trainers",
+      "primaryDepartmentId": "wdept-engineering",
+      "secondaryDepartmentIds": [
+        "wdept-ict"
+      ],
+      "photoUrl": "/src/assets/images/staff_lecturer_engineering_1795068915515.jpg",
+      "biography": "Licensed electrical and mechatronics engineer with 14 years of industrial automation, embedded microcontroller design, and TVET laboratory instruction experience.",
+      "academicQualifications": [
+        "MSc Mechatronic Engineering, JKUAT",
+        "BSc Electrical Engineering"
+      ],
+      "professionalCertifications": [
+        "Registered Graduate Engineer (EBK)",
+        "EPRA Solar T3 License"
+      ],
+      "specializations": [
+        "Embedded Robotics",
+        "PLC Automation",
+        "Three-Phase Power Systems"
+      ],
+      "subjectsTaught": [
+        "Mechatronics & Embedded Systems",
+        "Industrial Electrical Installation",
+        "Cisco Routing & Switching Essentials"
+      ],
+      "publicEmail": "pkamau@hitech.ac.ke",
+      "officeLocation": "Engineering Block, Lab E102, Westlands Technology Park",
+      "officeHours": "Mon & Wed, 2:00 PM – 4:30 PM",
+      "linkedinUrl": null,
+      "featured": true,
+      "displayOrder": 6,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:35:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-grace-nyambura",
+      "slug": "grace-nyambura-business",
+      "fullName": "Grace Nyambura",
+      "titlePrefix": "Ms.",
+      "officialTitle": "Head of Department — Business & Management",
+      "positionTitle": "Head of Department",
+      "designation": "MBA (Strategic Management)",
+      "category": "Heads of Departments",
+      "primaryDepartmentId": "wdept-business",
+      "secondaryDepartmentIds": [
+        "wdept-accounting"
+      ],
+      "photoUrl": "/src/assets/images/staff_registrar_director_1795068915251.jpg",
+      "biography": "Leads academic delivery for Business Management and Supply Chain programmes, mentoring cohorts on SME consultancy and operational finance.",
+      "academicQualifications": [
+        "MBA Strategic Management, USIU-Africa",
+        "BCom Management"
+      ],
+      "professionalCertifications": [
+        "KISM Certified Procurement Practitioner"
+      ],
+      "specializations": [
+        "Strategic Planning",
+        "Supply Chain Logistics",
+        "Commercial Law"
+      ],
+      "subjectsTaught": [
+        "Principles of Management",
+        "Operations & Supply Chain Strategy"
+      ],
+      "publicEmail": "hod.business@hitech.ac.ke",
+      "officeLocation": "Block A, 3rd Floor, Nairobi Main Campus",
+      "officeHours": "Tue & Fri, 9:00 AM – 12:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 7,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:40:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-daniel-kiprop",
+      "slug": "daniel-kiprop-cpa",
+      "fullName": "CPA Daniel Kiprop",
+      "titlePrefix": "CPA",
+      "officialTitle": "Senior Finance Officer & KASNEB Lead Tutor",
+      "positionTitle": "Finance Officer & Accounting Lead",
+      "designation": "CPA(K), MSc (Finance)",
+      "category": "Finance and administration",
+      "primaryDepartmentId": "wdept-accounting",
+      "secondaryDepartmentIds": [
+        "wdept-business"
+      ],
+      "photoUrl": "/src/assets/images/staff_principal_portrait_1795068915341.jpg",
+      "biography": "Registered Certified Public Accountant guiding HI-TECH College financial stewardship and lecturing in Financial Reporting and Corporate Taxation for KASNEB candidates.",
+      "academicQualifications": [
+        "MSc Finance, University of Nairobi",
+        "BCom Accounting"
+      ],
+      "professionalCertifications": [
+        "CPA (K) — ICPAK Member"
+      ],
+      "specializations": [
+        "IFRS Financial Reporting",
+        "Kenya Tax Law",
+        "Tuition & Bursary Systems"
+      ],
+      "subjectsTaught": [
+        "Financial Accounting (CPA Foundation)",
+        "Corporate Taxation"
+      ],
+      "publicEmail": "finance@hitech.ac.ke",
+      "officeLocation": "Finance & Bursar Wing, Ground Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Fri, 8:00 AM – 4:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 8,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:45:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-beatrice-mwangi",
+      "slug": "beatrice-wanjiku-mwangi",
+      "fullName": "Beatrice Wanjiku Mwangi",
+      "titlePrefix": "Mrs.",
+      "officialTitle": "Human Resources Officer",
+      "positionTitle": "HR & Faculty Development Officer",
+      "designation": "MSc (HRM), CHRP(K)",
+      "category": "Human Resource",
+      "primaryDepartmentId": null,
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_registrar_director_1795068915251.jpg",
+      "biography": "Manages faculty recruitment, continuous professional development, appraisal compliance, and workplace wellbeing policies across all campuses.",
+      "academicQualifications": [
+        "MSc Human Resource Management, JKUAT"
+      ],
+      "professionalCertifications": [
+        "CHRP(K) — IHRM Kenya Registered"
+      ],
+      "specializations": [
+        "Academic Recruitment",
+        "Faculty Development",
+        "Employment Compliance"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "hr@hitech.ac.ke",
+      "officeLocation": "HR Suite, 2nd Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Fri, 9:00 AM – 4:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 9,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:50:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-rachel-achieng",
+      "slug": "rachel-achieng-librarian",
+      "fullName": "Rachel Achieng",
+      "titlePrefix": "Ms.",
+      "officialTitle": "Senior College Librarian",
+      "positionTitle": "Head of Library & E-Resources",
+      "designation": "MLIS (Information Science)",
+      "category": "Library staff",
+      "primaryDepartmentId": "wdept-languages",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_hod_computing_1795068915093.jpg",
+      "biography": "Curates print collections, academic journal subscriptions, Open Educational Resources (OER), and APA research citation workshops for HI-TECH learners.",
+      "academicQualifications": [
+        "Master of Library & Information Science, Kenyatta University"
+      ],
+      "professionalCertifications": [
+        "Kenya Library Association Registered Member"
+      ],
+      "specializations": [
+        "Digital Repositories",
+        "Academic Referencing",
+        "Information Literacy"
+      ],
+      "subjectsTaught": [
+        "Information Literacy & Research Skills"
+      ],
+      "publicEmail": "library@hitech.ac.ke",
+      "officeLocation": "Learning Resource Centre, 1st Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Sat, 8:00 AM – 6:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 10,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T09:55:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-kenneth-mutiso",
+      "slug": "kenneth-mutiso-it-support",
+      "fullName": "Kenneth Mutiso",
+      "titlePrefix": "Mr.",
+      "officialTitle": "Systems & Campus ICT Support Lead",
+      "positionTitle": "ICT Systems & Lab Engineer",
+      "designation": "BSc (IT), CCNA, MCSA",
+      "category": "ICT and technical support",
+      "primaryDepartmentId": "wdept-professional",
+      "secondaryDepartmentIds": [
+        "wdept-ict"
+      ],
+      "photoUrl": "/src/assets/images/student_profile_portrait_1794587291385.jpg",
+      "biography": "Ensures 99.9% lab readiness across 38 computer studios, campus Wi-Fi infrastructure, CBT testing workstations, and student portal technical onboarding.",
+      "academicQualifications": [
+        "BSc Information Technology, Multimedia University"
+      ],
+      "professionalCertifications": [
+        "Cisco CCNA",
+        "CompTIA Network+"
+      ],
+      "specializations": [
+        "Linux Administration",
+        "CBT Network Readiness",
+        "Help Desk Engineering"
+      ],
+      "subjectsTaught": [
+        "Cisco Networking Lab Practicum"
+      ],
+      "publicEmail": "itsupport@hitech.ac.ke",
+      "officeLocation": "ICT Help Desk, Ground Floor, Block B",
+      "officeHours": "Mon – Fri, 7:30 AM – 5:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 11,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:00:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-lucy-wambui",
+      "slug": "lucy-wambui-student-affairs",
+      "fullName": "Lucy Wambui",
+      "titlePrefix": "Ms.",
+      "officialTitle": "Dean of Student Affairs & Welfare",
+      "positionTitle": "Dean of Students",
+      "designation": "MA (Counselling Psychology)",
+      "category": "Student affairs and welfare",
+      "primaryDepartmentId": "wdept-hospitality",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_registrar_director_1795068915251.jpg",
+      "biography": "Champions student wellness, hostel safety, student representative council (SRC) mentorship, career guidance, and alumni transition support.",
+      "academicQualifications": [
+        "MA Counselling Psychology, Daystar University"
+      ],
+      "professionalCertifications": [
+        "Registered Counsellor — KCPA"
+      ],
+      "specializations": [
+        "Student Mentorship",
+        "Career Readiness",
+        "Campus Clubs & Governance"
+      ],
+      "subjectsTaught": [
+        "Life Skills & Career Ethics"
+      ],
+      "publicEmail": "studentaffairs@hitech.ac.ke",
+      "officeLocation": "Student Welfare Centre, Ground Floor",
+      "officeHours": "Mon – Fri, 8:30 AM – 5:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 12,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:05:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-alice-mutua",
+      "slug": "alice-mutua-admissions",
+      "fullName": "Alice Mutua",
+      "titlePrefix": "Ms.",
+      "officialTitle": "Senior Admissions & Outreach Officer",
+      "positionTitle": "Head of Admissions & Marketing",
+      "designation": "BA (Communication & PR)",
+      "category": "Admissions and marketing",
+      "primaryDepartmentId": "wdept-languages",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_hod_computing_1795068915093.jpg",
+      "biography": "Guides prospective students, parents, and career teachers through programme placement, KUCCPS transfers, intake timelines, and scholarship enquiries.",
+      "academicQualifications": [
+        "BA Public Relations & Corporate Communication"
+      ],
+      "professionalCertifications": [
+        "PRSK Accredited Practitioner"
+      ],
+      "specializations": [
+        "Prospective Student Advising",
+        "KUCCPS Placement Support",
+        "Open Days"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "admissions@hitech.ac.ke",
+      "officeLocation": "Admissions Lounge, Ground Floor, Nairobi Main Campus",
+      "officeHours": "Mon – Sat, 8:00 AM – 5:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 13,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:10:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-charles-mwenda",
+      "slug": "charles-mwenda-qa",
+      "fullName": "Charles Mwenda",
+      "titlePrefix": "Mr.",
+      "officialTitle": "Quality Assurance & TVETA Standards Officer",
+      "positionTitle": "Quality Assurance Lead",
+      "designation": "MSc (Quality Management)",
+      "category": "Quality assurance",
+      "primaryDepartmentId": null,
+      "secondaryDepartmentIds": [
+        "wdept-engineering"
+      ],
+      "photoUrl": "/src/assets/images/staff_lecturer_engineering_1795068915515.jpg",
+      "biography": "Maintains ISO 9001 and TVETA internal quality audit frameworks, trainer accreditation verification, and continual academic improvement cycles.",
+      "academicQualifications": [
+        "MSc Quality & Productivity Management"
+      ],
+      "professionalCertifications": [
+        "ISO 9001:2015 Lead Auditor"
+      ],
+      "specializations": [
+        "TVETA Audit Compliance",
+        "Teaching Evaluation",
+        "ISO Standards"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "qa@hitech.ac.ke",
+      "officeLocation": "Quality & Standards Suite, 3rd Floor",
+      "officeHours": "Mon – Fri, 9:00 AM – 4:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 14,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:15:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-felix-kipkemoi",
+      "slug": "felix-kipkemoi-exams",
+      "fullName": "Felix Kipkemoi",
+      "titlePrefix": "Mr.",
+      "officialTitle": "Chief Examinations & Certification Officer",
+      "positionTitle": "Examinations Coordinator",
+      "designation": "BEd (Science), Certified CBT Administrator",
+      "category": "Examination and certification office",
+      "primaryDepartmentId": "wdept-professional",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_principal_portrait_1795068915341.jpg",
+      "biography": "Coordinates KNEC (Centre 2040182), TVET CDACC, KASNEB, and ICDL examination scheduling, external moderation, and secure certificate issuance.",
+      "academicQualifications": [
+        "BEd Science, Egerton University"
+      ],
+      "professionalCertifications": [
+        "CDACC Assessment Centre Manager"
+      ],
+      "specializations": [
+        "KNEC & CDACC Assessment Logistics",
+        "CBT Integrity",
+        "Certificate Security"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "exams@hitech.ac.ke",
+      "officeLocation": "Examinations Vault & Office, Block A",
+      "officeHours": "Mon – Fri, 8:00 AM – 4:30 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 15,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:20:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-joseph-njuguna",
+      "slug": "joseph-njuguna-facilities",
+      "fullName": "Joseph Njuguna",
+      "titlePrefix": "Mr.",
+      "officialTitle": "Campus Facilities, Fleet & Maintenance Supervisor",
+      "positionTitle": "Estates & Support Supervisor",
+      "designation": "Higher Diploma in Building & Fleet Operations",
+      "category": "Support and maintenance staff",
+      "primaryDepartmentId": null,
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/student_profile_portrait_1794587291385.jpg",
+      "biography": "Leads preventative estates maintenance, campus accessibility infrastructure, clean water/power continuity, and inter-campus student shuttle logistics.",
+      "academicQualifications": [
+        "Higher National Diploma in Facilities Operations"
+      ],
+      "professionalCertifications": [
+        "OSHA Workplace Safety Certified"
+      ],
+      "specializations": [
+        "Facilities Maintenance",
+        "Campus Fleet Safety",
+        "Green Energy Backup"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "facilities@hitech.ac.ke",
+      "officeLocation": "Estates & Transport Office, Ground Floor",
+      "officeHours": "Mon – Fri, 7:30 AM – 4:30 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 16,
+      "showOnPublicWebsite": true,
+      "status": "PUBLISHED",
+      "submittedAt": "2026-01-10T08:00:00.000Z",
+      "approvedAt": "2026-01-10T09:00:00.000Z",
+      "approvedById": "usr-principal-001",
+      "approvedByName": "Dr. Bernard K. Maina",
+      "publishedAt": "2026-01-10T10:25:00.000Z",
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-01-10T08:00:00.000Z",
+      "updatedAt": "2026-02-01T10:00:00.000Z"
+    },
+    {
+      "id": "wstaff-pending-lecturer",
+      "slug": "ms-brenda-atieno-ai",
+      "fullName": "Ms. Brenda Atieno",
+      "titlePrefix": "Ms.",
+      "officialTitle": "Assistant Lecturer in Applied Data Analytics",
+      "positionTitle": "Assistant Lecturer",
+      "designation": "MSc (Data Science)",
+      "category": "Lecturers and trainers",
+      "primaryDepartmentId": "wdept-ai",
+      "secondaryDepartmentIds": [],
+      "photoUrl": "/src/assets/images/staff_hod_computing_1795068915093.jpg",
+      "biography": "Specializes in agricultural predictive analytics and Python visualization workflows.",
+      "academicQualifications": [
+        "MSc Data Science, Strathmore University"
+      ],
+      "professionalCertifications": [
+        "Microsoft Certified Data Analyst"
+      ],
+      "specializations": [
+        "Data Visualization",
+        "Python ETL"
+      ],
+      "subjectsTaught": [
+        "Business Intelligence Foundations"
+      ],
+      "publicEmail": "batieno@hitech.ac.ke",
+      "officeLocation": "Westlands Technology Park, Lab W3",
+      "officeHours": "Mon & Thu, 1:00 PM – 3:00 PM",
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 17,
+      "showOnPublicWebsite": true,
+      "status": "PENDING_APPROVAL",
+      "submittedAt": "2026-02-14T11:00:00.000Z",
+      "approvedAt": null,
+      "approvedById": null,
+      "approvedByName": null,
+      "publishedAt": null,
+      "archivedAt": null,
+      "updatedById": "usr-comms-001",
+      "updatedByName": "N. Muthoni",
+      "createdAt": "2026-02-14T10:00:00.000Z",
+      "updatedAt": "2026-02-14T11:00:00.000Z",
+      "privatePhone": "+254 700 444 555",
+      "personalAddress": "Confidential Private Address",
+      "salaryBandConfidential": "JG-FAC-4"
+    },
+    {
+      "id": "wstaff-draft-advisor",
+      "slug": "mr-kevin-rotich-draft",
+      "fullName": "Mr. Kevin Rotich",
+      "titlePrefix": "Mr.",
+      "officialTitle": "Industry Attachment Liaison (Draft Profile)",
+      "positionTitle": "Placement Coordinator",
+      "designation": "BCom (HRM)",
+      "category": "Admissions and marketing",
+      "primaryDepartmentId": "wdept-business",
+      "secondaryDepartmentIds": [],
+      "photoUrl": null,
+      "biography": "Draft biography pending HR sign-off.",
+      "academicQualifications": [
+        "BCom Human Resources"
+      ],
+      "professionalCertifications": [],
+      "specializations": [
+        "Internship Placement"
+      ],
+      "subjectsTaught": [],
+      "publicEmail": "placements@hitech.ac.ke",
+      "officeLocation": "Career Services Desk",
+      "officeHours": null,
+      "linkedinUrl": null,
+      "featured": false,
+      "displayOrder": 18,
+      "showOnPublicWebsite": false,
+      "status": "DRAFT",
+      "submittedAt": null,
+      "approvedAt": null,
+      "approvedById": null,
+      "approvedByName": null,
+      "publishedAt": null,
+      "archivedAt": null,
+      "updatedById": "usr-hr-primary",
+      "updatedByName": "Beatrice Wanjiku Mwangi",
+      "createdAt": "2026-02-15T09:00:00.000Z",
+      "updatedAt": "2026-02-15T09:00:00.000Z",
+      "privatePhone": "+254 799 222 111"
+    }
+  ],
+  "departmentStaffAssignments": [
+    {
+      "id": "dsa-1",
+      "departmentId": "wdept-ict",
+      "staffProfileId": "wstaff-njeri-kamau",
+      "isHod": true,
+      "roleInDepartment": "Head of Department",
+      "isPrimaryDepartment": true,
+      "displayOrder": 1,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:00:00.000Z"
+    },
+    {
+      "id": "dsa-2",
+      "departmentId": "wdept-ict",
+      "staffProfileId": "wstaff-peter-kamau",
+      "isHod": false,
+      "roleInDepartment": "Networking & Systems Lecturer",
+      "isPrimaryDepartment": false,
+      "displayOrder": 2,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:05:00.000Z"
+    },
+    {
+      "id": "dsa-3",
+      "departmentId": "wdept-ict",
+      "staffProfileId": "wstaff-kenneth-mutiso",
+      "isHod": false,
+      "roleInDepartment": "Laboratory & CBT Technical Lead",
+      "isPrimaryDepartment": false,
+      "displayOrder": 3,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:10:00.000Z"
+    },
+    {
+      "id": "dsa-4",
+      "departmentId": "wdept-business",
+      "staffProfileId": "wstaff-grace-nyambura",
+      "isHod": true,
+      "roleInDepartment": "Head of Department",
+      "isPrimaryDepartment": true,
+      "displayOrder": 1,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:15:00.000Z"
+    },
+    {
+      "id": "dsa-5",
+      "departmentId": "wdept-accounting",
+      "staffProfileId": "wstaff-daniel-kiprop",
+      "isHod": true,
+      "roleInDepartment": "Lead CPA Tutor & Bursar",
+      "isPrimaryDepartment": true,
+      "displayOrder": 1,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:20:00.000Z"
+    },
+    {
+      "id": "dsa-6",
+      "departmentId": "wdept-engineering",
+      "staffProfileId": "wstaff-peter-kamau",
+      "isHod": true,
+      "roleInDepartment": "Head of Engineering Workshops",
+      "isPrimaryDepartment": true,
+      "displayOrder": 1,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:25:00.000Z"
+    },
+    {
+      "id": "dsa-7",
+      "departmentId": "wdept-ai",
+      "staffProfileId": "wstaff-deputy-omondi",
+      "isHod": false,
+      "roleInDepartment": "Academic Director & ML Advisor",
+      "isPrimaryDepartment": true,
+      "displayOrder": 1,
+      "assignedById": "usr-principal-001",
+      "assignedAt": "2026-01-10T09:30:00.000Z"
+    }
+  ],
+  "websiteAuditLogs": [
+    {
+      "id": "waud-1",
+      "entityType": "DEPARTMENT",
+      "entityId": "wdept-ict",
+      "entityLabel": "ICT & Computer Science",
+      "action": "DEPARTMENT_PUBLISHED",
+      "actorId": "usr-principal-001",
+      "actorName": "Dr. Bernard K. Maina",
+      "actorRole": "PRINCIPAL",
+      "detail": "Approved and published public department showcase and HOD attribution for ICT & Computer Science.",
+      "createdAt": "2026-01-12T09:05:00.000Z"
+    },
+    {
+      "id": "waud-2",
+      "entityType": "STAFF_PROFILE",
+      "entityId": "wstaff-pending-lecturer",
+      "entityLabel": "Ms. Brenda Atieno",
+      "action": "STAFF_SUBMITTED_FOR_APPROVAL",
+      "actorId": "usr-comms-001",
+      "actorName": "N. Muthoni",
+      "actorRole": "COMMUNICATIONS_OFFICER",
+      "detail": "Submitted new faculty public profile for Principal/Registrar verification before publishing.",
+      "createdAt": "2026-02-14T11:00:00.000Z"
+    }
+  ],
+  "admissionApplications": [
+    {
+      "id": "adm-app-1",
+      "applicationNumber": "APP-2026-0104",
+      "applicantName": "Faith Wanjiru Mwangi",
+      "firstName": "Faith",
+      "lastName": "Mwangi",
+      "email": "fmwangi@applicant.hitech.ac.ke",
+      "phone": "+254 712 456 890",
+      "nationalIdOrIndex": "KCSE-2025-882190",
+      "programmeName": "Diploma in Information Communication Technology (DICT)",
+      "departmentName": "ICT & Computer Science",
+      "campusName": "Nairobi Main Campus",
+      "intakeName": "September 2026 Intake",
+      "studyMode": "Full-time",
+      "meanGrade": "B-",
+      "status": "UNDER_REVIEW",
+      "missingDocumentsNote": null,
+      "documents": [
+        {
+          "name": "KCSE Result Slip",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "National ID Copy",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "Passport Photo",
+          "status": "PENDING"
+        }
+      ],
+      "offerLetterRef": null,
+      "submittedAt": "2026-02-10T09:15:00.000Z",
+      "updatedAt": "2026-02-10T09:15:00.000Z"
+    },
+    {
+      "id": "adm-app-2",
+      "applicationNumber": "APP-2026-0105",
+      "applicantName": "Mercy Chelangat Too",
+      "firstName": "Mercy",
+      "lastName": "Too",
+      "email": "mchelangat@applicant.hitech.ac.ke",
+      "phone": "+254 723 889 900",
+      "nationalIdOrIndex": "KCSE-2025-441092",
+      "programmeName": "Diploma in Artificial Intelligence & Machine Learning",
+      "departmentName": "Artificial Intelligence & Data Science",
+      "campusName": "Westlands Technology Park Campus",
+      "intakeName": "September 2026 Intake",
+      "studyMode": "Full-time",
+      "meanGrade": "B+",
+      "status": "OFFER_SENT",
+      "missingDocumentsNote": null,
+      "documents": [
+        {
+          "name": "KCSE Result Slip",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "National ID Copy",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "Passport Photo",
+          "status": "VERIFIED"
+        }
+      ],
+      "offerLetterRef": "HCA/OFR/2026/0018",
+      "offerIssuedAt": "2026-02-12T10:30:00.000Z",
+      "reviewedByName": "Alice Mutua",
+      "approvedByName": "H. Oduor",
+      "submittedAt": "2026-02-08T14:20:00.000Z",
+      "updatedAt": "2026-02-12T10:30:00.000Z"
+    },
+    {
+      "id": "adm-app-3",
+      "applicationNumber": "APP-2026-0106",
+      "applicantName": "Kevin Ochieng Odhiambo",
+      "firstName": "Kevin",
+      "lastName": "Odhiambo",
+      "email": "kochieng@applicant.hitech.ac.ke",
+      "phone": "+254 734 119 452",
+      "nationalIdOrIndex": "KCSE-2025-667213",
+      "programmeName": "Diploma in Business Management",
+      "departmentName": "Business & Management",
+      "campusName": "Nairobi Main Campus",
+      "intakeName": "May 2026 Intake",
+      "studyMode": "Evening",
+      "meanGrade": "C+",
+      "status": "OFFER_ACCEPTED",
+      "missingDocumentsNote": null,
+      "documents": [
+        {
+          "name": "KCSE Result Slip",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "National ID Copy",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "Passport Photo",
+          "status": "VERIFIED"
+        }
+      ],
+      "offerLetterRef": "HCA/OFR/2026/0019",
+      "offerIssuedAt": "2026-02-11T09:00:00.000Z",
+      "acceptedAt": "2026-02-14T13:15:00.000Z",
+      "reviewedByName": "Alice Mutua",
+      "approvedByName": "H. Oduor",
+      "submittedAt": "2026-02-07T08:40:00.000Z",
+      "updatedAt": "2026-02-14T13:15:00.000Z"
+    },
+    {
+      "id": "adm-app-4",
+      "applicationNumber": "APP-2026-0107",
+      "applicantName": "Amina Hassan Abdullahi",
+      "firstName": "Amina",
+      "lastName": "Abdullahi",
+      "email": "ahassan@applicant.hitech.ac.ke",
+      "phone": "+254 720 654 321",
+      "nationalIdOrIndex": "KCSE-2024-319044",
+      "programmeName": "Certified Public Accountants (CPA)",
+      "departmentName": "Accounting & Finance",
+      "campusName": "Mombasa Coastal Campus",
+      "intakeName": "May 2026 Intake",
+      "studyMode": "Full-time",
+      "meanGrade": "B",
+      "status": "DOCUMENTS_REQUIRED",
+      "missingDocumentsNote": "Please upload a clearer certified copy of your KCSE certificate or National ID.",
+      "documents": [
+        {
+          "name": "KCSE Result Slip",
+          "status": "MISSING"
+        },
+        {
+          "name": "National ID Copy",
+          "status": "VERIFIED"
+        },
+        {
+          "name": "Passport Photo",
+          "status": "VERIFIED"
+        }
+      ],
+      "offerLetterRef": null,
+      "reviewedByName": "Alice Mutua",
+      "submittedAt": "2026-02-13T16:00:00.000Z",
+      "updatedAt": "2026-02-14T10:10:00.000Z"
+    }
+  ],
+  "newsletterSubscribers": [],
+  "cookieConsentAudits": []
 }

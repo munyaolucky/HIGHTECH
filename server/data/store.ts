@@ -14,6 +14,20 @@ import {
   type RegistrationCategory,
   type RegistrationStatus,
 } from '../modules/registration/registration.permissions.ts';
+import type {
+  AdmissionApplicationRecord,
+  DepartmentStaffAssignmentRecord,
+  WebsiteAuditLogRecord,
+  WebsiteDepartmentRecord,
+  WebsiteStaffProfileRecord,
+} from '../modules/website/website.types.ts';
+import {
+  SEED_ADMISSION_APPLICATIONS,
+  SEED_DEPARTMENT_ASSIGNMENTS,
+  SEED_WEBSITE_AUDIT_LOGS,
+  SEED_WEBSITE_DEPARTMENTS,
+  SEED_WEBSITE_STAFF,
+} from '../modules/website/website.seed.ts';
 
 export type StaffTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
 
@@ -450,6 +464,24 @@ export interface RegistrationAuditLogRecord {
   createdAt: string;
 }
 
+export interface NewsletterSubscriberRecord {
+  id: string;
+  email: string;
+  source: string;
+  status: 'ACTIVE';
+  subscribedAt: string;
+}
+
+export interface CookieConsentAuditRecord {
+  id: string;
+  version: string;
+  action: 'accept_all' | 'reject_optional' | 'customize' | 'withdraw';
+  functional: boolean;
+  analytics: boolean;
+  marketing: boolean;
+  recordedAt: string;
+}
+
 export interface PortalDatabase {
   sequences: {
     documentIssuedSeq: number;
@@ -478,6 +510,13 @@ export interface PortalDatabase {
   registrations: UserRegistrationRecord[];
   activationInvitations: ActivationInvitationRecord[];
   registrationAuditLogs: RegistrationAuditLogRecord[];
+  websiteDepartments: WebsiteDepartmentRecord[];
+  websiteStaffProfiles: WebsiteStaffProfileRecord[];
+  departmentStaffAssignments: DepartmentStaffAssignmentRecord[];
+  websiteAuditLogs: WebsiteAuditLogRecord[];
+  admissionApplications: AdmissionApplicationRecord[];
+  newsletterSubscribers: NewsletterSubscriberRecord[];
+  cookieConsentAudits: CookieConsentAuditRecord[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -1835,6 +1874,13 @@ function createSeedDatabase(): PortalDatabase {
         createdAt: '2026-02-13T11:05:00.000Z',
       },
     ],
+    websiteDepartments: SEED_WEBSITE_DEPARTMENTS.map((d) => ({ ...d })),
+    websiteStaffProfiles: SEED_WEBSITE_STAFF.map((s) => ({ ...s })),
+    departmentStaffAssignments: SEED_DEPARTMENT_ASSIGNMENTS.map((a) => ({ ...a })),
+    websiteAuditLogs: SEED_WEBSITE_AUDIT_LOGS.map((l) => ({ ...l })),
+    admissionApplications: SEED_ADMISSION_APPLICATIONS.map((a) => ({ ...a })),
+    newsletterSubscribers: [],
+    cookieConsentAudits: [],
   };
 }
 
@@ -1868,6 +1914,27 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     registrationAuditLogs: Array.isArray(loaded.registrationAuditLogs)
       ? loaded.registrationAuditLogs
       : seed.registrationAuditLogs,
+    websiteDepartments: Array.isArray(loaded.websiteDepartments)
+      ? loaded.websiteDepartments
+      : seed.websiteDepartments,
+    websiteStaffProfiles: Array.isArray(loaded.websiteStaffProfiles)
+      ? loaded.websiteStaffProfiles
+      : seed.websiteStaffProfiles,
+    departmentStaffAssignments: Array.isArray(loaded.departmentStaffAssignments)
+      ? loaded.departmentStaffAssignments
+      : seed.departmentStaffAssignments,
+    websiteAuditLogs: Array.isArray(loaded.websiteAuditLogs)
+      ? loaded.websiteAuditLogs
+      : seed.websiteAuditLogs,
+    admissionApplications: Array.isArray(loaded.admissionApplications)
+      ? loaded.admissionApplications
+      : seed.admissionApplications,
+    newsletterSubscribers: Array.isArray(loaded.newsletterSubscribers)
+      ? loaded.newsletterSubscribers
+      : seed.newsletterSubscribers,
+    cookieConsentAudits: Array.isArray(loaded.cookieConsentAudits)
+      ? loaded.cookieConsentAudits
+      : seed.cookieConsentAudits,
   };
 }
 

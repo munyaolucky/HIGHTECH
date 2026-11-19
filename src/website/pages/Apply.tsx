@@ -16,12 +16,14 @@ import {
 
 interface ApplyProps {
   selectedCourse?: CourseProgramme | null;
+  initialProgrammeName?: string;
   onNavigateToPortalGuide: () => void;
   onLaunchStudentDashboard: () => void;
 }
 
 export default function Apply({
   selectedCourse,
+  initialProgrammeName,
   onNavigateToPortalGuide,
   onLaunchStudentDashboard,
 }: ApplyProps) {
@@ -35,20 +37,55 @@ export default function Apply({
   const [courseId, setCourseId] = useState(
     selectedCourse?.id || COURSES_CATALOGUE[0].id
   );
+  const [customProgramme, setCustomProgramme] = useState<string>(initialProgrammeName || "");
   const [campus, setCampus] = useState(COLLEGE_INFO.campuses[0].name);
   const [intake, setIntake] = useState("May 2026");
   const [mode, setMode] = useState("Full-time");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedAppRef, setSubmittedAppRef] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    if (selectedCourse?.id) {
+      setCourseId(selectedCourse.id);
+    }
+    if (initialProgrammeName) {
+      setCustomProgramme(initialProgrammeName);
+    }
+  }, [selectedCourse, initialProgrammeName]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    setTimeout(() => {
-      const courseTitle =
-        COURSES_CATALOGUE.find((c) => c.id === courseId)?.title || "BSc. Computer Science";
-      const created = collegeErpService.submitOnlineApplication({
+    const courseTitle =
+      customProgramme && !COURSES_CATALOGUE.some((c) => c.id === courseId && c.title === customProgramme)
+        ? customProgramme
+        : COURSES_CATALOGUE.find((c) => c.id === courseId)?.title || "Diploma in Information Communication Technology (DICT)";
+
+    try {
+      const res = await fetch("/api/admissions/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          applicantName: fullName,
+          email,
+          phone: phoneNumber,
+          nationalIdOrIndex: kcseIndex || nationalId || `KCSE-${kcseYear}`,
+          programmeName: courseTitle,
+          campusName: campus,
+          intakeName: `${intake} Intake`,
+          studyMode: mode,
+          meanGrade,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || "Unable to submit online application.");
+      }
+
+      collegeErpService.submitOnlineApplication({
         applicantName: fullName,
         email,
         phoneNumber,
@@ -59,8 +96,7 @@ export default function Apply({
         meanGrade,
       });
 
-      setIsSubmitting(false);
-      setSubmittedAppRef(created.applicationReference);
+      setSubmittedAppRef(json.data.applicationNumber);
 
       try {
         confetti({
@@ -68,10 +104,16 @@ export default function Apply({
           spread: 70,
           origin: { y: 0.6 },
         });
-      } catch (err) {
-        // ignore in case of headless
+      } catch {
+        // ignore headless
       }
-    }, 400);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Network error submitting application."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const currentCourse = COURSES_CATALOGUE.find((c) => c.id === courseId);
@@ -314,10 +356,18 @@ export default function Apply({
                     Selected Academic Programme *
                   </label>
                   <select
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
+                    value={customProgramme && !COURSES_CATALOGUE.some((c) => c.title === customProgramme) ? "__custom__" : courseId}
+                    onChange={(e) => {
+                      if (e.target.value !== "__custom__") {
+                        setCustomProgramme("");
+                        setCourseId(e.target.value);
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
                   >
+                    {customProgramme && !COURSES_CATALOGUE.some((c) => c.title === customProgramme) && (
+                      <option value="__custom__">{customProgramme} (Department Selection)</option>
+                    )}
                     {COURSES_CATALOGUE.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.title} — {c.level} ({c.duration})
@@ -385,13 +435,19 @@ export default function Apply({
                 </span>
               </label>
 
+              {submitError && (
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-800">
+                  {submitError}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-[#d92332] hover:bg-[#b81d2a] text-white py-3.5 rounded-xl font-bold text-sm tracking-wide transition shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {isSubmitting ? (
-                  <span>Processing Application & Assigning Reg ID...</span>
+                  <span>Processing Application &amp; Assigning Reg ID...</span>
                 ) : (
                   <>
                     <span>Submit Application for 2026 Intake</span>

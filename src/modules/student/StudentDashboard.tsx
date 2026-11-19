@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Activity,
   ArrowRight,
@@ -49,6 +49,7 @@ import {
 import campusHeroUrl from '../../assets/images/campus_hero_banner_1794587290452.jpg';
 import libraryPromoUrl from '../../assets/images/student_library_promo_1794587291004.jpg';
 import studentAvatarUrl from '../../assets/images/student_profile_portrait_1794587291385.jpg';
+import { AuthContext } from '../../auth/AuthProvider';
 import { useTheme } from '../../context/ThemeContext';
 import { subscribeErpSync } from '../../services/collegeErpService';
 import { engagementService } from '../../services/engagementService';
@@ -210,6 +211,7 @@ export default function StudentDashboard({
   onSwitchPortal,
 }: StudentDashboardProps) {
   const { theme, toggleTheme } = useTheme();
+  const authCtx = useContext(AuthContext);
   const isDark = theme === 'dark';
   const [activePage, setActivePage] = useState<StudentPortalSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -289,8 +291,11 @@ export default function StudentDashboard({
     navigate('mobile-companion');
   };
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     setActiveModal(null);
+    if (authCtx) {
+      await authCtx.signOut().catch(() => {});
+    }
     if (onLogout) {
       onLogout();
       return;
@@ -423,15 +428,15 @@ export default function StudentDashboard({
             onClick={() => navigate('dashboard')}
             className="flex items-center gap-3 text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-[#102D50] text-[#E8B44A] flex items-center justify-center shrink-0 shadow-xs">
-              <GraduationCap size={22} />
+            <div className="w-10 h-10 rounded-xl bg-[#102D50] text-[#F5EBDD] border-b-2 border-[#B83232] flex items-center justify-center shrink-0 shadow-xs font-black text-base">
+              H
             </div>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-extrabold text-[#102D50] dark:text-white tracking-tight truncate">
                 HI-TECH COLLEGE
               </h1>
               <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hidden sm:block">
-                Student Management Portal
+                Student Portal
               </p>
             </div>
           </button>
@@ -734,9 +739,9 @@ export default function StudentDashboard({
           } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           {/* Sidebar Brand Header & Collapse Control */}
-          <div className="flex items-center justify-between gap-2 px-1.5 mb-3">
+          <div className="flex items-center justify-between gap-2 px-1.5 mb-3 pb-2 border-b border-[#B83232]/70">
             {!sidebarCollapsed && (
-              <span className="text-[10px] font-extrabold tracking-widest text-[#E8B44A]">
+              <span className="text-[10px] font-extrabold tracking-widest text-[#F5EBDD]">
                 STUDENT PORTAL
               </span>
             )}

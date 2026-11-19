@@ -86,6 +86,12 @@ export default function CollegeChatbot({
   }, []);
 
   useEffect(() => {
+    const onOpenChat = () => setIsOpen(true);
+    window.addEventListener('hitech:open-chat', onOpenChat);
+    return () => window.removeEventListener('hitech:open-chat', onOpenChat);
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -187,23 +193,20 @@ export default function CollegeChatbot({
       <div className="fixed bottom-5 right-5 z-40">
         {!isOpen ? (
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
-            aria-label="Open College Chatbot"
-            className="group flex items-center gap-3 bg-[#153B70] hover:bg-[#092c60] text-white pl-4 pr-5 py-3 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-amber-400/80"
+            aria-label="Chat with Dr.IT — Open College Support Assistant"
+            className="group flex items-center gap-3 bg-[#087c60] hover:bg-[#05694f] text-white pl-3 pr-5 py-2.5 rounded-full shadow-2xl transition-all duration-200 hover:-translate-y-0.5 border border-[#ffc928] cursor-pointer"
           >
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-amber-400 text-[#092c60] flex items-center justify-center font-bold shadow-inner">
-                <MessageSquare size={20} className="text-[#092c60]" />
-              </div>
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#153B70] rounded-full animate-pulse" />
+            <div className="w-9 h-9 rounded-full bg-[#ffc928] text-[#061b3d] flex items-center justify-center font-bold shadow-inner">
+              <MessageSquare size={19} />
             </div>
             <div className="text-left">
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                <span>HI-TECH Support</span>
-                <Sparkles size={11} />
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#ffc928] leading-tight">
+                HI-TECH Support
               </div>
-              <div className="text-sm font-bold text-white leading-tight">
-                Ask Questions &amp; Admissions
+              <div className="text-xs font-bold text-white leading-tight">
+                Chat with Dr.IT
               </div>
             </div>
           </button>

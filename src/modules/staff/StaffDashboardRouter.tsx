@@ -70,6 +70,7 @@ import AccountSecurityPage from '../security/AccountSecurityPage';
 import SignatureWorkspace from '../signatures/SignatureWorkspace';
 import StudentManagementPage from '../sis/StudentManagementPage';
 import PlatformBaselineWorkspace from '../catalogue/PlatformBaselineWorkspace';
+import WebsiteCmsWorkspace from './website-cms/WebsiteCmsWorkspace';
 import {
   DashboardEmpty,
   DashboardError,
@@ -275,6 +276,7 @@ export default function StaffDashboardRouter({
   onNavigate,
   onSwitchPortal,
   onOpenActivationPage,
+  onOpenPublicPreview,
 }: {
   role: StaffRole | 'UNCONFIGURED';
   user: StaffUserAccount | null;
@@ -283,6 +285,7 @@ export default function StaffDashboardRouter({
   onNavigate: (path: string) => void;
   onSwitchPortal?: (role: PortalRole) => void;
   onOpenActivationPage?: (token?: string) => void;
+  onOpenPublicPreview?: (publicPath: string) => void;
 }) {
   const { data: dashboardData, loading, error, refetch } = useStaffDashboard(role);
 
@@ -332,6 +335,37 @@ export default function StaffDashboardRouter({
       );
     }
     return <CommunicationDashboard user={user} />;
+  }
+  if (
+    activePath === '/staff/website' ||
+    activePath === '/staff/website/staff' ||
+    activePath === '/staff/website/departments' ||
+    activePath === '/staff/website/approvals'
+  ) {
+    if (!hasStaffPermission(user.permissions, 'website.content.view')) {
+      return (
+        <StaffAccessDeniedView
+          message="Website Staff & Department Content Management requires Admin, Principal, Registrar, HR, HOD, or Communications privileges."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    const cmsTab =
+      activePath === '/staff/website/staff'
+        ? 'staff'
+        : activePath === '/staff/website/departments'
+        ? 'departments'
+        : activePath === '/staff/website/approvals'
+        ? 'approvals'
+        : 'overview';
+    return (
+      <WebsiteCmsWorkspace
+        user={user}
+        initialTab={cmsTab}
+        onNavigate={onNavigate}
+        onOpenPublicPreview={onOpenPublicPreview}
+      />
+    );
   }
   if (activePath === '/staff/sis') {
     if (!hasStaffPermission(user.permissions, 'sis.students.read')) {
@@ -638,6 +672,11 @@ export default function StaffDashboardRouter({
       : ('pending' as const),
   }));
 
+  const { roleItems } = getStaffNavigation(user.role, user.permissions);
+  const quickActionItems = roleItems
+    .filter((item) => item.path !== '/staff/dashboard')
+    .slice(0, 6);
+
   return (
     <div className="space-y-6">
       <StaffPageHeader
@@ -702,6 +741,43 @@ export default function StaffDashboardRouter({
         />
         <StaffActivityPanel items={formattedActivities} />
       </section>
+
+      {quickActionItems.length > 0 && (
+        <section
+          aria-labelledby="staff-quick-actions-heading"
+          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5"
+        >
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2
+                id="staff-quick-actions-heading"
+                className="text-base font-bold text-[#102D50] dark:text-white"
+              >
+                Role Quick Actions
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                Permitted workspaces for {user.roleTitle}
+              </p>
+            </div>
+            <span className="rounded-lg bg-[#F5EBDD] dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-[#102D50] dark:text-blue-300">
+              {quickActionItems.length} Active Modules
+            </span>
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {quickActionItems.map((action) => (
+              <button
+                key={action.path}
+                type="button"
+                onClick={() => onNavigate(action.path)}
+                className="min-h-[48px] flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-[#F4F7FB] dark:bg-slate-800/70 px-4 py-3 text-left text-xs font-semibold text-[#102D50] dark:text-slate-100 hover:border-[#1769AA] hover:bg-blue-50/70 dark:hover:bg-slate-800 transition-colors"
+              >
+                <span className="truncate">{action.label}</span>
+                <ArrowRight size={14} className="shrink-0 text-[#1769AA] dark:text-blue-400" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <StaffPermissionNotice
         roleTitle={user.roleTitle}

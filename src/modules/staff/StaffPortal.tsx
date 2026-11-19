@@ -8,12 +8,14 @@ export default function StaffPortal({
   initialPath = '/staff/dashboard',
   onSwitchPortal,
   onOpenActivationPage,
+  onOpenPublicPreview,
   onLogout,
 }: {
   initialRole?: StaffRole;
   initialPath?: string;
   onSwitchPortal?: (portal: PortalRole) => void;
   onOpenActivationPage?: (token?: string) => void;
+  onOpenPublicPreview?: (publicPath: string) => void;
   onLogout: () => void;
 }) {
   const [role, setRole] = useState<StaffRole | 'UNCONFIGURED'>(initialRole ?? 'ADMIN');
@@ -46,6 +48,7 @@ export default function StaffPortal({
       onSwitchRole={setRole}
       onSwitchPortal={onSwitchPortal}
       onOpenActivationPage={onOpenActivationPage}
+      onOpenPublicPreview={onOpenPublicPreview}
       onLogout={onLogout}
     />
   );

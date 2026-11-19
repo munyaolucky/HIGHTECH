@@ -6,13 +6,15 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  GraduationCap,
   KeyRound,
   Lock,
   Mail,
   ShieldCheck,
   Smartphone,
 } from 'lucide-react';
+import { normalizeServerUser } from '../../auth/auth-api';
+import { getUserDashboardPath } from '../../auth/auth-utils';
+import { useAuth } from '../../auth/useAuth';
 import { auth, googleAuthProvider } from '../../lib/firebase';
 
 interface LoginResponseData {
@@ -69,22 +71,43 @@ export default function PortalLoginPage({
     requiresProfileCompletion: boolean;
     fullName: string;
   } | null>(null);
+  const { refreshSession, setAuthenticatedUser } = useAuth();
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
 
-  const completeNavigation = (data: LoginResponseData) => {
-    const dest = data.destination || '/portal/staff';
-    const role = data.user?.primaryRole || 'STUDENT';
+  const completeNavigation = async (data: LoginResponseData) => {
+    const normalized = data.user
+      ? normalizeServerUser({
+          ...data.user,
+          destination: data.destination,
+        })
+      : null;
 
-    if (data.user?.mustChangePassword || data.user?.requiresProfileCompletion) {
+    if (normalized) {
+      setAuthenticatedUser(normalized);
+    }
+
+    const refreshed = await refreshSession();
+    const resolvedUser = refreshed ?? normalized;
+    const role = resolvedUser?.primaryRole || data.user?.primaryRole || 'STUDENT';
+    const dest = resolvedUser
+      ? getUserDashboardPath(resolvedUser)
+      : data.destination || '/portal/staff';
+
+    if (
+      (resolvedUser?.mustChangePassword || resolvedUser?.requiresProfileCompletion) &&
+      !dest.startsWith('/portal/change-password') &&
+      !dest.startsWith('/portal/complete-profile')
+    ) {
       setOnboardingStep({
-        destination: dest,
+        destination: data.destination || '/portal/staff',
         primaryRole: role,
-        mustChangePassword: data.user.mustChangePassword,
-        requiresProfileCompletion: data.user.requiresProfileCompletion,
-        fullName: data.user.fullName,
+        mustChangePassword: resolvedUser.mustChangePassword,
+        requiresProfileCompletion: resolvedUser.requiresProfileCompletion,
+        fullName: resolvedUser.fullName,
       });
       return;
     }
@@ -270,23 +293,28 @@ export default function PortalLoginPage({
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-7 space-y-6">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#102D50] text-white shadow-sm">
-              <GraduationCap size={24} />
+        <div className="rounded-2xl border border-[#dce4ef] dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+          {/* Unified HI-TECH Navy/Red/Cream Brand Banner */}
+          <div className="bg-[#102D50] px-7 py-6 text-white border-b-4 border-[#B83232] text-center space-y-2.5">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5EBDD] text-[#102D50] font-black text-xl shadow-sm">
+              H
             </div>
-            <h1 className="text-xl font-bold text-[#102D50] dark:text-white tracking-tight">
-              HI-TECH College Portal
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#F5EBDD]">
+              HI-TECH College
+            </p>
+            <h1 className="text-xl font-extrabold text-white tracking-tight">
+              Integrated Digital Portal
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-blue-100">
               {mfaChallenge
                 ? 'Two-step verification required before opening your workspace.'
                 : onboardingStep
                 ? 'Complete your first-login security & profile setup.'
-                : 'Sign in with your college email or registration number.'}
+                : 'One unified sign-in for students, lecturers, and staff.'}
             </p>
           </div>
+
+          <div className="p-7 space-y-6">
 
           {error && (
             <div
@@ -556,11 +584,11 @@ export default function PortalLoginPage({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#102D50] hover:bg-[#1769AA] text-white py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-60"
+                  className="min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#102D50] hover:bg-[#1769AA] text-white py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-60"
                 >
-                  <Lock size={15} />
+                  <Lock size={15} aria-hidden="true" />
                   <span>{loading ? 'Signing in...' : 'Sign in'}</span>
-                  <ArrowRight size={15} />
+                  <ArrowRight size={15} aria-hidden="true" />
                 </button>
               </form>
 
@@ -569,7 +597,7 @@ export default function PortalLoginPage({
                   <span className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
                 <div className="relative flex justify-center text-[11px] uppercase">
-                  <span className="bg-white dark:bg-slate-900 px-2.5 text-slate-400 font-semibold">
+                  <span className="bg-white dark:bg-slate-900 px-2.5 text-slate-600 dark:text-slate-300 font-semibold">
                     Or Institutional SSO
                   </span>
                 </div>
@@ -579,16 +607,17 @@ export default function PortalLoginPage({
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition disabled:opacity-60"
+                className="min-h-[44px] w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition disabled:opacity-60"
               >
-                <ShieldCheck size={15} className="text-[#1769AA]" />
+                <ShieldCheck size={15} className="text-[#1769AA] dark:text-blue-400" aria-hidden="true" />
                 <span>Sign in with Google Workspace</span>
               </button>
             </>
           )}
+          </div>
         </div>
 
-        <p className="text-center text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="text-center text-xs text-slate-600 dark:text-slate-300">
           Authorised HI-TECH College users only. Your role and portal workspace are assigned automatically after verification.
         </p>
       </div>

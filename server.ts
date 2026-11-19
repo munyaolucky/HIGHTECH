@@ -11,6 +11,9 @@ import notificationsRoutes from './server/modules/notifications/notifications.ro
 import signaturesRoutes from './server/modules/signatures/signatures.routes.ts';
 import sisRoutes from './server/modules/sis/sis.routes.ts';
 import platformRoutes from './server/modules/platform/platform.routes.ts';
+import publicWebsiteRoutes from './server/modules/website/public.routes.ts';
+import websiteCmsRoutes from './server/modules/website/website.routes.ts';
+import admissionsRoutes from './server/modules/admissions/admissions.routes.ts';
 
 async function startServer() {
   const app = express();
@@ -25,6 +28,9 @@ async function startServer() {
   });
 
   // Backend API Modules
+  app.use('/api/public', publicWebsiteRoutes);
+  app.use('/api/website', websiteCmsRoutes);
+  app.use('/api/admissions', admissionsRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/mfa', mfaRoutes);
   app.use('/api/account', accountRoutes);

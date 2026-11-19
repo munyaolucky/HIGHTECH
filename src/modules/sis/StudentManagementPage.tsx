@@ -333,53 +333,101 @@ export default function StudentManagementPage({
             No student records match your current scope or search filter.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                  <th className="py-3 pr-4 font-bold">Reg Number</th>
-                  <th className="py-3 pr-4 font-bold">Student Name</th>
-                  <th className="py-3 pr-4 font-bold">Programme</th>
-                  <th className="py-3 pr-4 font-bold">Campus</th>
-                  <th className="py-3 pr-4 font-bold">Status</th>
-                  <th className="py-3 font-bold text-right">Profile</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {students.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
-                  >
-                    <td className="py-3.5 pr-4 font-mono font-bold text-[#1769AA]">
-                      {s.registrationNumber}
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="font-bold text-[#102D50] dark:text-white">{s.fullName}</div>
+          <>
+            {/* Mobile Student Cards */}
+            <div className="space-y-3 md:hidden">
+              {students.map((s) => (
+                <article
+                  key={s.id}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#F4F7FB] dark:bg-slate-800/50 p-4 space-y-2.5 text-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-mono font-bold text-[#1769AA]">
+                        {s.registrationNumber}
+                      </div>
+                      <h3 className="mt-0.5 text-sm font-bold text-[#102D50] dark:text-white">
+                        {s.fullName}
+                      </h3>
                       <div className="text-[11px] text-slate-500">{s.email}</div>
-                    </td>
-                    <td className="py-3.5 pr-4 text-slate-700 dark:text-slate-300">
-                      {s.programmeName}
-                    </td>
-                    <td className="py-3.5 pr-4 text-slate-600 dark:text-slate-300">
-                      {s.campusName}
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <StaffStatusTag status={s.status} />
-                    </td>
-                    <td className="py-3.5 text-right">
-                      <StaffButton
-                        variant="secondary"
-                        onClick={() => setSelectedStudentId(s.id)}
-                      >
-                        <Eye size={13} /> Open 14-Tab Profile
-                      </StaffButton>
-                    </td>
+                    </div>
+                    <StaffStatusTag status={s.status} />
+                  </div>
+                  <div className="space-y-1 text-slate-600 dark:text-slate-300">
+                    <div>
+                      <span className="font-semibold text-[#102D50] dark:text-slate-200">
+                        Programme:
+                      </span>{' '}
+                      {s.programmeName || 'Unassigned'}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-[#102D50] dark:text-slate-200">
+                        Campus:
+                      </span>{' '}
+                      {s.campusName || 'Main Campus'}
+                    </div>
+                  </div>
+                  <div className="pt-1">
+                    <StaffButton
+                      variant="secondary"
+                      onClick={() => setSelectedStudentId(s.id)}
+                    >
+                      <Eye size={13} /> Open 14-Tab Profile
+                    </StaffButton>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Desktop Student Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                    <th className="py-3 pr-4 font-bold">Reg Number</th>
+                    <th className="py-3 pr-4 font-bold">Student Name</th>
+                    <th className="py-3 pr-4 font-bold">Programme</th>
+                    <th className="py-3 pr-4 font-bold">Campus</th>
+                    <th className="py-3 pr-4 font-bold">Status</th>
+                    <th className="py-3 font-bold text-right">Profile</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {students.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                    >
+                      <td className="py-3.5 pr-4 font-mono font-bold text-[#1769AA]">
+                        {s.registrationNumber}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <div className="font-bold text-[#102D50] dark:text-white">{s.fullName}</div>
+                        <div className="text-[11px] text-slate-500">{s.email}</div>
+                      </td>
+                      <td className="py-3.5 pr-4 text-slate-700 dark:text-slate-300">
+                        {s.programmeName}
+                      </td>
+                      <td className="py-3.5 pr-4 text-slate-600 dark:text-slate-300">
+                        {s.campusName}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <StaffStatusTag status={s.status} />
+                      </td>
+                      <td className="py-3.5 text-right">
+                        <StaffButton
+                          variant="secondary"
+                          onClick={() => setSelectedStudentId(s.id)}
+                        >
+                          <Eye size={13} /> Open 14-Tab Profile
+                        </StaffButton>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
