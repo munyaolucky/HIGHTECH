@@ -25,8 +25,12 @@ import {
   BarChart3,
   LifeBuoy,
   QrCode,
+  CreditCard,
+  Users,
+  KeyRound,
 } from "lucide-react";
 import { COLLEGE_INFO } from "../../data/college";
+import { usePortalShellContext } from "../../context/PortalShellContext";
 
 interface WebsiteHeaderProps {
   currentPage: string;
@@ -41,6 +45,7 @@ export default function WebsiteHeader({
   onOpenPortalModal,
   onSwitchToERP,
 }: WebsiteHeaderProps) {
+  const ctx = usePortalShellContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalDropdownOpen, setPortalDropdownOpen] = useState(false);
 
@@ -64,7 +69,7 @@ export default function WebsiteHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
+    <header className="sticky top-[52px] z-40 bg-white shadow-sm border-b border-slate-200">
       {/* Top Institutional Bar */}
       <div className="bg-[#0f274a] text-white text-xs py-2 px-4 sm:px-6 border-b border-blue-900/40">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -117,33 +122,26 @@ export default function WebsiteHeader({
             <div className="relative">
               <button
                 onClick={() => setPortalDropdownOpen(!portalDropdownOpen)}
-                className="inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded text-xs transition"
+                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded text-xs font-semibold transition"
               >
-                <span>Staff & ERP</span>
+                <span>Staff &amp; ERP (20)</span>
                 <ChevronDown className="w-3 h-3 text-slate-300" />
               </button>
 
               {portalDropdownOpen && (
                 <div
-                  className="absolute right-0 mt-1.5 w-60 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 py-1.5 z-50 text-xs font-medium"
+                  className="absolute right-0 mt-1.5 w-72 max-h-[80vh] overflow-y-auto bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-xs font-medium"
                   onMouseLeave={() => setPortalDropdownOpen(false)}
                 >
-                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-100">
-                    HI-TECH Institutional Portals
+                  <div className="px-3 py-1.5 text-[10px] uppercase font-black text-[#092c60] tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>HI-TECH ERP Portals</span>
+                    <span className="bg-blue-100 text-[#092c60] px-1.5 py-0.5 rounded text-[9px] font-black">20 Workspaces</span>
                   </div>
-                  <button
-                    onClick={() => {
-                      onSwitchToERP("catalogue");
-                      setPortalDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-amber-900 font-bold border-b border-slate-100"
-                  >
-                    <FileCheck2 className="w-4 h-4 text-amber-600" />
-                    <div>
-                      <div className="text-amber-900">Master Feature Blueprint</div>
-                      <div className="text-[10px] text-amber-700 font-normal">All 47 Modules & PDF Export</div>
-                    </div>
-                  </button>
+
+                  {/* Academics & Learning */}
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase font-extrabold text-blue-700 bg-blue-50/60">
+                    Academics &amp; Learning
+                  </div>
                   <button
                     onClick={() => {
                       onSwitchToERP("student");
@@ -151,10 +149,10 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-blue-900 font-semibold"
                   >
-                    <GraduationCap className="w-4 h-4 text-blue-700" />
+                    <GraduationCap className="w-4 h-4 text-blue-700 shrink-0" />
                     <div>
                       <div>Student Dashboard</div>
-                      <div className="text-[10px] text-slate-500 font-normal">HCA/STU/2026/001</div>
+                      <div className="text-[10px] text-slate-500 font-normal">HCA/STU/2026/001 Portal</div>
                     </div>
                   </button>
                   <button
@@ -164,10 +162,54 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
                       <div>Lecturer / Trainer Portal</div>
                       <div className="text-[10px] text-slate-500">Module 18 Faculty Workspace</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("examination");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <FileCheck2 className="w-4 h-4 text-purple-600 shrink-0" />
+                    <div>
+                      <div>Examinations &amp; CBT Engine</div>
+                      <div className="text-[10px] text-slate-500">63 Question Types &amp; CBT Runner</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("library");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />
+                    <div>
+                      <div>Central Library Management</div>
+                      <div className="text-[10px] text-slate-500">Circulation, Barcodes &amp; E-Books</div>
+                    </div>
+                  </button>
+
+                  {/* Admissions & Registry */}
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase font-extrabold text-indigo-700 bg-indigo-50/60 border-t border-slate-100">
+                    Admissions &amp; Registry
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("admissions");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Users className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div>
+                      <div>Admissions &amp; Enrolment</div>
+                      <div className="text-[10px] text-slate-500">Applications, Offers &amp; Enrolment</div>
                     </div>
                   </button>
                   <button
@@ -177,10 +219,10 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <Building2 className="w-4 h-4 text-purple-600" />
+                    <Building2 className="w-4 h-4 text-slate-700 shrink-0" />
                     <div>
-                      <div>Registrar & Transcripts</div>
-                      <div className="text-[10px] text-slate-500">Module 19 Official Records</div>
+                      <div>Academic Registrar Dashboard</div>
+                      <div className="text-[10px] text-slate-500">Transcripts (TRX), Roll &amp; Deferments</div>
                     </div>
                   </button>
                   <button
@@ -190,65 +232,28 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                     <div>
                       <div>Central Reg Generator</div>
-                      <div className="text-[10px] text-slate-500">HCA/STAFF/2026/001 Engine</div>
+                      <div className="text-[10px] text-slate-500">HCA/<wbr/>STAFF/2026/001 Engine</div>
                     </div>
                   </button>
-                  <button
-                    onClick={() => {
-                      onSwitchToERP("chatbot-admin");
-                      setPortalDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 border-t border-slate-100"
-                  >
-                    <Headphones className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <div className="font-semibold text-blue-900">Chatbot &amp; AI Service Desk</div>
-                      <div className="text-[10px] text-slate-500">Modules 36-39 KB &amp; Escalations</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSwitchToERP("ai-governance");
-                      setPortalDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 border-t border-slate-100"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                    <div>
-                      <div className="font-semibold text-indigo-900">AI Governance Centre</div>
-                      <div className="text-[10px] text-slate-500">Modules 40-42 Quotas, Indexing &amp; Audit</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSwitchToERP("ai-support");
-                      setPortalDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 border-t border-slate-100"
-                  >
-                    <LifeBuoy className="w-4 h-4 text-[#d92332]" />
-                    <div>
-                      <div className="font-semibold text-slate-900">AI Support &amp; Help Centre</div>
-                      <div className="text-[10px] text-slate-500">Module 43 Role Assistants &amp; Tickets</div>
-                    </div>
-                  </button>
-                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-t border-slate-100 bg-slate-50">
-                    Campus Operations &amp; Compliance
+
+                  {/* Finance & HR */}
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase font-extrabold text-emerald-800 bg-emerald-50/60 border-t border-slate-100">
+                    Finance &amp; Operations
                   </div>
                   <button
                     onClick={() => {
-                      onSwitchToERP("hostels");
+                      onSwitchToERP("finance");
                       setPortalDropdownOpen(false);
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <BedDouble className="w-4 h-4 text-teal-600" />
+                    <CreditCard className="w-4 h-4 text-emerald-700 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Hostels &amp; Student Welfare</div>
-                      <div className="text-[10px] text-slate-500">Beds, Stays, Billing &amp; Support</div>
+                      <div>Finance &amp; Lipa na M-Pesa</div>
+                      <div className="text-[10px] text-slate-500">STK Push, Fee Structures &amp; Receipts</div>
                     </div>
                   </button>
                   <button
@@ -258,10 +263,41 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <Briefcase className="w-4 h-4 text-blue-700" />
+                    <Briefcase className="w-4 h-4 text-blue-700 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">HR &amp; Staff Management</div>
-                      <div className="text-[10px] text-slate-500">Contracts, Leave &amp; Attendance</div>
+                      <div>HR &amp; Staff People Ops</div>
+                      <div className="text-[10px] text-slate-500">Contracts, Leave &amp; Teaching Hours</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("staff-users");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <KeyRound className="w-4 h-4 text-indigo-700 shrink-0" />
+                    <div>
+                      <div>Staff User Management</div>
+                      <div className="text-[10px] text-slate-500">Platform Accounts, RBAC &amp; Invitations</div>
+                    </div>
+                  </button>
+
+                  {/* Campus Ops & Student Welfare */}
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase font-extrabold text-amber-800 bg-amber-50/60 border-t border-slate-100">
+                    Campus Life &amp; Compliance
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("hostels");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <BedDouble className="w-4 h-4 text-teal-600 shrink-0" />
+                    <div>
+                      <div>Hostels &amp; Student Welfare</div>
+                      <div className="text-[10px] text-slate-500">Beds, Stays, Billing &amp; Support</div>
                     </div>
                   </button>
                   <button
@@ -271,10 +307,10 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <Vote className="w-4 h-4 text-red-600" />
+                    <Vote className="w-4 h-4 text-red-600 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Elections, Clubs &amp; Alumni</div>
-                      <div className="text-[10px] text-slate-500">Secret Ballots &amp; Campus Life</div>
+                      <div>Elections, Clubs &amp; Alumni</div>
+                      <div className="text-[10px] text-slate-500">Secret Ballots &amp; Campus Societies</div>
                     </div>
                   </button>
                   <button
@@ -284,10 +320,10 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <Bell className="w-4 h-4 text-amber-600" />
+                    <Bell className="w-4 h-4 text-amber-600 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Notifications, Guardians &amp; Careers</div>
-                      <div className="text-[10px] text-slate-500">Alerts, Parent Consent &amp; Internships</div>
+                      <div>Notices, Guardians &amp; Careers</div>
+                      <div className="text-[10px] text-slate-500">Broadcasts, Parent Consent &amp; Attachments</div>
                     </div>
                   </button>
                   <button
@@ -297,10 +333,10 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <BarChart3 className="w-4 h-4 text-emerald-700" />
+                    <BarChart3 className="w-4 h-4 text-emerald-700 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Docs, TVETA Quality &amp; Reports</div>
-                      <div className="text-[10px] text-slate-500">Accreditation, Vault &amp; CSV Analytics</div>
+                      <div>Docs, Quality &amp; Reports</div>
+                      <div className="text-[10px] text-slate-500">TVETA Audit, Vault &amp; CSV Analytics</div>
                     </div>
                   </button>
                   <button
@@ -310,12 +346,84 @@ export default function WebsiteHeader({
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
                   >
-                    <QrCode className="w-4 h-4 text-[#153b70]" />
+                    <QrCode className="w-4 h-4 text-[#153b70] shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Credentials, CRM &amp; Appointments</div>
-                      <div className="text-[10px] text-slate-500">QR Verify, Enquiry Funnel &amp; Compliance</div>
+                      <div>Credentials, CRM &amp; Services</div>
+                      <div className="text-[10px] text-slate-500">QR Verify, CRM Pipeline &amp; Compliance</div>
                     </div>
                   </button>
+
+                  {/* AI & Governance */}
+                  <div className="px-3 pt-2 pb-1 text-[10px] uppercase font-extrabold text-purple-800 bg-purple-50/60 border-t border-slate-100">
+                    AI &amp; Support Systems
+                  </div>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("chatbot-admin");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <Headphones className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div>
+                      <div>Chatbot &amp; AI Service Desk</div>
+                      <div className="text-[10px] text-slate-500">Modules 36-39 KB &amp; Escalations</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("ai-governance");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <div>
+                      <div>AI Governance Centre</div>
+                      <div className="text-[10px] text-slate-500">Modules 40-42 Quotas &amp; Indexing</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("ai-support");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700"
+                  >
+                    <LifeBuoy className="w-4 h-4 text-[#d92332] shrink-0" />
+                    <div>
+                      <div>AI Support &amp; Help Centre</div>
+                      <div className="text-[10px] text-slate-500">Module 43 Assistants &amp; Tickets</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onSwitchToERP("catalogue");
+                      setPortalDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-amber-900 font-bold border-t border-slate-100"
+                  >
+                    <FileCheck2 className="w-4 h-4 text-amber-600 shrink-0" />
+                    <div>
+                      <div className="text-amber-900">Master Feature Blueprint</div>
+                      <div className="text-[10px] text-amber-700 font-normal">47 Modules Specification &amp; PDF</div>
+                    </div>
+                  </button>
+
+                  {/* ALL PORTALS LAUNCHER BUTTON */}
+                  <div className="p-2 border-t border-slate-200 bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPortalDropdownOpen(false);
+                        ctx?.openSwitcher?.();
+                      }}
+                      className="w-full py-2 px-3 bg-[#092c60] hover:bg-[#061d40] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Open All 20 Portals Hub...</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

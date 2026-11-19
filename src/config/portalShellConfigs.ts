@@ -1182,7 +1182,7 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
         userTitle: 'Identity & Certification Issuance Controller',
         department: 'Central Registration Authority',
         campus: 'All Campuses',
-        defaultTab: 'main',
+        defaultTab: 'generate',
         quickStats: [
           {
             label: 'Format Standard',
@@ -1207,13 +1207,31 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
         ],
         navItems: [
           {
-            id: 'main',
-            label: 'Issue & Lookup Reg Numbers',
+            id: 'generate',
+            label: 'Issue New Reg Number',
             description: 'Generate atomic STU, STAFF, LECT, CERT, APP & LIB identifiers',
-            keywords: 'generate lookup sequence reg number hca',
+            keywords: 'generate issue sequence reg number hca',
             icon: Hash,
             group: 'Registry Engine',
             gradientClass: 'bg-[#092c60]',
+          },
+          {
+            id: 'registry',
+            label: 'Issued Registry Directory',
+            description: 'Search and inspect all issued credentials across categories and years',
+            keywords: 'registry issued directory search history log',
+            icon: Users,
+            group: 'Audit & Records',
+            gradientClass: 'bg-blue-700',
+          },
+          {
+            id: 'verify',
+            label: 'Verification & Audit Desk',
+            description: 'Verify registration authenticity and inspect status records',
+            keywords: 'verify audit check authenticity validate',
+            icon: FileCheck,
+            group: 'Verification',
+            gradientClass: 'bg-emerald-700',
           },
         ],
         relatedPortals: [
@@ -1315,7 +1333,7 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
           },
           {
             label: 'Active ERP Portals',
-            value: '19 Portals',
+            value: '20 Portals',
             toneClass: 'text-emerald-700',
           },
           {

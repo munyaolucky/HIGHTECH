@@ -8,6 +8,7 @@ import {
   Menu,
   Search,
   ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { usePortalShellContext } from '../context/PortalShellContext';
@@ -162,6 +163,17 @@ export default function UserPortalShell({
             )}
           </div>
 
+          {/* QUICK PORTAL SWITCHER BUTTON */}
+          <button
+            type="button"
+            onClick={() => ctx?.openSwitcher?.()}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#092c60] text-xs font-bold border border-blue-200 transition"
+            title="Browse all 20 institutional portals"
+          >
+            <Sparkles size={14} className="text-amber-500" />
+            <span>Switch Portal</span>
+          </button>
+
           <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-slate-200">
             <div className="w-8 h-8 rounded-full bg-[#092c60] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
               {initials || 'HT'}
@@ -241,6 +253,14 @@ export default function UserPortalShell({
                   <ArrowRight size={12} className="opacity-75 shrink-0" />
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => ctx?.openSwitcher?.()}
+                className="w-full px-3 py-2 rounded-lg text-[11px] font-bold text-amber-300 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">Browse All 20 Portals...</span>
+                <Sparkles size={12} className="opacity-90 shrink-0" />
+              </button>
             </div>
           </div>
 

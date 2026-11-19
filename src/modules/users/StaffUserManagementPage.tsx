@@ -16,7 +16,10 @@ import {
   CheckCircle2,
   Eye,
   Filter,
+  KeyRound,
+  ShieldCheck,
 } from "lucide-react";
+import { useSyncedPortalTab } from "../../context/PortalShellContext";
 import "./staff-user-management.css";
 
 export type AccountCategory =
@@ -329,6 +332,7 @@ function StatusBadge({ status }: { status: AccountStatus }) {
 }
 
 export default function StaffUserManagementPage() {
+  const [activeTab, setActiveTab] = useSyncedPortalTab<'accounts' | 'roles' | 'invitations'>('staff-users', 'accounts');
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -339,6 +343,14 @@ export default function StaffUserManagementPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<PortalAccount | null>(null);
   const [busyAccountId, setBusyAccountId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'invitations') {
+      setStatus('PENDING_ACTIVATION');
+    } else if (activeTab === 'accounts') {
+      setStatus('ALL');
+    }
+  }, [activeTab]);
 
   const pageSize = 10;
 
@@ -497,6 +509,128 @@ export default function StaffUserManagementPage() {
           )}
         </div>
       </header>
+
+      {/* WORKSPACE SECTION TABS */}
+      <div className="flex flex-wrap border-b border-slate-200 gap-2 pb-1 mb-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab("accounts")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "accounts"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <Users size={14} /> User Accounts Registry
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("roles")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "roles"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <KeyRound size={14} /> Role &amp; Permission Matrix
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("invitations")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "invitations"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <UserCheck size={14} /> Activation &amp; Invitations ({data?.summary?.pendingActivation ?? 1})
+        </button>
+      </div>
+
+      {activeTab === "roles" && (
+        <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 mb-6 shadow-sm">
+          <div>
+            <h2 className="text-base font-bold text-[#092c60] flex items-center gap-2">
+              <ShieldCheck size={18} className="text-blue-600" />
+              Institutional Roles &amp; Security Permissions Matrix
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Hierarchical role definitions and operational access policies across HI-TECH College platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                role: "Super Administrator",
+                badge: "HCA/ADMIN/...",
+                scope: "Platform configuration, institutional settings, module toggles, API keys & audit logs.",
+                permissions: ["users.*", "system.config", "audit.logs", "modules.toggle", "rbac.manage"],
+                color: "border-indigo-300 bg-indigo-50/40 text-indigo-900",
+              },
+              {
+                role: "Academic Registrar",
+                badge: "HCA/STAFF/...",
+                scope: "Nominal roll, course additions/drops, deferments, official transcripts (TRX) & graduation certs.",
+                permissions: ["transcripts.issue", "students.enroll", "deferments.approve", "certs.generate"],
+                color: "border-slate-300 bg-slate-50 text-slate-900",
+              },
+              {
+                role: "Finance Officer / Bursar",
+                badge: "HCA/STAFF/...",
+                scope: "Fee structure rates, Daraja M-Pesa STK Push collections, bank clearances & receipt issuance.",
+                permissions: ["finance.billing", "mpesa.reconcile", "receipts.issue", "fee.waiver"],
+                color: "border-teal-300 bg-teal-50/40 text-teal-900",
+              },
+              {
+                role: "Examinations Officer",
+                badge: "HCA/STAFF/...",
+                scope: "63 Question types moderation, CBT blueprints, seating conflict engine & marks approval.",
+                permissions: ["exams.schedule", "questions.moderate", "cbt.blueprints", "results.publish"],
+                color: "border-purple-300 bg-purple-50/40 text-purple-900",
+              },
+              {
+                role: "Senior Lecturer / Faculty",
+                badge: "HCA/LECT/...",
+                scope: "Classroom rosters, lesson plans, schemes of work, attendance registers & assessment grading.",
+                permissions: ["classes.teach", "attendance.mark", "assessments.grade", "materials.upload"],
+                color: "border-emerald-300 bg-emerald-50/40 text-emerald-900",
+              },
+              {
+                role: "Student Candidate",
+                badge: "HCA/STU/...",
+                scope: "Course unit registration, live timetables, fees Lipa na M-Pesa, CBT tests & results portal.",
+                permissions: ["units.register", "fees.pay", "cbt.take", "transcripts.view", "idcard.print"],
+                color: "border-blue-300 bg-blue-50/40 text-blue-900",
+              },
+            ].map((r) => (
+              <div key={r.role} className={`p-4 rounded-xl border ${r.color} flex flex-col justify-between`}>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <strong className="text-xs font-bold">{r.role}</strong>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/80 border border-slate-200">
+                      {r.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-3">{r.scope}</p>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Granted Permissions
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {r.permissions.map((p) => (
+                      <span key={p} className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-700">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {error && (
         <div className="um-alert um-alert--error" role="alert">

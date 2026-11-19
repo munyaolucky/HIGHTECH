@@ -28,6 +28,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Sparkles,
   Star,
   User,
   UserCheck,
@@ -37,6 +38,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
+import { usePortalShellContext } from '../../context/PortalShellContext';
 import campusHeroUrl from '../../assets/images/campus_hero_banner_1794587290452.jpg';
 import libraryPromoUrl from '../../assets/images/student_library_promo_1794587291004.jpg';
 import studentAvatarUrl from '../../assets/images/student_profile_portrait_1794587291385.jpg';
@@ -161,6 +163,7 @@ export default function StudentDashboard({
   onLogout,
   onSwitchPortal,
 }: StudentDashboardProps) {
+  const ctx = usePortalShellContext();
   const [activePage, setActivePage] = useState<StudentPortalSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -320,6 +323,17 @@ export default function StudentDashboard({
               </div>
             )}
           </div>
+
+          {/* CAMPUS PORTALS QUICK BUTTON */}
+          <button
+            type="button"
+            onClick={() => ctx?.openSwitcher?.()}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#092c60] text-xs font-bold border border-blue-200 transition"
+            title="Browse all 20 institutional portals"
+          >
+            <Sparkles size={14} className="text-amber-500" />
+            <span>Campus Portals</span>
+          </button>
 
           {/* NOTIFICATIONS DROPDOWN */}
           <div className="relative">
@@ -523,6 +537,63 @@ export default function StudentDashboard({
               <span>Settings</span>
             </button>
           </nav>
+
+          {/* CONNECTED CAMPUS WORKSPACES */}
+          <div className="mt-5 pt-3 border-t border-white/10">
+            <p className="px-3 mb-1.5 text-[10px] font-extrabold tracking-widest text-blue-300 uppercase">
+              Connected Campus Portals
+            </p>
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => onSwitchPortal ? onSwitchPortal('library') : ctx?.setCurrentRole?.('library')}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">Central E-Library</span>
+                <ArrowRight size={12} className="opacity-70" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal ? onSwitchPortal('examination') : ctx?.setCurrentRole?.('examination')}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">Online CBT Exams</span>
+                <ArrowRight size={12} className="opacity-70" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal ? onSwitchPortal('hostels') : ctx?.setCurrentRole?.('hostels')}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">Hostels &amp; Welfare</span>
+                <ArrowRight size={12} className="opacity-70" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal ? onSwitchPortal('community') : ctx?.setCurrentRole?.('community')}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">SRC Voting &amp; Clubs</span>
+                <ArrowRight size={12} className="opacity-70" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchPortal ? onSwitchPortal('ai-support') : ctx?.setCurrentRole?.('ai-support')}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">AI Student Support Desk</span>
+                <ArrowRight size={12} className="opacity-70" />
+              </button>
+              <button
+                type="button"
+                onClick={() => ctx?.openSwitcher?.()}
+                className="w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-amber-300 hover:bg-white/10 flex items-center justify-between transition-colors"
+              >
+                <span className="truncate">Browse All 20 Portals...</span>
+                <Sparkles size={12} className="opacity-90" />
+              </button>
+            </div>
+          </div>
 
           <div className="mt-auto pt-5 space-y-3">
             <div className="p-3.5 rounded-xl bg-white/10 border border-white/15 space-y-2">

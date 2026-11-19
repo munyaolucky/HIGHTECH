@@ -2,17 +2,43 @@ import React, { createContext, useContext, useState } from 'react';
 import { PortalRole } from '../types';
 
 interface PortalShellContextValue {
+  currentRole?: PortalRole;
+  setCurrentRole?: (role: PortalRole) => void;
   tabsByRole: Partial<Record<PortalRole, string>>;
   overviewOpenByRole: Partial<Record<PortalRole, boolean>>;
   setPortalTab: (role: PortalRole, tab: string) => void;
   setOverviewOpen: (role: PortalRole, isOpen: boolean) => void;
+  isSwitcherOpen: boolean;
+  setIsSwitcherOpen: (isOpen: boolean) => void;
+  openSwitcher: () => void;
+  closeSwitcher: () => void;
 }
 
 const PortalShellContext = createContext<PortalShellContextValue | null>(null);
 
-export function PortalShellProvider({ children }: { children: React.ReactNode }) {
+export function PortalShellProvider({
+  children,
+  currentRole,
+  onRoleChange,
+}: {
+  children: React.ReactNode;
+  currentRole?: PortalRole;
+  onRoleChange?: (role: PortalRole) => void;
+}) {
+  const [internalRole, setInternalRole] = useState<PortalRole>('website');
   const [tabsByRole, setTabsByRole] = useState<Partial<Record<PortalRole, string>>>({});
   const [overviewOpenByRole, setOverviewOpenByRole] = useState<Partial<Record<PortalRole, boolean>>>({});
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+
+  const activeRole = currentRole ?? internalRole;
+
+  const handleRoleChange = (role: PortalRole) => {
+    if (onRoleChange) {
+      onRoleChange(role);
+    } else {
+      setInternalRole(role);
+    }
+  };
 
   const setPortalTab = (role: PortalRole, tab: string) => {
     setTabsByRole((prev) => ({ ...prev, [role]: tab }));
@@ -26,10 +52,16 @@ export function PortalShellProvider({ children }: { children: React.ReactNode })
   return (
     <PortalShellContext.Provider
       value={{
+        currentRole: activeRole,
+        setCurrentRole: handleRoleChange,
         tabsByRole,
         overviewOpenByRole,
         setPortalTab,
         setOverviewOpen,
+        isSwitcherOpen,
+        setIsSwitcherOpen,
+        openSwitcher: () => setIsSwitcherOpen(true),
+        closeSwitcher: () => setIsSwitcherOpen(false),
       }}
     >
       {children}
@@ -60,3 +92,4 @@ export function useSyncedPortalTab<T extends string>(
 
   return [active, setTab];
 }
+

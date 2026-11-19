@@ -296,19 +296,98 @@ export default function PortalAccessModal({
         </div>
 
         {/* Modal Footer with Staff & Administration Links */}
-        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex flex-col gap-2 text-[11px] text-slate-500">
-          <span className="font-medium">Sign in to another institutional user dashboard:</span>
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-semibold text-blue-700">
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-col gap-2.5 text-[11px] text-slate-600">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-[#092c60]">Quick Launch Institutional Role Dashboards:</span>
+            <span className="text-[10px] text-slate-400">20 Portals Connected</span>
+          </div>
+
+          {/* Persona Direct Jumps */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onLaunchStudentDashboard();
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-400 text-left transition shadow-2xs hover:bg-blue-50/50"
+            >
+              <strong className="block text-blue-900 font-bold">👩‍🎓 Student Portal</strong>
+              <span className="text-[10px] text-slate-500 font-mono">Amina Wanjiku · HCA/STU</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("lecturer");
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 text-left transition shadow-2xs hover:bg-emerald-50/50"
+            >
+              <strong className="block text-emerald-900 font-bold">👨‍🏫 Lecturer Portal</strong>
+              <span className="text-[10px] text-slate-500 font-mono">Dr. Peter Otieno · HCA/LECT</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("registrar");
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-purple-400 text-left transition shadow-2xs hover:bg-purple-50/50"
+            >
+              <strong className="block text-purple-900 font-bold">🏛️ Academic Registrar</strong>
+              <span className="text-[10px] text-slate-500 font-mono">Dr. Chemweno · TRX Desk</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("finance");
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-teal-400 text-left transition shadow-2xs hover:bg-teal-50/50"
+            >
+              <strong className="block text-teal-900 font-bold">💳 Finance &amp; M-Pesa</strong>
+              <span className="text-[10px] text-slate-500 font-mono">CPA Beatrice · Treasury</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("examination");
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-indigo-400 text-left transition shadow-2xs hover:bg-indigo-50/50"
+            >
+              <strong className="block text-indigo-900 font-bold">📝 Examinations &amp; CBT</strong>
+              <span className="text-[10px] text-slate-500 font-mono">63 Formats &amp; Timed Runner</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToERP("staff-users");
+              }}
+              className="p-2 rounded-lg bg-white border border-slate-200 hover:border-amber-400 text-left transition shadow-2xs hover:bg-amber-50/50"
+            >
+              <strong className="block text-amber-900 font-bold">🛡️ Staff User Admin</strong>
+              <span className="text-[10px] text-slate-500 font-mono">Platform Accounts &amp; RBAC</span>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200 text-[10px] font-semibold text-slate-600">
+            <span className="text-slate-400">Other Portals:</span>
             {[
-              { role: "lecturer", label: "Lecturer" },
-              { role: "registrar", label: "Registrar" },
-              { role: "finance", label: "Finance" },
               { role: "admissions", label: "Admissions" },
               { role: "library", label: "Library" },
-              { role: "examination", label: "Exams & CBT" },
-              { role: "hostels", label: "Hostels" },
-              { role: "hr", label: "HR & Staff" },
               { role: "generator", label: "Reg Generator" },
+              { role: "hostels", label: "Hostels" },
+              { role: "hr", label: "HR Staff" },
+              { role: "community", label: "SRC Elections" },
+              { role: "engagement", label: "Notices & Careers" },
+              { role: "quality-reports", label: "Quality Audit" },
+              { role: "campus-services", label: "Credentials CRM" },
+              { role: "chatbot-admin", label: "AI Service Desk" },
+              { role: "ai-governance", label: "AI Governance" },
+              { role: "ai-support", label: "AI Support" },
+              { role: "catalogue", label: "Master Blueprint" },
             ].map((item) => (
               <button
                 key={item.role}
@@ -317,7 +396,7 @@ export default function PortalAccessModal({
                   onClose();
                   onSwitchToERP(item.role);
                 }}
-                className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition"
+                className="px-2 py-0.5 rounded bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 transition"
               >
                 {item.label}
               </button>

@@ -24,8 +24,13 @@ import {
   VALID_RECORD_TYPES,
 } from "../services/registrationService";
 import { RegistrationRecordType, RegistrationIssuance } from "../types";
+import { useSyncedPortalTab } from "../context/PortalShellContext";
 
 export default function RegistrationGeneratorPortal() {
+  const [activeTab, setActiveTab] = useSyncedPortalTab<"generate" | "registry" | "verify">(
+    "generator",
+    "generate"
+  );
   const [selectedType, setSelectedType] = useState<RegistrationRecordType>("STAFF");
   const [year, setYear] = useState<number>(2026);
   const [institutionCode, setInstitutionCode] = useState<string>("HCA");
@@ -159,7 +164,45 @@ export default function RegistrationGeneratorPortal() {
         </div>
       </div>
 
+      {/* SECTION TABS */}
+      <div className="flex flex-wrap border-b border-slate-200 gap-2 pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab("generate")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "generate"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <Hash size={14} /> Issue New Reg Number
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("registry")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "registry"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <Users size={14} /> Issued Registry Directory ({issuances.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("verify")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "verify"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <FileCheck size={14} /> Verification &amp; Audit Desk
+        </button>
+      </div>
+
       {/* GENERATOR + LIVE STATUS GRID */}
+      {(activeTab === "generate" || activeTab === "verify") && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* GENERATOR CARD (7 cols) */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
@@ -492,8 +535,10 @@ export default function RegistrationGeneratorPortal() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ISSUED NUMBERS AUDIT REGISTER */}
+      {(activeTab === "generate" || activeTab === "registry") && (
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -591,6 +636,7 @@ export default function RegistrationGeneratorPortal() {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }

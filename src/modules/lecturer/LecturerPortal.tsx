@@ -21,7 +21,10 @@ import {
   GraduationCap,
   Sparkles,
   LogOut,
+  ArrowRight,
 } from "lucide-react";
+import { PortalRole } from "../../types";
+import { usePortalShellContext } from "../../context/PortalShellContext";
 
 import "./lecturer.css";
 
@@ -71,9 +74,11 @@ export type LecturerTab =
 
 interface LecturerPortalProps {
   onLogout?: () => void;
+  onSwitchPortal?: (role: PortalRole) => void;
 }
 
-export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
+export default function LecturerPortal({ onLogout, onSwitchPortal }: LecturerPortalProps) {
+  const ctx = usePortalShellContext();
   const [activeTab, setActiveTab] = useState<LecturerTab>("dashboard");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("asg-csc301");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("stu-001");
@@ -234,6 +239,55 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
           </button>
         </nav>
 
+        {/* CONNECTED INSTITUTIONAL WORKSPACES */}
+        <div className="p-3 border-t border-white/10 bg-black/15">
+          <p className="px-1 mb-1.5 text-[10px] font-extrabold tracking-widest text-blue-300 uppercase">
+            Connected Workspaces
+          </p>
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => onSwitchPortal ? onSwitchPortal("examination") : ctx?.setCurrentRole?.("examination")}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+            >
+              <span className="truncate">Examinations &amp; CBT</span>
+              <ArrowRight size={12} className="opacity-70" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSwitchPortal ? onSwitchPortal("registrar") : ctx?.setCurrentRole?.("registrar")}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+            >
+              <span className="truncate">Academic Registrar</span>
+              <ArrowRight size={12} className="opacity-70" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSwitchPortal ? onSwitchPortal("library") : ctx?.setCurrentRole?.("library")}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+            >
+              <span className="truncate">Central Library</span>
+              <ArrowRight size={12} className="opacity-70" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSwitchPortal ? onSwitchPortal("hr") : ctx?.setCurrentRole?.("hr")}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-blue-100 hover:bg-white/10 flex items-center justify-between transition-colors"
+            >
+              <span className="truncate">HR Workloads &amp; Leave</span>
+              <ArrowRight size={12} className="opacity-70" />
+            </button>
+            <button
+              type="button"
+              onClick={() => ctx?.openSwitcher?.()}
+              className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-amber-300 hover:bg-white/10 flex items-center justify-between transition-colors"
+            >
+              <span className="truncate">Browse All 20 Portals...</span>
+              <Sparkles size={12} className="opacity-90" />
+            </button>
+          </div>
+        </div>
+
         {/* LECTURER PROFILE FOOTER */}
         <div className="lecturer-footer-profile">
           <div className="profile-avatar-sm">PO</div>
@@ -276,6 +330,15 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
           </div>
 
           <div className="header-actions">
+            <button
+              type="button"
+              onClick={() => ctx?.openSwitcher?.()}
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[#092c60] bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg font-bold border border-slate-200 transition"
+            >
+              <Sparkles size={13} className="text-amber-500" />
+              <span>Switch Portal</span>
+            </button>
+
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full font-bold border border-emerald-200">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Academic Session 2025/2026

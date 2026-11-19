@@ -3,7 +3,7 @@
  * Multi-Role Enterprise ERP & Central Registration Number Generator Suite
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   GraduationCap,
   Hash,
@@ -26,6 +26,8 @@ import {
   BarChart3,
   LifeBuoy,
   QrCode,
+  LayoutGrid,
+  ChevronRight,
 } from "lucide-react";
 import StudentDashboard from "./modules/student/StudentDashboard";
 import RegistrationGeneratorPortal from "./components/RegistrationGeneratorPortal";
@@ -48,15 +50,12 @@ import CampusServicesPortal from "./modules/campus-services/CampusServicesPortal
 import StaffUserManagementPage from "./modules/users/StaffUserManagementPage";
 import PublicWebsite from "./website/PublicWebsite";
 import UserPortalShell from "./components/UserPortalShell";
-import { PortalShellProvider } from "./context/PortalShellContext";
+import GlobalPortalSwitcherModal from "./components/GlobalPortalSwitcherModal";
+import { PortalShellProvider, usePortalShellContext } from "./context/PortalShellContext";
 import { getPortalShellConfig, ShellRoleKey } from "./config/portalShellConfigs";
 import { PortalRole } from "./types";
 
-export default function App() {
-  const [currentRole, setCurrentRole] = useState<PortalRole>("website");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const portals = [
+const portals = [
     {
       id: "website" as PortalRole,
       label: "Public Website",
@@ -199,14 +198,37 @@ export default function App() {
     },
   ];
 
-  const primaryQuickIds: PortalRole[] = [
-    "website",
-    "catalogue",
-    "student",
-    "hostels",
-    "hr",
-    "quality-reports",
-  ];
+const primaryQuickIds: PortalRole[] = [
+  "website",
+  "student",
+  "lecturer",
+  "examination",
+  "finance",
+  "registrar",
+  "generator",
+  "catalogue",
+];
+
+function AppContent() {
+  const ctx = usePortalShellContext();
+  const currentRole = ctx?.currentRole ?? "website";
+  const setCurrentRole = ctx?.setCurrentRole ?? (() => {});
+  const isSwitcherOpen = ctx?.isSwitcherOpen ?? false;
+  const setIsSwitcherOpen = ctx?.setIsSwitcherOpen ?? (() => {});
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSwitcherOpen(!isSwitcherOpen);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSwitcherOpen, setIsSwitcherOpen]);
+
+  const activePortalInfo = portals.find((p) => p.id === currentRole) ?? portals[0];
+  const ActiveIcon = activePortalInfo.icon;
 
   const renderShellPortalBody = (role: ShellRoleKey) => {
     switch (role) {
@@ -248,34 +270,50 @@ export default function App() {
   };
 
   return (
-    <PortalShellProvider>
-      <div className="min-h-screen bg-[#f5f8fd] text-[#102b55] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f5f8fd] text-[#102b55] flex flex-col font-sans">
       {/* Top Global Role Navigation Bar */}
-      <nav className="bg-[#061d40] text-white border-b border-blue-900/60 sticky top-0 z-50 px-4 sm:px-6 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <nav className="bg-[#061d40] text-white border-b border-blue-900/60 sticky top-0 z-50 px-3 sm:px-6 h-[52px] flex items-center shadow-md">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
           {/* Logo & Platform Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-300 text-[#092c60] flex items-center justify-center font-black shadow-sm">
-              <GraduationCap size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold tracking-tight text-sm sm:text-base text-white">
-                  HI-TECH COLLEGE
-                </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-400 text-[#092c60]">
-                  ERP 2026
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => setCurrentRole("website")}
+              className="flex items-center gap-2.5 text-left group select-none shrink-0"
+              title="Return to Public Website Homepage"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-300 text-[#092c60] flex items-center justify-center font-black shadow-sm group-hover:scale-105 transition-transform">
+                <GraduationCap size={20} />
+              </div>
+              <div className="hidden sm:block">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold tracking-tight text-xs sm:text-sm text-white">
+                    HI-TECH COLLEGE
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-[#092c60]">
+                    ERP 2026
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {/* Breadcrumb Indicator */}
+            <div className="hidden md:flex items-center gap-1.5 pl-2 border-l border-white/15 text-xs text-blue-200 truncate">
+              <ChevronRight size={13} className="text-slate-400 shrink-0" />
+              <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-md text-white font-bold truncate">
+                <ActiveIcon size={14} className="text-amber-300 shrink-0" />
+                <span className="truncate">{activePortalInfo.label}</span>
+                <span className="hidden lg:inline text-[10px] text-blue-200 font-normal">
+                  ({activePortalInfo.badge})
                 </span>
               </div>
-              <p className="text-[10px] text-blue-200 hidden sm:block">
-                Integrated Academic &amp; Central Certification Platform
-              </p>
             </div>
           </div>
 
-          {/* Primary Desktop Quick-Jump Pills + Full 17-Portal Switcher */}
+          {/* Quick-Jump Ribbon + Hub Launcher */}
           <div className="flex items-center gap-2">
-            <div className="hidden xl:flex items-center gap-1 bg-black/20 p-1 rounded-xl border border-white/10">
+            {/* Desktop Quick-Jump Pills */}
+            <div className="hidden xl:flex items-center gap-1 bg-black/25 p-0.5 rounded-xl border border-white/10">
               {portals
                 .filter((p) => primaryQuickIds.includes(p.id))
                 .map((p) => {
@@ -285,24 +323,39 @@ export default function App() {
                     <button
                       key={p.id}
                       onClick={() => setCurrentRole(p.id)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                         isActive
-                          ? "bg-[#0875e8] text-white shadow-md"
+                          ? "bg-[#0875e8] text-white shadow-xs"
                           : "text-blue-200 hover:text-white hover:bg-white/10"
                       }`}
                     >
-                      <Icon size={14} />
+                      <Icon size={13} />
                       <span>{p.label}</span>
                     </button>
                   );
                 })}
             </div>
 
+            {/* GLOBAL SWITCHER BUTTON */}
+            <button
+              type="button"
+              onClick={() => setIsSwitcherOpen(true)}
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 text-[#092c60] px-3 py-1.5 rounded-lg text-xs font-black shadow-sm transition group"
+              title="Open Complete 20-Portal Workspace Hub (Ctrl+K / ⌘K)"
+            >
+              <LayoutGrid size={14} className="group-hover:rotate-12 transition-transform" />
+              <span>All 20 Portals</span>
+              <kbd className="hidden sm:inline-block px-1 py-0.2 rounded text-[10px] bg-black/15 font-mono font-bold">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Quick Dropdown Fallback */}
             <select
               aria-label="Select institutional portal"
               value={currentRole}
               onChange={(e) => setCurrentRole(e.target.value as PortalRole)}
-              className="bg-[#092c60] border border-blue-400/40 text-xs font-bold text-white px-3 py-1.5 rounded-lg outline-none cursor-pointer max-w-[230px]"
+              className="bg-[#092c60] border border-blue-400/40 text-xs font-bold text-white px-2.5 py-1.5 rounded-lg outline-none cursor-pointer max-w-[170px] sm:max-w-[210px] truncate"
             >
               {portals.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -327,7 +380,10 @@ export default function App() {
             onLogout={() => setCurrentRole("website")}
           />
         ) : currentRole === "lecturer" ? (
-          <LecturerPortal onLogout={() => setCurrentRole("website")} />
+          <LecturerPortal
+            onLogout={() => setCurrentRole("website")}
+            onSwitchPortal={(role) => setCurrentRole(role as PortalRole)}
+          />
         ) : (
           <UserPortalShell
             config={getPortalShellConfig(currentRole as ShellRoleKey)}
@@ -338,7 +394,22 @@ export default function App() {
           </UserPortalShell>
         )}
       </div>
+
+      {/* GLOBAL 20-PORTAL SWITCHER MODAL */}
+      <GlobalPortalSwitcherModal
+        isOpen={isSwitcherOpen}
+        onClose={() => setIsSwitcherOpen(false)}
+        currentRole={currentRole}
+        onSelectRole={(role) => setCurrentRole(role)}
+      />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <PortalShellProvider>
+      <AppContent />
     </PortalShellProvider>
   );
 }

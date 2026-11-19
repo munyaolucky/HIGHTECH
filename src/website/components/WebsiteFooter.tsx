@@ -233,16 +233,40 @@ export default function WebsiteFooter({
                 <span>• Lecturer / Trainer Portal</span>
               </button>
               <button
+                onClick={() => onSwitchToERP("examination")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Examinations &amp; CBT Engine</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("library")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Central Library Management</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("admissions")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Admissions &amp; Enrolment</span>
+              </button>
+              <button
                 onClick={() => onSwitchToERP("registrar")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Registrar & Transcripts</span>
+                <span>• Registrar &amp; Transcripts (TRX)</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("finance")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Finance & M-Pesa Receipts</span>
+                <span>• Finance &amp; Lipa na M-Pesa</span>
+              </button>
+              <button
+                onClick={() => onSwitchToERP("staff-users")}
+                className="w-full text-left hover:text-white transition flex items-center gap-1.5"
+              >
+                <span>• Staff User Management &amp; RBAC</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("catalogue")}
@@ -272,7 +296,7 @@ export default function WebsiteFooter({
                 onClick={() => onSwitchToERP("generator")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Reg Number Generator</span>
+                <span>• Central Reg Number Generator</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("hostels")}
@@ -284,7 +308,7 @@ export default function WebsiteFooter({
                 onClick={() => onSwitchToERP("hr")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• HR &amp; Staff Management</span>
+                <span>• HR &amp; Staff People Ops</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("community")}
@@ -302,7 +326,7 @@ export default function WebsiteFooter({
                 onClick={() => onSwitchToERP("quality-reports")}
                 className="w-full text-left hover:text-white transition flex items-center gap-1.5"
               >
-                <span>• Docs, Quality &amp; Reports</span>
+                <span>• Docs, Quality &amp; TVETA Reports</span>
               </button>
               <button
                 onClick={() => onSwitchToERP("campus-services")}
