@@ -71,6 +71,10 @@ import SignatureWorkspace from '../signatures/SignatureWorkspace';
 import StudentManagementPage from '../sis/StudentManagementPage';
 import PlatformBaselineWorkspace from '../catalogue/PlatformBaselineWorkspace';
 import WebsiteCmsWorkspace from './website-cms/WebsiteCmsWorkspace';
+import StaffEventsWorkspace, { type StaffEventsSection } from './events/StaffEventsWorkspace';
+import HODAttendanceMonitor from './teaching/HODAttendanceMonitor';
+import PrincipalAttendanceOversight from './teaching/PrincipalAttendanceOversight';
+import AdminAttendancePolicyView from './teaching/AdminAttendancePolicyView';
 import {
   DashboardEmpty,
   DashboardError,
@@ -367,6 +371,45 @@ export default function StaffDashboardRouter({
       />
     );
   }
+  if (activePath === '/staff/events' || activePath.startsWith('/staff/events/')) {
+    if (!hasStaffPermission(user.permissions, 'event.view')) {
+      return (
+        <StaffAccessDeniedView
+          message="College Events Management & Check-In requires event.view authorization."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    const subSegment = activePath.replace(/^\/staff\/events\/?/, '').split('/')[0] || 'overview';
+    const sectionMap: Record<string, StaffEventsSection> = {
+      overview: 'overview',
+      all: 'events',
+      events: 'events',
+      create: 'create',
+      registrations: 'registrations',
+      checkin: 'checkin',
+      'check-in': 'checkin',
+      venues: 'venues',
+      payments: 'payments',
+      invitations: 'invitations',
+      certificates: 'certificates',
+      feedback: 'feedback',
+      media: 'media',
+      reports: 'reports',
+      settings: 'settings',
+      logs: 'logs',
+      audit: 'logs',
+    };
+    const initialSection: StaffEventsSection = sectionMap[subSegment] || 'overview';
+    return (
+      <StaffEventsWorkspace
+        user={user}
+        initialSection={initialSection}
+        onBack={() => onNavigate('/staff/dashboard')}
+        onOpenPublicPreview={onOpenPublicPreview}
+      />
+    );
+  }
   if (activePath === '/staff/sis') {
     if (!hasStaffPermission(user.permissions, 'sis.students.read')) {
       return (
@@ -528,6 +571,39 @@ export default function StaffDashboardRouter({
       );
     }
     return <ExaminationPortal />;
+  }
+  if (activePath === '/staff/hod/attendance') {
+    if (!hasStaffPermission(user.permissions, 'teaching.reports.view')) {
+      return (
+        <StaffAccessDeniedView
+          message="Department Teaching & Attendance Monitor requires HOD or authorized teaching.reports.view permission."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    return <HODAttendanceMonitor user={user} onBack={() => onNavigate('/staff/dashboard')} />;
+  }
+  if (activePath === '/staff/principal/attendance') {
+    if (!hasStaffPermission(user.permissions, 'teaching.reports.view')) {
+      return (
+        <StaffAccessDeniedView
+          message="Institutional Teaching & Attendance Oversight requires Principal or Registrar reporting permission."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    return <PrincipalAttendanceOversight user={user} onBack={() => onNavigate('/staff/dashboard')} />;
+  }
+  if (activePath === '/staff/admin/attendance-policy') {
+    if (!hasStaffPermission(user.permissions, 'teaching.policy.configure')) {
+      return (
+        <StaffAccessDeniedView
+          message="Attendance & Escalation Policy governance requires teaching.policy.configure permission."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    return <AdminAttendancePolicyView user={user} onBack={() => onNavigate('/staff/dashboard')} />;
   }
 
   // Generic operational logs (Procurement, Stores, Fleet, Security, Reception, Lab Tech, IT Assets)

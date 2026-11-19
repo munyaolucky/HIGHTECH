@@ -58,6 +58,12 @@ const WEBSITE_PAGES = new Set([
   "campus",
   "student-life",
   "campus-life",
+  "events",
+  "events-calendar",
+  "events-verify-ticket",
+  "event-details",
+  "event-register",
+  "event-confirmation",
   "news",
   "resources",
   "portal-guide",
@@ -112,6 +118,7 @@ interface RouteState {
   role: PortalRole;
   websitePage: string;
   websiteSlug?: string;
+  websiteToken?: string;
   staffInitialPath: string;
   authenticatedStaffRole?: StaffRole;
   openLoginModal: boolean;
@@ -250,6 +257,17 @@ function parseLocationToRoute(): RouteState {
     };
   }
 
+  if (pathname === "/portal/staff/events" || pathname.startsWith("/portal/staff/events/")) {
+    const subSection = pathname.slice("/portal/staff/events".length);
+    return {
+      mode: "portal",
+      role: "staff",
+      websitePage: "home",
+      staffInitialPath: `/staff/events${subSection}`,
+      openLoginModal: false,
+    };
+  }
+
   if (pathname.startsWith("/portal/")) {
     const seg = pathname.slice("/portal/".length).split("/")[0] as PortalRole;
     if (PORTAL_ROLES.has(seg) && seg !== "website") {
@@ -257,6 +275,84 @@ function parseLocationToRoute(): RouteState {
         mode: "portal",
         role: seg,
         websitePage: "home",
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
+  if (pathname === "/events/calendar") {
+    return {
+      mode: "website",
+      role: "website",
+      websitePage: "events-calendar",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname === "/events/verify-ticket") {
+    return {
+      mode: "website",
+      role: "website",
+      websitePage: "events-verify-ticket",
+      websiteSlug: params.get("code") ?? undefined,
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname.startsWith("/events/feedback/")) {
+    const eventSlug = pathname.slice("/events/feedback/".length).split("/")[0];
+    if (eventSlug) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "event-details",
+        websiteSlug: decodeURIComponent(eventSlug),
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
+  if (pathname.startsWith("/events/register/")) {
+    const eventId = pathname.slice("/events/register/".length).split("/")[0];
+    if (eventId) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "event-register",
+        websiteSlug: decodeURIComponent(eventId),
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
+  if (pathname.startsWith("/events/my-registration/")) {
+    const regId = pathname.slice("/events/my-registration/".length).split("/")[0];
+    if (regId) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "event-confirmation",
+        websiteSlug: decodeURIComponent(regId),
+        websiteToken: params.get("token") ?? undefined,
+        staffInitialPath: "/staff/dashboard",
+        openLoginModal: false,
+      };
+    }
+  }
+
+  if (pathname.startsWith("/events/")) {
+    const eventSlug = pathname.slice("/events/".length).split("/")[0];
+    if (eventSlug) {
+      return {
+        mode: "website",
+        role: "website",
+        websitePage: "event-details",
+        websiteSlug: decodeURIComponent(eventSlug),
         staffInitialPath: "/staff/dashboard",
         openLoginModal: false,
       };
@@ -640,17 +736,33 @@ export default function App() {
                 <PublicWebsite
                   initialPage={route.websitePage}
                   initialSlug={route.websiteSlug}
+                  initialToken={route.websiteToken}
                   initialPortalModalOpen={route.openLoginModal}
-                  onPageChange={(page, slug) => {
+                  onPageChange={(page, slug, token) => {
                     const targetUrl =
                       page === "home"
                         ? "/"
+                        : page === "events-calendar"
+                        ? "/events/calendar"
+                        : page === "events-verify-ticket"
+                        ? "/events/verify-ticket"
                         : page === "staff-details" && slug
                         ? `/our-staff/${encodeURIComponent(slug)}`
                         : page === "department-details" && slug
                         ? `/departments/${encodeURIComponent(slug)}`
+                        : page === "event-details" && slug
+                        ? `/events/${encodeURIComponent(slug)}`
+                        : page === "event-register" && slug
+                        ? `/events/register/${encodeURIComponent(slug)}`
+                        : page === "event-confirmation" && slug
+                        ? `/events/my-registration/${encodeURIComponent(slug)}${
+                            token ? `?token=${encodeURIComponent(token)}` : ""
+                          }`
                         : `/${page}`;
-                    if (typeof window !== "undefined" && window.location.pathname !== targetUrl) {
+                    if (
+                      typeof window !== "undefined" &&
+                      `${window.location.pathname}${window.location.search}` !== targetUrl
+                    ) {
                       window.history.pushState({}, "", targetUrl);
                     }
                   }}
@@ -669,6 +781,26 @@ export default function App() {
                   onSwitchPortal={(role) => navigateToPortal(role)}
                   onOpenActivationPage={(token) => navigateToActivation(token)}
                   onOpenPublicPreview={(publicPath) => {
+                    if (publicPath === "/events/calendar") {
+                      pushUrl(publicPath, {
+                        mode: "website",
+                        role: "website",
+                        websitePage: "events-calendar",
+                        staffInitialPath: "/staff/dashboard",
+                        openLoginModal: false,
+                      });
+                      return;
+                    }
+                    if (publicPath === "/events/verify-ticket") {
+                      pushUrl(publicPath, {
+                        mode: "website",
+                        role: "website",
+                        websitePage: "events-verify-ticket",
+                        staffInitialPath: "/staff/dashboard",
+                        openLoginModal: false,
+                      });
+                      return;
+                    }
                     if (publicPath.startsWith("/our-staff/")) {
                       const slug = publicPath.slice("/our-staff/".length);
                       pushUrl(publicPath, {
@@ -687,6 +819,18 @@ export default function App() {
                         mode: "website",
                         role: "website",
                         websitePage: "department-details",
+                        websiteSlug: decodeURIComponent(slug),
+                        staffInitialPath: "/staff/dashboard",
+                        openLoginModal: false,
+                      });
+                      return;
+                    }
+                    if (publicPath.startsWith("/events/")) {
+                      const slug = publicPath.slice("/events/".length);
+                      pushUrl(publicPath, {
+                        mode: "website",
+                        role: "website",
+                        websitePage: "event-details",
                         websiteSlug: decodeURIComponent(slug),
                         staffInitialPath: "/staff/dashboard",
                         openLoginModal: false,

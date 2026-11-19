@@ -28,6 +28,44 @@ import {
   SEED_WEBSITE_DEPARTMENTS,
   SEED_WEBSITE_STAFF,
 } from '../modules/website/website.seed.ts';
+import type {
+  AbsenceEvidenceRecord,
+  AbsenceExplanationRecord,
+  AbsenceEscalationRecord,
+  AbsenceReviewRecord,
+  AcademicInterventionRecord,
+  AttendanceAlertRecord,
+  AttendanceCorrectionRequest,
+  AttendancePolicyConfig,
+  AttendanceSessionRecord,
+  CatchUpLessonRecord,
+  LessonDeliveryRecordItem,
+  LessonObservationRecord,
+  SchemeOfWorkRecord,
+  StudentAbsenceCaseRecord,
+  TeachingAuditLogRecord,
+  TeachingDocumentApproval,
+  TeachingDocumentItem,
+  TeachingDocumentVersion,
+  TimetableSessionSlot,
+} from '../modules/teaching/teaching.types.ts';
+import { createTeachingModuleSeed } from '../modules/teaching/teaching.seed.ts';
+import type {
+  CollegeEventRecord,
+  EventAuditLogRecord,
+  EventCertificateRecord,
+  EventFeedbackRecord,
+  EventInvitationRecord,
+  EventMediaRecord,
+  EventNotificationRecord,
+  EventPaymentRecord,
+  EventRegistrationRecord,
+  EventScheduleItemRecord,
+  EventSettingsRecord,
+  EventSpeakerRecord,
+  EventVenueRecord,
+} from '../modules/events/events.types.ts';
+import { createEventsModuleSeed } from '../modules/events/events.seed.ts';
 
 export type StaffTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
 
@@ -489,6 +527,9 @@ export interface PortalDatabase {
     studentSeq: number;
     workflowSeq: number;
     registrationSeq: Record<RegistrationCategory, number>;
+    eventRegSeq: number;
+    eventCodeSeq: number;
+    eventCertSeq: number;
   };
   campuses: CampusRecord[];
   departments: DepartmentRecord[];
@@ -517,6 +558,38 @@ export interface PortalDatabase {
   admissionApplications: AdmissionApplicationRecord[];
   newsletterSubscribers: NewsletterSubscriberRecord[];
   cookieConsentAudits: CookieConsentAuditRecord[];
+  teachingTimetableSlots: TimetableSessionSlot[];
+  teachingDocuments: TeachingDocumentItem[];
+  teachingDocumentVersions: TeachingDocumentVersion[];
+  teachingDocumentApprovals: TeachingDocumentApproval[];
+  schemesOfWork: SchemeOfWorkRecord[];
+  attendanceSessions: AttendanceSessionRecord[];
+  attendanceCorrections: AttendanceCorrectionRequest[];
+  lessonDeliveryRecords: LessonDeliveryRecordItem[];
+  lessonObservations: LessonObservationRecord[];
+  studentAbsenceCases: StudentAbsenceCaseRecord[];
+  absenceExplanations: AbsenceExplanationRecord[];
+  absenceEvidence: AbsenceEvidenceRecord[];
+  absenceReviews: AbsenceReviewRecord[];
+  absenceEscalations: AbsenceEscalationRecord[];
+  catchUpLessons: CatchUpLessonRecord[];
+  academicInterventions: AcademicInterventionRecord[];
+  attendancePolicy: AttendancePolicyConfig;
+  attendanceAlerts: AttendanceAlertRecord[];
+  teachingAuditLogs: TeachingAuditLogRecord[];
+  collegeEvents: CollegeEventRecord[];
+  collegeEventSchedules: EventScheduleItemRecord[];
+  collegeEventSpeakers: EventSpeakerRecord[];
+  collegeEventRegistrations: EventRegistrationRecord[];
+  collegeEventVenues: EventVenueRecord[];
+  collegeEventPayments: EventPaymentRecord[];
+  collegeEventInvitations: EventInvitationRecord[];
+  collegeEventFeedbacks: EventFeedbackRecord[];
+  collegeEventCertificates: EventCertificateRecord[];
+  collegeEventMedia: EventMediaRecord[];
+  collegeEventNotifications: EventNotificationRecord[];
+  collegeEventAuditLogs: EventAuditLogRecord[];
+  eventSettings: EventSettingsRecord;
 }
 
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -680,8 +753,29 @@ const SEED_STAFF: StaffAccountRecord[] = [
     campusId: 'cmp-nairobi',
     campus: 'Nairobi Main Campus',
     allowedCampuses: ['Nairobi Main Campus'],
-    assignedUnits: ['ICT 2101 · Software Architecture', 'AI 3102 · Applied Machine Learning'],
+    assignedUnits: [
+      'CSC 301 · Advanced Data Structures & Algorithms',
+      'ICT 2101 · Software Architecture',
+      'AI 3102 · Applied Machine Learning',
+      'NET 303 · Cybersecurity Architectures & Forensics',
+      'ICT 1104 · Database Systems & SQL Administration',
+    ],
     restrictedFrom: ['Student Fee Statements', 'Other Staff Salaries & Contracts', 'Institutional Admissions Decisions'],
+  }),
+  makeStaff({
+    id: 'usr-lecturer-wanjala',
+    employeeNumber: 'HCA/STAFF/2026/022',
+    fullName: 'CPA Mercy Wanjala',
+    email: 'mwanjala@hitech.ac.ke',
+    role: 'LECTURER',
+    roleTitle: 'Lecturer in Accountancy & Financial Reporting',
+    departmentId: 'dept-finance',
+    department: 'Finance & Accounts',
+    campusId: 'cmp-nairobi',
+    campus: 'Nairobi Main Campus',
+    allowedCampuses: ['Nairobi Main Campus', 'Westlands Technology Park Campus'],
+    assignedUnits: ['FIN 201 · Corporate Financial Reporting & IFRS'],
+    restrictedFrom: ['Student Fee Statements', 'Other Staff Salaries & Contracts', 'Unassigned Computing Dept Cases'],
   }),
   makeStaff({
     id: 'usr-lib-001',
@@ -1220,6 +1314,9 @@ function createSeedDatabase(): PortalDatabase {
         PARTNER: 0,
         GUEST: 1,
       },
+      eventRegSeq: 12,
+      eventCodeSeq: 8,
+      eventCertSeq: 2,
     },
     campuses: SEED_CAMPUSES,
     departments: SEED_DEPARTMENTS,
@@ -1881,6 +1978,25 @@ function createSeedDatabase(): PortalDatabase {
     admissionApplications: SEED_ADMISSION_APPLICATIONS.map((a) => ({ ...a })),
     newsletterSubscribers: [],
     cookieConsentAudits: [],
+    ...createTeachingModuleSeed(),
+    ...(() => {
+      const eventsSeed = createEventsModuleSeed();
+      return {
+        collegeEvents: eventsSeed.collegeEvents,
+        collegeEventSchedules: eventsSeed.collegeEventSchedules,
+        collegeEventSpeakers: eventsSeed.collegeEventSpeakers,
+        collegeEventRegistrations: eventsSeed.collegeEventRegistrations,
+        collegeEventVenues: eventsSeed.collegeEventVenues,
+        collegeEventPayments: eventsSeed.collegeEventPayments,
+        collegeEventInvitations: eventsSeed.collegeEventInvitations,
+        collegeEventFeedbacks: eventsSeed.collegeEventFeedbacks,
+        collegeEventCertificates: eventsSeed.collegeEventCertificates,
+        collegeEventMedia: eventsSeed.collegeEventMedia,
+        collegeEventNotifications: eventsSeed.collegeEventNotifications,
+        collegeEventAuditLogs: eventsSeed.collegeEventAuditLogs,
+        eventSettings: eventsSeed.eventSettings,
+      };
+    })(),
   };
 }
 
@@ -1894,9 +2010,29 @@ function ensureDir(): void {
 
 function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabase {
   const seed = createSeedDatabase();
+  const baseStaff = Array.isArray(loaded.staffAccounts) ? loaded.staffAccounts : seed.staffAccounts;
+  const mergedStaff = baseStaff.map((acc) => {
+    const rolePerms = ROLE_TO_STAFF_PERMISSIONS[acc.role] ?? [];
+    const existingSet = new Set(acc.permissions || []);
+    for (const perm of rolePerms) {
+      if (perm !== 'teaching.evidence.view_restricted' || acc.role !== 'ADMIN') {
+        existingSet.add(perm);
+      }
+    }
+    return {
+      ...acc,
+      permissions: Array.from(existingSet),
+    };
+  });
+  for (const sAcc of seed.staffAccounts) {
+    if (!mergedStaff.some((m) => m.id === sAcc.id)) {
+      mergedStaff.push(sAcc);
+    }
+  }
   return {
     ...seed,
     ...loaded,
+    staffAccounts: mergedStaff,
     sequences: {
       ...seed.sequences,
       ...(loaded.sequences ?? {}),
@@ -1935,6 +2071,151 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     cookieConsentAudits: Array.isArray(loaded.cookieConsentAudits)
       ? loaded.cookieConsentAudits
       : seed.cookieConsentAudits,
+    teachingTimetableSlots: Array.isArray(loaded.teachingTimetableSlots)
+      ? loaded.teachingTimetableSlots
+      : seed.teachingTimetableSlots,
+    teachingDocuments: Array.isArray(loaded.teachingDocuments)
+      ? loaded.teachingDocuments
+      : seed.teachingDocuments,
+    teachingDocumentVersions: Array.isArray(loaded.teachingDocumentVersions)
+      ? loaded.teachingDocumentVersions
+      : seed.teachingDocumentVersions,
+    teachingDocumentApprovals: Array.isArray(loaded.teachingDocumentApprovals)
+      ? loaded.teachingDocumentApprovals
+      : seed.teachingDocumentApprovals,
+    schemesOfWork: Array.isArray(loaded.schemesOfWork)
+      ? loaded.schemesOfWork
+      : seed.schemesOfWork,
+    attendanceSessions: Array.isArray(loaded.attendanceSessions)
+      ? loaded.attendanceSessions
+      : seed.attendanceSessions,
+    attendanceCorrections: Array.isArray(loaded.attendanceCorrections)
+      ? loaded.attendanceCorrections
+      : seed.attendanceCorrections,
+    lessonDeliveryRecords: Array.isArray(loaded.lessonDeliveryRecords)
+      ? loaded.lessonDeliveryRecords
+      : seed.lessonDeliveryRecords,
+    lessonObservations: Array.isArray(loaded.lessonObservations)
+      ? loaded.lessonObservations
+      : seed.lessonObservations,
+    studentAbsenceCases: Array.isArray(loaded.studentAbsenceCases)
+      ? loaded.studentAbsenceCases
+      : seed.studentAbsenceCases,
+    absenceExplanations: Array.isArray(loaded.absenceExplanations)
+      ? loaded.absenceExplanations
+      : seed.absenceExplanations,
+    absenceEvidence: Array.isArray(loaded.absenceEvidence)
+      ? loaded.absenceEvidence
+      : seed.absenceEvidence,
+    absenceReviews: Array.isArray(loaded.absenceReviews)
+      ? loaded.absenceReviews
+      : seed.absenceReviews,
+    absenceEscalations: Array.isArray(loaded.absenceEscalations)
+      ? loaded.absenceEscalations
+      : seed.absenceEscalations,
+    catchUpLessons: Array.isArray(loaded.catchUpLessons)
+      ? loaded.catchUpLessons
+      : seed.catchUpLessons,
+    academicInterventions: Array.isArray(loaded.academicInterventions)
+      ? loaded.academicInterventions
+      : seed.academicInterventions,
+    attendancePolicy: loaded.attendancePolicy
+      ? { ...seed.attendancePolicy, ...loaded.attendancePolicy }
+      : seed.attendancePolicy,
+    attendanceAlerts: Array.isArray(loaded.attendanceAlerts)
+      ? loaded.attendanceAlerts
+      : seed.attendanceAlerts,
+    teachingAuditLogs: Array.isArray(loaded.teachingAuditLogs)
+      ? loaded.teachingAuditLogs
+      : seed.teachingAuditLogs,
+    collegeEvents: (Array.isArray(loaded.collegeEvents) ? loaded.collegeEvents : seed.collegeEvents).map(
+      (ev, idx) => ({
+        eventCode: `HTE-2026-${String(idx + 1).padStart(3, '0')}`,
+        endDate: ev.eventDate,
+        timezone: 'Africa/Nairobi',
+        isMultiDay: false,
+        recurrencePattern: 'NONE' as const,
+        campus: 'Nairobi Main Campus',
+        venueId: null,
+        building: '',
+        room: '',
+        mapsLink: '',
+        onlinePlatform: '',
+        accessibilityInfo: '',
+        parkingInfo: '',
+        showContactPhonePublicly: true,
+        language: 'English',
+        tags: [],
+        visibility: 'PUBLIC' as const,
+        waitlistCapacity: 25,
+        checkedOutCount: 0,
+        registrationOpenDate: ev.createdAt || '2026-01-01T08:00:00.000Z',
+        studentFeeAmount: ev.isPaid ? Math.round((ev.feeAmount || 0) * 0.5) : 0,
+        reminderHours: [24, 2],
+        confirmationMessage: '',
+        certificateEnabled: false,
+        certificateType: 'Certificate of Participation',
+        certificateMinAttendance: true,
+        feedbackEnabled: true,
+        ...ev,
+      })
+    ),
+    collegeEventSchedules: (Array.isArray(loaded.collegeEventSchedules)
+      ? loaded.collegeEventSchedules
+      : seed.collegeEventSchedules
+    ).map((sc) => ({
+      dayNumber: 1,
+      ...sc,
+    })),
+    collegeEventSpeakers: (Array.isArray(loaded.collegeEventSpeakers)
+      ? loaded.collegeEventSpeakers
+      : seed.collegeEventSpeakers
+    ).map((sp) => ({
+      speakerRole: 'Guest Speaker' as const,
+      confirmationStatus: 'CONFIRMED' as const,
+      ...sp,
+    })),
+    collegeEventRegistrations: (Array.isArray(loaded.collegeEventRegistrations)
+      ? loaded.collegeEventRegistrations
+      : seed.collegeEventRegistrations
+    ).map((reg) => ({
+      ticketType: 'General Admission',
+      paymentStatus: 'PAID' as const,
+      amountDue: 0,
+      amountPaid: 0,
+      checkedOut: false,
+      checkedOutAt: null,
+      organiserNotes: '',
+      certificateCode: null,
+      ...reg,
+    })),
+    collegeEventVenues: Array.isArray(loaded.collegeEventVenues)
+      ? loaded.collegeEventVenues
+      : seed.collegeEventVenues,
+    collegeEventPayments: Array.isArray(loaded.collegeEventPayments)
+      ? loaded.collegeEventPayments
+      : seed.collegeEventPayments,
+    collegeEventInvitations: Array.isArray(loaded.collegeEventInvitations)
+      ? loaded.collegeEventInvitations
+      : seed.collegeEventInvitations,
+    collegeEventFeedbacks: Array.isArray(loaded.collegeEventFeedbacks)
+      ? loaded.collegeEventFeedbacks
+      : seed.collegeEventFeedbacks,
+    collegeEventCertificates: Array.isArray(loaded.collegeEventCertificates)
+      ? loaded.collegeEventCertificates
+      : seed.collegeEventCertificates,
+    collegeEventMedia: Array.isArray(loaded.collegeEventMedia)
+      ? loaded.collegeEventMedia
+      : seed.collegeEventMedia,
+    collegeEventNotifications: Array.isArray(loaded.collegeEventNotifications)
+      ? loaded.collegeEventNotifications
+      : seed.collegeEventNotifications,
+    collegeEventAuditLogs: Array.isArray(loaded.collegeEventAuditLogs)
+      ? loaded.collegeEventAuditLogs
+      : seed.collegeEventAuditLogs,
+    eventSettings: loaded.eventSettings
+      ? { ...seed.eventSettings, ...loaded.eventSettings }
+      : seed.eventSettings,
   };
 }
 
@@ -1999,3 +2280,28 @@ export function allocateRegistrationNumber(
   const prefix = REGISTRATION_NUMBER_PREFIX[category];
   return `${prefix}/${year}/${String(next).padStart(4, '0')}`;
 }
+
+export function allocateEventRegistrationNumber(db: PortalDatabase): string {
+  const current = db.sequences.eventRegSeq ?? 12;
+  const next = current + 1;
+  db.sequences.eventRegSeq = next;
+  const year = new Date().getFullYear();
+  return `HTE-EVT-${year}-${String(next).padStart(4, '0')}`;
+}
+
+export function allocateEventCode(db: PortalDatabase): string {
+  const current = db.sequences.eventCodeSeq ?? 8;
+  const next = current + 1;
+  db.sequences.eventCodeSeq = next;
+  const year = new Date().getFullYear();
+  return `HTE-${year}-${String(next).padStart(3, '0')}`;
+}
+
+export function allocateCertificateNumber(db: PortalDatabase): string {
+  const current = db.sequences.eventCertSeq ?? 2;
+  const next = current + 1;
+  db.sequences.eventCertSeq = next;
+  const year = new Date().getFullYear();
+  return `HTE-CERT-${year}-${String(next).padStart(4, '0')}`;
+}
+

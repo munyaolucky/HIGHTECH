@@ -611,3 +611,699 @@ export const academicRegistrationsRelations = relations(academicRegistrations, (
     references: [academicPeriods.id],
   }),
 }));
+
+// ============================================================================
+// 7. TEACHING, LESSON DELIVERY & STUDENT ATTENDANCE MANAGEMENT MODULE
+// ============================================================================
+
+export const teachingDocuments = pgTable('teaching_documents', {
+  id: text('id').primaryKey(),
+  assignmentId: text('assignment_id').notNull(),
+  departmentId: text('department_id').notNull(),
+  departmentName: text('department_name').notNull(),
+  courseName: text('course_name').notNull(),
+  classGroupId: text('class_group_id').notNull(),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  academicYear: text('academic_year').notNull(),
+  term: text('term').notNull(),
+  category: text('category').notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull().default(''),
+  status: text('status').notNull().default('DRAFT'), // DRAFT | SUBMITTED | APPROVED | RETURNED | ARCHIVED
+  currentVersion: integer('current_version').notNull().default(1),
+  uploadedById: text('uploaded_by_id').notNull(),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  approvedById: text('approved_by_id'),
+  approvedByName: text('approved_by_name'),
+  approvalComments: text('approval_comments'),
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const teachingDocumentVersions = pgTable('teaching_document_versions', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => teachingDocuments.id, { onDelete: 'cascade' })
+    .notNull(),
+  versionNumber: integer('version_number').notNull(),
+  fileName: text('file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  fileSizeBytes: integer('file_size_bytes').notNull(),
+  fileContentBase64: text('file_content_base64').notNull().default(''),
+  changeSummary: text('change_summary').notNull().default('Initial upload'),
+  uploadedById: text('uploaded_by_id').notNull(),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const teachingDocumentApprovals = pgTable('teaching_document_approvals', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => teachingDocuments.id, { onDelete: 'cascade' })
+    .notNull(),
+  reviewerId: text('reviewer_id').notNull(),
+  reviewerName: text('reviewer_name').notNull(),
+  reviewerRole: text('reviewer_role').notNull(),
+  decision: text('decision').notNull(), // APPROVED | RETURNED | SUBMITTED | ARCHIVED
+  comment: text('comment'),
+  decidedAt: timestamp('decided_at').defaultNow().notNull(),
+});
+
+export const schemesOfWork = pgTable('schemes_of_work', {
+  id: text('id').primaryKey(),
+  assignmentId: text('assignment_id').notNull(),
+  departmentId: text('department_id').notNull(),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  classGroupId: text('class_group_id').notNull(),
+  academicYear: text('academic_year').notNull(),
+  term: text('term').notNull(),
+  title: text('title').notNull(),
+  lecturerId: text('lecturer_id').notNull(),
+  lecturerName: text('lecturer_name').notNull(),
+  status: text('status').notNull().default('DRAFT'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const schemeOfWorkTopics = pgTable('scheme_of_work_topics', {
+  id: text('id').primaryKey(),
+  schemeId: text('scheme_id')
+    .references(() => schemesOfWork.id, { onDelete: 'cascade' })
+    .notNull(),
+  weekNumber: integer('week_number').notNull(),
+  plannedDate: text('planned_date').notNull(),
+  topicTitle: text('topic_title').notNull(),
+  subtopics: text('subtopics').notNull().default(''),
+  learningOutcomes: text('learning_outcomes').notNull().default(''),
+  activities: text('activities').notNull().default(''),
+  resources: text('resources').notNull().default(''),
+  covered: boolean('covered').notNull().default(false),
+  actualCoveredDate: text('actual_covered_date'),
+  lessonDeliveryId: text('lesson_delivery_id'),
+  remarks: text('remarks'),
+});
+
+export const attendanceSessions = pgTable('attendance_sessions', {
+  id: text('id').primaryKey(),
+  assignmentId: text('assignment_id').notNull(),
+  departmentId: text('department_id').notNull(),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  classGroupId: text('class_group_id').notNull(),
+  timetableEntryId: text('timetable_entry_id'),
+  lecturerId: text('lecturer_id').notNull(),
+  lecturerName: text('lecturer_name').notNull(),
+  substituteLecturerId: text('substitute_lecturer_id'),
+  substituteLecturerName: text('substitute_lecturer_name'),
+  sessionDate: text('session_date').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  roomName: text('room_name').notNull(),
+  qrToken: text('qr_token'),
+  qrExpiresAt: timestamp('qr_expires_at'),
+  locked: boolean('locked').notNull().default(false),
+  submittedAt: timestamp('submitted_at'),
+  totalStudents: integer('total_students').notNull().default(0),
+  presentCount: integer('present_count').notNull().default(0),
+  lateCount: integer('late_count').notNull().default(0),
+  absentCount: integer('absent_count').notNull().default(0),
+  excusedCount: integer('excused_count').notNull().default(0),
+  attendanceRate: integer('attendance_rate').notNull().default(100),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const attendanceRecords = pgTable('attendance_records', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .references(() => attendanceSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  studentProfileId: text('student_profile_id'),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  status: text('status').notNull().default('PRESENT'), // PRESENT | LATE | ABSENT | EXCUSED
+  method: text('method').notNull().default('ROLL_CALL'), // ROLL_CALL | QR_CHECKIN
+  arrivalTime: text('arrival_time'),
+  departureTime: text('departure_time'),
+  remarks: text('remarks'),
+  markedById: text('marked_by_id').notNull(),
+  markedByName: text('marked_by_name').notNull(),
+  markedAt: timestamp('marked_at').defaultNow().notNull(),
+});
+
+export const attendanceCorrections = pgTable('attendance_corrections', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .references(() => attendanceSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  recordId: text('record_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  previousStatus: text('previous_status').notNull(),
+  requestedStatus: text('requested_status').notNull(),
+  reason: text('reason').notNull(),
+  requestedById: text('requested_by_id').notNull(),
+  requestedByName: text('requested_by_name').notNull(),
+  status: text('status').notNull().default('PENDING'), // PENDING | APPROVED | REJECTED
+  reviewedById: text('reviewed_by_id'),
+  reviewedByName: text('reviewed_by_name'),
+  reviewNote: text('review_note'),
+  reviewedAt: timestamp('reviewed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const lessonDeliveryRecords = pgTable('lesson_delivery_records', {
+  id: text('id').primaryKey(),
+  assignmentId: text('assignment_id').notNull(),
+  attendanceSessionId: text('attendance_session_id')
+    .references(() => attendanceSessions.id, { onDelete: 'restrict' })
+    .notNull(),
+  timetableEntryId: text('timetable_entry_id'),
+  schemeTopicId: text('scheme_topic_id'),
+  academicYear: text('academic_year').notNull(),
+  term: text('term').notNull(),
+  departmentId: text('department_id').notNull(),
+  departmentName: text('department_name').notNull(),
+  courseName: text('course_name').notNull(),
+  classGroupId: text('class_group_id').notNull(),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  lecturerId: text('lecturer_id').notNull(),
+  lecturerName: text('lecturer_name').notNull(),
+  actualTrainerId: text('actual_trainer_id').notNull(),
+  actualTrainerName: text('actual_trainer_name').notNull(),
+  isSubstitute: boolean('is_substitute').notNull().default(false),
+  lessonDate: text('lesson_date').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  durationMinutes: integer('duration_minutes').notNull().default(120),
+  roomName: text('room_name').notNull(),
+  plannedTopic: text('planned_topic').notNull(),
+  actualTopicTaught: text('actual_topic_taught').notNull().default(''),
+  subtopicsCovered: text('subtopics_covered').notNull().default(''),
+  learningObjectivesAchieved: text('learning_objectives_achieved').notNull().default(''),
+  teachingMethods: text('teaching_methods').notNull().default(''),
+  practicalsDone: text('practicals_done').notNull().default(''),
+  pagesOrSectionsCovered: text('pages_or_sections_covered').notNull().default(''),
+  challengesFaced: text('challenges_faced').notNull().default(''),
+  homeworkAssigned: text('homework_assigned').notNull().default(''),
+  nextLessonPlan: text('next_lesson_plan').notNull().default(''),
+  supportingDocumentIdsJson: jsonb('supporting_document_ids_json').$type<string[]>().notNull().default([]),
+  trainerRemarks: text('trainer_remarks').notNull().default(''),
+  status: text('status').notNull().default('SCHEDULED'), // SCHEDULED | CONDUCTED | PARTIALLY_CONDUCTED | NOT_CONDUCTED | RESCHEDULED
+  hodReviewStatus: text('hod_review_status').notNull().default('PENDING'), // PENDING | VERIFIED | FLAGGED
+  hodReviewerName: text('hod_reviewer_name'),
+  hodReviewComments: text('hod_review_comments'),
+  hodReviewedAt: timestamp('hod_reviewed_at'),
+  submittedAt: timestamp('submitted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const lessonObservations = pgTable('lesson_observations', {
+  id: text('id').primaryKey(),
+  lessonDeliveryId: text('lesson_delivery_id')
+    .references(() => lessonDeliveryRecords.id, { onDelete: 'cascade' })
+    .notNull(),
+  unitCode: text('unit_code').notNull(),
+  lecturerId: text('lecturer_id').notNull(),
+  lecturerName: text('lecturer_name').notNull(),
+  observerId: text('observer_id').notNull(),
+  observerName: text('observer_name').notNull(),
+  observerRole: text('observer_role').notNull(),
+  observationDate: text('observation_date').notNull(),
+  pedagogyScore: integer('pedagogy_score').notNull().default(4),
+  preparationScore: integer('preparation_score').notNull().default(4),
+  engagementScore: integer('engagement_score').notNull().default(4),
+  strengths: text('strengths').notNull(),
+  recommendations: text('recommendations').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const studentAbsenceCases = pgTable('student_absence_cases', {
+  id: text('id').primaryKey(),
+  attendanceSessionId: text('attendance_session_id')
+    .references(() => attendanceSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  attendanceRecordId: text('attendance_record_id').notNull(),
+  lessonDeliveryId: text('lesson_delivery_id'),
+  studentProfileId: text('student_profile_id'),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  departmentId: text('department_id').notNull(),
+  departmentName: text('department_name').notNull(),
+  courseName: text('course_name').notNull(),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  classGroupId: text('class_group_id').notNull(),
+  lecturerId: text('lecturer_id').notNull(),
+  lecturerName: text('lecturer_name').notNull(),
+  absenceDate: text('absence_date').notNull(),
+  consecutiveAbsenceCount: integer('consecutive_absence_count').notNull().default(1),
+  unitAbsenceCount: integer('unit_absence_count').notNull().default(1),
+  termAbsenceCount: integer('term_absence_count').notNull().default(1),
+  status: text('status').notNull().default('AWAITING_EXPLANATION'),
+  escalationLevel: text('escalation_level').notNull().default('NONE'), // NONE | LECTURER | HOD | PRINCIPAL
+  assignedReviewerRole: text('assigned_reviewer_role').notNull().default('LECTURER'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const absenceExplanations = pgTable('absence_explanations', {
+  id: text('id').primaryKey(),
+  absenceCaseId: text('absence_case_id')
+    .references(() => studentAbsenceCases.id, { onDelete: 'cascade' })
+    .notNull(),
+  source: text('source').notNull(), // STUDENT_PORTAL | TRAINER_VERBAL_ENTRY
+  category: text('category').notNull(), // MEDICAL | FAMILY_EMERGENCY | OFFICIAL_DUTY | TRANSPORT | FINANCIAL | OTHER
+  reasonText: text('reason_text').notNull(),
+  trainerRecordedNote: text('trainer_recorded_note'),
+  studentConfirmedAccuracy: boolean('student_confirmed_accuracy').notNull().default(false),
+  studentConfirmedAt: timestamp('student_confirmed_at'),
+  submittedById: text('submitted_by_id').notNull(),
+  submittedByName: text('submitted_by_name').notNull(),
+  submittedByRole: text('submitted_by_role').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const absenceEvidence = pgTable('absence_evidence', {
+  id: text('id').primaryKey(),
+  absenceCaseId: text('absence_case_id')
+    .references(() => studentAbsenceCases.id, { onDelete: 'cascade' })
+    .notNull(),
+  fileName: text('file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  fileSizeBytes: integer('file_size_bytes').notNull(),
+  fileContentBase64: text('file_content_base64').notNull().default(''),
+  description: text('description').notNull(),
+  isConfidentialMedical: boolean('is_confidential_medical').notNull().default(true),
+  uploadedById: text('uploaded_by_id').notNull(),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  uploadedByRole: text('uploaded_by_role').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const absenceReviews = pgTable('absence_reviews', {
+  id: text('id').primaryKey(),
+  absenceCaseId: text('absence_case_id')
+    .references(() => studentAbsenceCases.id, { onDelete: 'cascade' })
+    .notNull(),
+  reviewerId: text('reviewer_id').notNull(),
+  reviewerName: text('reviewer_name').notNull(),
+  reviewerRole: text('reviewer_role').notNull(),
+  decision: text('decision').notNull(), // UNDER_REVIEW | RECOMMENDED | APPROVED | REJECTED | ESCALATED | CLOSED
+  comment: text('comment').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const absenceEscalations = pgTable('absence_escalations', {
+  id: text('id').primaryKey(),
+  absenceCaseId: text('absence_case_id')
+    .references(() => studentAbsenceCases.id, { onDelete: 'cascade' })
+    .notNull(),
+  fromRole: text('from_role').notNull(),
+  toRole: text('to_role').notNull(),
+  triggerRule: text('trigger_rule').notNull(),
+  reason: text('reason').notNull(),
+  escalatedById: text('escalated_by_id').notNull(),
+  escalatedByName: text('escalated_by_name').notNull(),
+  resolved: boolean('resolved').notNull().default(false),
+  resolvedByName: text('resolved_by_name'),
+  resolvedAt: timestamp('resolved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const catchUpLessons = pgTable('catch_up_lessons', {
+  id: text('id').primaryKey(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  absenceCaseId: text('absence_case_id'),
+  unitCode: text('unit_code').notNull(),
+  unitTitle: text('unit_title').notNull(),
+  missedLessonDate: text('missed_lesson_date').notNull(),
+  scheduledDate: text('scheduled_date').notNull(),
+  scheduledTime: text('scheduled_time').notNull(),
+  trainerId: text('trainer_id').notNull(),
+  trainerName: text('trainer_name').notNull(),
+  roomOrLink: text('room_or_link').notNull(),
+  materialsAttached: text('materials_attached').notNull().default(''),
+  status: text('status').notNull().default('SCHEDULED'), // SCHEDULED | COMPLETED | MISSED
+  completionNotes: text('completion_notes').notNull().default(''),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const academicInterventions = pgTable('academic_interventions', {
+  id: text('id').primaryKey(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  unitCode: text('unit_code').notNull(),
+  departmentId: text('department_id').notNull(),
+  triggerReason: text('trigger_reason').notNull(),
+  interventionPlan: text('intervention_plan').notNull(),
+  ownerId: text('owner_id').notNull(),
+  ownerName: text('owner_name').notNull(),
+  status: text('status').notNull().default('OPEN'), // OPEN | IN_PROGRESS | COMPLETED
+  followUpDate: text('follow_up_date').notNull(),
+  outcomeNotes: text('outcome_notes').notNull().default(''),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const attendancePolicies = pgTable('attendance_policies', {
+  id: text('id').primaryKey(),
+  policyName: text('policy_name').notNull().default('HI-TECH College Official Attendance & Teaching Governance Policy'),
+  minimumExamAttendancePct: integer('minimum_exam_attendance_pct').notNull().default(75),
+  lateThresholdMinutes: integer('late_threshold_minutes').notNull().default(15),
+  consecutiveAbsenceTrainerAlert: integer('consecutive_absence_trainer_alert').notNull().default(2),
+  unitAbsenceHodAlert: integer('unit_absence_hod_alert').notNull().default(3),
+  termAbsenceHodEscalation: integer('term_absence_hod_escalation').notNull().default(5),
+  unresolvedPrincipalEscalation: integer('unresolved_principal_escalation').notNull().default(6),
+  lessonRecordOverdueHours: integer('lesson_record_overdue_hours').notNull().default(24),
+  allowQrCheckIn: boolean('allow_qr_check_in').notNull().default(true),
+  qrValidityMinutes: integer('qr_validity_minutes').notNull().default(15),
+  updatedByName: text('updated_by_name').notNull().default('Dr. Samuel Karanja'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const attendanceAlerts = pgTable('attendance_alerts', {
+  id: text('id').primaryKey(),
+  targetRole: text('target_role').notNull(), // STUDENT | LECTURER | HOD | REGISTRAR | PRINCIPAL | STUDENT_AFFAIRS
+  targetUserId: text('target_user_id'),
+  targetStudentRegNo: text('target_student_reg_no'),
+  departmentId: text('department_id'),
+  severity: text('severity').notNull().default('WARNING'), // INFO | WARNING | CRITICAL
+  category: text('category').notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  relatedEntityId: text('related_entity_id'),
+  read: boolean('read').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const teachingAuditLogs = pgTable('teaching_audit_logs', {
+  id: text('id').primaryKey(),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  actorRole: text('actor_role').notNull(),
+  action: text('action').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id').notNull(),
+  detail: text('detail').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================
+// PUBLIC & STAFF EVENTS MANAGEMENT + REGISTRATION SYSTEM
+// ============================================================
+
+export const collegeEvents = pgTable('college_events', {
+  id: text('id').primaryKey(),
+  eventCode: text('event_code').notNull().unique(),
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  category: text('category').notNull(),
+  shortDescription: text('short_description').notNull(),
+  fullDescription: text('full_description').notNull(),
+  eventDate: text('event_date').notNull(),
+  endDate: text('end_date').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  timezone: text('timezone').notNull().default('Africa/Nairobi'),
+  isMultiDay: boolean('is_multi_day').notNull().default(false),
+  recurrencePattern: text('recurrence_pattern').notNull().default('NONE'),
+  campus: text('campus').notNull().default('Nairobi Main Campus'),
+  venueId: text('venue_id'),
+  venue: text('venue').notNull(),
+  building: text('building').notNull().default(''),
+  room: text('room').notNull().default(''),
+  mapsLink: text('maps_link').notNull().default(''),
+  onlinePlatform: text('online_platform').notNull().default(''),
+  accessibilityInfo: text('accessibility_info').notNull().default(''),
+  parkingInfo: text('parking_info').notNull().default(''),
+  mode: text('mode').notNull().default('PHYSICAL'),
+  meetingUrl: text('meeting_url').notNull().default(''),
+  organisingDepartmentId: text('organising_department_id'),
+  organisingDepartmentName: text('organising_department_name').notNull(),
+  organizerName: text('organizer_name').notNull(),
+  contactEmail: text('contact_email').notNull(),
+  contactPhone: text('contact_phone').notNull(),
+  showContactPhonePublicly: boolean('show_contact_phone_publicly').notNull().default(true),
+  targetAudience: text('target_audience').notNull(),
+  requirements: text('requirements').notNull().default(''),
+  language: text('language').notNull().default('English'),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
+  visibility: text('visibility').notNull().default('PUBLIC'),
+  audienceRestriction: text('audience_restriction').notNull().default('PUBLIC'),
+  capacity: integer('capacity').notNull().default(100),
+  waitlistCapacity: integer('waitlist_capacity').notNull().default(25),
+  registeredCount: integer('registered_count').notNull().default(0),
+  waitlistCount: integer('waitlist_count').notNull().default(0),
+  checkedInCount: integer('checked_in_count').notNull().default(0),
+  checkedOutCount: integer('checked_out_count').notNull().default(0),
+  registrationOpenDate: text('registration_open_date').notNull().default(''),
+  registrationDeadline: text('registration_deadline').notNull(),
+  isPaid: boolean('is_paid').notNull().default(false),
+  feeAmount: integer('fee_amount').notNull().default(0),
+  studentFeeAmount: integer('student_fee_amount').notNull().default(0),
+  feeCurrency: text('fee_currency').notNull().default('KES'),
+  requiresApproval: boolean('requires_approval').notNull().default(false),
+  allowWaitlist: boolean('allow_waitlist').notNull().default(true),
+  allowSelfCancel: boolean('allow_self_cancel').notNull().default(true),
+  reminderHours: jsonb('reminder_hours').$type<number[]>().notNull().default([24, 2]),
+  confirmationMessage: text('confirmation_message').notNull().default(''),
+  certificateEnabled: boolean('certificate_enabled').notNull().default(false),
+  certificateType: text('certificate_type').notNull().default('Certificate of Participation'),
+  certificateMinAttendance: boolean('certificate_min_attendance').notNull().default(true),
+  feedbackEnabled: boolean('feedback_enabled').notNull().default(true),
+  bannerImageUrl: text('banner_image_url').notNull().default(''),
+  featured: boolean('featured').notNull().default(false),
+  status: text('status').notNull().default('DRAFT'),
+  isPublished: boolean('is_published').notNull().default(false),
+  createdById: text('created_by_id').notNull(),
+  createdByName: text('created_by_name').notNull(),
+  approvedById: text('approved_by_id'),
+  approvedByName: text('approved_by_name'),
+  approvedAt: timestamp('approved_at'),
+  publishedById: text('published_by_id'),
+  publishedByName: text('published_by_name'),
+  publishedAt: timestamp('published_at'),
+  cancelledReason: text('cancelled_reason'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const collegeEventSchedules = pgTable('college_event_schedules', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  dayNumber: integer('day_number').notNull().default(1),
+  timeRange: text('time_range').notNull(),
+  title: text('title').notNull(),
+  speakerName: text('speaker_name').notNull().default(''),
+  location: text('location').notNull().default(''),
+  description: text('description').notNull().default(''),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+export const collegeEventSpeakers = pgTable('college_event_speakers', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: text('name').notNull(),
+  roleTitle: text('role_title').notNull(),
+  speakerRole: text('speaker_role').notNull().default('Guest Speaker'),
+  organization: text('organization').notNull().default('HI-TECH College'),
+  bio: text('bio').notNull().default(''),
+  photoUrl: text('photo_url').notNull().default(''),
+  confirmationStatus: text('confirmation_status').notNull().default('CONFIRMED'),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+export const collegeEventRegistrations = pgTable('college_event_registrations', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationNumber: text('registration_number').notNull().unique(),
+  lookupTokenHash: text('lookup_token_hash').notNull(),
+  qrToken: text('qr_token').notNull().unique(),
+  fullName: text('full_name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone').notNull(),
+  participantCategory: text('participant_category').notNull(),
+  organizationOrInstitution: text('organization_or_institution').notNull().default(''),
+  studentOrStaffNumber: text('student_or_staff_number').notNull().default(''),
+  attendanceMode: text('attendance_mode').notNull().default('PHYSICAL'),
+  ticketType: text('ticket_type').notNull().default('General Admission'),
+  paymentStatus: text('payment_status').notNull().default('PAID'),
+  amountDue: integer('amount_due').notNull().default(0),
+  amountPaid: integer('amount_paid').notNull().default(0),
+  specialRequirements: text('special_requirements').notNull().default(''),
+  consentAccepted: boolean('consent_accepted').notNull().default(true),
+  status: text('status').notNull().default('CONFIRMED'),
+  checkedIn: boolean('checked_in').notNull().default(false),
+  checkedInAt: timestamp('checked_in_at'),
+  checkedInById: text('checked_in_by_id'),
+  checkedInByName: text('checked_in_by_name'),
+  checkedOut: boolean('checked_out').notNull().default(false),
+  checkedOutAt: timestamp('checked_out_at'),
+  reviewedByName: text('reviewed_by_name'),
+  reviewNote: text('review_note'),
+  organiserNotes: text('organiser_notes').notNull().default(''),
+  certificateCode: text('certificate_code'),
+  registeredAt: timestamp('registered_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const collegeEventVenues = pgTable('college_event_venues', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  campus: text('campus').notNull(),
+  building: text('building').notNull(),
+  venueType: text('venue_type').notNull(),
+  capacity: integer('capacity').notNull().default(100),
+  seatingLayout: text('seating_layout').notNull().default(''),
+  resources: jsonb('resources').$type<string[]>().notNull().default([]),
+  accessibilityFeatures: text('accessibility_features').notNull().default(''),
+  maintenanceStatus: text('maintenance_status').notNull().default('AVAILABLE'),
+});
+
+export const collegeEventPayments = pgTable('college_event_payments', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationId: text('registration_id')
+    .references(() => collegeEventRegistrations.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationNumber: text('registration_number').notNull(),
+  participantName: text('participant_name').notNull(),
+  participantEmail: text('participant_email').notNull(),
+  ticketType: text('ticket_type').notNull(),
+  amount: integer('amount').notNull().default(0),
+  currency: text('currency').notNull().default('KES'),
+  method: text('method').notNull().default('MPESA'),
+  transactionRef: text('transaction_ref').notNull(),
+  status: text('status').notNull().default('PENDING'),
+  verifiedById: text('verified_by_id'),
+  verifiedByName: text('verified_by_name'),
+  verifiedAt: timestamp('verified_at'),
+  refundReason: text('refund_reason'),
+  refundedAt: timestamp('refunded_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const collegeEventInvitations = pgTable('college_event_invitations', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  invitationCode: text('invitation_code').notNull().unique(),
+  inviteeName: text('invitee_name').notNull(),
+  inviteeEmail: text('invitee_email').notNull(),
+  inviteePhone: text('invitee_phone').notNull().default(''),
+  groupName: text('group_name').notNull().default(''),
+  status: text('status').notNull().default('SENT'),
+  expiresAt: text('expires_at').notNull(),
+  convertedRegistrationId: text('converted_registration_id'),
+  invitedByName: text('invited_by_name').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const collegeEventFeedbacks = pgTable('college_event_feedbacks', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationId: text('registration_id'),
+  respondentName: text('respondent_name').notNull(),
+  isAnonymous: boolean('is_anonymous').notNull().default(false),
+  overallRating: integer('overall_rating').notNull(),
+  speakerRating: integer('speaker_rating').notNull(),
+  organisationRating: integer('organisation_rating').notNull(),
+  venueRating: integer('venue_rating').notNull(),
+  recommendNps: integer('recommend_nps').notNull(),
+  comments: text('comments').notNull().default(''),
+  futureTopicInterest: text('future_topic_interest').notNull().default(''),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const collegeEventCertificates = pgTable('college_event_certificates', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationId: text('registration_id')
+    .references(() => collegeEventRegistrations.id, { onDelete: 'cascade' })
+    .notNull(),
+  certificateNumber: text('certificate_number').notNull().unique(),
+  verificationCode: text('verification_code').notNull().unique(),
+  participantName: text('participant_name').notNull(),
+  participantEmail: text('participant_email').notNull(),
+  certificateType: text('certificate_type').notNull(),
+  status: text('status').notNull().default('ISSUED'),
+  issuedAt: timestamp('issued_at').defaultNow().notNull(),
+  issuedByName: text('issued_by_name').notNull(),
+  revokedReason: text('revoked_reason'),
+});
+
+export const collegeEventMedia = pgTable('college_event_media', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  title: text('title').notNull(),
+  mediaType: text('media_type').notNull(),
+  url: text('url').notNull(),
+  caption: text('caption').notNull().default(''),
+  altText: text('alt_text').notNull().default(''),
+  visibility: text('visibility').notNull().default('PUBLIC'),
+  consentVerified: boolean('consent_verified').notNull().default(true),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const collegeEventSettings = pgTable('college_event_settings', {
+  id: text('id').primaryKey(),
+  defaultCurrency: text('default_currency').notNull().default('KES'),
+  defaultTimezone: text('default_timezone').notNull().default('Africa/Nairobi'),
+  autoGenerateTickets: boolean('auto_generate_tickets').notNull().default(true),
+  allowGuestRegistration: boolean('allow_guest_registration').notNull().default(true),
+  requireFeedbackConsent: boolean('require_feedback_consent').notNull().default(true),
+  defaultReminderHours: jsonb('default_reminder_hours').$type<number[]>().notNull().default([48, 24, 2]),
+  dataRetentionDays: integer('data_retention_days').notNull().default(365),
+  updatedByName: text('updated_by_name').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const collegeEventNotifications = pgTable('college_event_notifications', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id')
+    .references(() => collegeEvents.id, { onDelete: 'cascade' })
+    .notNull(),
+  registrationId: text('registration_id'),
+  channel: text('channel').notNull().default('EMAIL'),
+  recipientName: text('recipient_name').notNull(),
+  recipientTarget: text('recipient_target').notNull(),
+  subject: text('subject').notNull(),
+  message: text('message').notNull(),
+  status: text('status').notNull().default('DISPATCHED'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const collegeEventAuditLogs = pgTable('college_event_audit_logs', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull(),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  actorRole: text('actor_role').notNull(),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+

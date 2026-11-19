@@ -36,6 +36,8 @@ export interface WebsiteHeaderNavTarget {
   categoryFilter?: string;
   levelFilter?: string;
   departmentFilter?: string;
+  dateFilter?: string;
+  modeFilter?: string;
   action?: "chat" | "portal" | "apply";
 }
 
@@ -236,6 +238,29 @@ const NAVIGATION_ITEMS: NavItem[] = [
     ],
   },
   {
+    id: "events",
+    label: "Events",
+    href: "/events",
+    matchPages: [
+      "events",
+      "events-calendar",
+      "events-verify-ticket",
+      "event-details",
+      "event-register",
+      "event-confirmation",
+    ],
+    target: { page: "events" },
+    children: [
+      { label: "All College Events", href: "/events", target: { page: "events", dateFilter: "ALL" } },
+      { label: "Monthly Events Calendar", href: "/events/calendar", target: { page: "events-calendar" } },
+      { label: "Happening Today", href: "/events", target: { page: "events", dateFilter: "TODAY" } },
+      { label: "Upcoming Summits & Expos", href: "/events", target: { page: "events", dateFilter: "UPCOMING" } },
+      { label: "Workshops & Training", href: "/events", target: { page: "events", categoryFilter: "Workshop & Training" } },
+      { label: "Online Webinars", href: "/events", target: { page: "events", modeFilter: "ONLINE" } },
+      { label: "Verify Ticket / Certificate", href: "/events/verify-ticket", target: { page: "events-verify-ticket" } },
+    ],
+  },
+  {
     id: "news",
     label: "News & Events",
     href: "/news",
@@ -243,7 +268,7 @@ const NAVIGATION_ITEMS: NavItem[] = [
     target: { page: "news" },
     children: [
       { label: "Latest News", href: "/news", target: { page: "news" } },
-      { label: "Upcoming Events", href: "/news", target: { page: "news" } },
+      { label: "College Events Calendar", href: "/events/calendar", target: { page: "events-calendar" } },
       { label: "Academic Circulars", href: "/resources", target: { page: "resources" } },
     ],
   },
@@ -288,8 +313,16 @@ export default function WebsiteHeader({
       onOpenPortalModal();
       return;
     }
-    const { page, slug, categoryFilter, levelFilter, departmentFilter } = target;
-    onNavigate(page, { slug, categoryFilter, levelFilter, departmentFilter });
+    const { page, slug, categoryFilter, levelFilter, departmentFilter, dateFilter, modeFilter } =
+      target;
+    onNavigate(page, {
+      slug,
+      categoryFilter,
+      levelFilter,
+      departmentFilter,
+      dateFilter,
+      modeFilter,
+    });
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }

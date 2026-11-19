@@ -1,0 +1,1477 @@
+# **HI-TECH College Events System — Complete Feature Specification**
+
+We now expand the Events module into a complete event-management platform for the public website and the college portal.
+
+**Scope: Public events, event creation, registration, participant management, approval, tickets, QR check-in, notifications, reports, mobile and desktop.**
+
+The system will support anyone registering for public events, while organisers manage the event and participants from the staff portal.
+
+# **1. Complete Events Module**
+
+[College Event Management System for · Built with Blink](https://images.openai.com/static-rsc-4/TBt2uMG82apebQw_qAWCKA4Aemo3lXc75j1EPms9Jz0BLTHkl3dXKCmCSe7b6Fapb27Y2osVrjs8aoCGb9BjFfxcH8Iwi58juQa450gTo5oQ_EGJYT8Lew1cAXlb6hAWJKHGKwnh_8fk4lorsC7QPc5dvgHmaNb7tjPBmhqNjJ0?purpose=inline)
+
+[Solutions - Canapii Event Management Platform | Canapii](https://images.openai.com/static-rsc-4/0qh4NITlEy_U63opFWytlNjp0U8dOOIhruqXq8yudwUGpNh8Q-9kDqEmS-hPXRrKudj_65anKirme5dEvCEiRWfjJB2nJrTkxd0ORthf_UtVLcHiF_iXQCOHfLK_lMGXunfXfY_bDw8pciozZcn6N3z8n2bKKc7IIbi25yeWmDg?purpose=inline)
+
+[Go Campus — Case Study · DataHex](https://images.openai.com/static-rsc-4/sAxgrNIOAPHlrBXGBWuVGXxxxWcNRP5sCpoofSStr0l2gqhkTECAlIekQaYaPaJ9ZXwJ2GsOtV-6m4sJD4uzin8jE8SowUMTNZxqneom5i-RWchU-3vcYCCv0pkq0kb1CztgkrgUS5lVLkWTLT0d8Xqp_pxnLfYJ-XUNPPw9rGk?purpose=inline)
+
+14
+
+## **Main modules**
+
+| Module             | Features                                  |
+| ------------------ | ----------------------------------------- |
+| Events Dashboard   | Analytics, upcoming events, registrations |
+| Event Management   | Create, edit, duplicate, publish          |
+| Event Details      | Complete event information                |
+| Event Categories   | Workshops, seminars, graduation           |
+| Event Registration | Public and internal registrations         |
+| Participants       | Participant records                       |
+| Approvals          | Event and participant approvals           |
+| Tickets            | Digital event tickets                     |
+| QR Check-in        | Attendance scanning                       |
+| Waitlist           | Capacity-based waiting lists              |
+| Speakers           | Speaker profile management                |
+| Programme          | Event schedule                            |
+| Venue Management   | Rooms, venues, capacity                   |
+| Event Payments     | Fees and payment tracking                 |
+| Notifications      | Email, SMS and portal notifications       |
+| Attendance         | Check-in, check-out                       |
+| Reports            | Analytics, exports and summaries          |
+| Event Feedback     | Surveys and feedback                      |
+| Certificates       | Participation certificates                |
+| Media              | Event photographs and videos              |
+| Settings           | Rules and configuration                   |
+| Audit Trail        | Track actions and changes                 |
+
+# **2. Event Management Dashboard**
+
+**Route:** `/portal/staff/events`
+
+The dashboard is the main entry point for event organisers.
+
+[Event Management Software for Conferences and Events](https://images.openai.com/static-rsc-4/S7IIeQ82ULOadwEWQL3azryefymyAfbR3QK2rkVQHdErjXu3AWoIq_Jya3vBWgFaIvf7LwKQShS6moRUbQ-0Q0XIJ8tWu7WYII0n3KXwuCONJGPRy6xqYgEXLI-97N-tFWNIoe64TOKMbQn_rxiqjN3PZV-N-4v5B7JpzEa6i5g?purpose=inline)
+
+[Event Management Dashboard :: Behance](https://images.openai.com/static-rsc-4/DgiJJxFFfJ4_loprSAMPsKnMtyAJr6qtGm3BR_lA_ucm88GW4IuN9qgfBLfArLHXwIgxU7VD5qJYH2QdRDymFe3yG6v85USAKoC026vAXm1Tf8u4VLR5o9QQInpzIDLdN2Q1k8Y-39RFl84sYsQ2lIzs49VFsx0i4v7ZKTaEJYY?purpose=inline)
+
+[Introducing Goldcast's New ROI Dashboard for Event Performance Metrics](https://images.openai.com/static-rsc-4/yNBaOngAXdehLqVDiVvOMQaCPODvhfNZ5dBQVuIAWnvpk5SEIHsEt8HynDA9_210DCM_m-A-En2OMtDlZBVHItPPpETN98cmm7uAb_q6RaTAnu5KEXpFuYP3C0i39ic6cS-L-OpVPgH9otFEGq4vDt6tp05O8heEJtF_TSPdEGM?purpose=inline)
+
+14
+
+### **Dashboard statistics**
+
+- Total events.
+- Draft events.
+- Pending approvals.
+- Published events.
+- Upcoming events.
+- Ongoing events.
+- Completed events.
+- Cancelled events.
+- Total registrations.
+- Confirmed participants.
+- Pending participants.
+- Waitlisted participants.
+- Checked-in participants.
+- No-show participants.
+- Total event revenue.
+- Outstanding event fees.
+
+### **Dashboard sections**
+
+- Upcoming events calendar.
+- Recent registrations.
+- Events needing approval.
+- Recent activity.
+- Registration trends.
+- Event attendance trends.
+- Popular events.
+- Registration alerts.
+- Event capacity alerts.
+- Upcoming deadlines.
+
+# **3. Event creation and management**
+
+**Route:** `/portal/staff/events/create`
+
+[Conversational Event Organizer Web App — · Built with Blink](https://images.openai.com/static-rsc-4/kJuh6o0qmNLBQJ64fYf1ZfylVoF7pHzpZgazBofjM8qFLQUY8Ki4brPh_fKGwJ2zngA7DSZDmtS-J61fW-rbNzKB1eXIfD-YyWuZCAUwvbCmuPq37dh4BcK5VHZ2CmLsoGBuFLkZoYQ-1kvhnT4g0Y4dTWIYM11PdRMgZsMfiF0?purpose=inline)
+
+[Para organizadores | Passo Giro — Plataforma de inscrições para eventos esportivos | Passo Giro](https://images.openai.com/static-rsc-4/iDUjFIjBI-lxrx-AKlFHj6uem6UkjXg6k37cfhx1fE0xznvOL_RtMr06R85PrIxdT25ZlD1AacrGiC1XFyePa3HGsPSs9m7FWBlB6CuT_noHJCEAi6WaRs-5FjgzJxTbEo5T4mhuUJho_adfQcOTKZvvI00hgoVol0_SB8PblF8?purpose=inline)
+
+13
+
+## **Event creation wizard**
+
+1. **Basic information** — name, category, description.
+2. **Date and time** — start, end and registration deadlines.
+3. **Location** — venue, online link or hybrid.
+4. **Programme** — sessions, activities and schedule.
+5. **Speakers** — speakers, hosts and facilitators.
+6. **Registration** — capacity, audience and registration fields.
+7. **Fees** — free or paid, payment requirements.
+8. **Notifications** — registration and event messages.
+9. **Visibility** — public, private, invitation or internal.
+10. **Review and publish** — preview, submit and approval.
+
+### **Basic information**
+
+- Event title.
+- Event slug.
+- Event code.
+- Category.
+- Short description.
+- Full description.
+- Event banner.
+- Event gallery.
+- Event tags.
+- Organising department.
+- Event owner.
+- Event coordinator.
+- Event contact email.
+- Event contact phone (public only if authorised).
+- Event status.
+- Featured event.
+- Event language.
+
+### **Event types**
+
+- Conference.
+- Seminar.
+- Workshop.
+- Open day.
+- Graduation.
+- Career fair.
+- Exhibition.
+- Competition.
+- Hackathon.
+- Webinar.
+- Training.
+- Staff meeting.
+- Student meeting.
+- Sports event.
+- Cultural event.
+- Alumni event.
+- Parent meeting.
+- Orientation.
+- Public lecture.
+- Fundraising.
+- Other configurable categories.
+
+### **Event date and time**
+
+- Start date.
+- Start time.
+- End date.
+- End time.
+- Registration opening date.
+- Registration closing date.
+- Time zone.
+- Recurring events.
+- Multi-day events.
+- Day-by-day programme.
+- Calendar reminders.
+- Event postponement.
+- Rescheduling.
+
+### **Event location**
+
+- Campus.
+- Venue.
+- Building.
+- Room.
+- Hall.
+- Workshop area.
+- Outdoor location.
+- Google Maps location link.
+- Online meeting platform.
+- Meeting link.
+- Hybrid attendance.
+- Venue capacity.
+- Accessibility information.
+- Directions and parking information.
+
+# **4. Event registration management**
+
+**Route:** `/portal/staff/events/:eventId/registrations`
+
+[Best 15 Event Ticketing Software for Organisers](https://images.openai.com/static-rsc-4/OMJ5GcoeuFBQrkclNDAnJrMdJBgXjLkzMJ-25gXH-MR5AUhEXazUmT0B5EzUC2h3Hd6zVKOMZdx-2qbxVGRv1ZUILe1ROqqH0H49RM1H4Di7xaN9MYwkkc0AzZnauHoMqjOGBSD1xTG-csE2yB9nrgByFN4dI1ZgZ6GzOJvw5Fk?purpose=inline)
+
+[Reporting & Analytics - EnMotive](https://images.openai.com/static-rsc-4/4-wqJhR1S_T5JptOAbPHDuQxnC7-UNNgx3CkrmKA0gCOGFMYgenNfXX-lkGyWO5sZ0hBf9BYAdi03LedrzCBGZiChRVEp7HV3QzsodKMV97cfucAPcJDz2P8bkcKuMWvdepjp_v_DORIQLHgxSzm-TOYDHL8eCm5Iq9mTdY0L98?purpose=inline)
+
+[Overview of Attendees Table — FilPass Helpdesk](https://images.openai.com/static-rsc-4/KkGju6orR3PBh8qwXntxsDhH0QWhhLK2iyEEOtHvaFFrvZjPPjO-3a81AzfSQT0KaYTOM_SYYJeNA_p1vY4jzmpGfsIq6MmRCAATLlpi34HiLCOsCLUeEEIfZmA3ZUufjEOMpemCKdFvnyPtSKtn9teCft1WW__ZBnrP83RV0vg?purpose=inline)
+
+9
+
+## **Registration features**
+
+- View all registered participants.
+- Search participant.
+- Filter by status.
+- Filter by participant category.
+- Filter by organisation.
+- Filter by attendance mode.
+- Filter by registration date.
+- View participant details.
+- Edit permitted registration details.
+- Approve registration.
+- Reject registration.
+- Cancel registration.
+- Reinstate registration where allowed.
+- Move participant to waitlist.
+- Confirm participant.
+- Send notification.
+- Resend ticket.
+- Export participants.
+- Print participant list.
+- Add participant manually.
+- Register college student.
+- Register college staff.
+- Register guest.
+- Bulk registration.
+- Bulk approval.
+- Bulk messaging.
+- Import registrations from CSV.
+- Registration notes for authorised organisers.
+
+## **Participant statuses**
+
+| Status                | Meaning               |
+| --------------------- | --------------------- |
+| `PENDING`             | Awaiting approval     |
+| `CONFIRMED`           | Registration accepted |
+| `WAITLISTED`          | Waiting for capacity  |
+| `REJECTED`            | Registration declined |
+| `CANCELLED`           | Participant cancelled |
+| `CHECKED_IN`          | Participant arrived   |
+| `CHECKED_OUT`         | Participant left      |
+| `NO_SHOW`             | Did not attend        |
+| `INVITED`             | Invitation sent       |
+| `INVITATION_ACCEPTED` | Invitation accepted   |
+
+## **Participant profile**
+
+Each event participant should have a record containing:
+
+- Registration number.
+- Full name.
+- Email.
+- Phone.
+- Organisation.
+- Participant category.
+- Registration date.
+- Registration status.
+- Payment status.
+- Attendance mode.
+- Ticket.
+- QR code.
+- Special requirements.
+- Approval history.
+- Attendance record.
+- Event feedback.
+- Certificate status.
+
+Participant details should be visible only to authorised event personnel and retained according to the college data-retention policy.
+
+# **5. Registration approval system**
+
+Events can use different approval workflows.
+
+| Registration rule       | Behaviour                        |
+| ----------------------- | -------------------------------- |
+| Open registration       | Automatically confirm            |
+| Approval required       | Wait for organiser               |
+| Staff approval          | Only authorised officers approve |
+| Department approval     | Department officer approves      |
+| Invitation only         | Register through invitation      |
+| Restricted registration | Eligibility checked              |
+| Paid registration       | Payment verification             |
+| Free registration       | No payment required              |
+
+### **Approval workflow**
+
+\#chatgpt-mermaid-\_r_2qs\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_2qs\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_2qs\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_2qs\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_2qs\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_2qs\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_2qs\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_2qs\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_2qs\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_2qs\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2qs\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2qs\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_2qs\_ p{margin:0;}#chatgpt-mermaid-\_r_2qs\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_2qs\_ .label text,#chatgpt-mermaid-\_r_2qs\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .node rect,#chatgpt-mermaid-\_r_2qs\_ .node circle,#chatgpt-mermaid-\_r_2qs\_ .node ellipse,#chatgpt-mermaid-\_r_2qs\_ .node polygon,#chatgpt-mermaid-\_r_2qs\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .rough-node .label text,#chatgpt-mermaid-\_r_2qs\_ .node .label text,#chatgpt-mermaid-\_r_2qs\_ .image-shape .label,#chatgpt-mermaid-\_r_2qs\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_2qs\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .rough-node .label,#chatgpt-mermaid-\_r_2qs\_ .node .label,#chatgpt-mermaid-\_r_2qs\_ .image-shape .label,#chatgpt-mermaid-\_r_2qs\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_2qs\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_2qs\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2qs\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2qs\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_2qs\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_2qs\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2qs\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2qs\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_2qs\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_2qs\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2qs\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_2qs\_ .icon-shape,#chatgpt-mermaid-\_r_2qs\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_2qs\_ .icon-shape p,#chatgpt-mermaid-\_r_2qs\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_2qs\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_2qs\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2qs\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_2qs\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_2qs\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_2qs\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_2qs\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_2qs\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_2qs\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2qs\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_2qs\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2qs\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_2qs\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_2qs\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_2qs\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_2qs\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .node rect,#chatgpt-mermaid-\_r_2qs\_ .node circle,#chatgpt-mermaid-\_r_2qs\_ .node ellipse,#chatgpt-mermaid-\_r_2qs\_ .node polygon,#chatgpt-mermaid-\_r_2qs\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_2qs\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_2qs\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_2qs\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_2qs\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2qs\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Participant submitsregistrationRegistration createdApproval required?Confirm registrationPending approvalOrganiser reviewsDecisionRejectedIssue ticketSend notificationNoYesApproveReject
+
+### **Approval interface**
+
+- Pending registrations.
+- Participant information.
+- Registration submission time.
+- Participant eligibility.
+- Event capacity.
+- Approval notes.
+- Approve.
+- Reject.
+- Request more information.
+- Bulk approve.
+- Approval history.
+
+# **6. Waitlist management**
+
+The system should automatically place participants on the waiting list when an event reaches capacity, if the organiser enables the waitlist.
+
+### **Waitlist features**
+
+- Enable or disable waitlist.
+- Waitlist capacity.
+- Automatic placement.
+- Waitlist numbering.
+- Priority groups.
+- Waitlist participant list.
+- Notify participants when seats become available.
+- Promote participant to confirmed.
+- Promotion expiry deadline.
+- Automatic promotion rules, if configured.
+- Remove participant from waitlist.
+- Waitlist reports.
+
+### **Example**
+
+# **Digital Skills Workshop**
+
+# **100**
+
+Event capacity
+
+# **100**
+
+Confirmed registrations
+
+# **12**
+
+Waiting list
+
+# **8**
+
+Cancelled registrations
+
+When seats become available, the organiser can promote waiting-list participants.
+
+# **7. Digital event tickets**
+
+Every confirmed participant can receive an individual ticket.
+
+[מערכת רישום ומכירת כרטיסים](https://images.openai.com/static-rsc-4/P_B9Mnecskmi5hrtnh7OfNbH4GQLhXYSCh3_VbV5XHtv9tF03APHrcQXrX4JYu4opP1iQniuhVVtq1obnzjQ7wjz2_4W8cjBcv2VH-UJzlEGOlEGvA9GoikQHRyW38syHe-BYausdr4lPbiSWUHJd7D4jQjq5Ile78C0Od1KwYM?purpose=inline)
+
+[Event registration  | Event Portal | UZH](https://images.openai.com/static-rsc-4/ey4hCoj0ZWQlxmykci6Y62k22fcQ8kkzIeGzQDY7huaYRdpPcE7MLAKK_CK403KL9butSE1VvwOK54DAoJaTCIaLdhPczF6GNU_pQXtyOLsvMhRUG3HH0IFdsC7GEbRhQSkRk70uQYVHdzAvy0tyyj5jfdQlq5FLCA6o6gtQIJ0?purpose=inline)
+
+[Capture Leads with Our Easy-to-use Lead Retrieval app | Eventify](https://images.openai.com/static-rsc-4/IzF2GuUJglNa2fZ1bGEzkjOIz2I08MvSZzR6xBaUfxfB515F9fySQqdAEpxU5GBefuVkDo5YWTbbHdIaIWVVNL3TKm7ztwx1LDimyNRIN6xmEFy57mev_91Y-ZIiZXxygA6uWKXIvNF1KP6EFoJZPYRx5zeh7ZvEB3W-cd02KJs?purpose=inline)
+
+12
+
+### **Ticket features**
+
+- Unique ticket number.
+- Event name.
+- Event date.
+- Event venue.
+- Participant name.
+- Registration number.
+- QR code.
+- Ticket status.
+- Ticket type.
+- Download PDF.
+- Print ticket.
+- Email ticket.
+- Resend ticket.
+- Ticket validation.
+- Ticket cancellation.
+- Ticket replacement.
+- Multiple ticket categories.
+
+### **Ticket types**
+
+- General admission.
+- Student ticket.
+- Staff ticket.
+- VIP.
+- Speaker.
+- Exhibitor.
+- Sponsor.
+- Paid ticket.
+- Complimentary ticket.
+- Custom ticket types.
+
+### **Ticket security**
+
+- QR token must be unpredictable.
+- QR code must not contain participant personal information.
+- Ticket must be validated server-side.
+- Cancelled tickets must be rejected.
+- Duplicate check-in must be prevented.
+- QR check-in must be authorised.
+
+# **8. QR code event check-in**
+
+**Route:** `/portal/staff/events/:eventId/check-in`
+
+[Event App | Best Mobile Event App for Conferences | Accelevents](https://images.openai.com/static-rsc-4/x_afQuhSN2rOUPNAOIdPYN3V2jLhwRcLYMDMRnHPEAOxLeH_mF9sQ34wxxcKEDNPMA0NENInfxhpi2DD-AJjIk1B4m0OYEWCtvLua0AbHW9D3MkkW13ILVogfRLaUe_-nbE-KABGDxr8fAw51rMimo5oZW4YC5jLRrfo5R05UqI?purpose=inline)
+
+[Event Ticket QR Code Generator and Check-in System](https://images.openai.com/static-rsc-4/7xeq63SWUybyGq6AApPfBCeROwA7sn_TdSoNQ3gpuSeAaafg_oUytpO1nuwWDztYK2qZbumDKndhe3oDUVnlnw0ELyZ3JwkQ6W5AaJlazyVTD1xekoq7BR3hk4_JheEt6DtLBhTTOyHgyWRwUOJGV7pLEmeN-h0rQgFbpstzoSE?purpose=inline)
+
+[Australian Event Ticketing Platform for Organisers | Tickeasy](https://images.openai.com/static-rsc-4/-V0CtWV57bq1ZNWCESaOMU5oAGSXZSU72kOnx9DAxPZjnQttwuY7rewBk3NdQiXbSw3pG8VUFeaPBe6iyRxfzqvlF58XVDLW0UfITjcy6sbe1xS_kkLD6ogQNEIR3RTOYOYoUIFmXkUSGgt7X5ccVaMEAQwPfOa-rcMh4E2SAiU?purpose=inline)
+
+12
+
+## **Check-in options**
+
+- Scan QR code using mobile camera.
+- Scan using laptop webcam.
+- Manual registration number lookup.
+- Search participant by name.
+- Search participant by phone.
+- Search participant by email.
+- Validate ticket.
+- Check in.
+- Check out.
+- Record arrival time.
+- Record departure time.
+- Record check-in officer.
+- Offline check-in mode with later synchronisation, subject to implementation.
+- Manual correction with audit trail.
+
+## **Check-in screen**
+
+# **Event check-in**
+
+Digital Skills & AI Workshop
+
+# **84**
+
+Participants checked in
+
+# **100**
+
+Confirmed participants
+
+## **Scan participant ticket**
+
+Use the camera or enter a registration number manually.
+
+Check-in result: Valid ticket — Participant confirmed
+
+### **Check-in permissions**
+
+- `event.checkin`
+- `event.checkin.manage`
+- `event.attendance.edit`
+- `event.checkin.export`
+
+# **9. Event programme and schedule**
+
+**Route:** `/portal/staff/events/:eventId/programme`
+
+Organisers can build the programme for single-day or multi-day events.
+
+### **Programme management**
+
+- Add programme session.
+- Edit session.
+- Delete session.
+- Reorder sessions.
+- Set start and end times.
+- Assign venue.
+- Assign speakers.
+- Assign facilitators.
+- Assign moderator.
+- Assign host.
+- Set session description.
+- Add session materials.
+- Add session notes.
+- Publish programme.
+- Export programme.
+- Print programme.
+- Public programme view.
+
+### **Example programme**
+
+| Time        | Activity           | Responsible       |
+| ----------- | ------------------ | ----------------- |
+| 08:00–08:30 | Registration       | Registration team |
+| 08:30–09:00 | Opening ceremony   | Principal         |
+| 09:00–10:00 | AI in education    | Guest speaker     |
+| 10:00–10:30 | Tea break          | Organisers        |
+| 10:30–12:30 | Practical training | Trainers          |
+| 12:30–13:30 | Lunch              | Organisers        |
+| 13:30–15:30 | Practical workshop | Facilitators      |
+| 15:30–16:00 | Closing            | Event coordinator |
+
+# **10. Speaker and facilitator management**
+
+**Route:** `/portal/staff/events/:eventId/speakers`
+
+### **Speaker management**
+
+- Add speaker.
+- Upload profile photo.
+- Speaker name.
+- Official title.
+- Organisation.
+- Biography.
+- Qualifications.
+- Professional experience.
+- Specialisation.
+- Social links, if approved.
+- Contact information, private by default.
+- Speaker sessions.
+- Speaker invitation.
+- Speaker invitation status.
+- Speaker confirmation.
+- Speaker schedule.
+- Speaker documents.
+- Speaker notes.
+
+### **Speaker roles**
+
+- Keynote speaker.
+- Guest speaker.
+- Facilitator.
+- Trainer.
+- Moderator.
+- Panelist.
+- Host.
+- Presenter.
+- Demonstrator.
+
+# **11. Event venue and resource management**
+
+**Route:** `/portal/staff/events/venues`
+
+The college should manage internal venues to prevent double bookings.
+
+### **Venue features**
+
+- Venue directory.
+- Campus.
+- Building.
+- Room.
+- Hall.
+- Auditorium.
+- Laboratory.
+- Workshop.
+- Outdoor venue.
+- Venue capacity.
+- Seating layout.
+- Availability.
+- Venue booking.
+- Booking approval.
+- Equipment requirements.
+- Accessibility.
+- Venue maintenance status.
+
+### **Venue resources**
+
+- Projectors.
+- Computers.
+- Internet.
+- Sound system.
+- Microphones.
+- Chairs.
+- Tables.
+- Cameras.
+- Lighting.
+- Whiteboards.
+- Extension cables.
+- Generator.
+- Power backup.
+
+### **Conflict detection**
+
+The system should prevent or warn about:
+
+- Two events using the same room simultaneously.
+- Venue capacity exceeding limits.
+- Resource conflicts.
+- Equipment conflicts.
+- Event setup time conflicts.
+- Cleaning and breakdown conflicts.
+
+# **12. Event payment management**
+
+**Route:** `/portal/staff/events/:eventId/payments`
+
+Events can be free, paid or partially sponsored.
+
+### **Payment features**
+
+- Free event.
+- Paid event.
+- Configurable ticket price.
+- Different ticket prices.
+- Student discounts.
+- Staff discounts.
+- Early-bird pricing.
+- Group registration.
+- Payment verification.
+- Refund request.
+- Refund tracking.
+- Payment reports.
+- Revenue reports.
+- Outstanding balances.
+- Payment receipt.
+- M-Pesa integration.
+- Payment gateway integration, if approved.
+
+### **Payment status**
+
+| Status           | Description                  |
+| ---------------- | ---------------------------- |
+| `UNPAID`         | Payment not received         |
+| `PENDING`        | Payment verification pending |
+| `PAID`           | Payment verified             |
+| `PARTIALLY_PAID` | Partial payment              |
+| `FAILED`         | Payment failed               |
+| `REFUNDED`       | Refund completed             |
+| `CANCELLED`      | Payment cancelled            |
+
+### **Payment controls**
+
+- No participant should be marked paid solely because the browser says so.
+- Payments must be verified against the payment service or approved payment records.
+- Organisers should have permission-limited payment access.
+- Financial records should be auditable.
+
+# **13. Notifications and communication**
+
+**Route:** `/portal/staff/events/:eventId/communications`
+
+[Boost Attendance with Event Email Marketing Engine](https://images.openai.com/static-rsc-4/cupOk8s1ErdSdFBtOjz1Jj4RrpK4a5gBOALNF5P7RcgUoDSypuNV1jSlRFK06qeQAIDLMfSPBA86lHYhmEjpc_1bvx19o-aXI2CtirJ3ibTZEuwQf0kasJpZjLhPyzbhOKji5B8KOBt_vEpNG4FcOKxtC1VpkqBqAtvQDb6s5SE?purpose=inline)
+
+[Event Management Software | Accelevents Event Platform](https://images.openai.com/static-rsc-4/85LpEtwemxwT5c_1GnMVS-hBkoo1sdSxiITdgba6gOTlcPCKjTGb-_B0RLwunGVaq2voD4JG5Zz49TBv6ua8Saz-CBzjI5A_CdjTFDonTp2YkBaEFrGTMzdXRkrTncJBHZhCB_3A-wQZu8NzJDGoqtwH8NUSgRuyMu5OqgHt3H4?purpose=inline)
+
+[Logiciel de Gestion d’Événements & Billetterie | Eventrize](https://images.openai.com/static-rsc-4/501nZDLxDmjbe00urmD6ecZ9HrMfUesII3WDaXzqhLJpHHoNJmp19FrGR2NP2LuYwh5XLfIoumAsOKnvcNzJWs2h0yBmvswqB1aPMXLjnvXwyoTZdHtVguAXpY85p892jyjG4dmXr_1QBKyyZVv_oGTCiubBFIERCfB0f7FEns8?purpose=inline)
+
+12
+
+## **Automated notifications**
+
+| Trigger                | Notification                 |
+| ---------------------- | ---------------------------- |
+| Registration submitted | Registration acknowledgement |
+| Registration confirmed | Confirmation and ticket      |
+| Registration pending   | Pending approval message     |
+| Registration approved  | Approval notification        |
+| Registration rejected  | Rejection message            |
+| Waitlisted             | Waitlist notification        |
+| Promoted from waitlist | Confirmation                 |
+| Event reminder         | Reminder message             |
+| Event rescheduled      | Updated event details        |
+| Event cancelled        | Cancellation message         |
+| Payment received       | Payment confirmation         |
+| Ticket issued          | Ticket email                 |
+| Certificate issued     | Certificate notification     |
+| Feedback requested     | Feedback invitation          |
+
+### **Notification channels**
+
+- Email.
+- SMS.
+- Portal notification.
+- WhatsApp integration, if configured and consented.
+- Push notification, if mobile application supports it.
+
+### **Event reminder settings**
+
+- 7 days before.
+- 3 days before.
+- 24 hours before.
+- 6 hours before.
+- 1 hour before.
+- Custom reminders.
+
+### **Communication management**
+
+- Compose message.
+- Event email template.
+- SMS template.
+- Personalised messages.
+- Bulk email.
+- Bulk SMS.
+- Participant groups.
+- Message preview.
+- Scheduled message.
+- Delivery status.
+- Failed delivery.
+- Retry delivery.
+- Notification history.
+- Communication consent management.
+
+# **14. Event feedback and evaluation**
+
+**Route:** `/portal/staff/events/:eventId/feedback`
+
+[Event Feedback Survey Template | FormGrid](https://images.openai.com/static-rsc-4/LmbL1ogNrGwS6BX5karv-QBkmQRP6PHksQeQzJ3UFqUO0P2rPvXEQuX3_V5JRbCdBp30GXZNd3rNmvT26M4T8ICji0qRnbSHsaRerG1gHyWVn1EJsWWgO68eqPhGU4XkFrNY911SQPmysTNHx7ogzYf8ZzE9pNzTO-ywkfo8puM?purpose=inline)
+
+[Event Surveys & Feedback Software | Eventation](https://images.openai.com/static-rsc-4/qNyDGw-up0a9biZIV_drd5jYqmId4s0VUaVCvzOVmDc6vZnbpTCArJumNlfi6lEq3X7nWflC4ZhLso_xayAjjJUlOqXNZ3JtEnis2zxy_qcVdW5rqTHIPEWixQ_xnB92EBPQlXC3OTirW_nI7OCPhaGHafZEJVYr9JfQs0oV1UU?purpose=inline)
+
+[Lösung für Event-Feedback | SurveyMonkey](https://images.openai.com/static-rsc-4/uw5tR_daDPw8Hs2-aaF0uquZVsoyA0r8R7anPMVFlX_TkUwaRr5LxaifMtEfKG9MpQhH46lWbQjfEWde_ggoBGkUF4I711QqK9tK0Fg3jeJpSSwq-Dq_PMbBk0h1cdPlgPIKfGwE1Q8cHwfitlHjpOqx724xtA62zaBtty2BjAc?purpose=inline)
+
+7
+
+### **Feedback form builder**
+
+Organisers can create their own feedback questions.
+
+Supported question types:
+
+- Short answer.
+- Long answer.
+- Single choice.
+- Multiple choice.
+- Yes/No.
+- Rating scale.
+- Star rating.
+- NPS-style rating.
+- Dropdown.
+- Date.
+- File upload, if permitted.
+
+### **Feedback categories**
+
+- Overall event satisfaction.
+- Speaker satisfaction.
+- Programme quality.
+- Venue.
+- Facilities.
+- Catering.
+- Training quality.
+- Organisation.
+- Accessibility.
+- Suggestions.
+- Future event interest.
+
+### **Feedback features**
+
+- Anonymous feedback.
+- Identified feedback.
+- Feedback deadline.
+- Mandatory questions.
+- Optional questions.
+- Feedback analytics.
+- Response summaries.
+- Export results.
+- Report generation.
+
+# **15. Event certificates**
+
+**Route:** `/portal/staff/events/:eventId/certificates`
+
+[Simple and Stylish music workshop certificate template - Wauld](https://images.openai.com/static-rsc-4/kcmho_z95SXdPVJVlbdu6efUpKseG2BO-NiZDfVOS5nBXlUD1Ng_fZ8FNrhodQkKuVM1sEyNqXzvKuowr2WyKXWQ2r-xae8m8Ea9cy6GcEoBe1zyZc2BSp-2V0UpvLb9iFt6It484G5df2A7izqVZR6lCur1Tb2ZHtN1irUDcM4?purpose=inline)
+
+[Simple and professional workshop certificate template - Wauld](https://images.openai.com/static-rsc-4/fTpH_zWB7Kn65HfuXI9zuGPeW9_2VbhcRQAK15I3dlAO47mYgkSmpQDlycNPRcOX1qFOyPhU48_-uMz8pZeV0CIn_0Eqk3JLh-8ukgioKiZGtMEZOSMfcjcOoaUCFZ5RQ4orSkWNg9Ke5jaOLV_elg72hKWk3su80LioFLjmhQs?purpose=inline)
+
+[Digital Certificates & Badges | Virtualbadge.io](https://images.openai.com/static-rsc-4/bfa45k3TfxL58f4xEzeKD0BnKj6okNDYdPkV5OJSWxuiyBrGOd6KHPkX1whPQxdAKzhWw687zjxsL0RGYA4N9deU8UXCW87LucNBTZsUiuWNgUV9EbSRK6XwfP_ZbMFEaFND80-Un-8TK7IzarAagYXcSvz4yLRSCJSS8-DjxMc?purpose=inline)
+
+5
+
+### **Certificate types**
+
+- Certificate of participation.
+- Certificate of attendance.
+- Certificate of completion.
+- Certificate of achievement.
+- Certificate of presentation.
+- Certificate of training.
+- Custom certificates.
+
+### **Certificate management**
+
+- Certificate template.
+- Institution logo.
+- Event name.
+- Participant name.
+- Certificate number.
+- Issue date.
+- Event duration.
+- Trainer name.
+- Signatories.
+- QR verification.
+- PDF generation.
+- Bulk certificate generation.
+- Certificate download.
+- Email delivery.
+- Certificate revocation.
+- Verification page.
+
+### **Certificate rules**
+
+Certificates may be issued based on:
+
+- Confirmed registration.
+- Verified attendance.
+- Minimum attendance percentage.
+- Completed workshop.
+- Completed assessment.
+- Organiser approval.
+
+The rules must be configurable per event.
+
+# **16. Event media management**
+
+**Route:** `/portal/staff/events/:eventId/media`
+
+### **Media features**
+
+- Upload event photos.
+- Upload video links.
+- Upload posters.
+- Upload brochures.
+- Upload programme PDFs.
+- Upload presentations.
+- Upload approved documents.
+- Create photo albums.
+- Add captions.
+- Add alt text.
+- Sort media.
+- Publish media.
+- Hide media.
+- Archive media.
+- Public event gallery.
+- Staff-only media.
+- Consent and photo-publication controls.
+
+Media containing participants should be published only under appropriate consent, privacy and institutional policies.
+
+# **17. Event calendar**
+
+**Route:** `/events/calendar`
+
+[Creatrix Campus Software Reviews, Demo & Pricing - 2026](https://images.openai.com/static-rsc-4/YDsHwWm8BaVGPqhLeNxCoNkvqno7IPzSmyo8bIzw9b02tjbstk9ewAoFvZM0hL--b6xlYOBJltzJXIcHskh62Jj3Ixi5n48cDAtHdQKLyXiPDyx5kQDI6QZt7Md6l18QNtdFcFa3IqN8-dIJdNGOJyBtoXmOiXXY1vQ7bdcvnEw?purpose=inline)
+
+[Bgsu Spring 2024 Calendar | Plan Your Year Easily!](https://images.openai.com/static-rsc-4/BcOkYut5eOkgcsCjcLU0xrt7IyXcR_qPv7R2TbLWPABXiDrEHUq5UpFwxT-VQs7DZcbqfde7Buhh2kf3ybPXUdtuwqOV6dMleE5a9W_C3gKQqeVwU1C6IMxj7BfZmD5SES2LTKa4jb1mBmtPyYUlPVa-ArA8qy4Txv751St2CtU?purpose=inline)
+
+9
+
+### **Calendar features**
+
+- Monthly view.
+- Weekly view.
+- Daily view.
+- Agenda view.
+- Upcoming event list.
+- Event category colors.
+- Campus filters.
+- Department filters.
+- Event status.
+- Search.
+- Public calendar.
+- Staff calendar.
+- Download calendar.
+- Print calendar.
+- Calendar reminders.
+- Google Calendar export, if configured.
+- Outlook Calendar export, if configured.
+- ICS file export.
+
+### **Calendar views**
+
+- Public event calendar.
+- Staff event calendar.
+- Department event calendar.
+- Campus calendar.
+- Personal calendar.
+- Event coordinator calendar.
+
+# **18. Event reports and analytics**
+
+**Route:** `/portal/staff/events/reports`
+
+[Data Analytics Software for Events | CrowdPass](https://images.openai.com/static-rsc-4/E0e1mkvNLisrqOv3bofMxbCJcMMUeObAMJf8ilkHPOG1C4haEd-K4JTa02Y-2zqCBISLimkFy7fm4mx9L8cKVh1j0sDG-ij-QQn0vfNfsoE2QUG_38zAPQMdTLtq3DCYI5PihrYfNnc0wLrpphtMPilA8JCwz0Uu4VyJoKWNx5M?purpose=inline)
+
+[BrainStorm platform | Reporting](https://images.openai.com/static-rsc-4/GGNZVYgZR3T1sSBTQul8ESFJHKlogFB17NG2nA_p3z0ejLxIwDqWdaVRJyaRR_wGEw2-bBHcIijs3tZN2xWk02jas40AwgbzkszPqg3st3PGk0vCEarJ8VsDNu6Sku6VHi8ZGnAcsukNJeZFoUvl1qEcFibx-ZH0sem3EDAWHgU?purpose=inline)
+
+[How to Gather and Use Attendee Data | EventUp Planner](https://images.openai.com/static-rsc-4/R4lIZH2-7Z8rWNy8SzuqS_S9YiswwaRQCIcyN2U2ZmDMmxUimF5wrP3vTKK1PEVRK3KTOedq0TywHUb3u1mVBwMLxydT-RnUxLhcLSzxDbTb1imJiZ3XCbVMv0-RV1dCSAxk3n6ofw331-OUTkchl5uirAstk1zfWp6i6ao7FWE?purpose=inline)
+
+12
+
+### **Event analytics**
+
+- Events created.
+- Events published.
+- Events completed.
+- Registrations.
+- Confirmed participants.
+- Rejected registrations.
+- Cancelled registrations.
+- Waitlisted participants.
+- Checked-in participants.
+- No-show rate.
+- Attendance rate.
+- Registration conversion.
+- Registration trends.
+- Event popularity.
+- Department event activity.
+- Participant categories.
+- Organisation participation.
+- Ticket sales.
+- Revenue.
+- Refunds.
+- Feedback scores.
+- Certificate issuance.
+
+### **Reports**
+
+| Report                | Content                              |
+| --------------------- | ------------------------------------ |
+| Event summary         | Event details and overall statistics |
+| Registration report   | Registered participants              |
+| Attendance report     | Check-in and check-out               |
+| No-show report        | Confirmed but absent                 |
+| Waitlist report       | Waitlisted participants              |
+| Payment report        | Payment transactions and status      |
+| Revenue report        | Event revenue                        |
+| Feedback report       | Evaluation results                   |
+| Certificate report    | Certificates issued                  |
+| Department report     | Department event activity            |
+| Event activity report | Event changes and actions            |
+| Communication report  | Notifications and delivery           |
+
+### **Export options**
+
+- Excel.
+- CSV.
+- PDF.
+- Print.
+
+Exports should enforce permissions, audit the export, and respect data minimisation.
+
+# **19. Event invitation management**
+
+**Route:** `/portal/staff/events/:eventId/invitations`
+
+This feature allows organisers to invite specific people without opening the event to everyone.
+
+### **Invitation features**
+
+- Invite participants manually.
+- Invite by email.
+- Invite by phone, where SMS is configured.
+- Bulk invitation.
+- Upload invitation list.
+- Invitation template.
+- Invitation expiry.
+- Invitation status.
+- RSVP.
+- Invitation acceptance.
+- Invitation decline.
+- Invitation reminder.
+- Convert accepted invitation to registration.
+- Invitation reports.
+
+### **Invitation statuses**
+
+- Draft.
+- Sent.
+- Delivered, where available.
+- Accepted.
+- Declined.
+- Expired.
+- Cancelled.
+
+### **Restricted event access**
+
+An organiser can configure:
+
+- Public registration.
+- College students.
+- College staff.
+- Department members.
+- Invited participants.
+- Specific groups.
+- Registered organisations.
+- Approved guests.
+
+# **20. Event recurring and multi-day management**
+
+### **Recurring events**
+
+- Daily.
+- Weekly.
+- Monthly.
+- Custom recurring pattern.
+- End date.
+- Occurrence exceptions.
+- Holiday exceptions.
+
+### **Multi-day events**
+
+- Day 1 programme.
+- Day 2 programme.
+- Day 3 programme.
+- Multiple venues.
+- Multiple speakers.
+- Separate sessions.
+- Daily attendance.
+- Overall attendance.
+- Session attendance.
+
+### **Event series**
+
+- Create event series.
+- Link related events.
+- Shared speakers.
+- Shared programme templates.
+- Series registration rules.
+- Individual event registration.
+- Series-level reporting.
+
+# **21. Event permissions and roles**
+
+The event system must be role-based and department-aware.
+
+| Role              | Event access                                      |
+| ----------------- | ------------------------------------------------- |
+| Super Admin       | Configure event platform settings and permissions |
+| Admin             | Manage authorised college events                  |
+| Principal         | Approve assigned events and view reports          |
+| Registrar         | Manage assigned institutional events              |
+| Event Coordinator | Create and manage assigned events                 |
+| Department Head   | Manage events for assigned department             |
+| Lecturer          | Create or coordinate authorised events            |
+| Finance Officer   | Manage event payment records                      |
+| Marketing         | Public event promotion and content                |
+| Reception         | Participant registration and check-in             |
+| Security          | Authorised check-in and entry validation          |
+| Student           | Register and view own event registrations         |
+| Guest             | Public event browsing and registration            |
+
+### **Permission catalog**
+
+```
+
+export const eventPermissions = [
+  "event.view",
+  "event.create",
+  "event.edit",
+  "event.delete",
+  "event.submit",
+  "event.approve",
+  "event.publish",
+  "event.cancel",
+  "event.archive",
+
+  "event.registration.view",
+  "event.registration.create",
+  "event.registration.edit",
+  "event.registration.approve",
+  "event.registration.reject",
+  "event.registration.cancel",
+  "event.registration.export",
+
+  "event.waitlist.manage",
+
+  "event.checkin",
+  "event.checkin.manage",
+  "event.attendance.view",
+  "event.attendance.edit",
+  "event.attendance.export",
+
+  "event.speaker.manage",
+  "event.programme.manage",
+  "event.venue.manage",
+  "event.resource.manage",
+
+  "event.payment.view",
+  "event.payment.verify",
+  "event.payment.refund",
+
+  "event.ticket.manage",
+  "event.certificate.manage",
+  "event.feedback.manage",
+  "event.media.manage",
+
+  "event.notification.manage",
+  "event.invitation.manage",
+
+  "event.report.view",
+  "event.report.export",
+
+  "event.settings.manage",
+  "event.audit.view",
+] as const;
+
+```
+
+### **Role permission examples**
+
+| Feature                | Coordinator   | HOD        | Admin      | Finance          |
+| ---------------------- | ------------- | ---------- | ---------- | ---------------- |
+| Create event           | Yes           | Yes        | Yes        | No               |
+| Edit assigned event    | Yes           | Yes        | Yes        | No               |
+| Submit for approval    | Yes           | Yes        | Yes        | No               |
+| Approve event          | Assigned only | Department | Yes        | No               |
+| Publish event          | Assigned      | Assigned   | Yes        | No               |
+| View participants      | Assigned      | Department | Yes        | Limited          |
+| Check-in               | Assigned      | Assigned   | Yes        | No               |
+| Verify payments        | No            | No         | Restricted | Yes              |
+| Manage tickets         | Assigned      | Assigned   | Yes        | No               |
+| View reports           | Assigned      | Department | Yes        | Finance-specific |
+| Manage system settings | No            | No         | Restricted | No               |
+
+These are proposed permissions. The institution should assign them according to its approved authority structure, with separation of duties for approvals, payment verification and publication.
+
+# **22. Event audit trail**
+
+**Route:** `/portal/staff/events/:eventId/audit`
+
+Record actions such as:
+
+- Event created.
+- Event edited.
+- Event submitted.
+- Event approved.
+- Event published.
+- Event unpublished.
+- Event cancelled.
+- Registration created.
+- Registration approved.
+- Registration rejected.
+- Registration cancelled.
+- Ticket generated.
+- Ticket revoked.
+- Participant checked in.
+- Participant checked out.
+- Payment verified.
+- Certificate generated.
+- Notification sent.
+- Report exported.
+- Participant details modified.
+- Event capacity modified.
+- Registration deadline modified.
+
+### **Audit record**
+
+| Field                | Description                                |
+| -------------------- | ------------------------------------------ |
+| Actor                | User responsible                           |
+| Action               | Operation performed                        |
+| Target               | Event, participant, ticket etc.            |
+| Timestamp            | Date and time                              |
+| IP / session context | Where available and appropriately retained |
+| Before               | Previous values, where appropriate         |
+| After                | New values, where appropriate              |
+| Reason               | Required for selected sensitive changes    |
+
+Audit records must be protected against unauthorised modification.
+
+# **23. Event system routes**
+
+## **Public website**
+
+```
+/events
+/events/calendar
+/events/:slug
+/events/register/:eventId
+/events/my-registration/:registrationId
+/events/verify-ticket
+/events/feedback/:token
+```
+
+## **Staff portal**
+
+```
+/portal/staff/events
+/portal/staff/events/create
+/portal/staff/events/:eventId
+/portal/staff/events/:eventId/edit
+/portal/staff/events/:eventId/registrations
+/portal/staff/events/:eventId/approvals
+/portal/staff/events/:eventId/waitlist
+/portal/staff/events/:eventId/check-in
+/portal/staff/events/:eventId/attendance
+/portal/staff/events/:eventId/programme
+/portal/staff/events/:eventId/speakers
+/portal/staff/events/:eventId/venues
+/portal/staff/events/:eventId/payments
+/portal/staff/events/:eventId/tickets
+/portal/staff/events/:eventId/certificates
+/portal/staff/events/:eventId/feedback
+/portal/staff/events/:eventId/media
+/portal/staff/events/:eventId/invitations
+/portal/staff/events/:eventId/communications
+/portal/staff/events/:eventId/reports
+/portal/staff/events/:eventId/audit
+/portal/staff/events/settings
+/portal/staff/events/reports
+/portal/staff/events/venues
+```
+
+# **24. Database and API expansion**
+
+The proposed database foundation from the earlier Events slice should be expanded to support the complete system.
+
+### **Additional database entities**
+
+| Model                             | Purpose                       |
+| --------------------------------- | ----------------------------- |
+| `CollegeEvent`                    | Main event record             |
+| `CollegeEventRegistration`        | Participant registration      |
+| `CollegeEventSchedule`            | Programme sessions            |
+| `CollegeEventSpeaker`             | Speakers and facilitators     |
+| `CollegeEventTicket`              | Digital tickets               |
+| `CollegeEventCheckIn`             | Check-in and attendance       |
+| `CollegeEventWaitlist`            | Waiting list records          |
+| `CollegeEventInvitation`          | Invitations                   |
+| `CollegeEventPayment`             | Event payment records         |
+| `CollegeEventFeedback`            | Feedback responses            |
+| `CollegeEventFeedbackForm`        | Feedback form configuration   |
+| `CollegeEventCertificate`         | Certificates                  |
+| `CollegeEventVenue`               | Venues                        |
+| `CollegeEventResource`            | Equipment and resources       |
+| `CollegeEventVenueBooking`        | Venue reservations            |
+| `CollegeEventMedia`               | Images, videos and files      |
+| `CollegeEventNotification`        | Communication records         |
+| `CollegeEventCategory`            | Configurable event categories |
+| `CollegeEventAudit`               | Event audit trail             |
+| `CollegeEventSeries`              | Recurring and linked events   |
+| `CollegeEventInvitationRecipient` | Individual invitees           |
+| `CollegeEventTicketType`          | Ticket categories             |
+| `CollegeEventRegistrationField`   | Custom registration fields    |
+
+This is a proposed entity list, not a migration. Existing models should be inspected and reused where possible. Payment, attendance, tickets and registration should have consistent relationships and transaction handling.
+
+### **API expansion**
+
+```
+PUBLIC
+GET     /api/public/events
+GET     /api/public/events/:slug
+GET     /api/public/events/id/:eventId
+GET     /api/public/events/:eventId/availability
+POST    /api/public/events/:eventId/register
+GET     /api/public/events/registration/:token
+GET     /api/public/events/ticket/:token/verify
+
+STAFF
+GET     /api/events
+POST    /api/events
+GET     /api/events/:id
+PATCH   /api/events/:id
+DELETE  /api/events/:id
+POST    /api/events/:id/submit
+POST    /api/events/:id/approve
+POST    /api/events/:id/publish
+POST    /api/events/:id/cancel
+POST    /api/events/:id/duplicate
+
+REGISTRATIONS
+GET     /api/events/:id/registrations
+POST    /api/events/:id/registrations
+PATCH   /api/events/registrations/:id
+POST    /api/events/registrations/:id/approve
+POST    /api/events/registrations/:id/reject
+POST    /api/events/registrations/:id/cancel
+POST    /api/events/registrations/:id/promote
+
+WAITLIST
+GET     /api/events/:id/waitlist
+POST    /api/events/:id/waitlist
+POST    /api/events/waitlist/:id/promote
+POST    /api/events/waitlist/:id/remove
+
+CHECK-IN
+POST    /api/events/check-in
+POST    /api/events/check-out
+GET     /api/events/:id/attendance
+PATCH   /api/events/attendance/:id
+
+PROGRAMME
+GET     /api/events/:id/schedule
+POST    /api/events/:id/schedule
+PATCH   /api/events/schedule/:sessionId
+DELETE  /api/events/schedule/:sessionId
+
+SPEAKERS
+GET     /api/events/:id/speakers
+POST    /api/events/:id/speakers
+PATCH   /api/events/speakers/:speakerId
+DELETE  /api/events/speakers/:speakerId
+
+TICKETS
+GET     /api/events/:id/tickets
+POST    /api/events/tickets/:registrationId/generate
+POST    /api/events/tickets/:id/revoke
+
+PAYMENTS
+GET     /api/events/:id/payments
+POST    /api/events/payments/:id/verify
+POST    /api/events/payments/:id/refund
+
+CERTIFICATES
+POST    /api/events/:id/certificates/generate
+GET     /api/events/:id/certificates
+POST    /api/events/certificates/:id/revoke
+
+FEEDBACK
+GET     /api/events/:id/feedback
+POST    /api/public/events/:id/feedback
+GET     /api/events/:id/feedback/reports
+
+REPORTS
+GET     /api/events/:id/reports
+GET     /api/events/reports/summary
+GET     /api/events/reports/export
+
+AUDIT
+GET     /api/events/:id/audit
+```
+
+# **25. Mobile application features**
+
+The staff and student mobile application should support the Events module.
+
+### **Student mobile app**
+
+- View upcoming events.
+- Search events.
+- View event details.
+- Register.
+- Cancel registration, if permitted.
+- View registration status.
+- View ticket.
+- Display QR ticket.
+- Receive notifications.
+- View programme.
+- Submit feedback.
+- Download certificate.
+- View past events.
+
+### **Staff mobile app**
+
+- View assigned events.
+- Create event, where authorised.
+- Edit event, where authorised.
+- Approve registrations.
+- View participants.
+- Scan QR tickets.
+- Manual check-in.
+- View attendance.
+- Send event notifications.
+- View event reports.
+- Manage programme.
+- View event alerts.
+
+# **26. Complete event-management checklist**
+
+# **HI-TECH College Events System**
+
+Complete proposed scope
+
+Public website
+
+- Events listing design
+- Event detail design
+- Public registration UI
+- Confirmation UI
+- Search and filters
+- Public event API
+- Ticket verification
+- Public calendar
+
+Event administration
+
+- Dashboard
+- Event creation wizard
+- Event editing
+- Approval
+- Publishing
+- Cancellation
+- Event categories
+- Event templates
+- Recurring events
+- Multi-day events
+
+Registration
+
+- Participant registration
+- Student registration
+- Staff registration
+- Guest registration
+- Registration approval
+- Duplicate detection
+- Capacity control
+- Waitlist
+- Invitation registration
+- Bulk registration
+- Registration import
+
+Tickets and attendance
+
+- Digital tickets
+- QR generation
+- QR scanning
+- Manual check-in
+- Check-out
+- Attendance reports
+- No-show reports
+
+Programme and logistics
+
+- Programme editor
+- Speaker management
+- Facilitator management
+- Venue management
+- Equipment management
+- Venue booking
+- Conflict detection
+
+Communication
+
+- Email notifications
+- SMS integration
+- Reminder automation
+- Invitation management
+- Bulk communication
+- Notification templates
+- Delivery logs
+
+Finance and certificates
+
+- Event fees
+- Ticket categories
+- M-Pesa integration
+- Payment verification
+- Refund management
+- Certificates
+- Certificate QR verification
+
+Reports and governance
+
+- Reports
+- Analytics
+- Feedback
+- Media gallery
+- Permissions
+- Audit logs
+- Privacy controls
+- Data retention
+- Automated tests
+- Mobile interface
+
+# **27. Implementation order**
+
+I would implement this in the following order inside `hitech-college-website/apps`:
+
+| Phase | Feature                       | Priority  |
+| ----- | ----------------------------- | --------- |
+| 1     | Public events website         | High      |
+| 2     | Event CMS and creation wizard | High      |
+| 3     | Public registration backend   | High      |
+| 4     | Participant management        | High      |
+| 5     | Event approval workflow       | High      |
+| 6     | Tickets and QR                | High      |
+| 7     | Check-in and attendance       | High      |
+| 8     | Speakers and programme        | High      |
+| 9     | Notifications and reminders   | High      |
+| 10    | Waitlist and invitations      | Medium    |
+| 11    | Venues and resources          | Medium    |
+| 12    | Event payment integration     | Medium    |
+| 13    | Certificates                  | Medium    |
+| 14    | Feedback                      | Medium    |
+| 15    | Reports and analytics         | Medium    |
+| 16    | Media management              | Medium    |
+| 17    | Mobile integration            | Medium    |
+| 18    | Security, testing and audit   | Mandatory |
+
+**This is the full proposed Events feature scope for the HI-TECH College website and portal, covering visitors, participants, event organisers, staff, administrators and mobile users.**
+
+The next coding slice should be the **complete Event CMS creation wizard and management dashboard**, including its React components, forms, validation, API contract, permissions, and event workflow.

@@ -14,6 +14,15 @@ import platformRoutes from './server/modules/platform/platform.routes.ts';
 import publicWebsiteRoutes from './server/modules/website/public.routes.ts';
 import websiteCmsRoutes from './server/modules/website/website.routes.ts';
 import admissionsRoutes from './server/modules/admissions/admissions.routes.ts';
+import {
+  publicEventsRoutes,
+  staffEventsRoutes,
+} from './server/modules/events/events.routes.ts';
+import {
+  absenceRoutes,
+  managementRoutes,
+  teachingRoutes,
+} from './server/modules/teaching/teaching.routes.ts';
 
 async function startServer() {
   const app = express();
@@ -28,8 +37,10 @@ async function startServer() {
   });
 
   // Backend API Modules
+  app.use('/api/public/events', publicEventsRoutes);
   app.use('/api/public', publicWebsiteRoutes);
   app.use('/api/website', websiteCmsRoutes);
+  app.use('/api/events', staffEventsRoutes);
   app.use('/api/admissions', admissionsRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/mfa', mfaRoutes);
@@ -41,6 +52,9 @@ async function startServer() {
   app.use('/api/registrations', registrationRoutes);
   app.use('/api/sis', sisRoutes);
   app.use('/api/platform', platformRoutes);
+  app.use('/api/teaching', teachingRoutes);
+  app.use('/api/absence', absenceRoutes);
+  app.use('/api/management', managementRoutes);
 
   // Explicit 404 for unknown API paths so HTML fallback never masks missing routes
   app.use('/api', (_req, res) => {

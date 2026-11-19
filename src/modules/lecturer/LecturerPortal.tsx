@@ -48,6 +48,12 @@ import CreateAssessment from "./pages/CreateAssessment";
 import AssessmentDetails from "./pages/AssessmentDetails";
 import QuestionBank from "./pages/QuestionBank";
 import QuestionEditor from "./pages/QuestionEditor";
+import TeachingDocumentsHub from "./components/TeachingDocumentsHub";
+import RecordLessonDeliveryPage from "./components/RecordLessonDeliveryPage";
+import AbsenceCasesReviewPage from "./components/AbsenceCasesReviewPage";
+import SchemeCoveragePage from "./components/SchemeCoveragePage";
+import TeachingReportsPage from "./components/TeachingReportsPage";
+import { teachingModuleApi } from "../../services/teachingModuleApi";
 
 export type LecturerTab =
   | "dashboard"
@@ -57,6 +63,11 @@ export type LecturerTab =
   | "class_students"
   | "student_profile"
   | "lessons"
+  | "record_lesson"
+  | "teaching_documents"
+  | "absence_review"
+  | "scheme_coverage"
+  | "teaching_reports"
   | "schemes"
   | "materials"
   | "timetable"
@@ -76,7 +87,12 @@ interface LecturerPortalProps {
 }
 
 const LECTURER_SEARCH_ITEMS: { id: LecturerTab; label: string; group: string }[] = [
-  { id: "dashboard", label: "Dashboard Overview", group: "Overview" },
+  { id: "dashboard", label: "My Teaching & Documents", group: "Overview" },
+  { id: "record_lesson", label: "Record Today's Lesson & History", group: "Teaching Operations" },
+  { id: "teaching_documents", label: "Upload Teaching Documents (17 Categories)", group: "Teaching Operations" },
+  { id: "absence_review", label: "Student Absence Reasons & Explanations", group: "Classroom & Academic" },
+  { id: "scheme_coverage", label: "Schemes Coverage & Catch-Ups", group: "Teaching Operations" },
+  { id: "teaching_reports", label: "Teaching & Attendance Reports (14)", group: "Teaching Operations" },
   { id: "profile", label: "Faculty Profile & HR", group: "Overview" },
   { id: "courses", label: "My Courses & Units", group: "Teaching Operations" },
   { id: "lessons", label: "Lesson Plans", group: "Teaching Operations" },
@@ -103,6 +119,10 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+
+  useEffect(() => {
+    void teachingModuleApi.ensureLecturerSession();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -221,6 +241,42 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
           <div className="nav-section">Teaching Operations</div>
           <button
             type="button"
+            onClick={() => handleNavigate("record_lesson")}
+            aria-current={activeTab === "record_lesson" ? "page" : undefined}
+            className={`lecturer-nav-link ${activeTab === "record_lesson" ? "active" : ""}`}
+          >
+            <FileText size={16} />
+            <span>Record Today&apos;s Lesson</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleNavigate("teaching_documents")}
+            aria-current={activeTab === "teaching_documents" ? "page" : undefined}
+            className={`lecturer-nav-link ${activeTab === "teaching_documents" ? "active" : ""}`}
+          >
+            <BookOpen size={16} />
+            <span>Teaching Documents (17)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleNavigate("scheme_coverage")}
+            aria-current={activeTab === "scheme_coverage" ? "page" : undefined}
+            className={`lecturer-nav-link ${activeTab === "scheme_coverage" ? "active" : ""}`}
+          >
+            <Layers size={16} />
+            <span>Schemes &amp; Catch-Ups</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleNavigate("teaching_reports")}
+            aria-current={activeTab === "teaching_reports" ? "page" : undefined}
+            className={`lecturer-nav-link ${activeTab === "teaching_reports" ? "active" : ""}`}
+          >
+            <Award size={16} />
+            <span>Reports &amp; Exports (14)</span>
+          </button>
+          <button
+            type="button"
             onClick={() => handleNavigate("courses")}
             aria-current={activeTab === "courses" ? "page" : undefined}
             className={`lecturer-nav-link ${activeTab === "courses" ? "active" : ""}`}
@@ -257,6 +313,15 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
           </button>
 
           <div className="nav-section">Classroom &amp; Academic</div>
+          <button
+            type="button"
+            onClick={() => handleNavigate("absence_review")}
+            aria-current={activeTab === "absence_review" ? "page" : undefined}
+            className={`lecturer-nav-link ${activeTab === "absence_review" ? "active" : ""}`}
+          >
+            <Users size={16} />
+            <span>Student Absence Reasons</span>
+          </button>
           <button
             type="button"
             onClick={() => handleNavigate("classes")}
@@ -578,6 +643,16 @@ export default function LecturerPortal({ onLogout }: LecturerPortalProps) {
           {activeTab === "online_classes" && <OnlineClasses />}
 
           {activeTab === "attendance" && <Attendance />}
+
+          {activeTab === "record_lesson" && <RecordLessonDeliveryPage />}
+
+          {activeTab === "teaching_documents" && <TeachingDocumentsHub />}
+
+          {activeTab === "absence_review" && <AbsenceCasesReviewPage />}
+
+          {activeTab === "scheme_coverage" && <SchemeCoveragePage />}
+
+          {activeTab === "teaching_reports" && <TeachingReportsPage />}
 
           {activeTab === "assessments" && (
             <MyAssessments

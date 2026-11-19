@@ -21,14 +21,23 @@ import { StaffDirectoryPage } from "../modules/website/staff/StaffDirectoryPage"
 import { StaffProfilePage } from "../modules/website/staff/StaffProfilePage";
 import { DepartmentsPage } from "../modules/website/departments/DepartmentsPage";
 import { DepartmentProfilePage } from "../modules/website/departments/DepartmentProfilePage";
+import EventsPage from "./events/EventsPage";
+import EventDetailPage from "./events/EventDetailPage";
+import EventRegistrationPage from "./events/EventRegistrationPage";
+import EventRegistrationConfirmationPage from "./events/EventRegistrationConfirmationPage";
+import PublicEventCalendarPage from "./events/PublicEventCalendarPage";
+import PublicTicketVerifyPage from "./events/PublicTicketVerifyPage";
+import { mapEventBannerPath } from "./events/eventBannerKeys";
+import { resolveWebsiteMediaUrl } from "../modules/website/website-media";
 import { CourseProgramme } from "../types";
 import { COURSES_CATALOGUE } from "../data/college";
 
 interface PublicWebsiteProps {
   initialPage?: string;
   initialSlug?: string;
+  initialToken?: string;
   initialPortalModalOpen?: boolean;
-  onPageChange?: (page: string, slug?: string) => void;
+  onPageChange?: (page: string, slug?: string, token?: string) => void;
   onSwitchToERP: (role: string) => void;
   onLaunchStudentDashboard: () => void;
 }
@@ -36,6 +45,7 @@ interface PublicWebsiteProps {
 export default function PublicWebsite({
   initialPage = "home",
   initialSlug,
+  initialToken,
   initialPortalModalOpen = false,
   onPageChange,
   onSwitchToERP,
@@ -43,9 +53,13 @@ export default function PublicWebsite({
 }: PublicWebsiteProps) {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedSlug, setSelectedSlug] = useState<string | undefined>(initialSlug);
+  const [selectedToken, setSelectedToken] = useState<string | undefined>(initialToken);
   const [staffCategoryFilter, setStaffCategoryFilter] = useState<string | undefined>(undefined);
   const [academicsLevelFilter, setAcademicsLevelFilter] = useState<string | undefined>(undefined);
   const [academicsDeptFilter, setAcademicsDeptFilter] = useState<string | undefined>(undefined);
+  const [eventsDateFilter, setEventsDateFilter] = useState<string | undefined>(undefined);
+  const [eventsCategoryFilter, setEventsCategoryFilter] = useState<string | undefined>(undefined);
+  const [eventsModeFilter, setEventsModeFilter] = useState<string | undefined>(undefined);
   const [selectedCourse, setSelectedCourse] = useState<CourseProgramme | null>(
     COURSES_CATALOGUE[0]
   );
@@ -60,7 +74,8 @@ export default function PublicWebsite({
   React.useEffect(() => {
     setCurrentPage(initialPage);
     setSelectedSlug(initialSlug);
-  }, [initialPage, initialSlug]);
+    setSelectedToken(initialToken);
+  }, [initialPage, initialSlug, initialToken]);
 
   React.useEffect(() => {
     if (initialPortalModalOpen) {
@@ -74,9 +89,12 @@ export default function PublicWebsite({
       | string
       | {
           slug?: string;
+          token?: string;
           categoryFilter?: string;
           levelFilter?: string;
           departmentFilter?: string;
+          dateFilter?: string;
+          modeFilter?: string;
         }
   ) => {
     const options =
@@ -86,13 +104,17 @@ export default function PublicWebsite({
 
     setCurrentPage(page);
     setSelectedSlug(options.slug);
+    setSelectedToken(options.token);
     setStaffCategoryFilter(options.categoryFilter);
     setAcademicsLevelFilter(options.levelFilter);
     setAcademicsDeptFilter(options.departmentFilter);
+    setEventsDateFilter(options.dateFilter);
+    setEventsCategoryFilter(page === "events" ? options.categoryFilter : undefined);
+    setEventsModeFilter(options.modeFilter);
     if (page !== "apply") {
       setPreferredProgrammeTitle(undefined);
     }
-    onPageChange?.(page, options.slug);
+    onPageChange?.(page, options.slug, options.token);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -221,6 +243,70 @@ export default function PublicWebsite({
         {(currentPage === "campus-life" ||
           currentPage === "campus" ||
           currentPage === "student-life") && <CampusLife />}
+
+        {currentPage === "events" && (
+          <EventsPage
+            initialFilter={{
+              dateFilter: eventsDateFilter,
+              category: eventsCategoryFilter,
+              mode: eventsModeFilter,
+            }}
+            resolveBannerUrl={(url, cat) => resolveWebsiteMediaUrl(mapEventBannerPath(url, cat))}
+            onSelectEvent={(slug) => handleNavigate("event-details", slug)}
+            onRegisterEvent={(eventId) => handleNavigate("event-register", eventId)}
+            onLookupTicket={(regId, token) =>
+              handleNavigate("event-confirmation", { slug: regId, token })
+            }
+            onOpenCalendar={() => handleNavigate("events-calendar")}
+            onOpenVerifyTicket={() => handleNavigate("events-verify-ticket")}
+          />
+        )}
+
+        {currentPage === "events-calendar" && (
+          <PublicEventCalendarPage
+            onSelectEvent={(slug) => handleNavigate("event-details", slug)}
+            onRegisterEvent={(eventId) => handleNavigate("event-register", eventId)}
+            onBackToEvents={() => handleNavigate("events")}
+            onOpenVerifyTicket={() => handleNavigate("events-verify-ticket")}
+          />
+        )}
+
+        {currentPage === "events-verify-ticket" && (
+          <PublicTicketVerifyPage
+            initialCode={selectedSlug || ""}
+            onBackToEvents={() => handleNavigate("events")}
+            onOpenCalendar={() => handleNavigate("events-calendar")}
+          />
+        )}
+
+        {currentPage === "event-details" && selectedSlug && (
+          <EventDetailPage
+            slug={selectedSlug}
+            resolveBannerUrl={(url, cat) => resolveWebsiteMediaUrl(mapEventBannerPath(url, cat))}
+            onBackToEvents={() => handleNavigate("events")}
+            onRegisterEvent={(eventId) => handleNavigate("event-register", eventId)}
+          />
+        )}
+
+        {currentPage === "event-register" && selectedSlug && (
+          <EventRegistrationPage
+            eventId={selectedSlug}
+            onBackToEvent={(slug) => handleNavigate("event-details", slug)}
+            onBackToEvents={() => handleNavigate("events")}
+            onRegistrationSuccess={(registrationId, token) =>
+              handleNavigate("event-confirmation", { slug: registrationId, token })
+            }
+          />
+        )}
+
+        {currentPage === "event-confirmation" && selectedSlug && (
+          <EventRegistrationConfirmationPage
+            registrationId={selectedSlug}
+            initialToken={selectedToken}
+            onBackToEvents={() => handleNavigate("events")}
+            onSelectEvent={(slug) => handleNavigate("event-details", slug)}
+          />
+        )}
 
         {currentPage === "news" && <News />}
 

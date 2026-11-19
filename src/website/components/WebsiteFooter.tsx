@@ -68,8 +68,9 @@ export default function WebsiteFooter({
     { label: "Admissions", href: "/admissions", target: { page: "admissions" } },
     { label: "Campus", href: "/campus", target: { page: "campus" } },
     { label: "Student Life", href: "/student-life", target: { page: "student-life" } },
+    { label: "Events & Registration", href: "/events", target: { page: "events" } },
     { label: "Digital Library", href: "/resources", target: { page: "resources" } },
-    { label: "News & Events", href: "/news", target: { page: "news" } },
+    { label: "News & Bulletins", href: "/news", target: { page: "news" } },
     { label: "FAQs", href: "/admissions", target: { page: "admissions" } },
     { label: "Contact Us", href: "/contact", target: { page: "contact" } },
   ];

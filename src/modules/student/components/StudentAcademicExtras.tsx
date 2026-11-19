@@ -5,7 +5,6 @@ import {
   Download,
   FileCheck2,
   PlayCircle,
-  QrCode,
   RefreshCw,
   Send,
   Users,
@@ -22,6 +21,7 @@ import {
   studentPortalService,
   StudentPortalSection,
 } from '../../../services/studentPortalService';
+import StudentAbsenceSection from './StudentAbsenceSection';
 
 interface Props {
   activeSection: Extract<
@@ -71,10 +71,6 @@ export default function StudentAcademicExtras({
     }, reducedMotion ? 80 : 300);
   };
 
-  // Attendance QR check-in
-  const [checkInUnit, setCheckInUnit] = useState(state.units[0]?.code ?? 'CSC 301');
-  const [sessionCode, setSessionCode] = useState('');
-
   // E-Learning unit filter
   const [elearnUnit, setElearnUnit] = useState<string>('ALL');
 
@@ -96,121 +92,43 @@ export default function StudentAcademicExtras({
     );
   }
 
-  // 1. CLASS ATTENDANCE REGISTER & QR CHECK-IN
+  // 1. CLASS ATTENDANCE REGISTER, LIVE QR CHECK-IN & ABSENCE MANAGEMENT
   if (activeSection === 'attendance') {
     return (
       <div className="space-y-5">
         {headerBlock}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                Unit Attendance Summary (75% Exam Eligibility Rule)
-              </h3>
-              <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                Overall: {profile.attendanceRate}%
-              </span>
-            </div>
+        <StudentAbsenceSection onNotify={onNotify} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              {state.units.map((u) => (
-                <div key={u.code} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code}</p>
-                    <strong className="text-slate-900 dark:text-slate-100 block">{u.title}</strong>
-                    <span className="text-slate-600 dark:text-slate-300">{u.lecturerName}</span>
-                  </div>
-                  <div className="text-right font-mono tabular-nums shrink-0">
-                    <strong className={`text-base ${u.attendance >= 75 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
-                      {u.attendance}%
-                    </strong>
-                    <span className="block text-[11px] text-slate-600 dark:text-slate-300">
-                      {u.attendance >= 75 ? 'Cleared' : 'Low'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const res = studentPortalService.checkInAttendanceCode(checkInUnit, sessionCode);
-              if (!res.ok) return onNotify('err', res.error ?? 'Check-in failed');
-              setSessionCode('');
-              onNotify('ok', `Attendance check-in recorded for ${checkInUnit}.`);
-              onRefresh();
-            }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3.5 text-xs"
-          >
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <QrCode size={16} className="text-[#0866d7] dark:text-blue-400" /> Live Class Session Check-In
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              Registered Unit Attendance Summary (75% Exam Eligibility Rule)
             </h3>
-            <p className="text-slate-600 dark:text-slate-300">
-              Enter the classroom session code shared on the projector by your lecturer to mark today&apos;s register.
-            </p>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Course Unit</label>
-              <select
-                value={checkInUnit}
-                onChange={(e) => setCheckInUnit(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg"
-              >
-                {state.units.map((u) => (
-                  <option key={u.code} value={u.code}>
-                    {u.code} — {u.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Lecturer Session Code</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. CSC301-LAB"
-                value={sessionCode}
-                onChange={(e) => setSessionCode(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono uppercase"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-[#092c60] hover:bg-[#061f46] text-white font-semibold rounded-lg"
-            >
-              Mark Attendance Present
-            </button>
-          </form>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Recent Attendance Roll History</h3>
+            <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+              Profile Rate: {profile.attendanceRate}%
+            </span>
           </div>
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-              <tr>
-                <th className="py-2.5 px-4 font-semibold">Date</th>
-                <th className="py-2.5 px-4 font-semibold">Unit</th>
-                <th className="py-2.5 px-4 font-semibold">Session</th>
-                <th className="py-2.5 px-4 font-semibold">Method</th>
-                <th className="py-2.5 px-4 font-semibold text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {state.attendanceSessions.map((row) => (
-                <tr key={row.id}>
-                  <td className="py-2.5 px-4 font-mono tabular-nums text-slate-600 dark:text-slate-300">{row.date}</td>
-                  <td className="py-2.5 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{row.unitCode}</td>
-                  <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-medium">{row.sessionTitle}</td>
-                  <td className="py-2.5 px-4 font-mono text-slate-600 dark:text-slate-300">{row.method}</td>
-                  <td className="py-2.5 px-4 text-right font-semibold text-emerald-700 dark:text-emerald-400">{row.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {state.units.map((u) => (
+              <div key={u.code} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code}</p>
+                  <strong className="text-slate-900 dark:text-slate-100 block">{u.title}</strong>
+                  <span className="text-slate-600 dark:text-slate-300">{u.lecturerName}</span>
+                </div>
+                <div className="text-right font-mono tabular-nums shrink-0">
+                  <strong className={`text-base ${u.attendance >= 75 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+                    {u.attendance}%
+                  </strong>
+                  <span className="block text-[11px] text-slate-600 dark:text-slate-300">
+                    {u.attendance >= 75 ? 'Cleared' : 'Low'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
