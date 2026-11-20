@@ -272,6 +272,13 @@ export function Phase4ModuleSkeleton({
   const renderBody = () => {
     switch (section) {
       case 'examinations':
+      case 'exams-assessments':
+      case 'exams-assignments':
+      case 'exams-timetable':
+      case 'exams-online':
+      case 'exams-practical':
+      case 'exams-clearance':
+      case 'exams-history':
         return (
           <div className="space-y-5">
             <SkeletonSurface className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -293,6 +300,9 @@ export function Phase4ModuleSkeleton({
         );
 
       case 'results':
+      case 'exams-results':
+      case 'exams-appeals':
+      case 'exams-progress':
         return (
           <div className="space-y-5">
             <SkeletonSurface className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

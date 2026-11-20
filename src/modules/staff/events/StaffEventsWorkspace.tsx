@@ -63,16 +63,29 @@ import {
   SettingsPanel,
   VenuesPanel,
 } from './StaffEventsOperationsPanels';
+import {
+  ApprovalsDashboardPanel,
+  CommunicationsDashboardPanel,
+  CoordinatorDashboardPanel,
+  ProgrammeSpeakersPanel,
+  StaffEventsCalendarPanel,
+} from './StaffEventsExtendedDashboards';
+import { Calendar, Mic } from 'lucide-react';
 
 export type StaffEventsSection =
   | 'overview'
+  | 'coordinator'
+  | 'approvals'
+  | 'calendar'
   | 'events'
   | 'create'
+  | 'programme'
   | 'registrations'
   | 'checkin'
   | 'venues'
   | 'payments'
   | 'invitations'
+  | 'communications'
   | 'certificates'
   | 'feedback'
   | 'media'
@@ -216,6 +229,9 @@ export default function StaffEventsWorkspace({
   });
   const [selectedCertificates, setSelectedCertificates] = useState<EventCertificateRecord[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<EventMediaRecord[]>([]);
+  const [selectedSchedules, setSelectedSchedules] = useState<EventScheduleItemRecord[]>([]);
+  const [selectedSpeakers, setSelectedSpeakers] = useState<EventSpeakerRecord[]>([]);
+  const [selectedNotifications, setSelectedNotifications] = useState<EventNotificationRecord[]>([]);
 
   const [regFilter, setRegFilter] = useState('ALL');
   const [regSearch, setRegSearch] = useState('');
@@ -335,6 +351,9 @@ export default function StaffEventsWorkspace({
       setFeedbackSummary(detail.feedbackSummary);
       setSelectedCertificates(detail.certificates);
       setSelectedMedia(detail.media);
+      setSelectedSchedules(detail.schedules);
+      setSelectedSpeakers(detail.speakers);
+      setSelectedNotifications(detail.notifications);
     } catch (err) {
       setBannerMsg({
         type: 'error',
@@ -347,8 +366,10 @@ export default function StaffEventsWorkspace({
     const needsDetail = [
       'registrations',
       'checkin',
+      'programme',
       'payments',
       'invitations',
+      'communications',
       'certificates',
       'feedback',
       'media',
@@ -801,6 +822,14 @@ export default function StaffEventsWorkspace({
     visible: boolean;
   }> = [
     { key: 'overview', label: 'Overview & KPIs', icon: Layers, visible: true },
+    { key: 'coordinator', label: 'Coordinator', icon: UserPlus, visible: true },
+    {
+      key: 'approvals',
+      label: `Approvals${pendingApprovalEvents.length ? ` (${pendingApprovalEvents.length})` : ''}`,
+      icon: ShieldCheck,
+      visible: true,
+    },
+    { key: 'calendar', label: 'Calendar', icon: Calendar, visible: true },
     { key: 'events', label: 'All Events', icon: CalendarDays, visible: true },
     {
       key: 'create',
@@ -808,11 +837,13 @@ export default function StaffEventsWorkspace({
       icon: Edit3,
       visible: canCreate || canEdit,
     },
+    { key: 'programme', label: 'Programme & Speakers', icon: Mic, visible: true },
     { key: 'registrations', label: 'Registrations', icon: Users, visible: canViewRegs },
     { key: 'checkin', label: 'Check-In / Out', icon: QrCode, visible: canCheckIn },
     { key: 'venues', label: 'Venues', icon: Building2, visible: true },
     { key: 'payments', label: 'Payments', icon: CreditCard, visible: canVerifyPayments || canViewRegs },
     { key: 'invitations', label: 'Invitations', icon: Mail, visible: canManageInvites || canEdit },
+    { key: 'communications', label: 'Communications', icon: Send, visible: canEdit || canManageInvites },
     { key: 'certificates', label: 'Certificates', icon: Award, visible: canGenerateCerts || canViewRegs },
     { key: 'feedback', label: 'Feedback', icon: MessageSquare, visible: canViewFeedback || canViewRegs },
     { key: 'media', label: 'Media', icon: ImageIcon, visible: canManageMedia || canEdit },
@@ -1396,7 +1427,7 @@ export default function StaffEventsWorkspace({
                 )}
                 {canExportRegs && selectedEventId && (
                   <a
-                    href={`/api/events/${encodeURIComponent(selectedEventId)}/registrations/export`}
+                    href={`/api/events/${encodeURIComponent(selectedEventId)}/export`}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-bold text-[#102D50] dark:text-white hover:bg-slate-50"
                   >
                     <Download size={14} />
@@ -1743,6 +1774,50 @@ export default function StaffEventsWorkspace({
             </select>
           }
         >
+          {(() => {
+            const confirmedList = selectedRegistrations.filter((r) => r.status === 'CONFIRMED');
+            const checkedInCount = confirmedList.filter((r) => r.checkedIn).length;
+            const remainingCount = Math.max(0, confirmedList.length - checkedInCount);
+            const pct =
+              confirmedList.length > 0
+                ? Math.round((checkedInCount / confirmedList.length) * 1000) / 10
+                : 0;
+            return (
+              <div className="mb-5 grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono tabular-nums text-xs">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <span className="font-sans text-[11px] font-semibold text-slate-500 block">
+                    Confirmed
+                  </span>
+                  <strong className="text-lg font-black text-[#102D50] dark:text-white">
+                    {confirmedList.length}
+                  </strong>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <span className="font-sans text-[11px] font-semibold text-slate-500 block">
+                    Checked In
+                  </span>
+                  <strong className="text-lg font-black text-emerald-700 dark:text-emerald-400">
+                    {checkedInCount}
+                  </strong>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <span className="font-sans text-[11px] font-semibold text-slate-500 block">
+                    Remaining
+                  </span>
+                  <strong className="text-lg font-black text-amber-700 dark:text-amber-400">
+                    {remainingCount}
+                  </strong>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <span className="font-sans text-[11px] font-semibold text-slate-500 block">
+                    Live Attendance %
+                  </span>
+                  <strong className="text-lg font-black text-[#1769AA]">{pct}%</strong>
+                </div>
+              </div>
+            );
+          })()}
+
           <form onSubmit={handleCheckInSubmit} className="flex flex-col sm:flex-row gap-3 mb-5">
             <input
               type="text"
@@ -1819,6 +1894,43 @@ export default function StaffEventsWorkspace({
         </StaffCard>
       )}
 
+      {activeTab === 'coordinator' && (
+        <CoordinatorDashboardPanel
+          user={user}
+          events={events}
+          canEdit={canEdit}
+          onEditEvent={openEditEvent}
+          onSelectWorkspaceTab={(tab, eventId) => {
+            setSelectedEventId(eventId);
+            setActiveTab(tab);
+          }}
+          onOpenWizard={openNewEventWizard}
+        />
+      )}
+
+      {activeTab === 'approvals' && (
+        <ApprovalsDashboardPanel
+          user={user}
+          events={events}
+          auditLogs={auditLogs}
+          canApprove={canApprove}
+          canEdit={canEdit}
+          onReload={loadDashboard}
+          onEditEvent={openEditEvent}
+          onNotify={setBannerMsg}
+        />
+      )}
+
+      {activeTab === 'calendar' && (
+        <StaffEventsCalendarPanel
+          events={events}
+          onSelectEvent={(ev) => {
+            setSelectedEventId(ev.id);
+            setActiveTab('registrations');
+          }}
+        />
+      )}
+
       {/* ========================================================== */}
       {/* OPERATIONS SUB-PANELS (VENUES -> SETTINGS)                 */}
       {/* ========================================================== */}
@@ -1831,8 +1943,10 @@ export default function StaffEventsWorkspace({
         />
       )}
 
-      {(activeTab === 'payments' ||
+      {(activeTab === 'programme' ||
+        activeTab === 'payments' ||
         activeTab === 'invitations' ||
+        activeTab === 'communications' ||
         activeTab === 'certificates' ||
         activeTab === 'feedback' ||
         activeTab === 'media') && (
@@ -1855,6 +1969,18 @@ export default function StaffEventsWorkspace({
             </select>
           </div>
 
+          {activeTab === 'programme' && (
+            <ProgrammeSpeakersPanel
+              eventId={selectedEventId}
+              eventTitle={selectedEventObj?.title || ''}
+              schedules={selectedSchedules}
+              speakers={selectedSpeakers}
+              canEdit={canEdit}
+              onReload={() => loadSelectedEventDetail(selectedEventId)}
+              onNotify={setBannerMsg}
+            />
+          )}
+
           {activeTab === 'payments' && (
             <PaymentsPanel
               eventId={selectedEventId}
@@ -1874,6 +2000,18 @@ export default function StaffEventsWorkspace({
               invitations={selectedInvitations}
               canManage={canManageInvites}
               onReload={() => loadSelectedEventDetail(selectedEventId)}
+              onNotify={setBannerMsg}
+            />
+          )}
+
+          {activeTab === 'communications' && (
+            <CommunicationsDashboardPanel
+              eventId={selectedEventId}
+              eventTitle={selectedEventObj?.title || ''}
+              notifications={selectedNotifications}
+              onReload={async () => {
+                await Promise.all([loadDashboard(), loadSelectedEventDetail(selectedEventId)]);
+              }}
               onNotify={setBannerMsg}
             />
           )}

@@ -42,6 +42,7 @@ import {
 } from '../../services/examAssessmentService';
 import QuestionRunnerWidget from './components/QuestionRunnerWidget';
 import { useSyncedPortalTab } from '../../context/PortalShellContext';
+import SecureExamSupervisorPanel from './SecureExamSupervisorPanel';
 
 type ExamTab =
   | 'schedule'
@@ -49,7 +50,8 @@ type ExamTab =
   | 'studio'
   | 'runner'
   | 'marking'
-  | 'incidents';
+  | 'incidents'
+  | 'supervisor';
 
 export default function ExaminationPortal() {
   const [role, setRole] = useState<ExamRolePersona>('LECTURER_AUTHOR');
@@ -313,6 +315,7 @@ export default function ExaminationPortal() {
     { id: 'runner', label: 'Live CBT Runner', icon: Code2 },
     { id: 'marking', label: 'Anonymous Marking & Analysis', icon: ClipboardCheck },
     { id: 'incidents', label: 'Incidents & Supplementary', icon: ShieldAlert },
+    { id: 'supervisor', label: 'Secure Exam Supervisor & Config', icon: Lock },
   ];
 
   return (
@@ -2073,6 +2076,10 @@ export default function ExaminationPortal() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'supervisor' && (
+        <SecureExamSupervisorPanel onNotify={notify} />
       )}
     </div>
   );

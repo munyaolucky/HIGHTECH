@@ -35,11 +35,11 @@ interface ButtonProps {
 }
 
 const buttonStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-[#1769AA] text-white hover:bg-[#12568E] shadow-xs',
+  primary: 'bg-[#1769AA] text-white hover:bg-[#12568E]',
   secondary:
-    'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70',
-  success: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs',
-  danger: 'bg-red-600 text-white hover:bg-red-700 shadow-xs',
+    'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800',
+  success: 'bg-emerald-700 text-white hover:bg-emerald-800',
+  danger: 'bg-red-700 text-white hover:bg-red-800',
   ghost:
     'bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
 };
@@ -57,17 +57,31 @@ export function PortalButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1769AA] disabled:opacity-50 disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1769AA] disabled:opacity-50 disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
     >
       {children}
     </button>
   );
 }
 
+function formatBreadcrumbText(raw: string): string {
+  return raw
+    .split(/\s*·\s*/)
+    .map((segment) =>
+      segment
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .replace(/\bAnd\b/g, '&')
+        .replace(/\bCbt\b/g, 'CBT')
+    )
+    .join(' / ');
+}
+
 export function PortalPageHeader({
   title,
   description,
-  breadcrumbSection = 'STUDENT PORTAL',
+  breadcrumbSection = 'Student Portal',
   children,
 }: {
   title: string;
@@ -76,20 +90,27 @@ export function PortalPageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-2xs">
+    <header className="pb-5 border-b border-slate-200/85 dark:border-slate-800 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
-          <span>HI-TECH COLLEGE</span>
-          <ChevronRight size={13} aria-hidden="true" />
-          <span>{breadcrumbSection}</span>
-        </div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-[#102D50] dark:text-white tracking-tight">
+        <nav
+          aria-label="Workspace breadcrumb"
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5"
+        >
+          <span>HI-TECH College</span>
+          <ChevronRight size={13} aria-hidden="true" className="text-slate-400" />
+          <span className="text-[#1769AA] dark:text-blue-400 font-semibold">
+            {formatBreadcrumbText(breadcrumbSection)}
+          </span>
+        </nav>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#102D50] dark:text-white tracking-tight text-balance leading-tight">
           {title}
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1">{description}</p>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 max-w-2xl leading-relaxed">
+          {description}
+        </p>
       </div>
       {children && <div className="flex flex-wrap items-center gap-2 shrink-0">{children}</div>}
-    </div>
+    </header>
   );
 }
 
@@ -108,20 +129,22 @@ export function PortalCard({
 }) {
   return (
     <section
-      className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xs overflow-hidden ${className}`}
+      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden ${className}`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-        <div>
-          <h2 className="font-bold text-sm sm:text-base text-[#102D50] dark:text-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/75 dark:border-slate-800">
+        <div className="min-w-0">
+          <h2 className="font-semibold text-sm sm:text-base text-[#102D50] dark:text-slate-100 tracking-tight">
             {title}
           </h2>
           {description && (
-            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{description}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+              {description}
+            </p>
           )}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-5 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -149,16 +172,16 @@ export function PortalToolbar({
     <div className="flex flex-col sm:flex-row gap-3 justify-between mb-4">
       <div className="relative flex-1 max-w-lg">
         <Search
-          size={16}
+          size={15}
           aria-hidden="true"
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
         />
         <input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm focus:border-[#1769AA] focus:ring-2 focus:ring-[#1769AA]/25"
+          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg pl-9 pr-4 py-2 text-xs sm:text-sm focus:border-[#1769AA] focus:outline-none focus:ring-2 focus:ring-[#1769AA]/20"
         />
       </div>
 
@@ -202,35 +225,23 @@ export function PortalStatus({
     | 'GRADUATED';
 }) {
   const styles: Record<string, string> = {
-    Approved:
-      'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70',
-    VERIFIED:
-      'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70',
-    GRADUATED:
-      'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70',
-    Pending:
-      'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/70',
-    PENDING:
-      'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/70',
-    INCOMPLETE:
-      'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/70',
-    Rejected:
-      'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/70',
-    RETURNED:
-      'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/70',
-    SUSPENDED:
-      'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/70',
-    'Under Review':
-      'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/70',
-    INVITED:
-      'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/70',
-    SUBMITTED:
-      'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/70',
+    Approved: 'text-emerald-700 dark:text-emerald-400',
+    VERIFIED: 'text-emerald-700 dark:text-emerald-400',
+    GRADUATED: 'text-emerald-700 dark:text-emerald-400',
+    Pending: 'text-amber-700 dark:text-amber-400',
+    PENDING: 'text-amber-700 dark:text-amber-400',
+    INCOMPLETE: 'text-amber-700 dark:text-amber-400',
+    Rejected: 'text-red-700 dark:text-red-400',
+    RETURNED: 'text-red-700 dark:text-red-400',
+    SUSPENDED: 'text-red-700 dark:text-red-400',
+    'Under Review': 'text-[#1769AA] dark:text-blue-400',
+    INVITED: 'text-[#1769AA] dark:text-blue-400',
+    SUBMITTED: 'text-[#1769AA] dark:text-blue-400',
   };
 
   return (
     <span
-      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${
+      className={`inline-flex items-center text-xs font-semibold whitespace-nowrap ${
         styles[status] ?? styles.Pending
       }`}
     >

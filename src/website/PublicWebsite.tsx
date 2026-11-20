@@ -27,6 +27,7 @@ import EventRegistrationPage from "./events/EventRegistrationPage";
 import EventRegistrationConfirmationPage from "./events/EventRegistrationConfirmationPage";
 import PublicEventCalendarPage from "./events/PublicEventCalendarPage";
 import PublicTicketVerifyPage from "./events/PublicTicketVerifyPage";
+import GraduationPage from "./events/GraduationPage";
 import { mapEventBannerPath } from "./events/eventBannerKeys";
 import { resolveWebsiteMediaUrl } from "../modules/website/website-media";
 import { CourseProgramme } from "../types";
@@ -309,6 +310,17 @@ export default function PublicWebsite({
         )}
 
         {currentPage === "news" && <News />}
+
+        {currentPage === "graduation" && (
+          <GraduationPage
+            resolveBannerUrl={(url, cat) => resolveWebsiteMediaUrl(mapEventBannerPath(url, cat))}
+            onBackToEvents={() => handleNavigate("events")}
+            onRegisterEvent={(eventId) => handleNavigate("event-register", eventId)}
+            onOpenCalendar={() => handleNavigate("events-calendar")}
+            onOpenVerifyTicket={() => handleNavigate("events-verify-ticket")}
+            onOpenNews={() => handleNavigate("news")}
+          />
+        )}
 
         {currentPage === "resources" && (
           <Resources onOpenPortalModal={() => setIsPortalModalOpen(true)} />

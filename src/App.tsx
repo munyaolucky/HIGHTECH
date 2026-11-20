@@ -42,6 +42,10 @@ import { PortalShellProvider } from "./context/PortalShellContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { getPortalShellConfig, ShellRoleKey } from "./config/portalShellConfigs";
 import { STAFF_ACCOUNTS, type StaffRole } from "./config/staff-navigation";
+import {
+  resolveStudentSectionFromPath,
+  type StudentPortalSection,
+} from "./services/studentPortalService";
 import { PortalRole } from "./types";
 
 const WEBSITE_PAGES = new Set([
@@ -64,6 +68,7 @@ const WEBSITE_PAGES = new Set([
   "event-details",
   "event-register",
   "event-confirmation",
+  "graduation",
   "news",
   "resources",
   "portal-guide",
@@ -120,6 +125,7 @@ interface RouteState {
   websiteSlug?: string;
   websiteToken?: string;
   staffInitialPath: string;
+  studentInitialSection?: StudentPortalSection;
   authenticatedStaffRole?: StaffRole;
   openLoginModal: boolean;
   activationToken?: string;
@@ -264,6 +270,17 @@ function parseLocationToRoute(): RouteState {
       role: "staff",
       websitePage: "home",
       staffInitialPath: `/staff/events${subSection}`,
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname === "/portal/student" || pathname.startsWith("/portal/student/")) {
+    return {
+      mode: "portal",
+      role: "student",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      studentInitialSection: resolveStudentSectionFromPath(pathname),
       openLoginModal: false,
     };
   }
@@ -566,6 +583,20 @@ export default function App() {
         return;
       }
 
+      if (target.startsWith("/portal/student")) {
+        const cleanTarget = target.replace(/\/+$/, "") || "/portal/student";
+        pushUrl(cleanTarget, {
+          mode: "portal",
+          role: "student",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          studentInitialSection: resolveStudentSectionFromPath(cleanTarget),
+          authenticatedStaffRole: staffRoleOverride,
+          openLoginModal: false,
+        });
+        return;
+      }
+
       const normalized = target.startsWith("/portal/")
         ? target.slice("/portal/".length).split("/")[0]
         : target;
@@ -583,6 +614,7 @@ export default function App() {
         role,
         websitePage: "home",
         staffInitialPath: "/staff/dashboard",
+        studentInitialSection: role === "student" ? "dashboard" : undefined,
         authenticatedStaffRole: staffRoleOverride,
         openLoginModal: false,
       });
@@ -771,6 +803,15 @@ export default function App() {
                 />
               ) : route.role === "student" ? (
                 <StudentDashboard
+                  initialSection={route.studentInitialSection}
+                  onSectionPathChange={(targetPath) => {
+                    if (
+                      typeof window !== "undefined" &&
+                      window.location.pathname !== targetPath
+                    ) {
+                      window.history.pushState({}, "", targetPath);
+                    }
+                  }}
                   onSwitchPortal={(role) => navigateToPortal(role)}
                   onLogout={() => navigateToWebsite("home", false)}
                 />

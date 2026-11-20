@@ -11,13 +11,11 @@ import {
   Moon,
   Printer,
   RefreshCw,
-  Scale,
   Search,
   Send,
   ShieldCheck,
   Smartphone,
   Sun,
-  Trash2,
   UploadCloud,
   Users,
 } from 'lucide-react';
@@ -26,12 +24,10 @@ import campusHeroUrl from '../../../assets/images/campus_hero_banner_17945872904
 import { useTheme } from '../../../context/ThemeContext';
 import { aiSupportCentreService } from '../../../services/aiSupportCentreService';
 import { engagementService } from '../../../services/engagementService';
-import { examAssessmentService } from '../../../services/examAssessmentService';
 import { hostelsService } from '../../../services/hostelsService';
 import {
   downloadStudentDocument,
   PortalOnboardingStage,
-  StudentAppealItem,
   studentPortalService,
   StudentPortalSection,
 } from '../../../services/studentPortalService';
@@ -51,6 +47,19 @@ import { SupportRequestCategory } from '../../../types/hostels';
 import StudentAcademicExtras from './StudentAcademicExtras';
 import CloudSqlAcademicRegistrationCard from './CloudSqlAcademicRegistrationCard';
 import MobileStudentCompanion, { MobileCompanionTab } from './MobileStudentCompanion';
+import StudentEventsPanel from './StudentEventsPanel';
+import StudentExamDashboard from '../pages/exams/StudentExamDashboard';
+import MyAssessmentsPage from '../pages/exams/MyAssessmentsPage';
+import AssignmentsPage from '../pages/exams/AssignmentsPage';
+import ExamTimetablePage from '../pages/exams/ExamTimetablePage';
+import OnlineExamsPage from '../pages/exams/OnlineExamsPage';
+import PracticalAssessmentsPage from '../pages/exams/PracticalAssessmentsPage';
+import ResultsPage from '../pages/exams/ResultsPage';
+import ExamClearancePage from '../pages/exams/ExamClearancePage';
+import AssessmentHistoryPage from '../pages/exams/AssessmentHistoryPage';
+import AppealsPage from '../pages/exams/AppealsPage';
+import AcademicProgressPage from '../pages/exams/AcademicProgressPage';
+import type { ExamSession } from '../exams/secure/examTypes';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
@@ -60,6 +69,7 @@ interface StudentSubPagesProps {
   onNotify: (type: 'ok' | 'err', message: string) => void;
   onRefresh: () => void;
   onSwitchPortal?: (role: string) => void;
+  onLaunchSecureExam?: (session: ExamSession) => void;
 }
 
 const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: string; subtitle: string }> = {
@@ -96,11 +106,51 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
     subtitle: 'Downloadable lecture notes, recorded classes, and practical lab manuals',
   },
   examinations: {
-    title: 'Examinations & Official Exam Card',
-    subtitle: 'Scheduled internal, KNEC & TVET CDACC assessments and fee-clearance eligibility',
+    title: 'Exams & Assessments Overview',
+    subtitle: 'Scheduled internal, KNEC & TVET CDACC assessments, CATs, and exam clearance status',
+  },
+  'exams-assessments': {
+    title: 'My Assessments',
+    subtitle: 'All CATs, midterms, practicals, assignments, quizzes, and formal exams',
+  },
+  'exams-assignments': {
+    title: 'Assignments & Coursework',
+    subtitle: 'Upload lab reports, project deliverables, and coursework submissions before deadline',
+  },
+  'exams-timetable': {
+    title: 'Examination Timetable',
+    subtitle: 'Confirmed sittings, venues, seat numbers, and examination rules',
+  },
+  'exams-online': {
+    title: 'Online Exams (CBT Sessions)',
+    subtitle: 'Timed computer-based tests with server-clock autosave and anonymous marking',
+  },
+  'exams-practical': {
+    title: 'Practical Assessments',
+    subtitle: 'Laboratory checklists, TVET CDACC competencies, and evidence uploads',
+  },
+  'exams-results': {
+    title: 'Results & Grades',
+    subtitle: 'CAT marks, released CBT scripts, final grades, and verified transcripts',
+  },
+  'exams-clearance': {
+    title: 'Exam Clearance & Permit',
+    subtitle: '75% attendance rule, fee balance clearance, library sign-off, and official Exam Card',
+  },
+  'exams-history': {
+    title: 'Assessment History',
+    subtitle: 'Completed coursework, graded CATs, mock sittings, and archived term results',
+  },
+  'exams-appeals': {
+    title: 'Appeals & Remarking',
+    subtitle: 'Submit formal CAT/exam grade remarking, special exam, or attendance appeals',
+  },
+  'exams-progress': {
+    title: 'Certificates & Academic Progress',
+    subtitle: 'Cumulative GPA, semester credits earned, and verified institutional certificates',
   },
   results: {
-    title: 'Examination Results & Official Transcripts',
+    title: 'Results & Grades',
     subtitle: 'Registrar-approved marks and verified academic transcripts (read-only student record)',
   },
   finance: {
@@ -126,6 +176,10 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
   'campus-life': {
     title: 'Campus Clubs, Events & SRC Voting',
     subtitle: 'Student societies, campus activity RSVP, and anonymous SRC secret ballot voting',
+  },
+  events: {
+    title: 'Campus Events, Passes & Certificates',
+    subtitle: 'Browse college workshops, one-click RSVP, view QR entry passes, rate events, and download certificates',
   },
   'student-id': {
     title: 'Digital Student Identification Card',
@@ -169,6 +223,7 @@ export default function StudentSubPages({
   onNotify,
   onRefresh,
   onSwitchPortal,
+  onLaunchSecureExam,
 }: StudentSubPagesProps) {
   const { theme, setTheme, textScale, setTextScale, reducedMotion, setReducedMotion } = useTheme();
   const state = studentPortalService.getState();
@@ -257,20 +312,6 @@ export default function StudentSubPages({
     }, 320);
   };
 
-  // Academic Appeals state
-  const [appealSearch, setAppealSearch] = useState('');
-  const [appealCatFilter, setAppealCatFilter] = useState<'ALL' | StudentAppealItem['category']>('ALL');
-  const [appealsRefreshing, setAppealsRefreshing] = useState(false);
-  const [showAppealForm, setShowAppealForm] = useState(false);
-  const [appealForm, setAppealForm] = useState({
-    category: 'GRADE_REMARKING' as StudentAppealItem['category'],
-    unitCode: state.units[0]?.code ?? 'CSC 301',
-    subject: '',
-    evidenceRef: '',
-    reason: '',
-  });
-  const [withdrawAppealTarget, setWithdrawAppealTarget] = useState<StudentAppealItem | null>(null);
-
   // Support tab & forms
   const [supportTab, setSupportTab] = useState<'tickets' | 'lecturers' | 'welfare'>('tickets');
   const [ticketForm, setTicketForm] = useState<{
@@ -330,7 +371,6 @@ export default function StudentSubPages({
     activeSection === 'attendance' ||
     activeSection === 'elearning' ||
     activeSection === 'attachment' ||
-    activeSection === 'clearance' ||
     activeSection === 'campus-life'
   ) {
     return (
@@ -355,6 +395,48 @@ export default function StudentSubPages({
     );
   }
 
+  const examWorkspaceProps = {
+    onNavigate,
+    onNotify,
+    onRefresh,
+    onSwitchPortal,
+    onLaunchSecureExam,
+  };
+
+  if (activeSection === 'examinations') {
+    return <StudentExamDashboard {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-assessments') {
+    return <MyAssessmentsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-assignments') {
+    return <AssignmentsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-timetable') {
+    return <ExamTimetablePage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-online') {
+    return <OnlineExamsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-practical') {
+    return <PracticalAssessmentsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-results' || activeSection === 'results') {
+    return <ResultsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-clearance' || activeSection === 'clearance') {
+    return <ExamClearancePage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-history') {
+    return <AssessmentHistoryPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-appeals' || activeSection === 'appeals') {
+    return <AppealsPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'exams-progress' || activeSection === 'academic-progress') {
+    return <AcademicProgressPage {...examWorkspaceProps} />;
+  }
+
   if (activeSection === 'mobile-companion') {
     return (
       <MobileStudentCompanion
@@ -365,6 +447,21 @@ export default function StudentSubPages({
         onRefresh={onRefresh}
         onSwitchPortal={onSwitchPortal}
       />
+    );
+  }
+
+  if (activeSection === 'events') {
+    return (
+      <div className="space-y-5">
+        {SectionShellHeader()}
+        <StudentEventsPanel
+          studentName={profile.fullName}
+          registrationNumber={regNo}
+          email={state.contact.email}
+          phone={state.contact.phoneNumber}
+          onNotify={onNotify}
+        />
+      </div>
     );
   }
 
@@ -760,8 +857,8 @@ export default function StudentSubPages({
     );
   }
 
-  // 2. PROGRAMME & ACADEMIC PROGRESS
-  if (activeSection === 'programme' || activeSection === 'academic-progress') {
+  // 2. PROGRAMME STRUCTURE
+  if (activeSection === 'programme') {
     const totalCredits = state.units.reduce((acc, u) => acc + u.credits, 0);
     return (
       <div className="space-y-5">
@@ -1248,215 +1345,6 @@ export default function StudentSubPages({
               </div>
             ))}
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 5. EXAMINATIONS & CBT LAUNCH
-  if (activeSection === 'examinations') {
-    return (
-      <div className="space-y-5">
-        {SectionShellHeader(
-          <div className="flex flex-wrap items-center gap-2">
-            <PortalButton
-              variant="secondary"
-              onClick={() => triggerSectionSync('examinations', 'Examination schedule and CBT permits synchronized.')}
-            >
-              <RefreshCw size={14} /> Sync Exams
-            </PortalButton>
-            {onSwitchPortal && (
-              <button
-                type="button"
-                onClick={() => onSwitchPortal('examination')}
-                className="px-3.5 py-2 bg-[#0866d7] hover:bg-[#0652b3] text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
-              >
-                Open CBT Exam Runner
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                downloadStudentDocument(
-                  `Exam_Permit_${regNo.replace(/\//g, '_')}.txt`,
-                  `HI-TECH COLLEGE EXAMINATION PERMIT\nStudent: ${profile.fullName}\nReg No: ${regNo}\nProgramme: ${profile.programme}\nAttendance: ${profile.attendanceRate}%\nFee Balance: KES ${fin.balance.toLocaleString()}\nEligibility: ${fin.examCleared ? 'CLEARED FOR FINAL EXAMS' : 'CAT CLEARED — CLEAR KES ' + fin.balance.toLocaleString() + ' FOR FINAL EXAM CARD'}\n`
-                );
-                onNotify('ok', 'Examination Permit downloaded.');
-              }}
-              className="px-3.5 py-2 bg-[#092c60] hover:bg-[#061f46] text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
-            >
-              <Download size={14} /> Download Exam Card
-            </button>
-          </div>
-        )}
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Examination Hall Clearance Status</h3>
-            <p className="text-slate-600 dark:text-slate-300 mt-1">
-              Attendance Standing: <strong className="font-mono">{profile.attendanceRate}%</strong> (Minimum 75% met) · Fee Clearance:{' '}
-              <strong className="font-mono tabular-nums">{fin.percentPaid}%</strong> (Balance KES {fin.balance.toLocaleString()})
-            </p>
-          </div>
-          {!fin.examCleared ? (
-            <button
-              type="button"
-              onClick={() => onNavigate('finance')}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
-            >
-              Clear Remaining Balance
-            </button>
-          ) : (
-            <span className="font-semibold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
-              <CheckCircle2 size={15} /> 100% Exam Cleared
-            </span>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-              <tr>
-                <th className="py-3 px-4 font-semibold">Code</th>
-                <th className="py-3 px-4 font-semibold">Examination Paper</th>
-                <th className="py-3 px-4 font-semibold">Exam Body</th>
-                <th className="py-3 px-4 font-semibold">Date &amp; Time</th>
-                <th className="py-3 px-4 font-semibold">Venue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {resources.exams.map((ex) => (
-                <tr key={ex.id}>
-                  <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{ex.courseCode}</td>
-                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{ex.courseTitle}</td>
-                  <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-300">{ex.examBody}</td>
-                  <td className="py-3 px-4 font-mono tabular-nums text-slate-700 dark:text-slate-200">
-                    {ex.examDate} · {ex.time}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{ex.room}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Live CBT Assessments from Examination Engine */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Online CBT Assessments &amp; Attempts (Examination Engine)
-            </h3>
-            {onSwitchPortal && (
-              <button
-                type="button"
-                onClick={() => onSwitchPortal('examination')}
-                className="text-xs font-bold text-[#0866d7] dark:text-blue-400 hover:underline"
-              >
-                Open Full CBT Workspace
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {examAssessmentService.getState().assessments.map((asm) => {
-              const myAttempt = examAssessmentService
-                .getState()
-                .attempts.find(
-                  (a) =>
-                    a.assessmentId === asm.id &&
-                    a.studentRegNo.toUpperCase() === regNo.toUpperCase()
-                );
-              return (
-                <div key={asm.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-mono font-bold text-[#0866d7] dark:text-blue-400">
-                      {asm.unitCode} · {asm.assessmentKind} · {asm.durationMinutes} mins
-                    </p>
-                    <strong className="text-slate-900 dark:text-slate-100 block mt-0.5">{asm.title}</strong>
-                    <span className="text-slate-600 dark:text-slate-300">
-                      Status: {myAttempt ? `${myAttempt.moderationStatus} (Score: ${myAttempt.totalAwarded}/${myAttempt.maxPossibleMarks})` : asm.status}
-                    </span>
-                  </div>
-                  {onSwitchPortal && (
-                    <button
-                      type="button"
-                      onClick={() => onSwitchPortal('examination')}
-                      className="px-3 py-1.5 bg-[#092c60] text-white font-semibold rounded-lg whitespace-nowrap shrink-0"
-                    >
-                      {myAttempt ? 'Review Attempt' : 'Start CBT'}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 6. RESULTS & OFFICIAL TRANSCRIPTS
-  if (activeSection === 'results') {
-    const trx = resources.transcripts[0];
-    return (
-      <div className="space-y-5">
-        {SectionShellHeader(
-          <button
-            type="button"
-            onClick={() => {
-              downloadStudentDocument(
-                `Transcript_${regNo.replace(/\//g, '_')}.txt`,
-                `HI-TECH COLLEGE OFFICIAL ACADEMIC TRANSCRIPT\nStudent: ${profile.fullName}\nReg No: ${regNo}\nTranscript Ref: ${trx?.issuanceReference ?? 'TRX-2026-0001'}\nVerification Code: ${trx?.verificationCode ?? 'VRF-HCA-99210-2026'}\nGPA: ${profile.gpa.toFixed(2)}\n\n` +
-                  state.units.map((u) => `${u.code}\t${u.title}\tScore: ${u.score ?? '-'}\tGrade: ${u.grade ?? '-'}`).join('\n')
-              );
-              onNotify('ok', 'Official Registrar-verified transcript downloaded.');
-            }}
-            className="px-4 py-2 bg-[#092c60] hover:bg-[#061f46] text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
-          >
-            <Download size={14} /> Download Official Transcript
-          </button>
-        )}
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div>
-            <p className="font-mono text-[#0866d7] dark:text-blue-400 font-semibold">
-              {trx?.issuanceReference ?? 'TRX-2026-0001'} · Code {trx?.verificationCode ?? 'VRF-HCA-99210-2026'}
-            </p>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-              Issued by {trx?.issuedBy ?? 'Dr. Kiprop Chemweno (Registrar)'}
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mt-0.5">
-              Approved examination marks are permanently locked and cannot be altered from student accounts.
-            </p>
-          </div>
-          <div className="text-left sm:text-right font-mono tabular-nums shrink-0">
-            <span className="text-slate-600 dark:text-slate-300 block">Cumulative GPA</span>
-            <strong className="text-xl font-bold text-[#092c60] dark:text-blue-300">{profile.gpa.toFixed(2)} / 4.00</strong>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-              <tr>
-                <th className="py-3 px-4 font-semibold">Unit Code</th>
-                <th className="py-3 px-4 font-semibold">Course Title</th>
-                <th className="py-3 px-4 font-semibold text-right">Credits</th>
-                <th className="py-3 px-4 font-semibold text-right">Score</th>
-                <th className="py-3 px-4 font-semibold text-right">Grade</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {state.units.map((u) => (
-                <tr key={u.code}>
-                  <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{u.code}</td>
-                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{u.title}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">{u.credits}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">{u.score ?? '-'}%</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">{u.grade ?? '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     );
@@ -2074,254 +1962,6 @@ export default function StudentSubPages({
             </div>
           )}
         </PortalCard>
-      </div>
-    );
-  }
-
-  // 10B. ACADEMIC APPEALS & REMARKING
-  if (activeSection === 'appeals') {
-    const filteredAppeals = state.appeals.filter((ap) => {
-      const catOk = appealCatFilter === 'ALL' || ap.category === appealCatFilter;
-      const q = appealSearch.trim().toLowerCase();
-      const textOk =
-        !q ||
-        ap.subject.toLowerCase().includes(q) ||
-        ap.unitCode.toLowerCase().includes(q) ||
-        ap.reason.toLowerCase().includes(q);
-      return catOk && textOk;
-    });
-
-    const categories: { value: 'ALL' | StudentAppealItem['category']; label: string }[] = [
-      { value: 'ALL', label: 'All Appeals' },
-      { value: 'GRADE_REMARKING', label: 'Grade Remarking' },
-      { value: 'ATTENDANCE_CORRECTION', label: 'Attendance' },
-      { value: 'EXAM_MISSED', label: 'Missed Exam' },
-      { value: 'FEE_WAIVER_REVIEW', label: 'Fee Review' },
-    ];
-
-    return (
-      <div className="space-y-5">
-        {SectionShellHeader(
-          <PortalButton onClick={() => setShowAppealForm((v) => !v)}>
-            <Scale size={15} /> {showAppealForm ? 'Close Appeal Form' : 'Submit New Appeal'}
-          </PortalButton>
-        )}
-
-        {showAppealForm && (
-          <PortalCard
-            title="File Formal Academic Appeal"
-            description="Appeals are routed directly to the Academic Registrar & Examinations Board."
-          >
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const res = studentPortalService.submitAppeal(appealForm);
-                if (!res.ok) return onNotify('err', res.error ?? 'Could not submit appeal');
-                onNotify('ok', `Academic appeal "${appealForm.subject}" filed for Registrar review.`);
-                setAppealForm({ ...appealForm, subject: '', evidenceRef: '', reason: '' });
-                setShowAppealForm(false);
-                onRefresh();
-              }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs"
-            >
-              <div>
-                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Appeal Category
-                </label>
-                <select
-                  value={appealForm.category}
-                  onChange={(e) =>
-                    setAppealForm({
-                      ...appealForm,
-                      category: e.target.value as StudentAppealItem['category'],
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
-                >
-                  <option value="GRADE_REMARKING">Examination / CAT Grade Remarking</option>
-                  <option value="ATTENDANCE_CORRECTION">Class Attendance Roll Correction</option>
-                  <option value="EXAM_MISSED">Special / Supplementary Exam (Missed)</option>
-                  <option value="FEE_WAIVER_REVIEW">Late Fee Penalty Waiver Review</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Course Unit / Reference
-                </label>
-                <select
-                  value={appealForm.unitCode}
-                  onChange={(e) => setAppealForm({ ...appealForm, unitCode: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
-                >
-                  {state.units.map((u) => (
-                    <option key={u.code} value={u.code}>
-                      {u.code} — {u.title}
-                    </option>
-                  ))}
-                  <option value="GENERAL">General Institutional Matter</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Appeal Subject
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Concise summary of the appeal..."
-                  value={appealForm.subject}
-                  onChange={(e) => setAppealForm({ ...appealForm, subject: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Supporting Evidence Filename
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Lab_SignIn_Proof.pdf"
-                  value={appealForm.evidenceRef}
-                  onChange={(e) => setAppealForm({ ...appealForm, evidenceRef: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-mono text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Detailed Justification (Min 10 characters)
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Provide factual dates, lecturer session details, or assessment evidence..."
-                  value={appealForm.reason}
-                  onChange={(e) => setAppealForm({ ...appealForm, reason: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div className="sm:col-span-2 flex justify-end gap-2 pt-1">
-                <PortalButton variant="secondary" onClick={() => setShowAppealForm(false)}>
-                  Cancel
-                </PortalButton>
-                <PortalButton type="submit">Submit Appeal to Registrar</PortalButton>
-              </div>
-            </form>
-          </PortalCard>
-        )}
-
-        <PortalCard
-          title={`My Submitted Appeals (${state.appeals.length})`}
-          description="Track review status or withdraw pending appeals before final determination."
-        >
-          <PortalToolbar
-            search={appealSearch}
-            onSearch={setAppealSearch}
-            placeholder="Search appeals by unit code, title, or detail..."
-            isRefreshing={appealsRefreshing}
-            onRefresh={() => {
-              setAppealsRefreshing(true);
-              window.setTimeout(() => {
-                setAppealsRefreshing(false);
-                onRefresh();
-                onNotify('ok', 'Appeals register synchronized.');
-              }, 350);
-            }}
-            onAdd={() => setShowAppealForm(true)}
-            addLabel="New Appeal"
-          />
-
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setAppealCatFilter(cat.value)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                  appealCatFilter === cat.value
-                    ? 'bg-[#102D50] text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {appealsRefreshing ? (
-            <SkeletonCardList
-              items={3}
-              columns={1}
-              showMeta
-              label="Synchronizing appeals register..."
-            />
-          ) : filteredAppeals.length === 0 ? (
-            <PortalEmptyState
-              title="No appeals match your filters"
-              description="You can submit a new academic remarking, attendance correction, or special exam appeal anytime."
-              actionLabel="File an Appeal"
-              onAction={() => setShowAppealForm(true)}
-            />
-          ) : (
-            <div className="space-y-3 text-xs">
-              {filteredAppeals.map((ap) => (
-                <div
-                  key={ap.id}
-                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-[#F4F7FB] dark:bg-slate-800/70 space-y-2"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="font-mono font-bold text-[#1769AA] dark:text-blue-400">
-                        {ap.unitCode} · {ap.category.replace(/_/g, ' ')} ·{' '}
-                        {new Date(ap.submittedAt).toLocaleDateString()}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 dark:text-white mt-0.5">
-                        {ap.subject}
-                      </h4>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <PortalStatus status={ap.status} />
-                      {ap.status !== 'Approved' && (
-                        <PortalButton
-                          variant="danger"
-                          onClick={() => setWithdrawAppealTarget(ap)}
-                        >
-                          <Trash2 size={14} /> Withdraw
-                        </PortalButton>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-300">{ap.reason}</p>
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/70 dark:border-slate-700">
-                    <span>Evidence: {ap.evidenceRef}</span>
-                    {ap.reviewerComment && (
-                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-                        Outcome: {ap.reviewerComment}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </PortalCard>
-
-        <PortalConfirmDialog
-          isOpen={Boolean(withdrawAppealTarget)}
-          title="Withdraw Academic Appeal?"
-          message={`Are you sure you want to withdraw "${withdrawAppealTarget?.subject}"? This action cannot be undone once removed from the Registrar review queue.`}
-          confirmLabel="Yes, Withdraw Appeal"
-          cancelLabel="Keep Appeal"
-          onConfirm={() => {
-            if (withdrawAppealTarget) {
-              const res = studentPortalService.cancelAppeal(withdrawAppealTarget.id);
-              if (!res.ok) onNotify('err', res.error ?? 'Could not withdraw appeal');
-              else onNotify('ok', `Withdrew appeal "${withdrawAppealTarget.subject}".`);
-            }
-            setWithdrawAppealTarget(null);
-            onRefresh();
-          }}
-          onCancel={() => setWithdrawAppealTarget(null)}
-        />
       </div>
     );
   }

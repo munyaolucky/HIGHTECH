@@ -69,6 +69,7 @@ export default function WebsiteFooter({
     { label: "Campus", href: "/campus", target: { page: "campus" } },
     { label: "Student Life", href: "/student-life", target: { page: "student-life" } },
     { label: "Events & Registration", href: "/events", target: { page: "events" } },
+    { label: "Graduation & Convocation", href: "/graduation", target: { page: "graduation" } },
     { label: "Digital Library", href: "/resources", target: { page: "resources" } },
     { label: "News & Bulletins", href: "/news", target: { page: "news" } },
     { label: "FAQs", href: "/admissions", target: { page: "admissions" } },

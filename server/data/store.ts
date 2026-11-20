@@ -66,6 +66,14 @@ import type {
   EventVenueRecord,
 } from '../modules/events/events.types.ts';
 import { createEventsModuleSeed } from '../modules/events/events.seed.ts';
+import type {
+  SecureExamAuditLogRecord,
+  SecureExamDefinitionRecord,
+  SecureExamIncidentRecord,
+  SecureExamSecurityEventRecord,
+  SecureExamSessionRecord,
+} from '../modules/exams/secure/secureExam.types.ts';
+import { createSecureExamSeed } from '../modules/exams/secure/secureExam.seed.ts';
 
 export type StaffTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
 
@@ -590,6 +598,11 @@ export interface PortalDatabase {
   collegeEventNotifications: EventNotificationRecord[];
   collegeEventAuditLogs: EventAuditLogRecord[];
   eventSettings: EventSettingsRecord;
+  secureExamDefinitions: SecureExamDefinitionRecord[];
+  secureExamSessions: SecureExamSessionRecord[];
+  secureExamEvents: SecureExamSecurityEventRecord[];
+  secureExamIncidents: SecureExamIncidentRecord[];
+  secureExamAuditLogs: SecureExamAuditLogRecord[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -1995,6 +2008,7 @@ function createSeedDatabase(): PortalDatabase {
         collegeEventNotifications: eventsSeed.collegeEventNotifications,
         collegeEventAuditLogs: eventsSeed.collegeEventAuditLogs,
         eventSettings: eventsSeed.eventSettings,
+        ...createSecureExamSeed(),
       };
     })(),
   };
@@ -2130,64 +2144,64 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
       : seed.teachingAuditLogs,
     collegeEvents: (Array.isArray(loaded.collegeEvents) ? loaded.collegeEvents : seed.collegeEvents).map(
       (ev, idx) => ({
-        eventCode: `HTE-2026-${String(idx + 1).padStart(3, '0')}`,
-        endDate: ev.eventDate,
-        timezone: 'Africa/Nairobi',
-        isMultiDay: false,
-        recurrencePattern: 'NONE' as const,
-        campus: 'Nairobi Main Campus',
-        venueId: null,
-        building: '',
-        room: '',
-        mapsLink: '',
-        onlinePlatform: '',
-        accessibilityInfo: '',
-        parkingInfo: '',
-        showContactPhonePublicly: true,
-        language: 'English',
-        tags: [],
-        visibility: 'PUBLIC' as const,
-        waitlistCapacity: 25,
-        checkedOutCount: 0,
-        registrationOpenDate: ev.createdAt || '2026-01-01T08:00:00.000Z',
-        studentFeeAmount: ev.isPaid ? Math.round((ev.feeAmount || 0) * 0.5) : 0,
-        reminderHours: [24, 2],
-        confirmationMessage: '',
-        certificateEnabled: false,
-        certificateType: 'Certificate of Participation',
-        certificateMinAttendance: true,
-        feedbackEnabled: true,
         ...ev,
+        eventCode: ev.eventCode || `HTE-2026-${String(idx + 1).padStart(3, '0')}`,
+        endDate: ev.endDate || ev.eventDate,
+        timezone: ev.timezone || 'Africa/Nairobi',
+        isMultiDay: ev.isMultiDay ?? false,
+        recurrencePattern: ev.recurrencePattern || ('NONE' as const),
+        campus: ev.campus || 'Nairobi Main Campus',
+        venueId: ev.venueId ?? null,
+        building: ev.building ?? '',
+        room: ev.room ?? '',
+        mapsLink: ev.mapsLink ?? '',
+        onlinePlatform: ev.onlinePlatform ?? '',
+        accessibilityInfo: ev.accessibilityInfo ?? '',
+        parkingInfo: ev.parkingInfo ?? '',
+        showContactPhonePublicly: ev.showContactPhonePublicly ?? true,
+        language: ev.language || 'English',
+        tags: Array.isArray(ev.tags) ? ev.tags : [],
+        visibility: ev.visibility || ('PUBLIC' as const),
+        waitlistCapacity: ev.waitlistCapacity ?? 25,
+        checkedOutCount: ev.checkedOutCount ?? 0,
+        registrationOpenDate: ev.registrationOpenDate || ev.createdAt || '2026-01-01T08:00:00.000Z',
+        studentFeeAmount: ev.studentFeeAmount ?? (ev.isPaid ? Math.round((ev.feeAmount || 0) * 0.5) : 0),
+        reminderHours: Array.isArray(ev.reminderHours) ? ev.reminderHours : [24, 2],
+        confirmationMessage: ev.confirmationMessage ?? '',
+        certificateEnabled: ev.certificateEnabled ?? false,
+        certificateType: ev.certificateType || 'Certificate of Participation',
+        certificateMinAttendance: ev.certificateMinAttendance ?? true,
+        feedbackEnabled: ev.feedbackEnabled ?? true,
       })
     ),
     collegeEventSchedules: (Array.isArray(loaded.collegeEventSchedules)
       ? loaded.collegeEventSchedules
       : seed.collegeEventSchedules
     ).map((sc) => ({
-      dayNumber: 1,
       ...sc,
+      dayNumber: sc.dayNumber ?? 1,
     })),
     collegeEventSpeakers: (Array.isArray(loaded.collegeEventSpeakers)
       ? loaded.collegeEventSpeakers
       : seed.collegeEventSpeakers
     ).map((sp) => ({
-      speakerRole: 'Guest Speaker' as const,
-      confirmationStatus: 'CONFIRMED' as const,
       ...sp,
+      speakerRole: sp.speakerRole || ('Guest Speaker' as const),
+      confirmationStatus: sp.confirmationStatus || ('CONFIRMED' as const),
     })),
     collegeEventRegistrations: (Array.isArray(loaded.collegeEventRegistrations)
       ? loaded.collegeEventRegistrations
       : seed.collegeEventRegistrations
     ).map((reg) => ({
-      ticketType: 'General Admission',
-      paymentStatus: 'PAID' as const,
-      amountDue: 0,
-      amountPaid: 0,
-      checkedOut: false,
-      checkedOutAt: null,
-      organiserNotes: '',
-      certificateCode: null,
       ...reg,
+      ticketType: reg.ticketType || 'General Admission',
+      paymentStatus: reg.paymentStatus || ('PAID' as const),
+      amountDue: reg.amountDue ?? 0,
+      amountPaid: reg.amountPaid ?? 0,
+      checkedOut: reg.checkedOut ?? false,
+      checkedOutAt: reg.checkedOutAt ?? null,
+      organiserNotes: reg.organiserNotes ?? '',
+      certificateCode: reg.certificateCode ?? null,
     })),
     collegeEventVenues: Array.isArray(loaded.collegeEventVenues)
       ? loaded.collegeEventVenues
@@ -2216,6 +2230,21 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     eventSettings: loaded.eventSettings
       ? { ...seed.eventSettings, ...loaded.eventSettings }
       : seed.eventSettings,
+    secureExamDefinitions: Array.isArray(loaded.secureExamDefinitions)
+      ? loaded.secureExamDefinitions
+      : seed.secureExamDefinitions,
+    secureExamSessions: Array.isArray(loaded.secureExamSessions)
+      ? loaded.secureExamSessions
+      : seed.secureExamSessions,
+    secureExamEvents: Array.isArray(loaded.secureExamEvents)
+      ? loaded.secureExamEvents
+      : seed.secureExamEvents,
+    secureExamIncidents: Array.isArray(loaded.secureExamIncidents)
+      ? loaded.secureExamIncidents
+      : seed.secureExamIncidents,
+    secureExamAuditLogs: Array.isArray(loaded.secureExamAuditLogs)
+      ? loaded.secureExamAuditLogs
+      : seed.secureExamAuditLogs,
   };
 }
 

@@ -55,6 +55,7 @@ import { subscribeErpSync } from '../../services/collegeErpService';
 import { engagementService } from '../../services/engagementService';
 import {
   PortalOnboardingStage,
+  STUDENT_SECTION_PATHS,
   studentPortalService,
   StudentPortalSection,
 } from '../../services/studentPortalService';
@@ -63,7 +64,11 @@ import { PortalConfirmDialog } from '../../components/ui/PortalUI';
 import { MobileCompanionTab } from './components/MobileStudentCompanion';
 import StudentAnalyticsRow from './components/StudentAnalyticsRow';
 import StudentAssistantWidget from './components/StudentAssistantWidget';
+import StudentSidebar from './components/StudentSidebar';
 import StudentSubPages from './components/StudentSubPages';
+import SecureExamPage from './exams/secure/SecureExamPage';
+import { startServerSecureExamSession } from './exams/secure/secureExamData';
+import type { ExamSession } from './exams/secure/examTypes';
 
 type StudentDashboardProps = {
   studentName?: string;
@@ -74,110 +79,53 @@ type StudentDashboardProps = {
   registeredCourses?: number;
   attendance?: number;
   gpa?: number;
+  initialSection?: StudentPortalSection;
+  onSectionPathChange?: (path: string) => void;
   onNavigate?: (page: string) => void;
   onLogout?: () => void;
   onSwitchPortal?: (role: string) => void;
 };
 
-interface SidebarNavItem {
-  label: string;
-  icon: React.ComponentType<{ size?: number }>;
-  page: StudentPortalSection;
-  badgeText?: string;
-}
-
-const MENU_GROUPS: { group: string; items: SidebarNavItem[] }[] = [
-  {
-    group: 'OVERVIEW',
-    items: [
-      { label: 'Dashboard', icon: Home, page: 'dashboard' },
-      { label: 'Mobile Companion', icon: Smartphone, page: 'mobile-companion', badgeText: 'App' },
-    ],
-  },
-  {
-    group: 'ACADEMIC MANAGEMENT',
-    items: [
-      { label: 'My Profile', icon: UserRound, page: 'profile' },
-      { label: 'My Programme', icon: GraduationCap, page: 'programme' },
-      { label: 'Academic Registration', icon: ClipboardList, page: 'course-registration' },
-      { label: 'Timetable & Tasks', icon: CalendarDays, page: 'timetable' },
-      { label: 'Class Attendance', icon: UserCheck, page: 'attendance' },
-      { label: 'E-Learning', icon: Laptop, page: 'elearning' },
-      { label: 'Examinations & Card', icon: FileCheck2, page: 'examinations' },
-      { label: 'Results & Transcripts', icon: FileText, page: 'results' },
-      { label: 'Academic Appeals', icon: Scale, page: 'appeals' },
-    ],
-  },
-  {
-    group: 'FINANCIAL SERVICES',
-    items: [
-      { label: 'Fees & Finance', icon: CreditCard, page: 'finance' },
-      { label: 'Payment Receipts', icon: Receipt, page: 'receipts' },
-    ],
-  },
-  {
-    group: 'STUDENT SERVICES',
-    items: [
-      { label: 'Digital Library', icon: BookOpen, page: 'library' },
-      { label: 'Attachment & Careers', icon: Briefcase, page: 'attachment' },
-      { label: 'Clearance', icon: FileCheck2, page: 'clearance' },
-      { label: 'Clubs & SRC Voting', icon: Vote, page: 'campus-life' },
-      { label: 'Digital Student ID', icon: UserRound, page: 'student-id' },
-      { label: 'Documents & Downloads', icon: Download, page: 'documents' },
-      { label: 'Support & Hostels', icon: HeartHandshake, page: 'support', badgeText: 'Help' },
-      { label: 'Notifications', icon: Bell, page: 'notifications' },
-      { label: 'Settings', icon: Settings, page: 'settings' },
-    ],
-  },
-];
-
 const QUICK_ACTIONS: {
   title: string;
   description: string;
-  icon: React.ComponentType<{ size?: number }>;
-  gradientClass: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   page: StudentPortalSection;
 }[] = [
   {
     title: 'View Timetable',
-    description: 'See your classes',
+    description: 'Weekly class schedule',
     icon: CalendarDays,
-    gradientClass: 'bg-gradient-to-br from-[#0871df] to-[#0757b9]',
     page: 'timetable',
   },
   {
     title: 'Register Units',
-    description: 'Manage your courses',
+    description: 'Manage course units',
     icon: CheckCircle2,
-    gradientClass: 'bg-gradient-to-br from-[#0a9a5d] to-[#087b4c]',
     page: 'course-registration',
   },
   {
-    title: 'Check Results',
-    description: 'View your grades',
+    title: 'Exams & Results',
+    description: 'CATs, CBT & grades',
     icon: ClipboardList,
-    gradientClass: 'bg-gradient-to-br from-[#8252d8] to-[#6840b9]',
-    page: 'results',
+    page: 'examinations',
   },
   {
     title: 'Pay Fees',
     description: 'Lipa na M-Pesa STK',
     icon: CreditCard,
-    gradientClass: 'bg-gradient-to-br from-[#08a6a9] to-[#078c98]',
     page: 'finance',
   },
   {
-    title: 'Access Library',
-    description: 'Books and e-resources',
+    title: 'Digital Library',
+    description: 'Books & e-resources',
     icon: BookMarked,
-    gradientClass: 'bg-gradient-to-br from-[#f49b1c] to-[#e98013]',
     page: 'library',
   },
   {
-    title: 'Get Support',
-    description: 'Contact the college',
+    title: 'Student Support',
+    description: 'Helpdesk & welfare',
     icon: Headphones,
-    gradientClass: 'bg-gradient-to-br from-[#174c8b] to-[#10396f]',
     page: 'support',
   },
 ];
@@ -189,14 +137,22 @@ const SEARCH_DIRECTORY: { label: string; keywords: string; section: StudentPorta
   { label: 'Weekly Timetable & Assignments', keywords: 'timetable classes schedule assignment submit', section: 'timetable' },
   { label: 'Class Attendance & QR Check-In', keywords: 'attendance register qr checkin roll percentage', section: 'attendance' },
   { label: 'E-Learning Notes & Lab Manuals', keywords: 'elearning lecture notes videos slides labs lms', section: 'elearning' },
-  { label: 'Examinations, CBT & Exam Card', keywords: 'exams knec cdacc cbt permit card venue', section: 'examinations' },
-  { label: 'Results & Official Transcripts', keywords: 'results grades marks gpa transcript', section: 'results' },
-  { label: 'Academic Appeals & Remarking', keywords: 'appeal remarking grade correction attendance missed exam fee waiver', section: 'appeals' },
+  { label: 'Exams & Assessments Overview', keywords: 'exams assessments overview cats cards summary', section: 'examinations' },
+  { label: 'My Assessments (CATs, Quizzes, Midterms)', keywords: 'my assessments cat1 cat2 cat3 midterm practical quiz presentation oral', section: 'exams-assessments' },
+  { label: 'Assignments & Coursework Uploads', keywords: 'assignments coursework homework submit upload', section: 'exams-assignments' },
+  { label: 'Exam Timetable & Venues', keywords: 'exam timetable schedule hall seat knec cdacc', section: 'exams-timetable' },
+  { label: 'Online Exams (CBT Sessions)', keywords: 'online exams cbt computer test timed quiz', section: 'exams-online' },
+  { label: 'Practical & Competency Assessments', keywords: 'practical lab cdacc competency evidence checklist', section: 'exams-practical' },
+  { label: 'Results, Grades & Transcripts', keywords: 'results grades marks gpa transcript cat score', section: 'exams-results' },
+  { label: 'Exam Clearance & Permit', keywords: 'exam clearance card permit 75% attendance fee hold', section: 'exams-clearance' },
+  { label: 'Assessment History Archive', keywords: 'assessment history past exams supplementary mock', section: 'exams-history' },
+  { label: 'Appeals & Remarking Requests', keywords: 'appeal remarking grade correction attendance missed exam fee waiver', section: 'exams-appeals' },
+  { label: 'Certificates & Academic Progress', keywords: 'certificates progress credits gpa standing cdacc knec', section: 'exams-progress' },
   { label: 'Fees, Invoice, Lipa na M-Pesa & Receipts', keywords: 'fees invoice helb mpesa payment balance receipt', section: 'finance' },
   { label: 'Verified Payment Receipts', keywords: 'receipts download tuition ledger statement', section: 'receipts' },
   { label: 'Digital Library & Book Holds', keywords: 'library books reserve ebooks pdf loans', section: 'library' },
   { label: 'Industrial Attachment & Logbook', keywords: 'attachment internship logbook intro letter career board', section: 'attachment' },
-  { label: 'Institutional Clearance Form', keywords: 'clearance graduation finance library hostel hod', section: 'clearance' },
+  { label: 'Campus Events, Tickets, QR Passes & Certificates', keywords: 'events workshops seminars tickets qr pass certificates feedback', section: 'events' },
   { label: 'Campus Clubs, Events & SRC Elections', keywords: 'clubs societies events rsvp src voting elections ballot', section: 'campus-life' },
   { label: 'Digital Student ID Card', keywords: 'id card qr print badge', section: 'student-id' },
   { label: 'Official Documents & Uploaded Verification', keywords: 'documents admission letter handbook statement upload kcse', section: 'documents' },
@@ -206,6 +162,8 @@ const SEARCH_DIRECTORY: { label: string; keywords: string; section: StudentPorta
 ];
 
 export default function StudentDashboard({
+  initialSection,
+  onSectionPathChange,
   onNavigate,
   onLogout,
   onSwitchPortal,
@@ -213,10 +171,9 @@ export default function StudentDashboard({
   const { theme, toggleTheme } = useTheme();
   const authCtx = useContext(AuthContext);
   const isDark = theme === 'dark';
-  const [activePage, setActivePage] = useState<StudentPortalSection>('dashboard');
+  const [activePage, setActivePage] = useState<StudentPortalSection>(initialSection ?? 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarQuery, setSidebarQuery] = useState('');
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -225,10 +182,17 @@ export default function StudentDashboard({
   const [mobileCompanionTab, setMobileCompanionTab] = useState<MobileCompanionTab>('today');
   const [banner, setBanner] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'logout' | null>(null);
+  const [activeSecureExamSession, setActiveSecureExamSession] = useState<ExamSession | null>(null);
   const [, setVersionTick] = useState(0);
 
   const refresh = () => setVersionTick((n) => n + 1);
   const notify = (type: 'ok' | 'err', text: string) => setBanner({ type, text });
+
+  useEffect(() => {
+    if (initialSection) {
+      setActivePage(initialSection);
+    }
+  }, [initialSection]);
 
   useEffect(() => {
     return subscribeErpSync(refresh);
@@ -268,6 +232,9 @@ export default function StudentDashboard({
     if (category === 'SECURITY') {
       return 'settings';
     }
+    if (t.includes('event') || t.includes('ticket') || t.includes('certificate')) {
+      return 'events';
+    }
     if (t.includes('exam') || t.includes('cat') || t.includes('practical')) {
       return 'examinations';
     }
@@ -283,6 +250,7 @@ export default function StudentDashboard({
     setSearchValue('');
     setMobileSearchOpen(false);
     setBanner(null);
+    onSectionPathChange?.(STUDENT_SECTION_PATHS[page]);
     onNavigate?.(page);
   };
 
@@ -399,26 +367,36 @@ export default function StudentDashboard({
   ];
 
   const resources = studentPortalService.getStaticResources();
-  const filteredGroups = MENU_GROUPS.map((g) => ({
-    ...g,
-    items: g.items.filter(
-      (item) =>
-        !sidebarQuery.trim() ||
-        item.label.toLowerCase().includes(sidebarQuery.toLowerCase()) ||
-        item.page.toLowerCase().includes(sidebarQuery.toLowerCase())
-    ),
-  })).filter((g) => g.items.length > 0);
+  const examSummary = studentPortalService.getExamDashboardSummary();
+
+  if (activeSecureExamSession) {
+    return (
+      <SecureExamPage
+        initialSession={activeSecureExamSession}
+        onExitPortal={() => {
+          setActiveSecureExamSession(null);
+          refresh();
+        }}
+        onStartServerSession={(examId) =>
+          startServerSecureExamSession(examId, {
+            name: profile.fullName,
+            regNo: profile.registrationNumber,
+          })
+        }
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-[#102D50] dark:text-slate-100 font-sans flex flex-col transition-colors">
+    <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1322] text-[#102D50] dark:text-slate-100 font-sans flex flex-col transition-colors">
       {/* TOP PORTAL HEADER */}
-      <header className="sticky top-0 z-40 h-[72px] px-4 sm:px-7 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 transition-colors">
+      <header className="sticky top-0 z-40 h-16 px-4 sm:px-6 bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-4 transition-colors">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             aria-label="Toggle student menu"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-xl text-[#102D50] dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="lg:hidden p-2 rounded-lg text-[#102D50] dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -426,34 +404,34 @@ export default function StudentDashboard({
           <button
             type="button"
             onClick={() => navigate('dashboard')}
-            className="flex items-center gap-3 text-left"
+            className="flex items-center gap-2.5 text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-[#102D50] text-[#F5EBDD] border-b-2 border-[#B83232] flex items-center justify-center shrink-0 shadow-xs font-black text-base">
+            <div className="w-9 h-9 rounded-lg bg-[#102D50] text-[#F5EBDD] border-b-2 border-[#B83232] flex items-center justify-center shrink-0 font-extrabold text-sm">
               H
             </div>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-extrabold text-[#102D50] dark:text-white tracking-tight truncate">
+              <h1 className="text-sm sm:text-base font-bold text-[#102D50] dark:text-white tracking-tight truncate">
                 HI-TECH COLLEGE
               </h1>
-              <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hidden sm:block">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hidden sm:block">
                 Student Portal
               </p>
             </div>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3.5">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* MOBILE COMPANION LAUNCHER */}
           <button
             type="button"
             onClick={() => openMobileCompanion('today')}
-            className={`hidden sm:inline-flex items-center gap-1.5 min-h-[40px] px-3 rounded-xl border text-xs font-bold transition-colors ${
+            className={`hidden sm:inline-flex items-center gap-1.5 min-h-[38px] px-3 rounded-lg border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
               activePage === 'mobile-companion'
                 ? 'bg-[#102D50] text-white border-[#102D50] dark:bg-[#1769AA] dark:border-[#1769AA]'
-                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[#102D50] dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[#102D50] dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
-            <Smartphone size={15} />
+            <Smartphone size={14} />
             <span>Companion</span>
           </button>
 
@@ -732,148 +710,19 @@ export default function StudentDashboard({
       )}
 
       <div className="flex flex-1 min-h-0">
-        {/* SECTIONED COLLAPSIBLE NAVY SIDEBAR */}
-        <aside
-          className={`fixed lg:sticky top-[72px] left-0 z-30 h-[calc(100vh-72px)] bg-gradient-to-b from-[#102D50] to-[#08192e] text-white p-3 pt-4 flex flex-col overflow-y-auto scrollview-dark transition-all duration-200 ${
-            sidebarCollapsed ? 'lg:w-[74px]' : 'w-64'
-          } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
-        >
-          {/* Sidebar Brand Header & Collapse Control */}
-          <div className="flex items-center justify-between gap-2 px-1.5 mb-3 pb-2 border-b border-[#B83232]/70">
-            {!sidebarCollapsed && (
-              <span className="text-[10px] font-extrabold tracking-widest text-[#F5EBDD]">
-                STUDENT PORTAL
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed((c) => !c)}
-              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="hidden lg:flex w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 items-center justify-center text-blue-100 ml-auto"
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-            </button>
-          </div>
-
-          {/* Instant Sidebar Search */}
-          {!sidebarCollapsed && (
-            <div className="px-1 mb-3">
-              <div className="bg-white/10 border border-white/15 rounded-xl px-2.5 py-2 flex items-center gap-2 focus-within:border-[#E8B44A] focus-within:ring-2 focus-within:ring-[#E8B44A]/35">
-                <Search size={14} className="text-blue-200 shrink-0" aria-hidden="true" />
-                <input
-                  value={sidebarQuery}
-                  onChange={(e) => setSidebarQuery(e.target.value)}
-                  placeholder="Filter portal menu..."
-                  aria-label="Filter student sidebar menu"
-                  className="w-full bg-transparent text-[11px] text-white placeholder:text-blue-200 focus:outline-none"
-                />
-                {sidebarQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSidebarQuery('')}
-                    aria-label="Clear menu filter"
-                    className="text-blue-100 hover:text-white"
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Sectioned Nav Groups */}
-          <div className="space-y-4">
-            {filteredGroups.map((group) => (
-              <div key={group.group}>
-                {!sidebarCollapsed && (
-                  <p className="px-3 mb-1.5 text-[10px] font-extrabold tracking-widest text-blue-200">
-                    {group.group}
-                  </p>
-                )}
-                <nav className="space-y-1">
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activePage === item.page;
-                    const unreadCount = item.page === 'notifications' ? unreadNotifications.length : 0;
-                    return (
-                      <button
-                        key={item.page}
-                        type="button"
-                        aria-current={isActive ? 'page' : undefined}
-                        title={sidebarCollapsed ? item.label : undefined}
-                        onClick={() => navigate(item.page)}
-                        className={`w-full min-h-[38px] px-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-left transition-colors ${
-                          isActive
-                            ? 'bg-[#1769AA] text-white shadow-sm'
-                            : 'text-blue-50 hover:bg-white/10'
-                        } ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
-                      >
-                        <Icon size={17} />
-                        {!sidebarCollapsed && (
-                          <>
-                            <span className="flex-1 whitespace-nowrap truncate">{item.label}</span>
-                            {unreadCount > 0 ? (
-                              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
-                                {unreadCount}
-                              </span>
-                            ) : (
-                              item.badgeText && (
-                                <span className="text-[10px] text-[#E8B44A] font-bold">
-                                  {item.badgeText}
-                                </span>
-                              )
-                            )}
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-auto pt-5 space-y-3">
-            {!sidebarCollapsed && (
-              <div className="p-3.5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
-                <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-                  <MessageCircle size={17} />
-                </div>
-                <strong className="text-xs block">Need assistance?</strong>
-                <p className="text-[11px] text-blue-100 leading-relaxed">
-                  Raise a helpdesk ticket or message your lecturer directly.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate('support')}
-                  className="text-[11px] font-bold text-[#E8B44A] inline-flex items-center gap-1 hover:underline"
-                >
-                  Contact Support <ArrowRight size={13} />
-                </button>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setActiveModal('logout')}
-              title={sidebarCollapsed ? 'Logout' : undefined}
-              className={`w-full py-2.5 px-3 border-t border-white/15 flex items-center gap-3 text-xs font-semibold text-blue-100 hover:text-red-200 ${
-                sidebarCollapsed ? 'justify-center px-0' : ''
-              }`}
-            >
-              <LogOut size={17} /> {!sidebarCollapsed && 'Logout'}
-            </button>
-          </div>
-        </aside>
-
-        {sidebarOpen && (
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 top-[72px] bg-slate-950/50 z-20 lg:hidden"
-          />
-        )}
+        <StudentSidebar
+          activePage={activePage}
+          studentName={profile.fullName}
+          registrationNumber={profile.registrationNumber}
+          unreadNotificationsCount={unreadNotifications.length}
+          pendingAssessmentsCount={examSummary.pendingAssessments}
+          sidebarOpen={sidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+          onCloseMobile={() => setSidebarOpen(false)}
+          onNavigate={navigate}
+          onLogoutClick={() => setActiveModal('logout')}
+        />
 
         {/* MAIN VIEWPORT */}
         <main className="flex-1 min-w-0 p-4 sm:p-6 pb-20 lg:pb-6">
@@ -908,6 +757,12 @@ export default function StudentDashboard({
                 onNotify={notify}
                 onRefresh={refresh}
                 onSwitchPortal={onSwitchPortal}
+                onLaunchSecureExam={(session) => {
+                  setSidebarOpen(false);
+                  setNotificationOpen(false);
+                  setProfileOpen(false);
+                  setActiveSecureExamSession(session);
+                }}
               />
             ) : (
               <>
@@ -1170,14 +1025,14 @@ export default function StudentDashboard({
                   );
                 })()}
 
-                {/* 6 QUICK ACTION CARDS (HORIZONTAL SNAP SCROLLVIEW ON COMPACT VIEWPORTS, 6-COL GRID ON XL) */}
+                {/* 6 QUICK ACTION ITEMS (SINGLE-ELEVATION ARCHITECTURAL RAIL) */}
                 <section aria-label="Quick student actions">
                   <ScrollView
                     direction="horizontal"
                     snap
                     showArrows
                     hideScrollbar
-                    fadeColor={isDark ? 'from-[#0b1424]' : 'from-[#F4F7FB]'}
+                    fadeColor={isDark ? 'from-[#0B1322]' : 'from-[#F6F8FB]'}
                     ariaLabel="Quick actions horizontal scrollview"
                   >
                     <div className="flex xl:grid xl:grid-cols-6 gap-3 pb-1">
@@ -1188,20 +1043,19 @@ export default function StudentDashboard({
                             key={action.page}
                             type="button"
                             onClick={() => navigate(action.page)}
-                            className={`${action.gradientClass} scrollview-snap-item min-w-[205px] xl:min-w-0 text-white rounded-2xl p-3.5 min-h-[76px] flex items-center gap-3 text-left shadow-sm hover:-translate-y-0.5 transition-transform`}
+                            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-[#1769AA] dark:hover:border-blue-500 scrollview-snap-item min-w-[205px] xl:min-w-0 rounded-xl p-3.5 min-h-[70px] flex items-center gap-3 text-left transition-colors group"
                           >
-                            <span className="shrink-0">
-                              <Icon size={24} />
+                            <span className="w-9 h-9 rounded-lg bg-[#eef4fd] dark:bg-slate-800 text-[#1769AA] dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:bg-[#1769AA] group-hover:text-white transition-colors">
+                              <Icon size={18} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <strong className="block text-xs font-bold leading-tight truncate">
+                              <strong className="block text-xs font-semibold text-[#102D50] dark:text-white leading-tight truncate">
                                 {action.title}
                               </strong>
-                              <span className="block text-[11px] text-white/85 truncate mt-0.5">
+                              <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                                 {action.description}
                               </span>
                             </span>
-                            <ArrowRight size={15} className="shrink-0 opacity-85" />
                           </button>
                         );
                       })}
@@ -1210,78 +1064,78 @@ export default function StudentDashboard({
                 </section>
 
                 {/* MAIN 2-COLUMN DASHBOARD GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                   {/* LEFT 2 COLUMNS */}
-                  <div className="lg:col-span-2 space-y-5">
-                    {/* ACADEMIC OVERVIEW */}
-                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-                      <div className="flex items-center justify-between gap-2">
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* ACADEMIC OVERVIEW (UNIFIED FLAT ARCHITECTURAL SURFACE) */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden">
+                      <div className="px-5 py-4 border-b border-slate-200/75 dark:border-slate-800 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 text-[#102D50] dark:text-white">
-                          <BarChart3 size={20} className="text-[#1769AA] dark:text-blue-400" />
-                          <h3 className="text-sm font-extrabold">Your Academic Overview</h3>
+                          <BarChart3 size={18} className="text-[#1769AA] dark:text-blue-400" />
+                          <h3 className="text-sm font-semibold">Your Academic Overview</h3>
                         </div>
                         <button
                           type="button"
-                          onClick={() => navigate('academic-progress')}
-                          className="text-xs font-bold text-[#1769AA] dark:text-blue-400 hover:underline inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+                          onClick={() => navigate('exams-progress')}
+                          className="text-xs font-semibold text-[#1769AA] dark:text-blue-400 hover:underline inline-flex items-center gap-1 whitespace-nowrap shrink-0"
                         >
-                          View Details <ArrowRight size={14} />
+                          View Details <ArrowRight size={13} />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#102D50] to-[#17467b] text-white flex items-center gap-3">
-                          <GraduationCap size={26} className="shrink-0 text-[#E8B44A]" />
-                          <div className="min-w-0">
-                            <span className="text-[11px] text-blue-100 block">Current Programme</span>
-                            <strong className="text-xs font-bold block truncate">{profile.programme}</strong>
-                          </div>
+                      <div className="px-5 py-3.5 border-b border-slate-200/70 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 block text-[11px]">
+                            Current Programme
+                          </span>
+                          <strong className="text-sm font-semibold text-[#102D50] dark:text-white">
+                            {profile.programme}
+                          </strong>
                         </div>
-
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#12a66c] to-[#078452] text-white flex items-center gap-3">
-                          <CalendarDays size={26} className="shrink-0" />
+                        <div className="flex items-center gap-5 font-mono tabular-nums text-xs text-slate-600 dark:text-slate-300">
                           <div>
-                            <span className="text-[11px] text-emerald-100 block">Academic Year</span>
-                            <strong className="text-sm font-bold font-mono tabular-nums">{profile.academicYear}</strong>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-sans">
+                              Academic Year
+                            </span>
+                            <strong className="text-[#102D50] dark:text-white">
+                              {profile.academicYear}
+                            </strong>
                           </div>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#1769AA] to-[#104f82] text-white flex items-center gap-3">
-                          <CalendarCheck size={26} className="shrink-0" />
                           <div>
-                            <span className="text-[11px] text-blue-100 block">Current Semester</span>
-                            <strong className="text-sm font-bold">{profile.semester}</strong>
-                          </div>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-[#d9eaff] dark:bg-blue-950/60 text-[#0753ac] dark:text-blue-300 flex items-center gap-3">
-                          <BookOpen size={26} className="shrink-0" />
-                          <div>
-                            <span className="text-[11px] font-semibold block">Registered Units</span>
-                            <strong className="text-base font-extrabold font-mono tabular-nums">
-                              {state.units.length}
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-sans">
+                              Current Term
+                            </span>
+                            <strong className="text-[#102D50] dark:text-white font-sans">
+                              {profile.semester}
                             </strong>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="p-3.5 rounded-xl bg-[#d4f5e4] dark:bg-emerald-950/60 text-[#08784d] dark:text-emerald-300 flex items-center gap-3">
-                          <CheckCircle2 size={26} className="shrink-0" />
-                          <div>
-                            <span className="text-[11px] font-semibold block">Attendance</span>
-                            <strong className="text-base font-extrabold font-mono tabular-nums">
-                              {profile.attendanceRate}%
-                            </strong>
-                          </div>
+                      <div className="grid grid-cols-3 divide-x divide-slate-200/80 dark:divide-slate-800">
+                        <div className="p-4 sm:p-5">
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                            Registered Units
+                          </span>
+                          <strong className="text-2xl font-bold text-[#102D50] dark:text-white font-mono tabular-nums mt-1 block">
+                            {state.units.length}
+                          </strong>
                         </div>
-
-                        <div className="p-3.5 rounded-xl bg-[#fff0d8] dark:bg-amber-950/60 text-[#a65c00] dark:text-amber-300 flex items-center gap-3">
-                          <Star size={26} className="shrink-0" />
-                          <div>
-                            <span className="text-[11px] font-semibold block">GPA</span>
-                            <strong className="text-base font-extrabold font-mono tabular-nums">
-                              {profile.gpa.toFixed(2)}
-                            </strong>
-                          </div>
+                        <div className="p-4 sm:p-5">
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                            Attendance Rate
+                          </span>
+                          <strong className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums mt-1 block">
+                            {profile.attendanceRate}%
+                          </strong>
+                        </div>
+                        <div className="p-4 sm:p-5">
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                            Cumulative GPA
+                          </span>
+                          <strong className="text-2xl font-bold text-[#1769AA] dark:text-blue-400 font-mono tabular-nums mt-1 block">
+                            {profile.gpa.toFixed(2)}
+                          </strong>
                         </div>
                       </div>
                     </section>
@@ -1420,69 +1274,69 @@ export default function StudentDashboard({
                       </div>
                     </section>
 
-                    {/* STUDENT SERVICES SHORTCUTS */}
-                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                      <div className="flex items-center gap-2 text-[#102D50] dark:text-white">
-                        <Wallet size={20} className="text-[#1769AA] dark:text-blue-400" />
-                        <h3 className="text-sm font-extrabold">Student Services</h3>
+                    {/* STUDENT SERVICES SHORTCUTS (FLAT HAIRLINE GRID) */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden">
+                      <div className="px-5 py-4 border-b border-slate-200/75 dark:border-slate-800 flex items-center gap-2 text-[#102D50] dark:text-white">
+                        <Wallet size={18} className="text-[#1769AA] dark:text-blue-400" />
+                        <h3 className="text-sm font-semibold">Student Services</h3>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-slate-200/70 dark:divide-slate-800">
                         <button
                           type="button"
                           onClick={() => navigate('documents')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <FileText size={20} /> My Documents
+                          <FileText size={18} className="text-[#1769AA] dark:text-blue-400" /> My Documents
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate('receipts')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <Download size={20} /> Fee Receipts
+                          <Download size={18} className="text-[#1769AA] dark:text-blue-400" /> Fee Receipts
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate('student-id')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <UserRound size={20} /> Student ID Card
+                          <UserRound size={18} className="text-[#1769AA] dark:text-blue-400" /> Student ID Card
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate('attendance')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <UserCheck size={20} /> QR Attendance
+                          <UserCheck size={18} className="text-[#1769AA] dark:text-blue-400" /> QR Attendance
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate('elearning')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <Laptop size={20} /> E-Learning Notes
+                          <Laptop size={18} className="text-[#1769AA] dark:text-blue-400" /> E-Learning Notes
                         </button>
                         <button
                           type="button"
-                          onClick={() => navigate('appeals')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          onClick={() => navigate('exams-appeals')}
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <Scale size={20} /> Academic Appeals
+                          <Scale size={18} className="text-[#1769AA] dark:text-blue-400" /> Academic Appeals
                         </button>
                         <button
                           type="button"
-                          onClick={() => navigate('clearance')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          onClick={() => navigate('exams-clearance')}
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <FileCheck2 size={20} /> Clearance Form
+                          <FileCheck2 size={18} className="text-[#1769AA] dark:text-blue-400" /> Clearance Form
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate('campus-life')}
-                          className="p-3 rounded-xl bg-[#f4f8fe] dark:bg-slate-800/80 hover:bg-[#e7f1ff] dark:hover:bg-slate-800 border border-[#e5edf8] dark:border-slate-700 text-[#15518f] dark:text-blue-300 flex flex-col items-center justify-center gap-2 text-xs font-bold transition-colors"
+                          className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-[#102D50] dark:text-slate-200 flex flex-col items-center justify-center gap-2 text-xs font-semibold transition-colors"
                         >
-                          <Users size={20} /> Clubs &amp; Voting
+                          <Users size={18} className="text-[#1769AA] dark:text-blue-400" /> Clubs &amp; Voting
                         </button>
                       </div>
                     </section>
@@ -1569,14 +1423,14 @@ export default function StudentDashboard({
                         </button>
                       </div>
 
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-[#edf5ff] to-[#f7faff] dark:from-slate-800 dark:to-slate-800/70 space-y-1">
-                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block">
+                      <div className="pt-1 pb-2 border-y border-slate-200/75 dark:border-slate-800 space-y-1">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
                           Outstanding Balance
                         </span>
-                        <strong className="text-2xl font-extrabold text-[#102D50] dark:text-white font-mono tabular-nums block">
+                        <strong className="text-2xl font-bold text-[#102D50] dark:text-white font-mono tabular-nums block">
                           KES {fin.balance.toLocaleString()}.00
                         </strong>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 block font-mono tabular-nums">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono tabular-nums">
                           {state.transactions.length} Verified Receipt(s) · Billed KES {fin.totalBilled.toLocaleString()}
                         </span>
                       </div>
@@ -1590,7 +1444,7 @@ export default function StudentDashboard({
                         </div>
                         <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className={`h-full rounded-full bg-gradient-to-r from-[#07975d] to-[#35c58b] transition-all duration-300 ${progressWidthClass}`}
+                            className={`h-full rounded-full bg-emerald-600 transition-all duration-300 ${progressWidthClass}`}
                           />
                         </div>
                       </div>
@@ -1598,39 +1452,36 @@ export default function StudentDashboard({
                       <button
                         type="button"
                         onClick={() => navigate('finance')}
-                        className="w-full py-2.5 px-4 bg-[#1769AA] hover:bg-[#12568E] text-white text-xs font-bold rounded-xl flex items-center justify-between transition-colors"
+                        className="w-full py-2.5 px-4 bg-[#1769AA] hover:bg-[#12568E] text-white text-xs font-semibold rounded-lg flex items-center justify-between transition-colors"
                       >
                         <span className="inline-flex items-center gap-2">
-                          <CreditCard size={16} /> Make a Payment (M-Pesa)
+                          <CreditCard size={15} /> Make a Payment (M-Pesa)
                         </span>
-                        <ArrowRight size={15} />
+                        <ArrowRight size={14} />
                       </button>
                     </section>
 
                     {/* RECENT ACTIVITIES AUDIT FEED */}
-                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                      <div className="flex items-center justify-between">
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-5 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/75 dark:border-slate-800">
                         <div className="flex items-center gap-2 text-[#102D50] dark:text-white">
-                          <Activity size={18} className="text-[#1769AA] dark:text-blue-400" />
-                          <h3 className="text-sm font-extrabold">Recent Activity</h3>
+                          <Activity size={17} className="text-[#1769AA] dark:text-blue-400" />
+                          <h3 className="text-sm font-semibold">Recent Activity</h3>
                         </div>
                         <button
                           type="button"
                           onClick={() => navigate('settings')}
-                          className="text-xs font-bold text-[#1769AA] dark:text-blue-400 hover:underline"
+                          className="text-xs font-semibold text-[#1769AA] dark:text-blue-400 hover:underline"
                         >
                           Audit Log
                         </button>
                       </div>
-                      <div className="space-y-2.5 text-xs">
+                      <div className="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs">
                         {state.auditLog.slice(0, 4).map((ev) => (
-                          <div
-                            key={ev.id}
-                            className="p-2.5 rounded-xl bg-[#F4F7FB] dark:bg-slate-800/70 space-y-0.5"
-                          >
-                            <div className="flex items-center justify-between font-mono text-[10px] text-slate-600 dark:text-slate-300">
-                              <span className="font-bold text-[#1769AA] dark:text-blue-400">{ev.module}</span>
-                              <span>{new Date(ev.timestampIso).toLocaleTimeString()}</span>
+                          <div key={ev.id} className="py-2.5 first:pt-0 last:pb-0 space-y-0.5">
+                            <div className="flex items-center justify-between font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                              <span className="font-semibold text-[#1769AA] dark:text-blue-400">{ev.module}</span>
+                              <span className="tabular-nums">{new Date(ev.timestampIso).toLocaleTimeString()}</span>
                             </div>
                             <p className="font-medium text-slate-800 dark:text-slate-100 line-clamp-1">
                               {ev.detail}
@@ -1847,6 +1698,7 @@ export default function StudentDashboard({
                 { label: 'Assessments & CBT', icon: FileCheck2, action: () => openMobileCompanion('assessments') },
                 { label: 'Student Support', icon: Headphones, action: () => openMobileCompanion('support') },
                 { label: 'Alerts & M-Pesa Pay', icon: CreditCard, action: () => openMobileCompanion('alerts-pay') },
+                { label: 'Campus Events & QR', icon: CalendarCheck, action: () => openMobileCompanion('events') },
                 { label: 'Digital Student ID', icon: UserRound, action: () => navigate('student-id') },
               ].map((tile) => {
                 const Icon = tile.icon;

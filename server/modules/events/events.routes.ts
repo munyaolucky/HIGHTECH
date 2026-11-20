@@ -697,7 +697,7 @@ staffEventsRoutes.get(
 
 staffEventsRoutes.post(
   '/:id/registrations',
-  requirePermission(STAFF_PERMISSIONS.EVENT_REGISTRATION_ADD),
+  requirePermission(STAFF_PERMISSIONS.EVENT_REGISTRATION_CREATE),
   (req, res) => {
     try {
       const data = eventsService.addStaffRegistration(toEventsActor(req), req.params.id, req.body || {});
@@ -710,7 +710,7 @@ staffEventsRoutes.post(
 
 staffEventsRoutes.post(
   '/:id/registrations/bulk',
-  requirePermission(STAFF_PERMISSIONS.EVENT_REGISTRATION_ADD),
+  requirePermission(STAFF_PERMISSIONS.EVENT_REGISTRATION_CREATE),
   (req, res) => {
     try {
       const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];

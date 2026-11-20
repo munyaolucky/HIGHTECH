@@ -17,12 +17,32 @@ import EventsPage from '../src/website/events/EventsPage.tsx';
 import EventDetailPage from '../src/website/events/EventDetailPage.tsx';
 import EventRegistrationPage from '../src/website/events/EventRegistrationPage.tsx';
 import EventRegistrationConfirmationPage from '../src/website/events/EventRegistrationConfirmationPage.tsx';
+import PublicEventCalendarPage from '../src/website/events/PublicEventCalendarPage.tsx';
+import PublicTicketVerifyPage from '../src/website/events/PublicTicketVerifyPage.tsx';
+import GraduationPage from '../src/website/events/GraduationPage.tsx';
 import StaffEventsWorkspace from '../src/modules/staff/events/StaffEventsWorkspace.tsx';
+import StudentEventsPanel from '../src/modules/student/components/StudentEventsPanel.tsx';
+import {
+  ApprovalsDashboardPanel,
+  CommunicationsDashboardPanel,
+  CoordinatorDashboardPanel,
+  ProgrammeSpeakersPanel,
+  StaffEventsCalendarPanel,
+} from '../src/modules/staff/events/StaffEventsExtendedDashboards.tsx';
 
 let dbSnapshot: PortalDatabase | null = null;
 
 test.before(() => {
-  dbSnapshot = structuredClone(getDb());
+  const db = getDb();
+  dbSnapshot = structuredClone(db);
+  const clinic = db.collegeEvents.find((e) => e.id === 'evt-cyber-career-clinic');
+  if (clinic) {
+    const today = new Date().toISOString().slice(0, 10);
+    clinic.eventDate = today;
+    clinic.endDate = today;
+    clinic.registrationDeadline = `${today}T23:59:00.000Z`;
+    saveDb(db);
+  }
 });
 
 test.after(() => {
@@ -274,6 +294,81 @@ test('RBAC role assignments & SSR UI rendering contain zero animate-pulse or inl
         user: STAFF_ACCOUNTS.COMMUNICATIONS_OFFICER,
       })
     ),
+    renderToStaticMarkup(
+      React.createElement(PublicEventCalendarPage, {
+        onBackToEvents: () => {},
+        onSelectEvent: () => {},
+        onRegisterEvent: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(PublicTicketVerifyPage, {
+        onBackToEvents: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(GraduationPage, {
+        onBackToEvents: () => {},
+        onRegisterEvent: () => {},
+        onOpenCalendar: () => {},
+        onOpenVerifyTicket: () => {},
+        onOpenNews: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(StudentEventsPanel, {
+        studentName: 'Amina Wanjiku',
+        registrationNumber: 'HCA/STU/2026/001',
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(CoordinatorDashboardPanel, {
+        user: STAFF_ACCOUNTS.COMMUNICATIONS_OFFICER,
+        events: eventsService.listPublicEvents(),
+        canEdit: true,
+        onEditEvent: () => {},
+        onSelectWorkspaceTab: () => {},
+        onOpenWizard: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(ApprovalsDashboardPanel, {
+        user: STAFF_ACCOUNTS.PRINCIPAL,
+        events: eventsService.getStaffEventsDashboard().events,
+        auditLogs: [],
+        canApprove: true,
+        canEdit: true,
+        onReload: async () => {},
+        onEditEvent: () => {},
+        onNotify: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(StaffEventsCalendarPanel, {
+        events: eventsService.listPublicEvents(),
+        onSelectEvent: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(ProgrammeSpeakersPanel, {
+        eventId: 'evt-ai-symposium-2026',
+        eventTitle: 'HI-TECH Innovation & Applied AI Symposium 2026',
+        schedules: [],
+        speakers: [],
+        canEdit: true,
+        onReload: async () => {},
+        onNotify: () => {},
+      })
+    ),
+    renderToStaticMarkup(
+      React.createElement(CommunicationsDashboardPanel, {
+        eventId: 'evt-ai-symposium-2026',
+        eventTitle: 'HI-TECH Innovation & Applied AI Symposium 2026',
+        notifications: [],
+        onReload: async () => {},
+        onNotify: () => {},
+      })
+    ),
   ];
 
   for (const html of renders) {
@@ -281,4 +376,29 @@ test('RBAC role assignments & SSR UI rendering contain zero animate-pulse or inl
     assert.equal(html.includes('animate-pulse'), false, 'Forbidden animate-pulse found in SSR HTML');
     assert.equal(html.includes('style="'), false, 'Forbidden inline style found in SSR HTML');
   }
+});
+
+test('Public .ics calendar export, ticket verification, feedback & student portal passes work end-to-end', () => {
+  const icsRes = eventsService.generateEventIcsCalendar('hi-tech-innovation-ai-symposium-2026');
+  assert.ok(icsRes.ics.includes('BEGIN:VCALENDAR'));
+  assert.ok(icsRes.ics.includes('BEGIN:VEVENT'));
+
+  const studentPortal = eventsService.listStudentPortalEventsAndTickets(
+    'amina.wanjiku@student.hitech.ac.ke'
+  );
+  assert.ok(studentPortal.upcomingEvents.length >= 1);
+  assert.ok(studentPortal.myRegistrations.length >= 1);
+
+  const firstPass = studentPortal.myRegistrations[0];
+  const verifiedTicket = eventsService.verifyPublicTicketOrCertificate(firstPass.qrToken);
+  assert.equal(verifiedTicket.kind, 'TICKET');
+
+  const fb = eventsService.submitPublicFeedback('evt-ai-symposium-2026', {
+    respondentName: 'Amina Wanjiku',
+    registrationNumber: firstPass.registrationNumber,
+    overallRating: 5,
+    recommendNps: 10,
+    comments: 'Outstanding technical clinics and speakers!',
+  });
+  assert.equal(fb.overallRating, 5);
 });

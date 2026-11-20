@@ -27,6 +27,16 @@ export type StudentPortalSection =
   | 'attendance'
   | 'elearning'
   | 'examinations'
+  | 'exams-assessments'
+  | 'exams-assignments'
+  | 'exams-timetable'
+  | 'exams-online'
+  | 'exams-practical'
+  | 'exams-results'
+  | 'exams-clearance'
+  | 'exams-history'
+  | 'exams-appeals'
+  | 'exams-progress'
   | 'results'
   | 'finance'
   | 'receipts'
@@ -34,6 +44,7 @@ export type StudentPortalSection =
   | 'attachment'
   | 'clearance'
   | 'campus-life'
+  | 'events'
   | 'student-id'
   | 'documents'
   | 'appeals'
@@ -42,6 +53,145 @@ export type StudentPortalSection =
   | 'settings'
   | 'college-information'
   | 'mobile-companion';
+
+export const STUDENT_SECTION_PATHS: Record<StudentPortalSection, string> = {
+  dashboard: '/portal/student',
+  profile: '/portal/student/profile',
+  programme: '/portal/student/programme',
+  'academic-progress': '/portal/student/exams/progress',
+  'course-registration': '/portal/student/registration',
+  timetable: '/portal/student/timetable',
+  calendar: '/portal/student/calendar',
+  attendance: '/portal/student/attendance',
+  elearning: '/portal/student/learning',
+  examinations: '/portal/student/exams',
+  'exams-assessments': '/portal/student/exams/assessments',
+  'exams-assignments': '/portal/student/exams/assignments',
+  'exams-timetable': '/portal/student/exams/timetable',
+  'exams-online': '/portal/student/exams/online',
+  'exams-practical': '/portal/student/exams/practical',
+  'exams-results': '/portal/student/exams/results',
+  'exams-clearance': '/portal/student/exams/clearance',
+  'exams-history': '/portal/student/exams/history',
+  'exams-appeals': '/portal/student/exams/appeals',
+  'exams-progress': '/portal/student/exams/progress',
+  results: '/portal/student/exams/results',
+  finance: '/portal/student/finance',
+  receipts: '/portal/student/receipts',
+  library: '/portal/student/library',
+  attachment: '/portal/student/attachment',
+  clearance: '/portal/student/exams/clearance',
+  'campus-life': '/portal/student/campus-life',
+  events: '/portal/student/events',
+  'student-id': '/portal/student/student-id',
+  documents: '/portal/student/documents',
+  appeals: '/portal/student/exams/appeals',
+  support: '/portal/student/support',
+  notifications: '/portal/student/notifications',
+  settings: '/portal/student/settings',
+  'college-information': '/portal/student/college-information',
+  'mobile-companion': '/portal/student/mobile-companion',
+};
+
+export function resolveStudentSectionFromPath(pathname: string): StudentPortalSection {
+  const clean = pathname.replace(/\/+$/, '') || '/portal/student';
+  if (clean === '/portal/student') return 'dashboard';
+  if (clean === '/portal/student/learning') return 'elearning';
+  if (clean === '/portal/student/exams') return 'examinations';
+  if (clean === '/portal/student/exams/assessments') return 'exams-assessments';
+  if (clean === '/portal/student/exams/assignments') return 'exams-assignments';
+  if (clean === '/portal/student/exams/timetable') return 'exams-timetable';
+  if (clean === '/portal/student/exams/online') return 'exams-online';
+  if (clean === '/portal/student/exams/practical') return 'exams-practical';
+  if (clean === '/portal/student/exams/results') return 'exams-results';
+  if (clean === '/portal/student/exams/clearance') return 'exams-clearance';
+  if (clean === '/portal/student/exams/history') return 'exams-history';
+  if (clean === '/portal/student/exams/appeals') return 'exams-appeals';
+  if (clean === '/portal/student/exams/progress') return 'exams-progress';
+
+  const matched = (Object.entries(STUDENT_SECTION_PATHS) as [StudentPortalSection, string][]).find(
+    ([, path]) => path === clean
+  );
+  return matched ? matched[0] : 'dashboard';
+}
+
+export const STUDENT_ASSESSMENT_TYPES = [
+  'CAT 1',
+  'CAT 2',
+  'CAT 3',
+  'End-term exam',
+  'Midterm',
+  'Practical',
+  'Assignment',
+  'Project',
+  'Oral assessment',
+  'Presentation',
+  'Quiz',
+  'Competency assessment',
+  'Mock exam',
+  'Supplementary exam',
+] as const;
+
+export type StudentAssessmentType = (typeof STUDENT_ASSESSMENT_TYPES)[number];
+
+export type StudentAssessmentStatus =
+  | 'Pending'
+  | 'In progress'
+  | 'Submitted'
+  | 'Marked'
+  | 'Overdue'
+  | 'Upcoming';
+
+export interface StudentAssessmentItem {
+  id: string;
+  title: string;
+  unitCode: string;
+  unitTitle: string;
+  assessmentType: StudentAssessmentType;
+  totalMarks: number;
+  weightPercent: number;
+  startDate: string;
+  deadline: string;
+  deadlineIso: string;
+  status: StudentAssessmentStatus;
+  termLabel: string;
+  lecturerName: string;
+  venue?: string;
+  durationMinutes?: number;
+  examBody?: 'HI-TECH INTERNAL' | 'TVET CDACC' | 'KNEC' | 'KASNEB';
+  scoreObtained?: number;
+  gradeLabel?: string;
+  lecturerFeedback?: string;
+  submissionNote?: string;
+  attachmentName?: string;
+  attachmentSize?: string;
+  submittedAt?: string;
+  cbtAssessmentId?: string;
+  instructions?: string;
+  checklistSteps?: string[];
+  completedSteps?: boolean[];
+}
+
+export interface StudentExamNotice {
+  id: string;
+  title: string;
+  unitCode: string;
+  noticeType: 'SCHEDULE_CHANGE' | 'VENUE_UPDATE' | 'CANCELLATION' | 'INSTRUCTIONS' | 'RESULTS_RELEASE';
+  message: string;
+  publishedAt: string;
+  urgent: boolean;
+  acknowledged: boolean;
+}
+
+export interface StudentCertificateRecord {
+  id: string;
+  title: string;
+  issuingBody: string;
+  unitOrProgramme: string;
+  status: 'Issued' | 'In Progress' | 'Eligible';
+  issuedDate?: string;
+  verificationCode?: string;
+}
 
 export interface StudentContactSettings {
   phoneNumber: string;
@@ -225,6 +375,9 @@ export interface StudentPortalState {
   onboardingSteps: OnboardingStepItem[];
   appeals: StudentAppealItem[];
   uploadedDocuments: StudentUploadedDocument[];
+  assessments: StudentAssessmentItem[];
+  examNotices: StudentExamNotice[];
+  certificates: StudentCertificateRecord[];
   auditLog: StudentAuditEntry[];
 }
 
@@ -361,6 +514,368 @@ const INITIAL_UPLOADED_DOCS: StudentUploadedDocument[] = [
   },
 ];
 
+const INITIAL_STUDENT_ASSESSMENTS: StudentAssessmentItem[] = [
+  {
+    id: 'st-asm-cat2',
+    title: 'CAT 2: Routing Protocols & Subnetting',
+    unitCode: 'NET 303',
+    unitTitle: 'Cybersecurity Architectures & Forensics',
+    assessmentType: 'CAT 2',
+    totalMarks: 30,
+    weightPercent: 15,
+    startDate: '20 Nov 2026',
+    deadline: '24 Nov 2026',
+    deadlineIso: '2026-11-24T17:00:00Z',
+    status: 'Pending',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Eng. David Kiprono',
+    venue: 'Cyber Lab 1A / Online CBT',
+    durationMinutes: 45,
+    examBody: 'HI-TECH INTERNAL',
+    cbtAssessmentId: 'asm-knec-pool',
+    instructions: 'Complete all subnetting and packet-filter tasks within 45 minutes. Bring student ID for lab verification.',
+  },
+  {
+    id: 'st-asm-practical-1',
+    title: 'Practical: Cloud API Containerization & Firewall Rules',
+    unitCode: 'SWE 304',
+    unitTitle: 'Full Stack Cloud Application Architecture',
+    assessmentType: 'Practical',
+    totalMarks: 50,
+    weightPercent: 20,
+    startDate: '18 Nov 2026',
+    deadline: '26 Nov 2026',
+    deadlineIso: '2026-11-26T16:00:00Z',
+    status: 'Pending',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Eunice Mutua',
+    venue: 'Innovation Hub Lab 2',
+    durationMinutes: 120,
+    examBody: 'TVET CDACC',
+    instructions: 'Execute the container build checklist, record port binding telemetry, and upload screenshot or PDF evidence.',
+    checklistSteps: [
+      'Build hardened multi-stage container image without root privileges',
+      'Expose HTTPS reverse proxy route with healthcheck passing',
+      'Capture environment log & network bridge verification screenshot',
+      'Upload signed lab report evidence file',
+    ],
+    completedSteps: [true, false, false, false],
+  },
+  {
+    id: 'st-asm-asg3',
+    title: 'Assignment 3: Distributed Query Optimization Study',
+    unitCode: 'CSC 302',
+    unitTitle: 'Distributed Database Systems',
+    assessmentType: 'Assignment',
+    totalMarks: 30,
+    weightPercent: 10,
+    startDate: '10 Nov 2026',
+    deadline: '28 Nov 2026',
+    deadlineIso: '2026-11-28T23:59:00Z',
+    status: 'Submitted',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Prof. Mary Wangui',
+    submissionNote: 'Uploaded B-Tree vs Hash partitioning latency comparison report.',
+    attachmentName: 'CSC302_Partitioning_Amina.pdf',
+    attachmentSize: '1.4 MB',
+    submittedAt: '2026-11-19T14:22:00Z',
+    examBody: 'HI-TECH INTERNAL',
+    instructions: 'Compare shard rebalancing strategies across 3 database nodes with benchmark graphs.',
+  },
+  {
+    id: 'st-asm-endterm-mat',
+    title: 'End-term exam: Discrete Mathematics for Computing',
+    unitCode: 'MAT 205',
+    unitTitle: 'Discrete Mathematics for Computing',
+    assessmentType: 'End-term exam',
+    totalMarks: 70,
+    weightPercent: 60,
+    startDate: '2 Dec 2026',
+    deadline: '2 Dec 2026',
+    deadlineIso: '2026-12-02T12:00:00Z',
+    status: 'Upcoming',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Dr. Samuel Kiarie',
+    venue: 'Main Assembly Hall · Seat B2-14',
+    durationMinutes: 180,
+    examBody: 'HI-TECH INTERNAL',
+    instructions: 'Approved non-programmable scientific calculators permitted. Present printed Exam Permit 30 minutes prior.',
+  },
+  {
+    id: 'st-asm-endterm-csc',
+    title: 'End-term exam: Advanced Data Structures & Algorithms',
+    unitCode: 'CSC 301',
+    unitTitle: 'Advanced Data Structures & Algorithms',
+    assessmentType: 'End-term exam',
+    totalMarks: 100,
+    weightPercent: 60,
+    startDate: '4 Dec 2026',
+    deadline: '4 Dec 2026',
+    deadlineIso: '2026-12-04T12:00:00Z',
+    status: 'Upcoming',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Dr. Peter Otieno',
+    venue: 'Examination Centre Room A-1 · Seat A1-R01-S01',
+    durationMinutes: 180,
+    examBody: 'HI-TECH INTERNAL',
+    cbtAssessmentId: 'asm-csc301-cbt',
+    instructions: 'Closed-book theory and live Python/SQL complexity analysis CBT examination.',
+  },
+  {
+    id: 'st-asm-cat1-csc',
+    title: 'CAT 1: Asymptotic Complexity & Recurrence Relations',
+    unitCode: 'CSC 301',
+    unitTitle: 'Advanced Data Structures & Algorithms',
+    assessmentType: 'CAT 1',
+    totalMarks: 30,
+    weightPercent: 15,
+    startDate: '12 Oct 2026',
+    deadline: '15 Oct 2026',
+    deadlineIso: '2026-10-15T11:00:00Z',
+    status: 'Marked',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Dr. Peter Otieno',
+    scoreObtained: 26,
+    gradeLabel: 'A (87%)',
+    lecturerFeedback: 'Clear Master Theorem proofs and accurate worst-case pivot analysis.',
+    examBody: 'HI-TECH INTERNAL',
+  },
+  {
+    id: 'st-asm-midterm-db',
+    title: 'Midterm: Relational Algebra & ACID Transactions',
+    unitCode: 'CSC 302',
+    unitTitle: 'Distributed Database Systems',
+    assessmentType: 'Midterm',
+    totalMarks: 40,
+    weightPercent: 20,
+    startDate: '22 Oct 2026',
+    deadline: '25 Oct 2026',
+    deadlineIso: '2026-10-25T13:00:00Z',
+    status: 'Marked',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Prof. Mary Wangui',
+    scoreObtained: 32,
+    gradeLabel: 'A- (80%)',
+    lecturerFeedback: 'Strong serializability schedule proof; expand slightly on 2PC coordinator recovery.',
+    examBody: 'HI-TECH INTERNAL',
+  },
+  {
+    id: 'st-asm-quiz-ent',
+    title: 'Quiz: Kenyan Software IP & Copyright Compliance',
+    unitCode: 'ENT 101',
+    unitTitle: 'Technology Entrepreneurship & IP Law',
+    assessmentType: 'Quiz',
+    totalMarks: 20,
+    weightPercent: 10,
+    startDate: '19 Nov 2026',
+    deadline: '23 Nov 2026',
+    deadlineIso: '2026-11-23T23:59:00Z',
+    status: 'In progress',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'CPA Joyce Achieng',
+    durationMinutes: 20,
+    examBody: 'HI-TECH INTERNAL',
+    instructions: '20-minute timed compliance check covering Kenya Copyright Act and startup licensing.',
+  },
+  {
+    id: 'st-asm-project-swe',
+    title: 'Project: Multi-Tenant College Microservice Capstone',
+    unitCode: 'SWE 304',
+    unitTitle: 'Full Stack Cloud Application Architecture',
+    assessmentType: 'Project',
+    totalMarks: 100,
+    weightPercent: 30,
+    startDate: '1 Nov 2026',
+    deadline: '30 Nov 2026',
+    deadlineIso: '2026-11-30T23:59:00Z',
+    status: 'In progress',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Eunice Mutua',
+    examBody: 'HI-TECH INTERNAL',
+    instructions: 'Submit production repository URL, OpenAPI documentation, and architectural ADR.',
+  },
+  {
+    id: 'st-asm-oral-ent',
+    title: 'Oral assessment: Investor Pitch Defence',
+    unitCode: 'ENT 101',
+    unitTitle: 'Technology Entrepreneurship & IP Law',
+    assessmentType: 'Oral assessment',
+    totalMarks: 25,
+    weightPercent: 15,
+    startDate: '14 Nov 2026',
+    deadline: '17 Nov 2026',
+    deadlineIso: '2026-11-17T16:00:00Z',
+    status: 'Overdue',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'CPA Joyce Achieng',
+    venue: 'Business Complex 3',
+    examBody: 'HI-TECH INTERNAL',
+    instructions: 'Rescheduled makeup slot requires brief justification upload or appeal.',
+  },
+  {
+    id: 'st-asm-pres-net',
+    title: 'Presentation: Zero-Trust Campus Network Proposal',
+    unitCode: 'NET 303',
+    unitTitle: 'Cybersecurity Architectures & Forensics',
+    assessmentType: 'Presentation',
+    totalMarks: 30,
+    weightPercent: 10,
+    startDate: '5 Nov 2026',
+    deadline: '8 Nov 2026',
+    deadlineIso: '2026-11-08T15:00:00Z',
+    status: 'Marked',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Eng. David Kiprono',
+    scoreObtained: 25,
+    gradeLabel: 'A- (83%)',
+    lecturerFeedback: 'Practical VLAN micro-segmentation topology well justified.',
+    examBody: 'HI-TECH INTERNAL',
+  },
+  {
+    id: 'st-asm-comp-tvet',
+    title: 'Competency assessment: TVET CDACC Level 6 Practical Portfolio',
+    unitCode: 'TVET-ICT-M2',
+    unitTitle: 'Systems Administration & Network Hardening',
+    assessmentType: 'Competency assessment',
+    totalMarks: 100,
+    weightPercent: 100,
+    startDate: '15 Nov 2026',
+    deadline: '29 Nov 2026',
+    deadlineIso: '2026-11-29T17:00:00Z',
+    status: 'Pending',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Eng. David Kiprono',
+    venue: 'Cyber Lab 1A',
+    examBody: 'TVET CDACC',
+    checklistSteps: [
+      'Configure Linux SSH key-only authentication & UFW rules',
+      'Verify automated daily PostgreSQL dump verification log',
+      'Complete incident triage simulation checklist',
+    ],
+    completedSteps: [true, true, false],
+    instructions: 'CDACC External Assessor observation requires completed lab evidence logs.',
+  },
+  {
+    id: 'st-asm-mock-knec',
+    title: 'Mock exam: KNEC Module II Operating Systems Paper',
+    unitCode: 'KNEC-2920',
+    unitTitle: 'Operating Systems & Networking',
+    assessmentType: 'Mock exam',
+    totalMarks: 100,
+    weightPercent: 0,
+    startDate: '2 Nov 2026',
+    deadline: '5 Nov 2026',
+    deadlineIso: '2026-11-05T12:00:00Z',
+    status: 'Marked',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Dr. Peter Otieno',
+    scoreObtained: 72,
+    gradeLabel: 'B+ (72%)',
+    lecturerFeedback: 'Good command of deadlock avoidance and paging; review DMA ring buffers.',
+    examBody: 'KNEC',
+  },
+  {
+    id: 'st-asm-cat3-mat',
+    title: 'CAT 3: Graph Colouring & Combinatorial Proofs',
+    unitCode: 'MAT 205',
+    unitTitle: 'Discrete Mathematics for Computing',
+    assessmentType: 'CAT 3',
+    totalMarks: 30,
+    weightPercent: 10,
+    startDate: '18 Oct 2026',
+    deadline: '20 Oct 2026',
+    deadlineIso: '2026-10-20T10:00:00Z',
+    status: 'Marked',
+    termLabel: '2026 · Semester 1',
+    lecturerName: 'Dr. Samuel Kiarie',
+    scoreObtained: 21,
+    gradeLabel: 'B (70%)',
+    lecturerFeedback: 'Solid graph isomorphism proof; double-check Euler circuit base cases.',
+    examBody: 'HI-TECH INTERNAL',
+  },
+  {
+    id: 'st-asm-supp-prev',
+    title: 'Supplementary exam: Structured Programming (Exempt / Cleared)',
+    unitCode: 'CSC 102',
+    unitTitle: 'Structured Programming in C',
+    assessmentType: 'Supplementary exam',
+    totalMarks: 100,
+    weightPercent: 100,
+    startDate: '12 Aug 2026',
+    deadline: '12 Aug 2026',
+    deadlineIso: '2026-08-12T12:00:00Z',
+    status: 'Marked',
+    termLabel: '2025/2026 · Special Sitting',
+    lecturerName: 'Dr. Peter Otieno',
+    scoreObtained: 68,
+    gradeLabel: 'B (68% · Cleared)',
+    lecturerFeedback: 'Pass threshold satisfied; academic progression cleared.',
+    examBody: 'HI-TECH INTERNAL',
+  },
+];
+
+const INITIAL_EXAM_NOTICES: StudentExamNotice[] = [
+  {
+    id: 'enot-1',
+    title: 'NET 303 CAT 2 Lab Seating & Timing Update',
+    unitCode: 'NET 303',
+    noticeType: 'SCHEDULE_CHANGE',
+    message:
+      'CAT 2 session moved to Cyber Lab 1A (24 Nov 2026, 02:00 PM) to accommodate Wireshark capture sandboxes.',
+    publishedAt: '2026-11-19T11:30:00Z',
+    urgent: true,
+    acknowledged: false,
+  },
+  {
+    id: 'enot-2',
+    title: 'Final Exam Permit & 75% Attendance Verification Window',
+    unitCode: 'REGISTRY',
+    noticeType: 'INSTRUCTIONS',
+    message:
+      'Download your verified Exam Card under Exam Clearance before 28 Nov 2026. Fee clearance below 100% triggers a Finance hold at the exam hall desk.',
+    publishedAt: '2026-11-18T08:15:00Z',
+    urgent: false,
+    acknowledged: false,
+  },
+  {
+    id: 'enot-3',
+    title: 'CSC 301 CAT 1 & Midterm Marks Released',
+    unitCode: 'CSC 301',
+    noticeType: 'RESULTS_RELEASE',
+    message:
+      'Moderated CAT 1 scripts and rubric comments are now published in Results & Grades. Remarking appeals close in 7 days.',
+    publishedAt: '2026-11-15T15:45:00Z',
+    urgent: false,
+    acknowledged: true,
+  },
+];
+
+const INITIAL_CERTIFICATES: StudentCertificateRecord[] = [
+  {
+    id: 'cert-1',
+    title: 'Foundations of Software Engineering & Algorithms',
+    issuingBody: 'HI-TECH Academic Senate',
+    unitOrProgramme: 'Year 1 & Year 2 Core Track',
+    status: 'Issued',
+    issuedDate: '2026-02-14',
+    verificationCode: 'VRF-HCA-99210-2026',
+  },
+  {
+    id: 'cert-2',
+    title: 'TVET CDACC Level 6 ICT Technician Competency',
+    issuingBody: 'TVET CDACC Kenya',
+    unitOrProgramme: 'Systems Administration & Security (TVET-ICT-M2)',
+    status: 'In Progress',
+  },
+  {
+    id: 'cert-3',
+    title: 'KNEC Diploma Module II ICT Statement',
+    issuingBody: 'Kenya National Examinations Council',
+    unitOrProgramme: 'Operating Systems & Networking (KNEC-2920)',
+    status: 'Eligible',
+  },
+];
+
 function buildInitialState(): StudentPortalState {
   const ownTransactions = collegeErpService.getStudentTransactions(
     INITIAL_STUDENT_PROFILE.registrationNumber
@@ -427,6 +942,9 @@ function buildInitialState(): StudentPortalState {
     onboardingSteps: INITIAL_ONBOARDING,
     appeals: INITIAL_APPEALS,
     uploadedDocuments: INITIAL_UPLOADED_DOCS,
+    assessments: INITIAL_STUDENT_ASSESSMENTS,
+    examNotices: INITIAL_EXAM_NOTICES,
+    certificates: INITIAL_CERTIFICATES,
     auditLog: [
       {
         id: 'aud-init-1',
@@ -457,6 +975,9 @@ function loadState(): StudentPortalState {
       onboardingSubmissions: parsed.onboardingSubmissions ?? defaults.onboardingSubmissions,
       appeals: parsed.appeals ?? defaults.appeals,
       uploadedDocuments: parsed.uploadedDocuments ?? defaults.uploadedDocuments,
+      assessments: parsed.assessments && parsed.assessments.length > 0 ? parsed.assessments : defaults.assessments,
+      examNotices: parsed.examNotices && parsed.examNotices.length > 0 ? parsed.examNotices : defaults.examNotices,
+      certificates: parsed.certificates && parsed.certificates.length > 0 ? parsed.certificates : defaults.certificates,
     };
   } catch {
     return buildInitialState();
@@ -1090,4 +1611,130 @@ export const studentPortalService = {
     saveState(state);
     return { ok: true };
   },
+
+  getExamDashboardSummary() {
+    const state = this.getState();
+    const pendingAssessments = state.assessments.filter(
+      (a) => a.status === 'Pending' || a.status === 'In progress' || a.status === 'Overdue'
+    ).length;
+    const upcomingExams = state.assessments.filter(
+      (a) =>
+        (a.assessmentType === 'End-term exam' ||
+          a.assessmentType === 'Midterm' ||
+          a.assessmentType === 'CAT 2' ||
+          a.assessmentType === 'Mock exam' ||
+          a.assessmentType === 'Supplementary exam') &&
+        (a.status === 'Upcoming' || a.status === 'Pending')
+    ).length;
+    const graded = state.assessments.filter(
+      (a) => a.status === 'Marked' && typeof a.scoreObtained === 'number' && a.totalMarks > 0
+    );
+    const averageScore =
+      graded.length > 0
+        ? Math.round(
+            graded.reduce((sum, item) => sum + ((item.scoreObtained ?? 0) / item.totalMarks) * 100, 0) /
+              graded.length
+          )
+        : Math.round(
+            state.units.reduce((sum, u) => sum + (u.score ?? 74), 0) / Math.max(1, state.units.length)
+          );
+    const releasedResults = graded.length + state.units.filter((u) => typeof u.score === 'number').length;
+    return {
+      pendingAssessments,
+      upcomingExams,
+      averageScore,
+      releasedResults,
+      overdueCount: state.assessments.filter((a) => a.status === 'Overdue').length,
+    };
+  },
+
+  startAssessment(assessmentId: string): { ok: boolean; error?: string } {
+    const state = loadState();
+    const target = state.assessments.find((a) => a.id === assessmentId);
+    if (!target) return { ok: false, error: 'Assessment record not found.' };
+    if (target.status === 'Marked' || target.status === 'Submitted') {
+      return { ok: false, error: 'This assessment has already been submitted.' };
+    }
+    target.status = 'In progress';
+    appendAudit(state, 'Assessments', 'ASSESSMENT_STARTED', `Started ${target.unitCode}: ${target.title}`);
+    saveState(state);
+    return { ok: true };
+  },
+
+  submitAssessmentWork(
+    assessmentId: string,
+    submissionNote: string,
+    attachment?: { fileName: string; fileSize: string }
+  ): { ok: boolean; error?: string } {
+    const trimmed = submissionNote.trim();
+    if (trimmed.length < 6 && !attachment?.fileName) {
+      return { ok: false, error: 'Enter submission notes (min 6 chars) or attach an evidence file.' };
+    }
+    const state = loadState();
+    const target = state.assessments.find((a) => a.id === assessmentId);
+    if (!target) return { ok: false, error: 'Assessment record not found.' };
+    if (target.status === 'Marked') {
+      return { ok: false, error: 'Marked assessments cannot be re-submitted.' };
+    }
+    target.status = 'Submitted';
+    target.submissionNote = trimmed || `Uploaded file: ${attachment?.fileName}`;
+    if (attachment?.fileName) {
+      target.attachmentName = attachment.fileName;
+      target.attachmentSize = attachment.fileSize;
+    }
+    target.submittedAt = new Date().toISOString();
+    appendAudit(
+      state,
+      'Assessments',
+      'ASSESSMENT_SUBMITTED',
+      `${target.unitCode}: ${target.title}${attachment?.fileName ? ` (${attachment.fileName})` : ''}`
+    );
+    saveState(state);
+    return { ok: true };
+  },
+
+  savePracticalEvidence(
+    assessmentId: string,
+    completedSteps: boolean[],
+    labNotes: string,
+    attachment?: { fileName: string; fileSize: string },
+    submitFinal = false
+  ): { ok: boolean; error?: string } {
+    const state = loadState();
+    const target = state.assessments.find((a) => a.id === assessmentId);
+    if (!target) return { ok: false, error: 'Practical assessment not found.' };
+    target.completedSteps = [...completedSteps];
+    if (labNotes.trim()) {
+      target.submissionNote = labNotes.trim();
+    }
+    if (attachment?.fileName) {
+      target.attachmentName = attachment.fileName;
+      target.attachmentSize = attachment.fileSize;
+    }
+    if (submitFinal) {
+      if (!target.attachmentName && !labNotes.trim()) {
+        return { ok: false, error: 'Provide practical lab observations or attach evidence before submitting.' };
+      }
+      target.status = 'Submitted';
+      target.submittedAt = new Date().toISOString();
+      appendAudit(state, 'Practicals', 'PRACTICAL_SUBMITTED', `${target.unitCode}: ${target.title}`);
+    } else {
+      if (target.status === 'Pending' || target.status === 'Upcoming') {
+        target.status = 'In progress';
+      }
+      appendAudit(state, 'Practicals', 'PRACTICAL_PROGRESS_SAVED', `${target.unitCode}: ${target.title}`);
+    }
+    saveState(state);
+    return { ok: true };
+  },
+
+  acknowledgeExamNotice(noticeId: string): void {
+    const state = loadState();
+    const target = state.examNotices.find((n) => n.id === noticeId);
+    if (target) {
+      target.acknowledged = true;
+      saveState(state);
+    }
+  },
 };
+

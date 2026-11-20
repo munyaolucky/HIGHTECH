@@ -22,6 +22,7 @@ import {
   StudentPortalSection,
 } from '../../../services/studentPortalService';
 import StudentAbsenceSection from './StudentAbsenceSection';
+import StudentEventsPanel from './StudentEventsPanel';
 
 interface Props {
   activeSection: Extract<
@@ -687,6 +688,15 @@ export default function StudentAcademicExtras({
           )}
         </div>
       </div>
+
+      <StudentEventsPanel
+        studentName={profile.fullName}
+        registrationNumber={regNo}
+        email={state.contact.email}
+        phone={state.contact.phoneNumber}
+        compact
+        onNotify={onNotify}
+      />
     </div>
   );
 }

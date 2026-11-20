@@ -31,6 +31,7 @@ import {
   StudentPortalSection,
 } from '../../../services/studentPortalService';
 import { SupportTicketCategory } from '../../../types/aiSupportCentre';
+import StudentEventsPanel from './StudentEventsPanel';
 
 export type MobileCompanionTab =
   | 'today'
@@ -38,6 +39,7 @@ export type MobileCompanionTab =
   | 'assignments'
   | 'documents'
   | 'assessments'
+  | 'events'
   | 'support'
   | 'alerts-pay';
 
@@ -68,6 +70,7 @@ const COMPANION_TABS: {
   { id: 'assignments', label: 'Assignments', icon: UploadCloud },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'assessments', label: 'Assessments', icon: FileCheck2 },
+  { id: 'events', label: 'Events & QR', icon: CalendarDays },
   { id: 'support', label: 'Support', icon: Headphones },
   { id: 'alerts-pay', label: 'Alerts & Pay', icon: CreditCard },
 ];
@@ -1088,6 +1091,17 @@ export default function MobileStudentCompanion({
             </div>
           </form>
         </div>
+      )}
+
+      {activeTab === 'events' && (
+        <StudentEventsPanel
+          studentName={profile.fullName}
+          registrationNumber={regNo}
+          email={state.contact.email}
+          phone={state.contact.phoneNumber}
+          compact
+          onNotify={onNotify}
+        />
       )}
     </div>
   );

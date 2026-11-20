@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Pause,
   Play,
-  Sparkles,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import computingLabImg from "../../assets/images/hitech_computing_lab_1794981896260.jpg";
@@ -115,9 +114,9 @@ export default function Hero({ onNavigate, onOpenPortalModal }: HeroProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           {/* Left Column: Headlines, Call to Actions & Campus Visual Strip */}
           <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-            {/* Accreditation Badge */}
-            <div className="hero-fade-up inline-flex items-center gap-2 bg-blue-900/70 border border-blue-700/70 text-blue-100 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm shadow-sm">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            {/* Accreditation Kicker */}
+            <div className="hero-fade-up inline-flex items-center gap-2 text-blue-200 text-xs font-semibold">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Government Registered &amp; TVETA Accredited College</span>
             </div>
 
@@ -235,11 +234,10 @@ export default function Hero({ onNavigate, onOpenPortalModal }: HeroProps) {
                 {/* Editorial Gradient Scrim */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#07162c]/95 via-[#07162c]/25 to-transparent pointer-events-none" />
 
-                {/* Top Overlay Pill & Playback Controls */}
+                {/* Top Overlay Label & Playback Controls */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 bg-[#07162c]/80 backdrop-blur-md border border-white/20 text-sky-200 text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider">
-                    <Sparkles className="w-3 h-3 text-amber-300" />
-                    <span>{currentSlide.tag}</span>
+                  <span className="text-sky-200 text-[11px] font-semibold tracking-wide drop-shadow">
+                    {currentSlide.tag}
                   </span>
 
                   <div className="flex items-center gap-1.5">
@@ -325,8 +323,8 @@ export default function Hero({ onNavigate, onOpenPortalModal }: HeroProps) {
                     </div>
                   </div>
                 </div>
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
-                  ACTIVE
+                <span className="text-emerald-300 text-xs font-semibold shrink-0">
+                  Active
                 </span>
               </div>
 

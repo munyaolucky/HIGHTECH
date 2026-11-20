@@ -13,7 +13,9 @@
       "PARTNER": 0,
       "GUEST": 1
     },
-    "eventRegSeq": 10
+    "eventRegSeq": 10,
+    "eventCodeSeq": 8,
+    "eventCertSeq": 2
   },
   "campuses": [
     {
@@ -347,7 +349,34 @@
         "event.registration.export",
         "event.checkin",
         "event.report.view",
-        "event.cancel"
+        "event.cancel",
+        "event.delete",
+        "event.archive",
+        "event.registration.create",
+        "event.registration.edit",
+        "event.registration.reject",
+        "event.registration.cancel",
+        "event.waitlist.manage",
+        "event.checkin.manage",
+        "event.attendance.view",
+        "event.attendance.edit",
+        "event.attendance.export",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.resource.manage",
+        "event.payment.view",
+        "event.payment.verify",
+        "event.payment.refund",
+        "event.ticket.manage",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.media.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.settings.manage",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -436,7 +465,34 @@
         "event.registration.export",
         "event.checkin",
         "event.report.view",
-        "event.cancel"
+        "event.cancel",
+        "event.delete",
+        "event.archive",
+        "event.registration.create",
+        "event.registration.edit",
+        "event.registration.reject",
+        "event.registration.cancel",
+        "event.waitlist.manage",
+        "event.checkin.manage",
+        "event.attendance.view",
+        "event.attendance.edit",
+        "event.attendance.export",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.resource.manage",
+        "event.payment.view",
+        "event.payment.verify",
+        "event.payment.refund",
+        "event.ticket.manage",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.media.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.settings.manage",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -521,7 +577,34 @@
         "event.registration.export",
         "event.checkin",
         "event.report.view",
-        "event.cancel"
+        "event.cancel",
+        "event.delete",
+        "event.archive",
+        "event.registration.create",
+        "event.registration.edit",
+        "event.registration.reject",
+        "event.registration.cancel",
+        "event.waitlist.manage",
+        "event.checkin.manage",
+        "event.attendance.view",
+        "event.attendance.edit",
+        "event.attendance.export",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.resource.manage",
+        "event.payment.view",
+        "event.payment.verify",
+        "event.payment.refund",
+        "event.ticket.manage",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.media.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.settings.manage",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -587,7 +670,12 @@
         "reports.export",
         "event.view",
         "event.registration.view",
-        "event.report.view"
+        "event.report.view",
+        "event.payment.view",
+        "event.payment.verify",
+        "event.payment.refund",
+        "event.report.export",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -712,7 +800,18 @@
         "teaching.absence.review",
         "teaching.absence.escalate",
         "teaching.evidence.view_restricted",
-        "teaching.reports.view"
+        "teaching.reports.view",
+        "event.view",
+        "event.create",
+        "event.edit",
+        "event.submit",
+        "event.registration.view",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.checkin",
+        "event.attendance.view",
+        "event.feedback.manage",
+        "event.report.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -877,7 +976,21 @@
         "event.registration.view",
         "event.registration.export",
         "event.checkin",
-        "event.report.view"
+        "event.report.view",
+        "event.registration.create",
+        "event.registration.approve",
+        "event.registration.reject",
+        "event.waitlist.manage",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.attendance.view",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1044,7 +1157,11 @@
         "event.view",
         "event.registration.view",
         "event.report.view",
-        "event.registration.export"
+        "event.registration.export",
+        "event.attendance.view",
+        "event.feedback.manage",
+        "event.report.export",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1111,7 +1228,34 @@
         "event.registration.export",
         "event.checkin",
         "event.report.view",
-        "event.cancel"
+        "event.cancel",
+        "event.delete",
+        "event.archive",
+        "event.registration.create",
+        "event.registration.edit",
+        "event.registration.reject",
+        "event.registration.cancel",
+        "event.waitlist.manage",
+        "event.checkin.manage",
+        "event.attendance.view",
+        "event.attendance.edit",
+        "event.attendance.export",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.resource.manage",
+        "event.payment.view",
+        "event.payment.verify",
+        "event.payment.refund",
+        "event.ticket.manage",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.media.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.settings.manage",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1366,7 +1510,29 @@
         "event.registration.export",
         "event.checkin",
         "event.report.view",
-        "event.cancel"
+        "event.cancel",
+        "event.archive",
+        "event.registration.create",
+        "event.registration.edit",
+        "event.registration.reject",
+        "event.registration.cancel",
+        "event.waitlist.manage",
+        "event.checkin.manage",
+        "event.attendance.view",
+        "event.attendance.edit",
+        "event.attendance.export",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.venue.manage",
+        "event.resource.manage",
+        "event.ticket.manage",
+        "event.certificate.manage",
+        "event.feedback.manage",
+        "event.media.manage",
+        "event.notification.manage",
+        "event.invitation.manage",
+        "event.report.export",
+        "event.audit.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1416,7 +1582,9 @@
         "staff.activity.view",
         "event.view",
         "event.registration.view",
-        "event.checkin"
+        "event.checkin",
+        "event.registration.create",
+        "event.attendance.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1460,7 +1628,8 @@
         "assets.manage",
         "event.view",
         "event.registration.view",
-        "event.checkin"
+        "event.checkin",
+        "event.attendance.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -1563,7 +1732,18 @@
         "teaching.absence.review",
         "teaching.absence.escalate",
         "teaching.evidence.view_restricted",
-        "teaching.reports.view"
+        "teaching.reports.view",
+        "event.view",
+        "event.create",
+        "event.edit",
+        "event.submit",
+        "event.registration.view",
+        "event.speaker.manage",
+        "event.programme.manage",
+        "event.checkin",
+        "event.attendance.view",
+        "event.feedback.manage",
+        "event.report.view"
       ],
       "documentPermissions": [
         "documents.view",
@@ -5961,7 +6141,37 @@
       "publishedAt": "2026-02-18T11:30:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-17T09:00:00.000Z",
-      "updatedAt": "2026-02-18T11:30:00.000Z"
+      "updatedAt": "2026-02-18T11:30:00.000Z",
+      "eventCode": "HTE-2026-001",
+      "endDate": "2026-11-24",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-17T09:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-cyber-career-clinic",
@@ -6009,7 +6219,37 @@
       "publishedAt": "2026-02-20T09:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-19T14:00:00.000Z",
-      "updatedAt": "2026-02-20T09:00:00.000Z"
+      "updatedAt": "2026-02-20T09:00:00.000Z",
+      "eventCode": "HTE-2026-002",
+      "endDate": "2026-11-19",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-19T14:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-cloud-devops-workshop",
@@ -6057,7 +6297,37 @@
       "publishedAt": "2026-02-22T12:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-21T10:00:00.000Z",
-      "updatedAt": "2026-02-22T12:00:00.000Z"
+      "updatedAt": "2026-02-22T12:00:00.000Z",
+      "eventCode": "HTE-2026-003",
+      "endDate": "2026-12-01",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-21T10:00:00.000Z",
+      "studentFeeAmount": 750,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-knec-cdacc-webinar",
@@ -6105,7 +6375,37 @@
       "publishedAt": "2026-02-24T10:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-23T15:00:00.000Z",
-      "updatedAt": "2026-02-24T10:00:00.000Z"
+      "updatedAt": "2026-02-24T10:00:00.000Z",
+      "eventCode": "HTE-2026-004",
+      "endDate": "2026-12-08",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-23T15:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-open-day-admissions-2026",
@@ -6153,7 +6453,37 @@
       "publishedAt": "2026-02-25T11:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-24T13:00:00.000Z",
-      "updatedAt": "2026-02-25T11:00:00.000Z"
+      "updatedAt": "2026-02-25T11:00:00.000Z",
+      "eventCode": "HTE-2026-005",
+      "endDate": "2026-12-17",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-24T13:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-graduation-2026",
@@ -6201,7 +6531,37 @@
       "publishedAt": "2026-02-26T10:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-02-25T16:00:00.000Z",
-      "updatedAt": "2026-02-26T10:00:00.000Z"
+      "updatedAt": "2026-02-26T10:00:00.000Z",
+      "eventCode": "HTE-2026-006",
+      "endDate": "2026-12-29",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-25T16:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-alumni-founders-draft",
@@ -6249,7 +6609,37 @@
       "publishedAt": null,
       "cancelledReason": null,
       "createdAt": "2026-02-27T08:00:00.000Z",
-      "updatedAt": "2026-02-27T08:30:00.000Z"
+      "updatedAt": "2026-02-27T08:30:00.000Z",
+      "eventCode": "HTE-2026-007",
+      "endDate": "2026-12-05",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-02-27T08:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     },
     {
       "id": "evt-tveta-innovation-expo-past",
@@ -6297,7 +6687,37 @@
       "publishedAt": "2026-01-20T11:00:00.000Z",
       "cancelledReason": null,
       "createdAt": "2026-01-18T09:00:00.000Z",
-      "updatedAt": "2026-02-05T17:00:00.000Z"
+      "updatedAt": "2026-02-05T17:00:00.000Z",
+      "eventCode": "HTE-2026-008",
+      "endDate": "2026-11-05",
+      "timezone": "Africa/Nairobi",
+      "isMultiDay": false,
+      "recurrencePattern": "NONE",
+      "campus": "Nairobi Main Campus",
+      "venueId": null,
+      "building": "",
+      "room": "",
+      "mapsLink": "",
+      "onlinePlatform": "",
+      "accessibilityInfo": "",
+      "parkingInfo": "",
+      "showContactPhonePublicly": true,
+      "language": "English",
+      "tags": [],
+      "visibility": "PUBLIC",
+      "waitlistCapacity": 25,
+      "checkedOutCount": 0,
+      "registrationOpenDate": "2026-01-18T09:00:00.000Z",
+      "studentFeeAmount": 0,
+      "reminderHours": [
+        24,
+        2
+      ],
+      "confirmationMessage": "",
+      "certificateEnabled": false,
+      "certificateType": "Certificate of Participation",
+      "certificateMinAttendance": true,
+      "feedbackEnabled": true
     }
   ],
   "collegeEventSchedules": [
@@ -6309,7 +6729,8 @@
       "speakerName": "Organising Secretariat",
       "location": "Main Auditorium Foyer",
       "description": "Verification of digital passes, badge collection, and prototype booth setup.",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "dayNumber": 1
     },
     {
       "id": "esch-2",
@@ -6319,7 +6740,8 @@
       "speakerName": "Dr. Samuel Karanja & Mercy Chebet (CTO, Savanna Cloud)",
       "location": "Main Auditorium & Livestream",
       "description": "Opening address and keynote on industry-ready applied computing graduates.",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "dayNumber": 1
     },
     {
       "id": "esch-3",
@@ -6329,7 +6751,8 @@
       "speakerName": "Eng. Peter Kamau Njoroge & Dr. Margaret Wambui",
       "location": "Auditorium & Lab 3",
       "description": "Live architectural walkthroughs and Q&A with faculty leads.",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "dayNumber": 1
     },
     {
       "id": "esch-4",
@@ -6339,7 +6762,8 @@
       "speakerName": "Industry Adjudication Panel",
       "location": "Innovation Hall",
       "description": "Live product pitches, employer feedback, and closing remarks.",
-      "sortOrder": 4
+      "sortOrder": 4,
+      "dayNumber": 1
     },
     {
       "id": "esch-5",
@@ -6349,7 +6773,8 @@
       "speakerName": "K. Mutiso (IT Support & Security Lead)",
       "location": "Westlands Cyber Range Lab 2",
       "description": "Real-time log triage exercise and portfolio expectations for junior analysts.",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "dayNumber": 1
     },
     {
       "id": "esch-6",
@@ -6359,7 +6784,8 @@
       "speakerName": "Industry Placement Desk",
       "location": "Seminar Room B",
       "description": "Direct feedback and internship matching for ICT trainees.",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "dayNumber": 1
     },
     {
       "id": "esch-7",
@@ -6369,7 +6795,8 @@
       "speakerName": "Brian Kiptoo",
       "location": "Engineering Lab A1",
       "description": "Hands-on terminal labs deploying resilient Node.js and PostgreSQL services.",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "dayNumber": 1
     },
     {
       "id": "esch-8",
@@ -6379,7 +6806,8 @@
       "speakerName": "Eng. Peter Kamau Njoroge",
       "location": "Engineering Lab A1",
       "description": "Automated testing, rollback strategies, and CPD certification sign-off.",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "dayNumber": 1
     }
   ],
   "collegeEventSpeakers": [
@@ -6391,7 +6819,9 @@
       "organization": "HI-TECH College",
       "bio": "Academic executive championing TVET digital transformation and industry-aligned STEM curricula.",
       "photoUrl": "",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "speakerRole": "Guest Speaker",
+      "confirmationStatus": "CONFIRMED"
     },
     {
       "id": "espk-2",
@@ -6401,7 +6831,9 @@
       "organization": "Savanna Cloud Systems",
       "bio": "Distributed systems architect building scalable East African payment and machine learning platforms.",
       "photoUrl": "",
-      "sortOrder": 2
+      "sortOrder": 2,
+      "speakerRole": "Guest Speaker",
+      "confirmationStatus": "CONFIRMED"
     },
     {
       "id": "espk-3",
@@ -6411,7 +6843,9 @@
       "organization": "HI-TECH College",
       "bio": "Applied AI researcher leading capstone innovation and CDACC curriculum modernization.",
       "photoUrl": "",
-      "sortOrder": 3
+      "sortOrder": 3,
+      "speakerRole": "Guest Speaker",
+      "confirmationStatus": "CONFIRMED"
     },
     {
       "id": "espk-4",
@@ -6421,7 +6855,9 @@
       "organization": "HI-TECH College",
       "bio": "Network security educator and mentor for regional cyber defence competitions.",
       "photoUrl": "",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "speakerRole": "Guest Speaker",
+      "confirmationStatus": "CONFIRMED"
     },
     {
       "id": "espk-5",
@@ -6431,7 +6867,9 @@
       "organization": "HI-TECH College",
       "bio": "Linux systems engineer managing campus virtualization clusters and developer sandboxes.",
       "photoUrl": "",
-      "sortOrder": 1
+      "sortOrder": 1,
+      "speakerRole": "Guest Speaker",
+      "confirmationStatus": "CONFIRMED"
     }
   ],
   "collegeEventRegistrations": [
@@ -6458,7 +6896,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-20T09:15:00.000Z",
-      "updatedAt": "2026-02-20T09:15:00.000Z"
+      "updatedAt": "2026-02-20T09:15:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-002",
@@ -6483,7 +6929,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-21T11:20:00.000Z",
-      "updatedAt": "2026-02-21T11:20:00.000Z"
+      "updatedAt": "2026-02-21T11:20:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-003",
@@ -6508,7 +6962,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-22T14:10:00.000Z",
-      "updatedAt": "2026-02-22T14:10:00.000Z"
+      "updatedAt": "2026-02-22T14:10:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-004",
@@ -6533,7 +6995,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-22T16:00:00.000Z",
-      "updatedAt": "2026-11-19T09:45:00.000Z"
+      "updatedAt": "2026-11-19T09:45:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-005",
@@ -6558,7 +7028,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-23T08:40:00.000Z",
-      "updatedAt": "2026-02-23T08:40:00.000Z"
+      "updatedAt": "2026-02-23T08:40:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-006",
@@ -6583,7 +7061,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-24T12:00:00.000Z",
-      "updatedAt": "2026-02-24T12:00:00.000Z"
+      "updatedAt": "2026-02-24T12:00:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-007",
@@ -6608,7 +7094,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-25T15:30:00.000Z",
-      "updatedAt": "2026-02-25T15:30:00.000Z"
+      "updatedAt": "2026-02-25T15:30:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-008",
@@ -6633,7 +7127,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-25T16:10:00.000Z",
-      "updatedAt": "2026-02-25T16:10:00.000Z"
+      "updatedAt": "2026-02-25T16:10:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-009",
@@ -6658,7 +7160,15 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-26T10:00:00.000Z",
-      "updatedAt": "2026-02-26T10:00:00.000Z"
+      "updatedAt": "2026-02-26T10:00:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
     },
     {
       "id": "ereg-seed-010",
@@ -6683,7 +7193,282 @@
       "reviewedByName": null,
       "reviewNote": null,
       "registeredAt": "2026-02-26T14:20:00.000Z",
-      "updatedAt": "2026-02-26T14:20:00.000Z"
+      "updatedAt": "2026-02-26T14:20:00.000Z",
+      "ticketType": "General Admission",
+      "paymentStatus": "PAID",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "checkedOut": false,
+      "checkedOutAt": null,
+      "organiserNotes": "",
+      "certificateCode": null
+    }
+  ],
+  "collegeEventVenues": [
+    {
+      "id": "venue-nbo-auditorium",
+      "name": "Innovation Auditorium",
+      "campus": "Nairobi Main Campus",
+      "building": "Academic Towers Block A",
+      "venueType": "Auditorium",
+      "capacity": 250,
+      "seatingLayout": "Tiered Theatre + Livestream Studio",
+      "resources": [
+        "4K LED Projector",
+        "Dual Wireless PA",
+        "Livestream Encoder",
+        "Stage Lighting",
+        "Recording Desk"
+      ],
+      "accessibilityFeatures": "Step-free ramp access, 6 wheelchair bays, induction hearing loop",
+      "maintenanceStatus": "AVAILABLE"
+    },
+    {
+      "id": "venue-wst-cyber-lab",
+      "name": "Cyber Range Lab 2",
+      "campus": "Westlands Technology Park Campus",
+      "building": "Innovation Wing Floor 2",
+      "venueType": "Laboratory",
+      "capacity": 60,
+      "seatingLayout": "Clustered SOC Pods (60 Workstations)",
+      "resources": [
+        "60 Linux/Windows Workstations",
+        "Cisco Core Rack",
+        "Dual Projectors",
+        "High-Speed Fiber"
+      ],
+      "accessibilityFeatures": "Elevator access, adjustable height lab desks",
+      "maintenanceStatus": "AVAILABLE"
+    },
+    {
+      "id": "venue-nbo-eng-lab-a1",
+      "name": "Engineering Lab A1",
+      "campus": "Nairobi Main Campus",
+      "building": "Engineering & Computing Block",
+      "venueType": "Workshop",
+      "capacity": 40,
+      "seatingLayout": "Hands-On Workbench Rows",
+      "resources": [
+        "Dual-Boot Cloud Terminals",
+        "Server Rack",
+        "Smartboard",
+        "Backup Power UPS"
+      ],
+      "accessibilityFeatures": "Ground floor wide double doors",
+      "maintenanceStatus": "AVAILABLE"
+    },
+    {
+      "id": "venue-nbo-convocation",
+      "name": "Convocation Pavilion & Quadrangle",
+      "campus": "Nairobi Main Campus",
+      "building": "Central Campus Grounds",
+      "venueType": "Outdoor",
+      "capacity": 600,
+      "seatingLayout": "Canopy Banquet & Academic Procession",
+      "resources": [
+        "Outdoor Line-Array Sound",
+        "Livestream Cameras",
+        "Backup Generator",
+        "First-Aid Tent"
+      ],
+      "accessibilityFeatures": "Paved pathways, accessible restrooms nearby",
+      "maintenanceStatus": "AVAILABLE"
+    },
+    {
+      "id": "venue-wst-exec-lounge",
+      "name": "Executive Seminar Lounge",
+      "campus": "Westlands Technology Park Campus",
+      "building": "Corporate Wing Floor 4",
+      "venueType": "Boardroom",
+      "capacity": 90,
+      "seatingLayout": "Roundtable / Networking Reception",
+      "resources": [
+        "75-inch Interactive Display",
+        "Hybrid Video Bar",
+        "Catering Pantry"
+      ],
+      "accessibilityFeatures": "Lift access & accessible washrooms",
+      "maintenanceStatus": "AVAILABLE"
+    },
+    {
+      "id": "venue-mba-hall",
+      "name": "Coastal Academic Hall",
+      "campus": "Mombasa Coastal Campus",
+      "building": "Nkrumah Road Wing",
+      "venueType": "Lecture Hall",
+      "capacity": 120,
+      "seatingLayout": "Flexible Seminar Classroom",
+      "resources": [
+        "HD Projector",
+        "PA Sound System",
+        "Video Conferencing Link"
+      ],
+      "accessibilityFeatures": "Ground-level ramp entry",
+      "maintenanceStatus": "AVAILABLE"
+    }
+  ],
+  "collegeEventPayments": [
+    {
+      "id": "epay-seed-001",
+      "eventId": "evt-cloud-devops-workshop",
+      "registrationId": "ereg-seed-006",
+      "registrationNumber": "HTE-EVT-2026-0006",
+      "participantName": "Victor Mwangi",
+      "participantEmail": "victor.mwangi@finhub.ke",
+      "ticketType": "General Admission",
+      "amount": 1500,
+      "currency": "KES",
+      "method": "MPESA",
+      "transactionRef": "UCD94X8L2K",
+      "status": "PENDING",
+      "verifiedById": null,
+      "verifiedByName": null,
+      "verifiedAt": null,
+      "refundReason": null,
+      "refundedAt": null,
+      "createdAt": "2026-02-24T12:05:00.000Z"
+    },
+    {
+      "id": "epay-seed-002",
+      "eventId": "evt-cloud-devops-workshop",
+      "registrationId": "ereg-seed-007",
+      "registrationNumber": "HTE-EVT-2026-0007",
+      "participantName": "Mercy Chepkorir",
+      "participantEmail": "mercy.chepkorir@student.hitech.ac.ke",
+      "ticketType": "Student Ticket",
+      "amount": 750,
+      "currency": "KES",
+      "method": "MPESA",
+      "transactionRef": "PENDING-WAITLIST",
+      "status": "UNPAID",
+      "verifiedById": null,
+      "verifiedByName": null,
+      "verifiedAt": null,
+      "refundReason": null,
+      "refundedAt": null,
+      "createdAt": "2026-02-25T15:32:00.000Z"
+    }
+  ],
+  "collegeEventInvitations": [
+    {
+      "id": "einv-seed-001",
+      "eventId": "evt-alumni-founders-draft",
+      "invitationCode": "HTE-INV-ALUMNI-2026A",
+      "inviteeName": "David Njoroge (Class of 2021)",
+      "inviteeEmail": "dnjoroge@twiga-labs.ke",
+      "inviteePhone": "+254722801920",
+      "groupName": "Alumni Tech Founders",
+      "status": "SENT",
+      "expiresAt": "2026-12-06T18:00:00.000Z",
+      "convertedRegistrationId": null,
+      "invitedByName": "N. Muthoni",
+      "createdAt": "2026-02-27T08:15:00.000Z",
+      "updatedAt": "2026-02-27T08:15:00.000Z"
+    },
+    {
+      "id": "einv-seed-002",
+      "eventId": "evt-ai-symposium-2026",
+      "invitationCode": "HTE-INV-KEYNOTE-VIP1",
+      "inviteeName": "Prof. Esther Nyambura",
+      "inviteeEmail": "e.nyambura@tveta.go.ke",
+      "inviteePhone": "+254733900112",
+      "groupName": "VIP Industry & Regulatory Panel",
+      "status": "SENT",
+      "expiresAt": "2026-11-25T08:00:00.000Z",
+      "convertedRegistrationId": null,
+      "invitedByName": "Dr. Margaret Wambui",
+      "createdAt": "2026-02-19T10:00:00.000Z",
+      "updatedAt": "2026-02-19T10:00:00.000Z"
+    }
+  ],
+  "collegeEventFeedbacks": [
+    {
+      "id": "efb-seed-001",
+      "eventId": "evt-tveta-innovation-expo-past",
+      "registrationId": "ereg-seed-011",
+      "respondentName": "Brian Kiprop Mutai",
+      "isAnonymous": false,
+      "overallRating": 5,
+      "speakerRating": 5,
+      "organisationRating": 5,
+      "venueRating": 4,
+      "recommendNps": 10,
+      "comments": "Excellent assessor feedback and smooth QR entry at the Engineering Quadrangle.",
+      "futureTopicInterest": "Edge AI & Embedded Rust Workshops",
+      "createdAt": "2026-11-06T17:30:00.000Z"
+    },
+    {
+      "id": "efb-seed-002",
+      "eventId": "evt-tveta-innovation-expo-past",
+      "registrationId": "ereg-seed-012",
+      "respondentName": "Faith Wanjiru Kamau",
+      "isAnonymous": false,
+      "overallRating": 5,
+      "speakerRating": 4,
+      "organisationRating": 5,
+      "venueRating": 5,
+      "recommendNps": 9,
+      "comments": "Well organized industry judges and helpful power backup setup for demo booths.",
+      "futureTopicInterest": "Green Energy IoT Systems",
+      "createdAt": "2026-11-06T18:05:00.000Z"
+    }
+  ],
+  "collegeEventCertificates": [
+    {
+      "id": "ecert-seed-001",
+      "eventId": "evt-tveta-innovation-expo-past",
+      "registrationId": "ereg-seed-011",
+      "certificateNumber": "HTE-CERT-2026-0001",
+      "verificationCode": "VRF-TVT-2026-881A",
+      "participantName": "Brian Kiprop Mutai",
+      "participantEmail": "bmutai@student.hitech.ac.ke",
+      "certificateType": "Certificate of Achievement",
+      "status": "ISSUED",
+      "issuedAt": "2026-11-06T17:00:00.000Z",
+      "issuedByName": "Dr. Margaret Wambui",
+      "revokedReason": null
+    },
+    {
+      "id": "ecert-seed-002",
+      "eventId": "evt-tveta-innovation-expo-past",
+      "registrationId": "ereg-seed-012",
+      "certificateNumber": "HTE-CERT-2026-0002",
+      "verificationCode": "VRF-TVT-2026-994B",
+      "participantName": "Faith Wanjiru Kamau",
+      "participantEmail": "fkamau@student.hitech.ac.ke",
+      "certificateType": "Certificate of Achievement",
+      "status": "ISSUED",
+      "issuedAt": "2026-11-06T17:05:00.000Z",
+      "issuedByName": "Dr. Margaret Wambui",
+      "revokedReason": null
+    }
+  ],
+  "collegeEventMedia": [
+    {
+      "id": "emed-seed-001",
+      "eventId": "evt-tveta-innovation-expo-past",
+      "title": "Robotics Team Final Adjudication Highlight",
+      "mediaType": "PHOTO",
+      "url": "local:robotics-expo",
+      "caption": "TVETA assessors evaluating the autonomous warehouse sorting robot at Nairobi Main Campus.",
+      "altText": "Students presenting engineering prototypes at HI-TECH College Quadrangle",
+      "visibility": "PUBLIC",
+      "consentVerified": true,
+      "uploadedByName": "N. Muthoni",
+      "createdAt": "2026-11-06T16:45:00.000Z"
+    },
+    {
+      "id": "emed-seed-002",
+      "eventId": "evt-ai-symposium-2026",
+      "title": "Official Symposium Programme & Speaker Dossier",
+      "mediaType": "BROCHURE",
+      "url": "local:ai-symposium",
+      "caption": "Downloadable delegate programme pack for the 2026 Applied AI Symposium.",
+      "altText": "Innovation & Applied AI Symposium programme brochure",
+      "visibility": "PUBLIC",
+      "consentVerified": true,
+      "uploadedByName": "Dr. Margaret Wambui",
+      "createdAt": "2026-02-18T12:00:00.000Z"
     }
   ],
   "collegeEventNotifications": [
@@ -6754,6 +7539,342 @@
       "action": "PARTICIPANT_CHECKED_IN",
       "detail": "Checked in Kevin Kipruto (HTE-EVT-2026-0004) at Westlands Cyber Range Lab 2.",
       "createdAt": "2026-11-19T09:45:00.000Z"
+    }
+  ],
+  "eventSettings": {
+    "defaultCurrency": "KES",
+    "defaultTimezone": "Africa/Nairobi",
+    "autoGenerateTickets": true,
+    "allowGuestRegistration": true,
+    "requireFeedbackConsent": true,
+    "defaultReminderHours": [
+      48,
+      24,
+      2
+    ],
+    "dataRetentionDays": 365,
+    "updatedByName": "Dr. Samuel Karanja",
+    "updatedAt": "2026-02-15T08:00:00.000Z"
+  },
+  "secureExamDefinitions": [
+    {
+      "id": "sec-exam-net-cat",
+      "code": "NET-204-CAT",
+      "title": "Computer Networking CAT",
+      "subject": "ICT 204 · Computer Networking & Routing",
+      "unitCode": "ICT 204",
+      "durationMinutes": 60,
+      "totalMarks": 30,
+      "isPublished": true,
+      "startsAt": "2026-11-19T15:29:18.717Z",
+      "endsAt": "2026-12-04T15:29:18.717Z",
+      "maxAttempts": 2,
+      "instructions": [
+        "Ensure a stable internet connection before launching Secure Examination Mode.",
+        "Do not switch browser tabs, exit fullscreen, or open external resources while the session is active.",
+        "All objective and structured answers autosave automatically and submit on expiry.",
+        "Contact the examination supervisor immediately if your device experiences a hardware or power fault."
+      ],
+      "securityPolicy": {
+        "securityLevel": "LEVEL_1_WEB",
+        "requireFullscreen": true,
+        "disableCopy": true,
+        "disablePaste": true,
+        "disableCut": true,
+        "disableRightClick": true,
+        "blockProhibitedShortcuts": true,
+        "trackTabSwitching": true,
+        "trackFullscreenExit": true,
+        "autoSaveAnswers": true,
+        "autoSubmitOnExpiry": true,
+        "logSecurityIncidents": true,
+        "requireWebcamMonitoring": false,
+        "requireScreenRecording": false,
+        "restrictToManagedDevices": false,
+        "requireSafeExamBrowser": false,
+        "tabSwitchWarningAt": 1,
+        "tabSwitchIncidentAt": 2,
+        "tabSwitchSupervisorAt": 3,
+        "fullscreenExitSupervisorAt": 2
+      },
+      "questions": [
+        {
+          "id": "net-q1",
+          "number": 1,
+          "type": "LONG_ANSWER",
+          "instruction": "Provide concise, numbered points with technical terminology.",
+          "text": "Explain three core functions of a router in a computer network.",
+          "marks": 9
+        },
+        {
+          "id": "net-q2",
+          "number": 2,
+          "type": "SINGLE_CHOICE",
+          "text": "At which layer of the OSI reference model does a standard IP router primarily forward packets?",
+          "marks": 3,
+          "options": [
+            {
+              "id": "opt-a",
+              "text": "Layer 1 — Physical Layer"
+            },
+            {
+              "id": "opt-b",
+              "text": "Layer 2 — Data Link Layer"
+            },
+            {
+              "id": "opt-c",
+              "text": "Layer 3 — Network Layer"
+            },
+            {
+              "id": "opt-d",
+              "text": "Layer 4 — Transport Layer"
+            }
+          ],
+          "correctOptionIds": [
+            "opt-c"
+          ]
+        },
+        {
+          "id": "net-q3",
+          "number": 3,
+          "type": "MULTIPLE_CHOICE",
+          "instruction": "Select all protocols that operate cleanly over TCP.",
+          "text": "Which of the following application-layer protocols rely on TCP for reliable transport?",
+          "marks": 6,
+          "options": [
+            {
+              "id": "opt-http",
+              "text": "HTTP / HTTPS"
+            },
+            {
+              "id": "opt-ssh",
+              "text": "SSH"
+            },
+            {
+              "id": "opt-dhcp",
+              "text": "DHCP"
+            },
+            {
+              "id": "opt-smtp",
+              "text": "SMTP"
+            }
+          ],
+          "correctOptionIds": [
+            "opt-http",
+            "opt-ssh",
+            "opt-smtp"
+          ]
+        },
+        {
+          "id": "net-q4",
+          "number": 4,
+          "type": "TRUE_FALSE",
+          "text": "A /26 IPv4 subnet mask provides 62 usable host addresses per subnet.",
+          "marks": 4,
+          "options": [
+            {
+              "id": "opt-true",
+              "text": "True"
+            },
+            {
+              "id": "opt-false",
+              "text": "False"
+            }
+          ],
+          "correctOptionIds": [
+            "opt-true"
+          ]
+        },
+        {
+          "id": "net-q5",
+          "number": 5,
+          "type": "SHORT_ANSWER",
+          "text": "State the command used on Cisco IOS routers to verify the active routing table and explain two columns shown.",
+          "marks": 8
+        }
+      ],
+      "updatedAt": "2026-11-20T15:29:18.717Z"
+    },
+    {
+      "id": "sec-exam-csc301",
+      "code": "CSC-301-MID",
+      "title": "CSC 301 Data Structures & Algorithms CBT",
+      "subject": "CSC 301 · Advanced Data Structures & Algorithms",
+      "unitCode": "CSC 301",
+      "durationMinutes": 45,
+      "totalMarks": 25,
+      "isPublished": true,
+      "startsAt": "2026-11-19T15:29:18.717Z",
+      "endsAt": "2026-12-04T15:29:18.717Z",
+      "maxAttempts": 2,
+      "instructions": [
+        "Complete all questions within the 45-minute countdown.",
+        "Copy, paste, right-click, and developer tools shortcuts are blocked during the exam.",
+        "Your server-authoritative timer continues running even if the browser refreshes."
+      ],
+      "securityPolicy": {
+        "securityLevel": "LEVEL_1_WEB",
+        "requireFullscreen": true,
+        "disableCopy": true,
+        "disablePaste": true,
+        "disableCut": true,
+        "disableRightClick": true,
+        "blockProhibitedShortcuts": true,
+        "trackTabSwitching": true,
+        "trackFullscreenExit": true,
+        "autoSaveAnswers": true,
+        "autoSubmitOnExpiry": true,
+        "logSecurityIncidents": true,
+        "requireWebcamMonitoring": false,
+        "requireScreenRecording": false,
+        "restrictToManagedDevices": false,
+        "requireSafeExamBrowser": false,
+        "tabSwitchWarningAt": 1,
+        "tabSwitchIncidentAt": 2,
+        "tabSwitchSupervisorAt": 3,
+        "fullscreenExitSupervisorAt": 2
+      },
+      "questions": [
+        {
+          "id": "csc-q1",
+          "number": 1,
+          "type": "SINGLE_CHOICE",
+          "text": "Which data structure supports O(1) amortized insertion and LIFO retrieval?",
+          "marks": 5,
+          "options": [
+            {
+              "id": "opt-1",
+              "text": "Array-backed Stack"
+            },
+            {
+              "id": "opt-2",
+              "text": "Binary Heap"
+            },
+            {
+              "id": "opt-3",
+              "text": "Adjacency Matrix"
+            },
+            {
+              "id": "opt-4",
+              "text": "Trie"
+            }
+          ],
+          "correctOptionIds": [
+            "opt-1"
+          ]
+        },
+        {
+          "id": "csc-q2",
+          "number": 2,
+          "type": "TRUE_FALSE",
+          "text": "Breadth-First Search (BFS) guarantees the shortest path in an unweighted graph.",
+          "marks": 5,
+          "options": [
+            {
+              "id": "opt-t",
+              "text": "True"
+            },
+            {
+              "id": "opt-f",
+              "text": "False"
+            }
+          ],
+          "correctOptionIds": [
+            "opt-t"
+          ]
+        },
+        {
+          "id": "csc-q3",
+          "number": 3,
+          "type": "SHORT_ANSWER",
+          "text": "Compare the worst-case time complexity of Merge Sort and QuickSort and identify when Merge Sort is preferred.",
+          "marks": 15
+        }
+      ],
+      "updatedAt": "2026-11-20T15:29:18.717Z"
+    }
+  ],
+  "secureExamSessions": [
+    {
+      "id": "EXAM-SESSION-001",
+      "examId": "sec-exam-net-cat",
+      "studentId": "stu-sample-002",
+      "studentRegNo": "HCA/STU/2026/014",
+      "studentName": "Brian Kipkorir",
+      "attemptNumber": 1,
+      "status": "ACTIVE",
+      "startedAt": "2026-11-20T14:54:18.717Z",
+      "expiresAt": "2026-11-20T15:54:18.717Z",
+      "lastSavedAt": "2026-11-20T15:27:18.717Z",
+      "lastHeartbeatAt": "2026-11-20T15:27:18.717Z",
+      "answers": [
+        {
+          "questionId": "net-q2",
+          "value": "opt-c",
+          "updatedAt": "2026-11-20T15:24:18.717Z",
+          "savedAt": "2026-11-20T15:24:18.717Z"
+        }
+      ],
+      "createdAt": "2026-11-20T14:54:18.717Z",
+      "updatedAt": "2026-11-20T15:27:18.717Z"
+    }
+  ],
+  "secureExamEvents": [
+    {
+      "id": "sec-ev-001",
+      "sessionId": "EXAM-SESSION-001",
+      "eventType": "TAB_HIDDEN",
+      "occurredAt": "2026-11-20T15:17:18.717Z",
+      "receivedAt": "2026-11-20T15:17:18.717Z",
+      "details": "Candidate tab visibility changed to hidden.",
+      "responseTriggered": "WARNING"
+    },
+    {
+      "id": "sec-ev-002",
+      "sessionId": "EXAM-SESSION-001",
+      "eventType": "FULLSCREEN_EXIT",
+      "occurredAt": "2026-11-20T15:18:18.717Z",
+      "receivedAt": "2026-11-20T15:18:18.717Z",
+      "details": "Browser exited fullscreen during active session.",
+      "responseTriggered": "WARNING_AND_LOG"
+    },
+    {
+      "id": "sec-ev-003",
+      "sessionId": "EXAM-SESSION-001",
+      "eventType": "COPY_ATTEMPT",
+      "occurredAt": "2026-11-20T15:21:18.717Z",
+      "receivedAt": "2026-11-20T15:21:18.717Z",
+      "details": "Clipboard copy blocked inside exam workspace.",
+      "responseTriggered": "BLOCK_AND_LOG"
+    }
+  ],
+  "secureExamIncidents": [
+    {
+      "id": "INC-2026-001",
+      "sessionId": "EXAM-SESSION-001",
+      "examId": "sec-exam-net-cat",
+      "examTitle": "Computer Networking CAT",
+      "studentId": "stu-sample-002",
+      "studentRegNo": "HCA/STU/2026/014",
+      "studentName": "Brian Kipkorir",
+      "status": "UNDER_REVIEW",
+      "severity": "MEDIUM",
+      "summary": "Multiple focus/fullscreen interruptions and blocked clipboard copy attempt recorded.",
+      "eventCount": 3,
+      "createdAt": "2026-11-20T15:18:18.717Z",
+      "updatedAt": "2026-11-20T15:21:18.717Z"
+    }
+  ],
+  "secureExamAuditLogs": [
+    {
+      "id": "seclog-001",
+      "sessionId": "EXAM-SESSION-001",
+      "examId": "sec-exam-net-cat",
+      "actorId": "stu-sample-002",
+      "actorName": "Brian Kipkorir",
+      "action": "SESSION_STARTED",
+      "detail": "Started Computer Networking CAT under Level 1 Web Secure Mode.",
+      "timestampIso": "2026-11-20T14:54:18.717Z"
     }
   ]
 }

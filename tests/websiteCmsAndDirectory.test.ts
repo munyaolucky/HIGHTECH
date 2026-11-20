@@ -177,11 +177,17 @@ test('Role permissions and public header & footer navigation stay aligned and fr
     'Campus',
     'Student Life',
     'News &amp; Events',
+    'Graduation &amp; Convocation',
     'Contact Us',
     'Apply Now',
   ]) {
     assert.ok(headerHtml.includes(label), `Header must include ${label}`);
   }
+  assert.equal(
+    headerHtml.includes('<span>Events</span>'),
+    false,
+    'Header must not have a separate standalone Events item alongside News & Events'
+  );
   assert.equal(headerHtml.includes('animate-pulse'), false);
   assert.equal(/\sstyle="/i.test(headerHtml), false);
 

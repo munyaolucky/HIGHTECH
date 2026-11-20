@@ -23,6 +23,11 @@ import {
   managementRoutes,
   teachingRoutes,
 } from './server/modules/teaching/teaching.routes.ts';
+import {
+  studentSecureExamRoutes,
+  supervisorSecureExamRoutes,
+} from './server/modules/exams/secure/secureExam.routes.ts';
+import { secureExamService } from './server/modules/exams/secure/secureExam.service.ts';
 
 async function startServer() {
   const app = express();
@@ -55,6 +60,8 @@ async function startServer() {
   app.use('/api/teaching', teachingRoutes);
   app.use('/api/absence', absenceRoutes);
   app.use('/api/management', managementRoutes);
+  app.use('/api/student/exam-sessions', studentSecureExamRoutes);
+  app.use('/api/exams/supervisor', supervisorSecureExamRoutes);
 
   // Explicit 404 for unknown API paths so HTML fallback never masks missing routes
   app.use('/api', (_req, res) => {
@@ -83,6 +90,15 @@ async function startServer() {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
+
+  // Server-authoritative expiry sweep for active exam sessions (single coordinated interval)
+  setInterval(() => {
+    try {
+      secureExamService.expireActiveSessions();
+    } catch {
+      // Ignore transient sweep errors
+    }
+  }, 60_000).unref();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`HI-TECH College full-stack portal listening on http://0.0.0.0:${PORT}`);
