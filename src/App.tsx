@@ -459,7 +459,7 @@ function GlobalPortalSwitcherWrapper({
     <GlobalPortalSwitcherModal
       isOpen={ctx.isSwitcherOpen}
       onClose={ctx.closeSwitcher}
-      currentRole={ctx.currentRole}
+      currentRole={ctx.currentRole ?? 'website'}
       onSelectRole={(role) => {
         ctx.closeSwitcher();
         if (role === "website") {
