@@ -1306,4 +1306,292 @@ export const collegeEventAuditLogs = pgTable('college_event_audit_logs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// ============================================================================
+// 9. SECURE ONLINE EXAMINATION & PROCTORING MODULE
+// ============================================================================
+
+export const secureExamDefinitions = pgTable('secure_exam_definitions', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  title: text('title').notNull(),
+  subject: text('subject').notNull(),
+  unitCode: text('unit_code').notNull(),
+  durationMinutes: integer('duration_minutes').notNull(),
+  totalMarks: integer('total_marks').notNull(),
+  isPublished: boolean('is_published').notNull().default(false),
+  startsAt: text('starts_at').notNull(),
+  endsAt: text('ends_at').notNull(),
+  maxAttempts: integer('max_attempts').notNull().default(1),
+  instructions: jsonb('instructions').$type<string[]>().notNull().default([]),
+  securityPolicy: jsonb('security_policy').$type<Record<string, unknown>>().notNull(),
+  questions: jsonb('questions').$type<Record<string, unknown>[]>().notNull().default([]),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const secureExamSessions = pgTable('secure_exam_sessions', {
+  id: text('id').primaryKey(),
+  examId: text('exam_id')
+    .references(() => secureExamDefinitions.id, { onDelete: 'cascade' })
+    .notNull(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  attemptNumber: integer('attempt_number').notNull().default(1),
+  status: text('status').notNull().default('ACTIVE'),
+  startedAt: text('started_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  submittedAt: text('submitted_at'),
+  lastSavedAt: text('last_saved_at'),
+  lastHeartbeatAt: text('last_heartbeat_at'),
+  connectionLost: boolean('connection_lost').notNull().default(false),
+  terminationReason: text('termination_reason'),
+  terminatedBy: text('terminated_by'),
+  totalMarksAwarded: integer('total_marks_awarded'),
+  timeAdjustments: jsonb('time_adjustments').$type<Record<string, unknown>[]>().default([]),
+  answers: jsonb('answers').$type<Record<string, unknown>[]>().notNull().default([]),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const secureExamSecurityEvents = pgTable('secure_exam_security_events', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .references(() => secureExamSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  eventType: text('event_type').notNull(),
+  occurredAt: text('occurred_at').notNull(),
+  receivedAt: text('received_at').notNull(),
+  details: text('details'),
+  responseTriggered: text('response_triggered').notNull(),
+});
+
+export const secureExamIncidents = pgTable('secure_exam_incidents', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .references(() => secureExamSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  examId: text('exam_id').notNull(),
+  examTitle: text('exam_title').notNull(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  status: text('status').notNull().default('OPEN'),
+  severity: text('severity').notNull().default('MEDIUM'),
+  summary: text('summary').notNull(),
+  eventCount: integer('event_count').notNull().default(1),
+  reviewedById: text('reviewed_by_id'),
+  reviewedByName: text('reviewed_by_name'),
+  reviewerNotes: text('reviewer_notes'),
+  reviewedAt: text('reviewed_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const secureExamMessages = pgTable('secure_exam_messages', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .references(() => secureExamSessions.id, { onDelete: 'cascade' })
+    .notNull(),
+  examId: text('exam_id').notNull(),
+  examTitle: text('exam_title').notNull(),
+  studentId: text('student_id').notNull(),
+  studentName: text('student_name').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  senderRole: text('sender_role').notNull(),
+  senderId: text('sender_id').notNull(),
+  senderName: text('sender_name').notNull(),
+  kind: text('kind').notNull(),
+  priority: text('priority').notNull().default('NORMAL'),
+  body: text('body').notNull(),
+  createdAt: text('created_at').notNull(),
+  readByStudent: boolean('read_by_student').notNull().default(false),
+  readBySupervisor: boolean('read_by_supervisor').notNull().default(false),
+});
+
+export const secureExamAuditLogs = pgTable('secure_exam_audit_logs', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id'),
+  examId: text('exam_id'),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
+  timestampIso: text('timestamp_iso').notNull(),
+});
+
+// ============================================================================
+// 10. STUDENT FEES, LEDGER & M-PESA FINANCE MODULE
+// ============================================================================
+
+export const financeStudentAccounts = pgTable('finance_student_accounts', {
+  studentId: text('student_id').primaryKey(),
+  studentRegNo: text('student_reg_no').notNull().unique(),
+  studentName: text('student_name').notNull(),
+  programme: text('programme').notNull(),
+  academicYear: text('academic_year').notNull(),
+  termLabel: text('term_label').notNull(),
+  totalFees: integer('total_fees').notNull().default(0),
+  nextInstalmentAmount: integer('next_instalment_amount').notNull().default(0),
+  nextInstalmentDueDate: text('next_instalment_due_date').notNull(),
+  sponsorshipStatus: text('sponsorship_status').notNull().default('Self-Sponsored'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const financeLedgerCharges = pgTable('finance_ledger_charges', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  termLabel: text('term_label').notNull(),
+  academicYear: text('academic_year').notNull(),
+  category: text('category').notNull(),
+  description: text('description').notNull(),
+  amount: integer('amount').notNull(),
+  postedAt: text('posted_at').notNull(),
+});
+
+export const financePayments = pgTable('finance_payments', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  method: text('method').notNull(),
+  channelLabel: text('channel_label').notNull(),
+  referenceNumber: text('reference_number').notNull(),
+  idempotencyKey: text('idempotency_key'),
+  phoneNumber: text('phone_number'),
+  bankName: text('bank_name'),
+  amount: integer('amount').notNull(),
+  status: text('status').notNull().default('PENDING'),
+  description: text('description').notNull(),
+  receiptId: text('receipt_id'),
+  receiptNumber: text('receipt_number'),
+  failureReason: text('failure_reason'),
+  verifiedById: text('verified_by_id'),
+  verifiedByName: text('verified_by_name'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  paidAt: text('paid_at'),
+});
+
+export const mpesaTransactions = pgTable('mpesa_transactions', {
+  id: text('id').primaryKey(),
+  paymentId: text('payment_id').notNull(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  phoneNumber: text('phone_number').notNull(),
+  amount: integer('amount').notNull(),
+  accountReference: text('account_reference').notNull(),
+  transactionDesc: text('transaction_desc').notNull(),
+  merchantRequestId: text('merchant_request_id').notNull(),
+  checkoutRequestId: text('checkout_request_id').notNull().unique(),
+  mpesaReceiptNumber: text('mpesa_receipt_number'),
+  transactionDate: text('transaction_date'),
+  resultCode: integer('result_code'),
+  resultDesc: text('result_desc'),
+  status: text('status').notNull().default('PENDING'),
+  mode: text('mode').notNull().default('SANDBOX_SIMULATOR'),
+  callbackReceivedAt: text('callback_received_at'),
+  rawCallback: jsonb('raw_callback').$type<unknown>(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const financeReceipts = pgTable('finance_receipts', {
+  id: text('id').primaryKey(),
+  receiptNumber: text('receipt_number').notNull().unique(),
+  paymentId: text('payment_id').notNull(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  programme: text('programme').notNull(),
+  academicYear: text('academic_year').notNull(),
+  termLabel: text('term_label').notNull(),
+  method: text('method').notNull(),
+  referenceNumber: text('reference_number').notNull(),
+  amount: integer('amount').notNull(),
+  description: text('description').notNull(),
+  verificationCode: text('verification_code').notNull().unique(),
+  issuedAt: text('issued_at').notNull(),
+});
+
+export const financeFeeStructures = pgTable('finance_fee_structures', {
+  id: text('id').primaryKey(),
+  programmeCode: text('programme_code').notNull(),
+  programmeName: text('programme_name').notNull(),
+  academicYear: text('academic_year').notNull(),
+  termLabel: text('term_label').notNull(),
+  items: jsonb('items').$type<{ code: string; label: string; amount: number }[]>().notNull().default([]),
+  totalAmount: integer('total_amount').notNull(),
+  active: boolean('active').notNull().default(true),
+});
+
+export const financePaymentPlans = pgTable('finance_payment_plans', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  termLabel: text('term_label').notNull(),
+  totalCoveredAmount: integer('total_covered_amount').notNull(),
+  instalments: jsonb('instalments').$type<Record<string, unknown>[]>().notNull().default([]),
+  status: text('status').notNull().default('PENDING_APPROVAL'),
+  requestedNotes: text('requested_notes'),
+  reviewerNotes: text('reviewer_notes'),
+  reviewedByName: text('reviewed_by_name'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const financeClearances = pgTable('finance_clearances', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  category: text('category').notNull(),
+  label: text('label').notNull(),
+  thresholdPercent: integer('threshold_percent').notNull(),
+  status: text('status').notNull(),
+  requirementNote: text('requirement_note').notNull(),
+  checkedAt: text('checked_at').notNull(),
+  checkedBy: text('checked_by').notNull(),
+});
+
+export const financeRefundRequests = pgTable('finance_refund_requests', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id').notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  amount: integer('amount').notNull(),
+  reason: text('reason').notNull(),
+  payoutChannel: text('payout_channel').notNull(),
+  payoutAccount: text('payout_account').notNull(),
+  supportingReference: text('supporting_reference'),
+  status: text('status').notNull().default('PENDING'),
+  reviewerNotes: text('reviewer_notes'),
+  reviewedByName: text('reviewed_by_name'),
+  reviewedAt: text('reviewed_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const financeAuditLogs = pgTable('finance_audit_logs', {
+  id: text('id').primaryKey(),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  actorRole: text('actor_role').notNull(),
+  studentRegNo: text('student_reg_no'),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+// ============================================================================
+// 11. UNIFIED PORTAL STATE SNAPSHOTS (DURABLE CLOUD SQL BACKUP FOR STORE)
+// ============================================================================
+
+export const portalStateSnapshots = pgTable('portal_state_snapshots', {
+  snapshotKey: text('snapshot_key').primaryKey(),
+  payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+
 

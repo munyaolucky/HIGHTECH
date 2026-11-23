@@ -7,15 +7,13 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from 'lucide-react';
-import SecureExamLayout from './SecureExamLayout';
+import SecureExamLayout from '../../pages/exams/SecureExamLayout';
+import { useExamSecurity } from '../../hooks/useExamSecurity';
 import { useExamSession } from './useExamSession';
-import {
-  enterExamFullscreen,
-  exitExamFullscreen,
-  installExamSecurity,
-  isUnsupportedMobileOrSmallViewport,
-} from './examSecurity';
+import { useExamMessaging } from './useExamMessaging';
 import type { ExamSecurityEvent, ExamSession } from './examTypes';
+import { AutoSaveToast } from '../../../../shared/components/auto-save/AutoSaveToast';
+import { useToast } from '../../../../shared/components/toast/useToast';
 
 interface SecureExamPageProps {
   initialSession: ExamSession;
@@ -28,8 +26,19 @@ export default function SecureExamPage({
   onExitPortal,
   onStartServerSession,
 }: SecureExamPageProps) {
+  const { toast } = useToast();
   const exam = useExamSession(initialSession);
   const policy = exam.session.securityPolicy;
+  const messaging = useExamMessaging({
+    role: 'student',
+    sessionId: exam.session.id,
+    examId: exam.session.exam.id,
+    examTitle: exam.session.exam.title,
+    studentName: exam.session.candidateName,
+    studentRegNo: exam.session.candidateRegNo,
+    enabled: initialSession.status === 'active' || exam.session.status === 'active',
+    localPreviewMode: Boolean(exam.session.localPreviewMode),
+  });
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [started, setStarted] = useState(initialSession.status === 'active');
@@ -40,7 +49,6 @@ export default function SecureExamPage({
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
 
   const confirmDialogRef = useRef<HTMLButtonElement | null>(null);
-  const mobileEnv = useMemo(() => isUnsupportedMobileOrSmallViewport(), []);
 
   const questions = exam.session.exam.questions;
   const question = questions[currentIndex];
@@ -55,44 +63,30 @@ export default function SecureExamPage({
     return answer.value.trim().length > 0;
   }).length;
 
-  // Install browser security controls while exam is active
-  useEffect(() => {
-    if (!started || exam.session.status !== 'active') return;
-
-    const cleanup = installExamSecurity({
-      blockCopy: policy?.disableCopy ?? true,
-      blockPaste: policy?.disablePaste ?? true,
-      blockCut: policy?.disableCut ?? true,
-      blockContextMenu: policy?.disableRightClick ?? true,
-      blockShortcuts: policy?.blockProhibitedShortcuts ?? true,
-      trackTabSwitching: policy?.trackTabSwitching ?? true,
-      trackFullscreenExit: policy?.trackFullscreenExit ?? true,
-      onEvent: (event: ExamSecurityEvent) => {
-        void exam.recordSecurityEvent(event).then((policyMsg) => {
-          if (policyMsg) {
-            setSecurityWarning(policyMsg);
-          } else if (event.type === 'TAB_HIDDEN' || event.type === 'FULLSCREEN_EXIT') {
-            setSecurityWarning(
-              'Your exam window lost focus or exited fullscreen. Return to fullscreen immediately.'
-            );
-          }
-        });
-      },
-    });
-
-    return cleanup;
-  }, [
-    started,
-    exam.session.status,
-    exam.recordSecurityEvent,
-    policy?.disableCopy,
-    policy?.disablePaste,
-    policy?.disableCut,
-    policy?.disableRightClick,
-    policy?.blockProhibitedShortcuts,
-    policy?.trackTabSwitching,
-    policy?.trackFullscreenExit,
-  ]);
+  // Install browser security controls while exam is active via useExamSecurity hook
+  const examSecurity = useExamSecurity({
+    enabled: started && exam.session.status === 'active',
+    requireFullscreen: policy?.requireFullscreen ?? true,
+    blockCopy: policy?.disableCopy ?? true,
+    blockPaste: policy?.disablePaste ?? true,
+    blockCut: policy?.disableCut ?? true,
+    blockContextMenu: policy?.disableRightClick ?? true,
+    blockShortcuts: policy?.blockProhibitedShortcuts ?? true,
+    trackTabSwitching: policy?.trackTabSwitching ?? true,
+    trackFullscreenExit: policy?.trackFullscreenExit ?? true,
+    onSecurityEvent: (event: ExamSecurityEvent) => {
+      void exam.recordSecurityEvent(event).then((policyMsg) => {
+        if (policyMsg) {
+          setSecurityWarning(policyMsg);
+        } else if (event.type === 'TAB_HIDDEN' || event.type === 'FULLSCREEN_EXIT') {
+          setSecurityWarning(
+            'Your exam window lost focus or exited fullscreen. Return to fullscreen immediately.'
+          );
+        }
+      });
+    },
+  });
+  const mobileEnv = examSecurity.mobileRestriction;
 
   // Automatic submission on expiry
   useEffect(() => {
@@ -129,7 +123,7 @@ export default function SecureExamPage({
 
     try {
       const requireFs = policy?.requireFullscreen ?? true;
-      const fsOk = requireFs ? await enterExamFullscreen() : true;
+      const fsOk = requireFs ? await examSecurity.enterFullscreen() : true;
 
       if (requireFs && !fsOk) {
         setSecurityWarning(
@@ -158,9 +152,19 @@ export default function SecureExamPage({
     try {
       await exam.submitExam();
       setShowSubmitDialog(false);
-      await exitExamFullscreen();
+      await examSecurity.exitFullscreen();
+      toast({
+        type: 'success',
+        title: 'Examination submitted',
+        message: 'Your answers have been finalized and recorded.',
+      });
     } catch {
       setSecurityWarning('Submission failed. Your saved answers remain available for retry.');
+      toast({
+        type: 'error',
+        title: 'Submission interrupted',
+        message: 'Your answers remain saved locally. Please retry submission.',
+      });
     } finally {
       setSubmittingBusy(false);
     }
@@ -195,7 +199,7 @@ export default function SecureExamPage({
             <button
               type="button"
               onClick={() => {
-                void exitExamFullscreen();
+                void examSecurity.exitFullscreen();
                 onExitPortal();
               }}
               className="w-full min-h-[44px] px-5 py-2.5 rounded-lg bg-[#102D50] hover:bg-[#1769AA] text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors"
@@ -364,6 +368,16 @@ export default function SecureExamPage({
       remainingSeconds={exam.remainingSeconds}
       saveState={exam.saveState}
       securityLevel={policy?.securityLevel}
+      enableSecurity={false}
+      isFullscreen={examSecurity.isFullscreen}
+      onReenterFullscreen={() => void examSecurity.enterFullscreen()}
+      messages={messaging.messages}
+      messagingConnection={messaging.connectionState}
+      unreadSupervisorCount={messaging.unreadCount}
+      sendingHelpMessage={messaging.sending}
+      messagingError={messaging.errorMessage}
+      onSendHelpMessage={(input) => messaging.sendMessage(input)}
+      onMarkMessagesRead={() => void messaging.markSessionRead()}
       onSubmit={() => setShowSubmitDialog(true)}
     >
       {securityWarning && (
@@ -378,7 +392,7 @@ export default function SecureExamPage({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => void enterExamFullscreen()}
+              onClick={() => void examSecurity.enterFullscreen()}
               className="px-3 py-1.5 rounded-lg border border-amber-400 bg-white text-amber-900 font-semibold inline-flex items-center gap-1 whitespace-nowrap"
             >
               <Maximize2 size={12} aria-hidden="true" />
@@ -395,16 +409,25 @@ export default function SecureExamPage({
         </div>
       )}
 
-      {/* Progress Strip */}
+      {/* Progress & Auto-Save Strip */}
       <div className="mb-5 space-y-2 text-xs">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-slate-700">
             <strong className="font-mono tabular-nums text-[#102D50]">{answeredCount}</strong> of{' '}
             <strong className="font-mono tabular-nums text-[#102D50]">{questions.length}</strong> answered
           </span>
-          <span className="font-mono tabular-nums text-slate-500">
-            Question {currentIndex + 1} of {questions.length}
-          </span>
+          <div className="flex items-center gap-3">
+            <AutoSaveToast
+              state={{
+                status: exam.saveState,
+                lastSavedAt: exam.session.lastSavedAt,
+              }}
+              onRetry={() => void exam.persistAnswers(true)}
+            />
+            <span className="font-mono tabular-nums text-slate-500">
+              Question {currentIndex + 1} of {questions.length}
+            </span>
+          </div>
         </div>
         <progress
           value={answeredCount}

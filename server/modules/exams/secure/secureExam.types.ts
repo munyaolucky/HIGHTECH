@@ -112,9 +112,24 @@ export interface SecureExamSessionRecord {
   terminationReason?: string;
   terminatedBy?: string;
   totalMarksAwarded?: number;
+  timeAdjustments?: SecureExamTimeAdjustmentRecord[];
   answers: SecureExamAnswerRecord[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SecureExamTimeAdjustmentRecord {
+  id: string;
+  sessionId: string;
+  examId: string;
+  studentId: string;
+  additionalSeconds: number;
+  reason: string;
+  adjustedById: string;
+  adjustedByName: string;
+  previousExpiresAt: string;
+  newExpiresAt: string;
+  createdAt: string;
 }
 
 export interface SecureExamSecurityEventRecord {
@@ -200,3 +215,29 @@ export interface CandidateExamSessionDto {
   tabSwitchCount: number;
   fullscreenExitCount: number;
 }
+
+export type ExamMessageSenderRole = 'STUDENT' | 'SUPERVISOR';
+
+export type ExamMessageKind = 'HELP_REQUEST' | 'SUPERVISOR_INSTRUCTION' | 'GENERAL_NOTE';
+
+export type ExamMessagePriority = 'NORMAL' | 'URGENT';
+
+export interface SecureExamMessageRecord {
+  id: string;
+  sessionId: string;
+  examId: string;
+  examTitle: string;
+  studentId: string;
+  studentName: string;
+  studentRegNo: string;
+  senderRole: ExamMessageSenderRole;
+  senderId: string;
+  senderName: string;
+  kind: ExamMessageKind;
+  priority: ExamMessagePriority;
+  body: string;
+  createdAt: string;
+  readByStudent: boolean;
+  readBySupervisor: boolean;
+}
+

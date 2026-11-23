@@ -184,11 +184,13 @@ function buildStaffSessionFromAccount(accountId: string): AuthenticatedSessionUs
   };
 }
 
-async function resolveSessionContext(req: Request): Promise<{
+export async function resolveSessionContextFromCookieHeader(
+  cookieHeader: string | undefined
+): Promise<{
   portalUser?: PortalSessionContext;
   staffUser?: AuthenticatedSessionUser;
 }> {
-  const cookies = parseCookies(req.headers.cookie);
+  const cookies = parseCookies(cookieHeader);
 
   // 1. Check PostgreSQL unified portal session cookie first
   const portalToken = cookies[PORTAL_SESSION_COOKIE_NAME];
@@ -325,7 +327,7 @@ async function resolveSessionContext(req: Request): Promise<{
  * or unified PostgreSQL session cookie.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const { staffUser, portalUser } = await resolveSessionContext(req);
+  const { staffUser, portalUser } = await resolveSessionContextFromCookieHeader(req.headers.cookie);
   if (portalUser) req.portalUser = portalUser;
 
   if (!staffUser) {
@@ -349,7 +351,7 @@ export async function requirePortalAuth(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const { staffUser, portalUser } = await resolveSessionContext(req);
+  const { staffUser, portalUser } = await resolveSessionContextFromCookieHeader(req.headers.cookie);
   if (staffUser) req.staffUser = staffUser;
   if (portalUser) req.portalUser = portalUser;
 

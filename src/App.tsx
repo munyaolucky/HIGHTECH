@@ -40,6 +40,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { PortalRedirect } from "./auth/PortalRedirect";
 import { PortalShellProvider } from "./context/PortalShellContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./shared/components/toast/ToastProvider";
 import { getPortalShellConfig, ShellRoleKey } from "./config/portalShellConfigs";
 import { STAFF_ACCOUNTS, type StaffRole } from "./config/staff-navigation";
 import {
@@ -661,9 +662,10 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <PortalShellProvider>
-          <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-[#102D50] dark:text-slate-100 flex flex-col font-sans transition-colors">
+      <ToastProvider>
+        <AuthProvider>
+          <PortalShellProvider>
+            <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-[#102D50] dark:text-slate-100 flex flex-col font-sans transition-colors">
             <ScrollProgressBar />
 
             <div className="flex-1">
@@ -896,9 +898,10 @@ export default function App() {
             </div>
 
             <ScrollToTopButton lifted={route.mode === "website"} />
-          </div>
-        </PortalShellProvider>
-      </AuthProvider>
+            </div>
+          </PortalShellProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

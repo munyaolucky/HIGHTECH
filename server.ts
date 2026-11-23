@@ -1,3 +1,4 @@
+import http from 'node:http';
 import path from 'node:path';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { createServer as createViteServer } from 'vite';
@@ -28,9 +29,18 @@ import {
   supervisorSecureExamRoutes,
 } from './server/modules/exams/secure/secureExam.routes.ts';
 import { secureExamService } from './server/modules/exams/secure/secureExam.service.ts';
+import { attachExamMessagingWebSocket } from './server/modules/exams/secure/examMessagingWs.ts';
+import {
+  mpesaWebhookRoutes,
+  staffFinanceRoutes,
+  studentFeesRoutes,
+} from './server/modules/finance/finance.routes.ts';
+import { isPostgresConfigured } from './src/db/index.ts';
+import { ensurePostgresSeeded } from './server/lib/pg-sync.ts';
 
 async function startServer() {
   const app = express();
+  const server = http.createServer(app);
   const PORT = Number(process.env.PORT ?? 3000);
   const isProd = process.env.NODE_ENV === 'production';
 
@@ -39,6 +49,18 @@ async function startServer() {
   // Healthcheck
   app.get('/api/health', (_req, res) => {
     res.json({ success: true, status: 'ok', service: 'hi-tech-college-portal' });
+  });
+
+  // Lazy Cloud SQL initialization & store hydration on first incoming API request
+  app.use('/api', async (req, _res, next) => {
+    if (req.path !== '/health' && isPostgresConfigured()) {
+      try {
+        await ensurePostgresSeeded();
+      } catch (err) {
+        console.error('Lazy Cloud SQL seed/hydration warning:', err);
+      }
+    }
+    next();
   });
 
   // Backend API Modules
@@ -62,6 +84,9 @@ async function startServer() {
   app.use('/api/management', managementRoutes);
   app.use('/api/student/exam-sessions', studentSecureExamRoutes);
   app.use('/api/exams/supervisor', supervisorSecureExamRoutes);
+  app.use('/api/student/fees', studentFeesRoutes);
+  app.use('/api/payments', mpesaWebhookRoutes);
+  app.use('/api/finance', staffFinanceRoutes);
 
   // Explicit 404 for unknown API paths so HTML fallback never masks missing routes
   app.use('/api', (_req, res) => {
@@ -100,7 +125,9 @@ async function startServer() {
     }
   }, 60_000).unref();
 
-  app.listen(PORT, '0.0.0.0', () => {
+  attachExamMessagingWebSocket(server);
+
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`HI-TECH College full-stack portal listening on http://0.0.0.0:${PORT}`);
   });
 }

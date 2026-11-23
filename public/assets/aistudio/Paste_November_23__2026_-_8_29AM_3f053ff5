@@ -1,0 +1,1254 @@
+# **HI-TECH College — Examination Supervisor Dashboard**
+
+This module is the staff-side control centre for managing examinations in real time. It should be separate from the student portal and accessible only to authorized examination officers, Principal, Registrar and designated supervisors.
+
+**Module: Exam Operations & Supervision**
+
+## **1. Dashboard overview**
+
+# **Examination Control Centre**
+
+Live monitoring · Academic Examination
+
+Monitoring
+
+Total candidates
+
+# **248**
+
+Active exams
+
+# **6**
+
+Currently active
+
+# **193**
+
+Security incidents
+
+# **12**
+
+Submitted
+
+# **38**
+
+Disconnected
+
+# **5**
+
+Illustrative monitoring figures. Not live examination data.
+
+## **2. Supervisor navigation**
+
+```
+EXAMINATION OPERATIONS
+├── Dashboard
+├── Live Exams
+│   ├── Active Exams
+│   ├── Candidate Monitor
+│   └── Exam Sessions
+├── Security Monitoring
+│   ├── Incident Feed
+│   ├── Tab Switches
+│   ├── Fullscreen Events
+│   └── Incident Review
+├── Candidate Management
+│   ├── Exam Attendance
+│   ├── Candidate Sessions
+│   ├── Disconnected Candidates
+│   └── Special Arrangements
+├── Exam Controls
+│   ├── Extend Time
+│   ├── Pause / Resume
+│   ├── Terminate Session
+│   └── Force Submission
+├── Reports
+│   ├── Attendance Report
+│   ├── Submission Report
+│   ├── Security Report
+│   └── Exam Session Report
+└── Audit Trail
+```
+
+## **3. Dashboard UI components**
+
+**Live examination monitoring**
+
+Example active examination
+
+**Computer Networking CAT**
+
+ICT · Level 5 · Room Lab 2
+
+Running
+
+Enrolled
+
+# **65**
+
+Active
+
+# **52**
+
+Submitted
+
+# **8**
+
+Disconnected
+
+# **3**
+
+Time remaining (exam schedule)
+
+34 minutes
+
+Open exam monitor
+
+Sample dashboard card.
+
+### **Candidate status definitions**
+
+| Status       | Meaning                                         |
+| ------------ | ----------------------------------------------- |
+| Scheduled    | Candidate has not started                       |
+| Started      | Session has been initiated                      |
+| Active       | Session is currently active                     |
+| Disconnected | Recent heartbeat missing                        |
+| Submitted    | Candidate has submitted                         |
+| Expired      | Time limit reached                              |
+| Terminated   | Session ended by authorized supervisor          |
+| Under review | A supervisor is reviewing a session or incident |
+
+Disconnected status should be based on an actual server-side heartbeat threshold, not merely a browser `blur` event.
+
+## **4. Examination Supervisor Dashboard code**
+
+**Path:** `apps/web/src/modules/exams/supervisor/pages/ExamSupervisorDashboard.tsx`
+
+This is a dashboard prototype using illustrative data. It includes examination cards, candidate counts, incident feed and supervisor action entry points.
+
+```
+
+import { useState } from "react";
+import "./ExamSupervisorDashboard.css";
+
+type ExamStatus = "RUNNING" | "SCHEDULED" | "COMPLETED";
+
+type ExamRecord = {
+  id: string;
+  title: string;
+  department: string;
+  className: string;
+  room: string;
+  status: ExamStatus;
+  candidates: number;
+  active: number;
+  submitted: number;
+  disconnected: number;
+  incidents: number;
+  endsAt: string;
+};
+
+type Incident = {
+  id: string;
+  candidate: string;
+  admissionNo: string;
+  exam: string;
+  type: string;
+  time: string;
+  status: string;
+};
+
+const exams: ExamRecord[] = [
+  {
+    id: "EX-001",
+    title: "Computer Networking CAT",
+    department: "ICT",
+    className: "ICT Level 5",
+    room: "Lab 2",
+    status: "RUNNING",
+    candidates: 65,
+    active: 52,
+    submitted: 8,
+    disconnected: 3,
+    incidents: 4,
+    endsAt: "10:30 AM",
+  },
+  {
+    id: "EX-002",
+    title: "Database Systems Assessment",
+    department: "ICT",
+    className: "ICT Level 4",
+    room: "Lab 1",
+    status: "RUNNING",
+    candidates: 45,
+    active: 38,
+    submitted: 5,
+    disconnected: 2,
+    incidents: 2,
+    endsAt: "11:00 AM",
+  },
+  {
+    id: "EX-003",
+    title: "Computer Packages Practical",
+    department: "ICT",
+    className: "Computer Packages",
+    room: "Lab 3",
+    status: "RUNNING",
+    candidates: 40,
+    active: 33,
+    submitted: 4,
+    disconnected: 3,
+    incidents: 6,
+    endsAt: "12:00 PM",
+  },
+];
+
+const incidents: Incident[] = [
+  {
+    id: "INC-001",
+    candidate: "Candidate 001",
+    admissionNo: "HT/ICT/2026/001",
+    exam: "Computer Networking CAT",
+    type: "Fullscreen exit",
+    time: "10:14 AM",
+    status: "OPEN",
+  },
+  {
+    id: "INC-002",
+    candidate: "Candidate 002",
+    admissionNo: "HT/ICT/2026/002",
+    exam: "Database Systems Assessment",
+    type: "Paste attempt",
+    time: "10:18 AM",
+    status: "OPEN",
+  },
+  {
+    id: "INC-003",
+    candidate: "Candidate 003",
+    admissionNo: "HT/ICT/2026/003",
+    exam: "Computer Packages Practical",
+    type: "Tab hidden",
+    time: "10:21 AM",
+    status: "UNDER_REVIEW",
+  },
+];
+
+const summary = [
+  { label: "Total candidates", value: 248 },
+  { label: "Active", value: 193 },
+  { label: "Submitted", value: 38 },
+  { label: "Disconnected", value: 5 },
+  { label: "Security events", value: 12 },
+  { label: "Running exams", value: 6 },
+];
+
+export default function ExamSupervisorDashboard() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const filteredExams = exams.filter((exam) => {
+    const matchesSearch =
+      exam.title.toLowerCase().includes(search.toLowerCase()) ||
+      exam.department.toLowerCase().includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "ALL" || exam.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <main className="exam-supervisor">
+      <header className="exam-supervisor__header">
+        <div>
+          <span className="exam-supervisor__eyebrow">
+            EXAMINATION OPERATIONS
+          </span>
+          <h1>Examination Control Centre</h1>
+          <p>
+            Monitor examinations, candidate sessions and incidents.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="exam-supervisor__refresh"
+          onClick={() => window.location.reload()}
+        >
+          Refresh
+        </button>
+      </header>
+
+      <section className="exam-supervisor__summary">
+        {summary.map((item) => (
+          <article key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value.toLocaleString()}</strong>
+          </article>
+        ))}
+      </section>
+
+      <section className="exam-supervisor__section">
+        <div className="exam-supervisor__section-heading">
+          <div>
+            <h2>Live examinations</h2>
+            <p>Monitor running assessments.</p>
+          </div>
+        </div>
+
+        <div className="exam-supervisor__filters">
+          <input
+            type="search"
+            placeholder="Search examination..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="ALL">All statuses</option>
+            <option value="RUNNING">Running</option>
+            <option value="SCHEDULED">Scheduled</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+
+        <div className="exam-supervisor__exam-list">
+          {filteredExams.map((exam) => (
+            <article
+              key={exam.id}
+              className="exam-supervisor__exam-card"
+            >
+              <div className="exam-supervisor__exam-title">
+                <div>
+                  <h3>{exam.title}</h3>
+                  <p>
+                    {exam.department} · {exam.className} · {exam.room}
+                  </p>
+                </div>
+
+                <span
+                  className={`exam-supervisor__status ${
+                    exam.status.toLowerCase()
+                  }`}
+                >
+                  {exam.status}
+                </span>
+              </div>
+
+              <div className="exam-supervisor__exam-stats">
+                <div>
+                  <span>Candidates</span>
+                  <strong>{exam.candidates}</strong>
+                </div>
+                <div>
+                  <span>Active</span>
+                  <strong className="green">{exam.active}</strong>
+                </div>
+                <div>
+                  <span>Submitted</span>
+                  <strong>{exam.submitted}</strong>
+                </div>
+                <div>
+                  <span>Disconnected</span>
+                  <strong className="orange">{exam.disconnected}</strong>
+                </div>
+                <div>
+                  <span>Incidents</span>
+                  <strong className="red">{exam.incidents}</strong>
+                </div>
+              </div>
+
+              <div className="exam-supervisor__exam-footer">
+                <span>Scheduled end: {exam.endsAt}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.location.href =
+                      `/portal/staff/examinations/${exam.id}/monitor`
+                  }
+                >
+                  Monitor candidates
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="exam-supervisor__section">
+        <div className="exam-supervisor__section-heading">
+          <div>
+            <h2>Recent security events</h2>
+            <p>Events requiring examination staff review.</p>
+          </div>
+          <a href="/portal/staff/examinations/incidents">
+            View all
+          </a>
+        </div>
+
+        <div className="exam-supervisor__incident-list">
+          {incidents.map((incident) => (
+            <article key={incident.id}>
+              <div className="exam-supervisor__incident-icon">
+                !
+              </div>
+
+              <div className="exam-supervisor__incident-details">
+                <strong>{incident.type}</strong>
+                <span>{incident.candidate}</span>
+                <span>{incident.admissionNo}</span>
+                <span>{incident.exam}</span>
+                <small>{incident.time}</small>
+              </div>
+
+              <div className="exam-supervisor__incident-actions">
+                <span
+                  className={`exam-supervisor__incident-status ${
+                    incident.status.toLowerCase()
+                  }`}
+                >
+                  {incident.status.replace("_", " ")}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.location.href =
+                      `/portal/staff/examinations/incidents/${incident.id}`
+                  }
+                >
+                  Review
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="exam-supervisor__section">
+        <h2>Quick operations</h2>
+
+        <div className="exam-supervisor__quick-actions">
+          <a href="/portal/staff/examinations/candidates">
+            Candidate sessions
+          </a>
+          <a href="/portal/staff/examinations/disconnected">
+            Disconnected candidates
+          </a>
+          <a href="/portal/staff/examinations/attendance">
+            Exam attendance
+          </a>
+          <a href="/portal/staff/examinations/reports">
+            Examination reports
+          </a>
+          <a href="/portal/staff/examinations/audit">
+            Audit trail
+          </a>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+```
+
+## **5. Dashboard CSS**
+
+**Path:** `apps/web/src/modules/exams/supervisor/pages/ExamSupervisorDashboard.css`
+
+```
+
+.exam-supervisor {
+  padding: 28px;
+  color: #26384d;
+  font-family: Inter, sans-serif;
+}
+
+.exam-supervisor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.exam-supervisor__eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #1769aa;
+}
+
+.exam-supervisor__header h1 {
+  margin: 8px 0;
+  font-size: 26px;
+}
+
+.exam-supervisor__header p,
+.exam-supervisor__section-heading p {
+  color: #65758b;
+  font-size: 13px;
+  margin: 0;
+}
+
+.exam-supervisor button,
+.exam-supervisor a {
+  font: inherit;
+}
+
+.exam-supervisor button {
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid #dce3eb;
+  border-radius: 8px;
+  background: white;
+  color: #102d50;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.exam-supervisor button:hover {
+  background: #f0f6fc;
+  border-color: #1769aa;
+}
+
+.exam-supervisor button:focus-visible,
+.exam-supervisor a:focus-visible {
+  outline: 3px solid #83b9e6;
+  outline-offset: 3px;
+}
+
+.exam-supervisor__refresh {
+  color: #1769aa !important;
+}
+
+.exam-supervisor__summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.exam-supervisor__summary article {
+  padding: 20px;
+  border: 1px solid #e1e7ee;
+  border-radius: 12px;
+  background: white;
+}
+
+.exam-supervisor__summary span {
+  display: block;
+  color: #65758b;
+  font-size: 12px;
+}
+
+.exam-supervisor__summary strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 24px;
+}
+
+.exam-supervisor__section {
+  margin-bottom: 24px;
+  padding: 22px;
+  border: 1px solid #e1e7ee;
+  border-radius: 12px;
+  background: white;
+}
+
+.exam-supervisor__section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.exam-supervisor__section-heading h2,
+.exam-supervisor__section > h2 {
+  margin: 0 0 7px;
+  font-size: 17px;
+}
+
+.exam-supervisor__section-heading a {
+  color: #1769aa;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.exam-supervisor__filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.exam-supervisor__filters input,
+.exam-supervisor__filters select {
+  min-height: 42px;
+  padding: 10px;
+  border: 1px solid #dce3eb;
+  border-radius: 8px;
+  background: white;
+  color: #26384d;
+}
+
+.exam-supervisor__filters input {
+  flex: 1;
+  min-width: 0;
+}
+
+.exam-supervisor__exam-list {
+  display: grid;
+  gap: 15px;
+}
+
+.exam-supervisor__exam-card {
+  padding: 20px;
+  border: 1px solid #e1e7ee;
+  border-radius: 10px;
+}
+
+.exam-supervisor__exam-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.exam-supervisor__exam-title h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.exam-supervisor__exam-title p {
+  margin: 8px 0;
+  color: #65758b;
+  font-size: 12px;
+}
+
+.exam-supervisor__status,
+.exam-supervisor__incident-status {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.exam-supervisor__status.running {
+  background: #e8f5ed;
+  color: #1d7048;
+}
+
+.exam-supervisor__status.scheduled {
+  background: #edf5fc;
+  color: #1769aa;
+}
+
+.exam-supervisor__status.completed {
+  background: #f0f2f5;
+  color: #526174;
+}
+
+.exam-supervisor__exam-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.exam-supervisor__exam-stats div {
+  padding: 12px;
+  background: #f6f8fa;
+  border-radius: 8px;
+}
+
+.exam-supervisor__exam-stats span {
+  display: block;
+  color: #65758b;
+  font-size: 11px;
+}
+
+.exam-supervisor__exam-stats strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+.exam-supervisor__exam-stats .green {
+  color: #237b59;
+}
+
+.exam-supervisor__exam-stats .orange {
+  color: #b87519;
+}
+
+.exam-supervisor__exam-stats .red {
+  color: #b83232;
+}
+
+.exam-supervisor__exam-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e8edf2;
+}
+
+.exam-supervisor__exam-footer span {
+  color: #65758b;
+  font-size: 12px;
+}
+
+.exam-supervisor__incident-list {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-supervisor__incident-list article {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid #e1e7ee;
+  border-radius: 10px;
+}
+
+.exam-supervisor__incident-icon {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff3e5;
+  color: #9b5c12;
+  font-weight: 800;
+}
+
+.exam-supervisor__incident-details {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+
+.exam-supervisor__incident-details strong {
+  font-size: 13px;
+}
+
+.exam-supervisor__incident-details span,
+.exam-supervisor__incident-details small {
+  color: #65758b;
+  font-size: 11px;
+}
+
+.exam-supervisor__incident-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.exam-supervisor__incident-status.open {
+  background: #fff3e5;
+  color: #9b5c12;
+}
+
+.exam-supervisor__incident-status.under_review {
+  background: #edf5fc;
+  color: #1769aa;
+}
+
+.exam-supervisor__quick-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.exam-supervisor__quick-actions a {
+  display: flex;
+  align-items: center;
+  min-height: 60px;
+  padding: 15px;
+  border: 1px solid #e1e7ee;
+  border-radius: 10px;
+  color: #1769aa;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.exam-supervisor__quick-actions a:hover {
+  background: #f4f8fc;
+  border-color: #1769aa;
+}
+
+@media (max-width: 1200px) {
+  .exam-supervisor__summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .exam-supervisor__quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .exam-supervisor__exam-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .exam-supervisor__quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .exam-supervisor {
+    padding: 16px;
+  }
+
+  .exam-supervisor__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .exam-supervisor__header h1 {
+    font-size: 22px;
+  }
+
+  .exam-supervisor__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exam-supervisor__section {
+    padding: 15px;
+  }
+
+  .exam-supervisor__filters {
+    flex-direction: column;
+  }
+
+  .exam-supervisor__exam-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exam-supervisor__exam-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exam-supervisor__incident-list article {
+    flex-wrap: wrap;
+  }
+
+  .exam-supervisor__incident-actions {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .exam-supervisor__quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-supervisor * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+```
+
+## **6. Supervisor routes and permissions**
+
+Proposed routes:
+
+| Route                                              | Page                    | Permission                       |
+| -------------------------------------------------- | ----------------------- | -------------------------------- |
+| `/portal/staff/examinations/supervisor`            | Dashboard               | `exam.supervisor.dashboard.view` |
+| `/portal/staff/examinations/:examId/monitor`       | Live exam monitor       | `exam.session.monitor`           |
+| `/portal/staff/examinations/candidates`            | Candidate sessions      | `exam.candidate.view`            |
+| `/portal/staff/examinations/disconnected`          | Disconnected candidates | `exam.connection.monitor`        |
+| `/portal/staff/examinations/incidents`             | Incident feed           | `exam.incident.view`             |
+| `/portal/staff/examinations/incidents/:incidentId` | Incident review         | `exam.incident.review`           |
+| `/portal/staff/examinations/attendance`            | Attendance              | `exam.attendance.view`           |
+| `/portal/staff/examinations/reports`               | Reports                 | `exam.report.view`               |
+| `/portal/staff/examinations/audit`                 | Audit trail             | `exam.audit.view`                |
+
+### **Role permissions**
+
+| Role                | Access                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Principal           | Oversight, approved interventions, reports                                                                                |
+| Registrar           | Examination administration, attendance and approved interventions                                                         |
+| Examination Officer | Full examination supervision and candidate monitoring                                                                     |
+| HOD                 | Department examinations and departmental incidents                                                                        |
+| Lecturer            | Assigned exams and their candidate sessions                                                                               |
+| IT Support          | Technical session diagnostics; no unrestricted access to answers or marks                                                 |
+| Super Admin         | Platform configuration and system-level administration; access to confidential exam content remains separately controlled |
+
+## **7. Supervisor intervention controls**
+
+The supervisor should open a candidate's session and perform an authorized intervention.
+
+**Candidate session control**
+
+Illustrative session control interface
+
+**Candidate 001**
+
+HT/ICT/2026/001
+
+Active
+
+Examination: Computer Networking CAT
+
+Session: EX-001-S001
+
+Remaining time: 00:34:12
+
+Available actions
+
+- Extend examination time
+- Force submission
+- Terminate session
+- Restore session access
+- Record technical support
+- View session audit history
+
+**Every intervention must require a reason, authorized permission, confirmation and an audit record.**
+
+### **Intervention reason examples**
+
+- Network failure.
+- Approved additional time.
+- Medical interruption.
+- Wrong exam assignment.
+- Student device failure.
+- Examination integrity investigation.
+- Approved accommodation.
+
+## **8. Supervisor intervention API**
+
+Proposed endpoints:
+
+| Method  | Endpoint                                      | Function                |
+| ------- | --------------------------------------------- | ----------------------- |
+| `GET`   | `/api/exams/supervisor/dashboard`             | Summary metrics         |
+| `GET`   | `/api/exams/supervisor/live`                  | Live examinations       |
+| `GET`   | `/api/exams/:examId/candidates`               | Candidates for an exam  |
+| `GET`   | `/api/exams/sessions/:sessionId`              | Session details         |
+| `GET`   | `/api/exams/sessions/:sessionId/events`       | Session event history   |
+| `POST`  | `/api/exams/sessions/:sessionId/extend`       | Extend time             |
+| `POST`  | `/api/exams/sessions/:sessionId/terminate`    | Terminate session       |
+| `POST`  | `/api/exams/sessions/:sessionId/force-submit` | Force submission        |
+| `POST`  | `/api/exams/sessions/:sessionId/reconnect`    | Reconnection assistance |
+| `GET`   | `/api/exams/supervisor/incidents`             | Incident queue          |
+| `PATCH` | `/api/exams/supervisor/incidents/:incidentId` | Review incident         |
+| `GET`   | `/api/exams/supervisor/reports/attendance`    | Attendance report       |
+| `GET`   | `/api/exams/supervisor/reports/submissions`   | Submission report       |
+| `GET`   | `/api/exams/supervisor/audit`                 | Audit records           |
+
+## **9. Intervention database model**
+
+Add an audit model to record supervisor actions. Adapt it to the existing audit architecture if one is already present.
+
+**Proposed addition to&#x20;**`schema.prisma`**:**
+
+```
+
+enum ExamSupervisorActionType {
+  TIME_EXTENSION
+  FORCE_SUBMISSION
+  SESSION_TERMINATION
+  RECONNECTION_ASSISTANCE
+  SESSION_REVIEW
+  INCIDENT_REVIEW
+}
+
+model ExamSupervisorAction {
+  id              String                    @id @default(cuid())
+  sessionId       String
+  actorId         String
+  actionType      ExamSupervisorActionType
+  reason          String
+  details         Json?
+  createdAt       DateTime                  @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([actionType, createdAt])
+}
+
+```
+
+### **Extension request validation**
+
+**Proposed path:** `apps/api/src/modules/exams/supervisor/supervisor.schemas.ts`
+
+```
+
+import { z } from "zod";
+
+export const extendExamSchema = z.object({
+  minutes: z.number().int().min(1).max(180),
+  reason: z.string().trim().min(5).max(1000),
+});
+
+export const terminateExamSchema = z.object({
+  reason: z.string().trim().min(5).max(1000),
+  notifyStudent: z.boolean().default(true),
+});
+
+export const forceSubmitSchema = z.object({
+  reason: z.string().trim().min(5).max(1000),
+});
+
+export const reviewIncidentSchema = z.object({
+  status: z.enum([
+    "UNDER_REVIEW",
+    "DISMISSED",
+    "CONFIRMED",
+  ]),
+  reviewerNotes: z.string().trim().max(3000).optional(),
+});
+
+```
+
+## **10. Session extension service**
+
+**Proposed path:** `apps/api/src/modules/exams/supervisor/supervisor.service.ts`
+
+```
+
+import { prisma } from "../../../../lib/prisma";
+
+export async function extendExamSession(
+  sessionId: string,
+  actorId: string,
+  minutes: number,
+  reason: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.examSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new Error("Exam session not found.");
+    }
+
+    if (session.status !== "ACTIVE") {
+      throw new Error("Only active sessions can be extended.");
+    }
+
+    const now = new Date();
+
+    if (session.expiresAt <= now) {
+      throw new Error("Expired sessions cannot be extended.");
+    }
+
+    const newExpiry = new Date(
+      session.expiresAt.getTime() + minutes * 60 * 1000
+    );
+
+    const updated = await tx.examSession.update({
+      where: { id: sessionId },
+      data: { expiresAt: newExpiry },
+    });
+
+    await tx.examSupervisorAction.create({
+      data: {
+        sessionId,
+        actorId,
+        actionType: "TIME_EXTENSION",
+        reason,
+        details: {
+          minutes,
+          previousExpiry: session.expiresAt.toISOString(),
+          newExpiry: newExpiry.toISOString(),
+        },
+      },
+    });
+
+    return updated;
+  });
+}
+
+```
+
+**The extension service is a starting example. Production must use permission checks, concurrency control, a consistent policy for the original exam closing time and audit protection.**
+
+## **11. Termination service**
+
+```
+
+import { prisma } from "../../../../lib/prisma";
+
+export async function terminateExamSession(
+  sessionId: string,
+  actorId: string,
+  reason: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.examSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new Error("Exam session not found.");
+    }
+
+    if (session.status !== "ACTIVE") {
+      throw new Error("Session is not active.");
+    }
+
+    const updated = await tx.examSession.update({
+      where: { id: sessionId },
+      data: {
+        status: "TERMINATED",
+        submittedAt: new Date(),
+      },
+    });
+
+    await tx.examSupervisorAction.create({
+      data: {
+        sessionId,
+        actorId,
+        actionType: "SESSION_TERMINATION",
+        reason,
+      },
+    });
+
+    return updated;
+  });
+}
+
+```
+
+Termination and force-submission are different actions and should not be treated interchangeably. Termination should preserve answers and record the reason. Whether terminated attempts are marked, reviewed or excluded should be decided by examination policy.
+
+## **12. Report design**
+
+### **A. Examination attendance report**
+
+| Admission No.   | Candidate     | Exam           | Started | Status    |
+| --------------- | ------------- | -------------- | ------- | --------- |
+| HT/ICT/2026/001 | Candidate 001 | Networking CAT | 09:02   | Active    |
+| HT/ICT/2026/002 | Candidate 002 | Networking CAT | 09:03   | Submitted |
+| HT/ICT/2026/003 | Candidate 003 | Networking CAT | —       | Absent    |
+
+Features:
+
+- Filter by department.
+- Filter by course.
+- Filter by examination.
+- Filter by date.
+- Download PDF.
+- Export Excel.
+- Print attendance.
+
+### **B. Submission report**
+
+| Candidate     | Exam           | Submitted | Status    |
+| ------------- | -------------- | --------- | --------- |
+| Candidate 001 | Networking CAT | 10:27     | Submitted |
+| Candidate 002 | Networking CAT | 10:30     | Submitted |
+| Candidate 003 | Networking CAT | —         | Expired   |
+
+### **C. Security report**
+
+- Total security events.
+- Events by category.
+- Events per examination.
+- Events per candidate.
+- Events by severity.
+- Incidents dismissed.
+- Incidents under review.
+- Incidents confirmed.
+- Supervisor decisions.
+- Exportable incident history.
+
+### **D. Audit trail**
+
+Every examination intervention should record:
+
+| Field          | Description                             |
+| -------------- | --------------------------------------- |
+| Actor          | Supervisor who acted                    |
+| Actor role     | Authorized role                         |
+| Student        | Candidate affected                      |
+| Exam           | Examination name                        |
+| Session        | Session reference                       |
+| Action         | Extension, termination, submission etc. |
+| Reason         | Required explanation                    |
+| Previous value | Original state                          |
+| New value      | Updated state                           |
+| Timestamp      | Server timestamp                        |
+| IP / device    | Recorded where appropriate and lawful   |
+
+## **13. Route registration**
+
+**Proposed path:** `apps/web/src/modules/exams/supervisor/supervisorRoutes.tsx`
+
+```
+
+import { Route } from "react-router-dom";
+import ExamSupervisorDashboard from
+  "./pages/ExamSupervisorDashboard";
+
+export const examSupervisorRoutes = (
+  <>
+    <Route
+      path="/portal/staff/examinations/supervisor"
+      element={<ExamSupervisorDashboard />}
+    />
+  </>
+);
+
+```
+
+**The dashboard is currently a prototype with illustrative figures and links. It is not yet connected to live session data or supervisor action APIs.**
+
+## **14. Complete Examination Operations roadmap**
+
+**Examination Operations**
+
+Phase 1 — Secure Student Exam Interface
+
+Separate exam layout, browser restrictions, timer and answer workspace.
+
+Phase 2 — Secure Exam Backend
+
+Session persistence, answer saving, expiry, security event recording.
+
+Phase 3 — Supervisor Dashboard
+
+Live monitoring, candidate counts and incident feed.
+
+Phase 4 — Live Candidate Monitoring
+
+Detailed session status, connectivity, submitted answers and intervention controls.
+
+Phase 5 — Incident Review
+
+Review workflow, supervisor notes, audit trail and decisions.
+
+Phase 6 — Examination Reports
+
+Attendance, submission, incidents and session reports.
+
+Phase 7 — Examination Results
+
+Marking, moderation, approval, release and student result access.
+
+The next development slice should be **Live Candidate Monitoring**, where the supervisor can open an exam, inspect each candidate's session, see connection status, saved-answer progress, remaining time and authorized intervention controls.

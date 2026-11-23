@@ -14,9 +14,11 @@ import {
   CreditCard,
   Download,
   FileCheck,
+  FileSpreadsheet,
   FileText,
   GraduationCap,
   History,
+  Layers,
   LayoutDashboard,
   LogOut,
   MessageCircle,
@@ -25,8 +27,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  RotateCcw,
   Search,
   Settings,
+  ShieldCheck,
   Smartphone,
   UserCheck,
   UserRound,
@@ -138,6 +142,79 @@ const EXAM_SECTIONS = new Set<StudentPortalSection>([
   'academic-progress',
 ]);
 
+export const STUDENT_FEES_SUBMENU_ITEMS: ExamSubmenuItem[] = [
+  {
+    label: 'Fee Overview',
+    page: 'fees-overview',
+    matchPages: ['fees-overview', 'finance'],
+    path: '/portal/student/fees',
+    icon: LayoutDashboard,
+  },
+  {
+    label: 'Fee Statement',
+    page: 'fees-statement',
+    path: '/portal/student/fees/statement',
+    icon: FileSpreadsheet,
+  },
+  {
+    label: 'Pay Fees',
+    page: 'fees-pay',
+    path: '/portal/student/fees/pay',
+    icon: CreditCard,
+  },
+  {
+    label: 'Payment History',
+    page: 'fees-history',
+    path: '/portal/student/fees/history',
+    icon: History,
+  },
+  {
+    label: 'Receipts',
+    page: 'fees-receipts',
+    matchPages: ['fees-receipts', 'receipts'],
+    path: '/portal/student/fees/receipts',
+    icon: Receipt,
+  },
+  {
+    label: 'Fee Structure',
+    page: 'fees-structure',
+    path: '/portal/student/fees/structure',
+    icon: Layers,
+  },
+  {
+    label: 'Payment Plans',
+    page: 'fees-plans',
+    path: '/portal/student/fees/plans',
+    icon: CalendarCheck,
+  },
+  {
+    label: 'Financial Clearance',
+    page: 'fees-clearance',
+    path: '/portal/student/fees/clearance',
+    icon: ShieldCheck,
+  },
+  {
+    label: 'Refund Requests',
+    page: 'fees-refunds',
+    path: '/portal/student/fees/refunds',
+    icon: RotateCcw,
+  },
+];
+
+const FEES_SECTIONS = new Set<StudentPortalSection>([
+  'finance',
+  'receipts',
+  'fees-overview',
+  'fees-statement',
+  'fees-pay',
+  'fees-history',
+  'fees-receipts',
+  'fees-structure',
+  'fees-plans',
+  'fees-clearance',
+  'fees-refunds',
+]);
+
 interface MainNavLink {
   label: string;
   page: StudentPortalSection;
@@ -154,8 +231,7 @@ const PRIMARY_MAIN_LINKS: MainNavLink[] = [
 
 const SECONDARY_MAIN_LINKS: MainNavLink[] = [
   { label: 'Digital Library', page: 'library', path: '/portal/student/library', icon: BookMarked },
-  { label: 'Fees & Payments', page: 'finance', path: '/portal/student/finance', icon: Wallet },
-  { label: 'Support', page: 'support', path: '/portal/student/support', icon: MessageCircle },
+  { label: 'Support Centre', page: 'support', path: '/portal/student/support', icon: MessageCircle },
 ];
 
 const CAMPUS_SERVICE_LINKS: MainNavLink[] = [
@@ -202,12 +278,15 @@ export default function StudentSidebar({
   onLogoutClick,
 }: StudentSidebarProps) {
   const [examOpen, setExamOpen] = useState(true);
+  const [feesOpen, setFeesOpen] = useState(true);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState('');
 
   useEffect(() => {
     if (EXAM_SECTIONS.has(activePage)) {
       setExamOpen(true);
+    } else if (FEES_SECTIONS.has(activePage)) {
+      setFeesOpen(true);
     } else if (CAMPUS_SERVICE_LINKS.some((item) => item.page === activePage)) {
       setServicesOpen(true);
     }
@@ -219,6 +298,7 @@ export default function StudentSidebar({
 
   const visiblePrimary = filterByQuery(PRIMARY_MAIN_LINKS);
   const visibleExams = filterByQuery(STUDENT_EXAM_SUBMENU_ITEMS);
+  const visibleFees = filterByQuery(STUDENT_FEES_SUBMENU_ITEMS);
   const visibleSecondary = filterByQuery(SECONDARY_MAIN_LINKS);
   const visibleCampusServices = filterByQuery(CAMPUS_SERVICE_LINKS);
 
@@ -278,6 +358,8 @@ export default function StudentSidebar({
 
   const isExamGroupActive = EXAM_SECTIONS.has(activePage);
   const showExamSubmenu = (examOpen || Boolean(q)) && visibleExams.length > 0;
+  const isFeesGroupActive = FEES_SECTIONS.has(activePage);
+  const showFeesSubmenu = (feesOpen || Boolean(q)) && visibleFees.length > 0;
 
   return (
     <>
@@ -420,6 +502,76 @@ export default function StudentSidebar({
                   className="mt-1 mb-2 ml-4 pl-2.5 border-l border-white/15 space-y-0.5"
                 >
                   {visibleExams.map((sub) => {
+                    const Icon = sub.icon;
+                    const isSubActive = sub.matchPages
+                      ? sub.matchPages.includes(activePage)
+                      : activePage === sub.page;
+
+                    return (
+                      <a
+                        key={sub.path}
+                        href={sub.path}
+                        aria-current={isSubActive ? 'page' : undefined}
+                        onClick={(e) => handleNavClick(e, sub.page)}
+                        className={`flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 rounded-md text-[12px] transition-colors duration-150 whitespace-nowrap focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-[#f2b84b] focus-visible:outline-offset-2 ${
+                          isSubActive
+                            ? 'bg-[#e9f2fc] text-[#102d50] font-semibold'
+                            : 'text-[#c4d5e6] hover:bg-white/8 hover:text-white font-normal'
+                        }`}
+                      >
+                        <Icon size={15} className="shrink-0 opacity-85" />
+                        <span className="truncate">{sub.label}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Collapsible Fees & Payments Menu */}
+          {(!q || visibleFees.length > 0 || 'fees & payments'.includes(q)) && (
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (sidebarCollapsed) {
+                    onNavigate('fees-overview');
+                  } else {
+                    setFeesOpen((prev) => !prev);
+                  }
+                }}
+                title={sidebarCollapsed ? 'Fees & Payments' : undefined}
+                aria-expanded={showFeesSubmenu}
+                aria-controls="student-fees-submenu"
+                className={`flex w-full min-h-[40px] items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-left transition-colors duration-150 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-[#f2b84b] focus-visible:outline-offset-2 ${
+                  isFeesGroupActive && !showFeesSubmenu
+                    ? 'bg-[#1769aa] text-white font-semibold'
+                    : isFeesGroupActive
+                    ? 'bg-white/10 text-white font-semibold'
+                    : 'text-[#d5e1ee] hover:bg-white/8 hover:text-white'
+                } ${sidebarCollapsed ? 'justify-center px-0 min-h-[44px]' : ''}`}
+              >
+                <Wallet size={17} className="shrink-0 opacity-90" />
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="flex-1 truncate">Fees &amp; Payments</span>
+                    <ChevronDown
+                      size={15}
+                      className={`shrink-0 opacity-75 transition-transform duration-150 ${
+                        showFeesSubmenu ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </>
+                )}
+              </button>
+
+              {!sidebarCollapsed && showFeesSubmenu && (
+                <div
+                  id="student-fees-submenu"
+                  className="mt-1 mb-2 ml-4 pl-2.5 border-l border-white/15 space-y-0.5"
+                >
+                  {visibleFees.map((sub) => {
                     const Icon = sub.icon;
                     const isSubActive = sub.matchPages
                       ? sub.matchPages.includes(activePage)

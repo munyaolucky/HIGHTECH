@@ -101,3 +101,36 @@ export interface ExamSession {
   securityPolicy?: ExamSecurityPolicy;
   localPreviewMode?: boolean;
 }
+
+export type ExamMessageSenderRole = 'STUDENT' | 'SUPERVISOR';
+
+export type ExamMessageKind = 'HELP_REQUEST' | 'SUPERVISOR_INSTRUCTION' | 'GENERAL_NOTE';
+
+export type ExamMessagePriority = 'NORMAL' | 'URGENT';
+
+export type ExamMessagingConnectionState =
+  | 'connected'
+  | 'connecting'
+  | 'reconnecting'
+  | 'offline'
+  | 'preview';
+
+export interface ExamChatMessage {
+  id: string;
+  sessionId: string;
+  examId: string;
+  examTitle: string;
+  studentId: string;
+  studentName: string;
+  studentRegNo: string;
+  senderRole: ExamMessageSenderRole;
+  senderId: string;
+  senderName: string;
+  kind: ExamMessageKind;
+  priority: ExamMessagePriority;
+  body: string;
+  createdAt: string;
+  readByStudent: boolean;
+  readBySupervisor: boolean;
+}
+

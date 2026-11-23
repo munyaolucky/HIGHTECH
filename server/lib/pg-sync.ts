@@ -6,12 +6,29 @@ import {
   academicRegistrations,
   campuses,
   departments,
+  financeAuditLogs,
+  financeClearances,
+  financeFeeStructures,
+  financeLedgerCharges,
+  financePaymentPlans,
+  financePayments,
+  financeReceipts,
+  financeRefundRequests,
+  financeStudentAccounts,
+  mpesaTransactions,
   notificationPreferences,
   notificationTemplates,
   notifications,
   platformFeatures,
+  portalStateSnapshots,
   programmes,
   registrationNumberSequences,
+  secureExamAuditLogs,
+  secureExamDefinitions,
+  secureExamIncidents,
+  secureExamMessages,
+  secureExamSecurityEvents,
+  secureExamSessions,
   signatureAuditEvents,
   signatureRequests,
   documentSigners,
@@ -28,7 +45,12 @@ import {
   MASTER_FEATURES_84,
   SPRINT_1_BASELINE_TASKS,
 } from '../../src/data/platformMasterBlueprint.ts';
-import { getDb } from '../data/store.ts';
+import {
+  getDb,
+  hydrateDbFromSnapshot,
+  registerPostgresSyncHook,
+  type PortalDatabase,
+} from '../data/store.ts';
 import { hashPasswordScrypt } from './crypto.ts';
 
 let seedPromise: Promise<void> | null = null;
@@ -858,6 +880,436 @@ async function runSeed(): Promise<void> {
         }))
       )
       .onConflictDoNothing();
+  }
+
+  // 9. Hydrate or Seed Unified Portal Snapshot + Relational Finance & Secure Exam Tables
+  const isTestEnv =
+    process.env.NODE_ENV === 'test' ||
+    process.execArgv.some((arg) => arg.includes('test')) ||
+    process.argv.some((arg) => arg.includes('--test'));
+
+  if (!isTestEnv) {
+    const existingSnapshot = await db
+      .select()
+      .from(portalStateSnapshots)
+      .where(eq(portalStateSnapshots.snapshotKey, 'primary'))
+      .limit(1);
+
+    if (existingSnapshot[0]?.payload) {
+      hydrateDbFromSnapshot(existingSnapshot[0].payload as Partial<PortalDatabase>);
+    } else {
+      await syncPortalStoreToPostgres(getDb());
+    }
+
+    registerPostgresSyncHook(syncPortalStoreToPostgres);
+  }
+}
+
+export async function syncPortalStoreToPostgres(storeData: PortalDatabase): Promise<void> {
+  if (!isPostgresConfigured()) return;
+
+  try {
+    await db
+      .insert(portalStateSnapshots)
+      .values({
+        snapshotKey: 'primary',
+        payload: storeData as unknown as Record<string, unknown>,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: portalStateSnapshots.snapshotKey,
+        set: {
+          payload: storeData as unknown as Record<string, unknown>,
+          updatedAt: new Date(),
+        },
+      });
+
+    for (const acc of storeData.financeStudentAccounts) {
+      await db
+        .insert(financeStudentAccounts)
+        .values({
+          studentId: acc.studentId,
+          studentRegNo: acc.studentRegNo,
+          studentName: acc.studentName,
+          programme: acc.programme,
+          academicYear: acc.academicYear,
+          termLabel: acc.termLabel,
+          totalFees: acc.totalFees,
+          nextInstalmentAmount: acc.nextInstalmentAmount,
+          nextInstalmentDueDate: acc.nextInstalmentDueDate,
+          sponsorshipStatus: acc.sponsorshipStatus,
+          updatedAt: acc.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: financeStudentAccounts.studentId,
+          set: {
+            studentName: acc.studentName,
+            programme: acc.programme,
+            totalFees: acc.totalFees,
+            nextInstalmentAmount: acc.nextInstalmentAmount,
+            nextInstalmentDueDate: acc.nextInstalmentDueDate,
+            sponsorshipStatus: acc.sponsorshipStatus,
+            updatedAt: acc.updatedAt,
+          },
+        });
+    }
+
+    for (const chg of storeData.financeLedgerCharges) {
+      await db
+        .insert(financeLedgerCharges)
+        .values(chg)
+        .onConflictDoNothing();
+    }
+
+    for (const pay of storeData.financePayments) {
+      await db
+        .insert(financePayments)
+        .values({
+          id: pay.id,
+          studentId: pay.studentId,
+          studentRegNo: pay.studentRegNo,
+          studentName: pay.studentName,
+          method: pay.method,
+          channelLabel: pay.channelLabel,
+          referenceNumber: pay.referenceNumber,
+          idempotencyKey: pay.idempotencyKey ?? null,
+          phoneNumber: pay.phoneNumber ?? null,
+          bankName: pay.bankName ?? null,
+          amount: pay.amount,
+          status: pay.status,
+          description: pay.description,
+          receiptId: pay.receiptId ?? null,
+          receiptNumber: pay.receiptNumber ?? null,
+          failureReason: pay.failureReason ?? null,
+          verifiedById: pay.verifiedById ?? null,
+          verifiedByName: pay.verifiedByName ?? null,
+          createdAt: pay.createdAt,
+          updatedAt: pay.updatedAt,
+          paidAt: pay.paidAt ?? null,
+        })
+        .onConflictDoUpdate({
+          target: financePayments.id,
+          set: {
+            referenceNumber: pay.referenceNumber,
+            status: pay.status,
+            receiptId: pay.receiptId ?? null,
+            receiptNumber: pay.receiptNumber ?? null,
+            failureReason: pay.failureReason ?? null,
+            verifiedById: pay.verifiedById ?? null,
+            verifiedByName: pay.verifiedByName ?? null,
+            updatedAt: pay.updatedAt,
+            paidAt: pay.paidAt ?? null,
+          },
+        });
+    }
+
+    for (const tx of storeData.mpesaTransactions) {
+      await db
+        .insert(mpesaTransactions)
+        .values({
+          id: tx.id,
+          paymentId: tx.paymentId,
+          studentId: tx.studentId,
+          studentRegNo: tx.studentRegNo,
+          phoneNumber: tx.phoneNumber,
+          amount: tx.amount,
+          accountReference: tx.accountReference,
+          transactionDesc: tx.transactionDesc,
+          merchantRequestId: tx.merchantRequestId,
+          checkoutRequestId: tx.checkoutRequestId,
+          mpesaReceiptNumber: tx.mpesaReceiptNumber ?? null,
+          transactionDate: tx.transactionDate ?? null,
+          resultCode: tx.resultCode ?? null,
+          resultDesc: tx.resultDesc ?? null,
+          status: tx.status,
+          mode: tx.mode,
+          callbackReceivedAt: tx.callbackReceivedAt ?? null,
+          rawCallback: tx.rawCallback ?? null,
+          createdAt: tx.createdAt,
+          updatedAt: tx.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: mpesaTransactions.id,
+          set: {
+            mpesaReceiptNumber: tx.mpesaReceiptNumber ?? null,
+            transactionDate: tx.transactionDate ?? null,
+            resultCode: tx.resultCode ?? null,
+            resultDesc: tx.resultDesc ?? null,
+            status: tx.status,
+            callbackReceivedAt: tx.callbackReceivedAt ?? null,
+            rawCallback: tx.rawCallback ?? null,
+            updatedAt: tx.updatedAt,
+          },
+        });
+    }
+
+    for (const rct of storeData.financeReceipts) {
+      await db
+        .insert(financeReceipts)
+        .values(rct)
+        .onConflictDoNothing();
+    }
+
+    for (const fs of storeData.financeFeeStructures) {
+      await db
+        .insert(financeFeeStructures)
+        .values(fs)
+        .onConflictDoNothing();
+    }
+
+    for (const plan of storeData.financePaymentPlans) {
+      await db
+        .insert(financePaymentPlans)
+        .values({
+          id: plan.id,
+          studentId: plan.studentId,
+          studentRegNo: plan.studentRegNo,
+          studentName: plan.studentName,
+          termLabel: plan.termLabel,
+          totalCoveredAmount: plan.totalCoveredAmount,
+          instalments: plan.instalments as unknown as Record<string, unknown>[],
+          status: plan.status,
+          requestedNotes: plan.requestedNotes ?? null,
+          reviewerNotes: plan.reviewerNotes ?? null,
+          reviewedByName: plan.reviewedByName ?? null,
+          createdAt: plan.createdAt,
+          updatedAt: plan.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: financePaymentPlans.id,
+          set: {
+            instalments: plan.instalments as unknown as Record<string, unknown>[],
+            status: plan.status,
+            reviewerNotes: plan.reviewerNotes ?? null,
+            reviewedByName: plan.reviewedByName ?? null,
+            updatedAt: plan.updatedAt,
+          },
+        });
+    }
+
+    for (const clr of storeData.financeClearances) {
+      await db
+        .insert(financeClearances)
+        .values(clr)
+        .onConflictDoUpdate({
+          target: financeClearances.id,
+          set: {
+            status: clr.status,
+            requirementNote: clr.requirementNote,
+            checkedAt: clr.checkedAt,
+            checkedBy: clr.checkedBy,
+          },
+        });
+    }
+
+    for (const ref of storeData.financeRefundRequests) {
+      await db
+        .insert(financeRefundRequests)
+        .values({
+          id: ref.id,
+          studentId: ref.studentId,
+          studentRegNo: ref.studentRegNo,
+          studentName: ref.studentName,
+          amount: ref.amount,
+          reason: ref.reason,
+          payoutChannel: ref.payoutChannel,
+          payoutAccount: ref.payoutAccount,
+          supportingReference: ref.supportingReference ?? null,
+          status: ref.status,
+          reviewerNotes: ref.reviewerNotes ?? null,
+          reviewedByName: ref.reviewedByName ?? null,
+          reviewedAt: ref.reviewedAt ?? null,
+          createdAt: ref.createdAt,
+          updatedAt: ref.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: financeRefundRequests.id,
+          set: {
+            status: ref.status,
+            reviewerNotes: ref.reviewerNotes ?? null,
+            reviewedByName: ref.reviewedByName ?? null,
+            reviewedAt: ref.reviewedAt ?? null,
+            updatedAt: ref.updatedAt,
+          },
+        });
+    }
+
+    for (const log of storeData.financeAuditLogs.slice(0, 100)) {
+      await db
+        .insert(financeAuditLogs)
+        .values({
+          id: log.id,
+          actorId: log.actorId,
+          actorName: log.actorName,
+          actorRole: log.actorRole,
+          studentRegNo: log.studentRegNo ?? null,
+          action: log.action,
+          detail: log.detail,
+          createdAt: log.createdAt,
+        })
+        .onConflictDoNothing();
+    }
+
+    for (const exam of storeData.secureExamDefinitions) {
+      await db
+        .insert(secureExamDefinitions)
+        .values({
+          id: exam.id,
+          code: exam.code,
+          title: exam.title,
+          subject: exam.subject,
+          unitCode: exam.unitCode,
+          durationMinutes: exam.durationMinutes,
+          totalMarks: exam.totalMarks,
+          isPublished: exam.isPublished,
+          startsAt: exam.startsAt,
+          endsAt: exam.endsAt,
+          maxAttempts: exam.maxAttempts,
+          instructions: exam.instructions,
+          securityPolicy: exam.securityPolicy as unknown as Record<string, unknown>,
+          questions: exam.questions as unknown as Record<string, unknown>[],
+          updatedAt: exam.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: secureExamDefinitions.id,
+          set: {
+            isPublished: exam.isPublished,
+            securityPolicy: exam.securityPolicy as unknown as Record<string, unknown>,
+            updatedAt: exam.updatedAt,
+          },
+        });
+    }
+
+    for (const ses of storeData.secureExamSessions) {
+      await db
+        .insert(secureExamSessions)
+        .values({
+          id: ses.id,
+          examId: ses.examId,
+          studentId: ses.studentId,
+          studentRegNo: ses.studentRegNo,
+          studentName: ses.studentName,
+          attemptNumber: ses.attemptNumber,
+          status: ses.status,
+          startedAt: ses.startedAt,
+          expiresAt: ses.expiresAt,
+          submittedAt: ses.submittedAt ?? null,
+          lastSavedAt: ses.lastSavedAt ?? null,
+          lastHeartbeatAt: ses.lastHeartbeatAt ?? null,
+          connectionLost: Boolean(ses.connectionLost),
+          terminationReason: ses.terminationReason ?? null,
+          terminatedBy: ses.terminatedBy ?? null,
+          totalMarksAwarded: ses.totalMarksAwarded ?? null,
+          timeAdjustments: (ses.timeAdjustments ?? []) as unknown as Record<string, unknown>[],
+          answers: ses.answers as unknown as Record<string, unknown>[],
+          createdAt: ses.createdAt,
+          updatedAt: ses.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: secureExamSessions.id,
+          set: {
+            status: ses.status,
+            expiresAt: ses.expiresAt,
+            submittedAt: ses.submittedAt ?? null,
+            lastSavedAt: ses.lastSavedAt ?? null,
+            lastHeartbeatAt: ses.lastHeartbeatAt ?? null,
+            connectionLost: Boolean(ses.connectionLost),
+            terminationReason: ses.terminationReason ?? null,
+            terminatedBy: ses.terminatedBy ?? null,
+            totalMarksAwarded: ses.totalMarksAwarded ?? null,
+            timeAdjustments: (ses.timeAdjustments ?? []) as unknown as Record<string, unknown>[],
+            answers: ses.answers as unknown as Record<string, unknown>[],
+            updatedAt: ses.updatedAt,
+          },
+        });
+    }
+
+    for (const ev of storeData.secureExamEvents.slice(0, 200)) {
+      await db
+        .insert(secureExamSecurityEvents)
+        .values({
+          id: ev.id,
+          sessionId: ev.sessionId,
+          eventType: ev.eventType,
+          occurredAt: ev.occurredAt,
+          receivedAt: ev.receivedAt,
+          details: ev.details ?? null,
+          responseTriggered: ev.responseTriggered,
+        })
+        .onConflictDoNothing();
+    }
+
+    for (const inc of storeData.secureExamIncidents) {
+      await db
+        .insert(secureExamIncidents)
+        .values({
+          id: inc.id,
+          sessionId: inc.sessionId,
+          examId: inc.examId,
+          examTitle: inc.examTitle,
+          studentId: inc.studentId,
+          studentRegNo: inc.studentRegNo,
+          studentName: inc.studentName,
+          status: inc.status,
+          severity: inc.severity,
+          summary: inc.summary,
+          eventCount: inc.eventCount,
+          reviewedById: inc.reviewedById ?? null,
+          reviewedByName: inc.reviewedByName ?? null,
+          reviewerNotes: inc.reviewerNotes ?? null,
+          reviewedAt: inc.reviewedAt ?? null,
+          createdAt: inc.createdAt,
+          updatedAt: inc.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: secureExamIncidents.id,
+          set: {
+            status: inc.status,
+            severity: inc.severity,
+            summary: inc.summary,
+            eventCount: inc.eventCount,
+            reviewedById: inc.reviewedById ?? null,
+            reviewedByName: inc.reviewedByName ?? null,
+            reviewerNotes: inc.reviewerNotes ?? null,
+            reviewedAt: inc.reviewedAt ?? null,
+            updatedAt: inc.updatedAt,
+          },
+        });
+    }
+
+    for (const msg of storeData.secureExamMessages.slice(0, 200)) {
+      await db
+        .insert(secureExamMessages)
+        .values(msg)
+        .onConflictDoUpdate({
+          target: secureExamMessages.id,
+          set: {
+            readByStudent: msg.readByStudent,
+            readBySupervisor: msg.readBySupervisor,
+          },
+        });
+    }
+
+    for (const log of storeData.secureExamAuditLogs.slice(0, 100)) {
+      await db
+        .insert(secureExamAuditLogs)
+        .values({
+          id: log.id,
+          sessionId: log.sessionId ?? null,
+          examId: log.examId ?? null,
+          actorId: log.actorId,
+          actorName: log.actorName,
+          action: log.action,
+          detail: log.detail,
+          timestampIso: log.timestampIso,
+        })
+        .onConflictDoNothing();
+    }
+  } catch (error) {
+    console.error('Database sync failed in syncPortalStoreToPostgres:', error);
+    throw new Error('Database synchronization failed. Please try again later.', {
+      cause: error,
+    });
   }
 }
 

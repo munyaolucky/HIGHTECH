@@ -189,7 +189,7 @@ export default function OnlineExamsPage({
     <div className="space-y-6">
       <PortalPageHeader
         breadcrumbSection="Exams & Assessments · Online Exams"
-        title="Online Exams (CBT & Secure Exam Mode)"
+        title="Online Exams (CBT Sessions)"
         description="Launch timed examinations inside HI-TECH College's isolated Secure Examination Environment with fullscreen enforcement, clipboard protection, and server-clock autosave."
       >
         <button

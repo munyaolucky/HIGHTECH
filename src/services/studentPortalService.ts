@@ -39,6 +39,15 @@ export type StudentPortalSection =
   | 'exams-progress'
   | 'results'
   | 'finance'
+  | 'fees-overview'
+  | 'fees-statement'
+  | 'fees-pay'
+  | 'fees-history'
+  | 'fees-receipts'
+  | 'fees-structure'
+  | 'fees-plans'
+  | 'fees-clearance'
+  | 'fees-refunds'
   | 'receipts'
   | 'library'
   | 'attachment'
@@ -77,6 +86,15 @@ export const STUDENT_SECTION_PATHS: Record<StudentPortalSection, string> = {
   'exams-progress': '/portal/student/exams/progress',
   results: '/portal/student/exams/results',
   finance: '/portal/student/finance',
+  'fees-overview': '/portal/student/fees',
+  'fees-statement': '/portal/student/fees/statement',
+  'fees-pay': '/portal/student/fees/pay',
+  'fees-history': '/portal/student/fees/history',
+  'fees-receipts': '/portal/student/fees/receipts',
+  'fees-structure': '/portal/student/fees/structure',
+  'fees-plans': '/portal/student/fees/plans',
+  'fees-clearance': '/portal/student/fees/clearance',
+  'fees-refunds': '/portal/student/fees/refunds',
   receipts: '/portal/student/receipts',
   library: '/portal/student/library',
   attachment: '/portal/student/attachment',
@@ -108,6 +126,17 @@ export function resolveStudentSectionFromPath(pathname: string): StudentPortalSe
   if (clean === '/portal/student/exams/history') return 'exams-history';
   if (clean === '/portal/student/exams/appeals') return 'exams-appeals';
   if (clean === '/portal/student/exams/progress') return 'exams-progress';
+  if (clean === '/portal/student/fees' || clean === '/portal/student/fees/overview') {
+    return 'fees-overview';
+  }
+  if (clean === '/portal/student/fees/statement') return 'fees-statement';
+  if (clean === '/portal/student/fees/pay') return 'fees-pay';
+  if (clean === '/portal/student/fees/history') return 'fees-history';
+  if (clean === '/portal/student/fees/receipts') return 'fees-receipts';
+  if (clean === '/portal/student/fees/structure') return 'fees-structure';
+  if (clean === '/portal/student/fees/plans') return 'fees-plans';
+  if (clean === '/portal/student/fees/clearance') return 'fees-clearance';
+  if (clean === '/portal/student/fees/refunds') return 'fees-refunds';
 
   const matched = (Object.entries(STUDENT_SECTION_PATHS) as [StudentPortalSection, string][]).find(
     ([, path]) => path === clean

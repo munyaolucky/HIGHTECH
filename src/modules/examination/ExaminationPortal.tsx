@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   AlertTriangle,
   Award,
   BarChart3,
@@ -43,6 +44,7 @@ import {
 import QuestionRunnerWidget from './components/QuestionRunnerWidget';
 import { useSyncedPortalTab } from '../../context/PortalShellContext';
 import SecureExamSupervisorPanel from './SecureExamSupervisorPanel';
+import ExaminationSupervisorDashboard from './ExaminationSupervisorDashboard';
 
 type ExamTab =
   | 'schedule'
@@ -51,6 +53,7 @@ type ExamTab =
   | 'runner'
   | 'marking'
   | 'incidents'
+  | 'supervisor-dashboard'
   | 'supervisor';
 
 export default function ExaminationPortal() {
@@ -315,6 +318,7 @@ export default function ExaminationPortal() {
     { id: 'runner', label: 'Live CBT Runner', icon: Code2 },
     { id: 'marking', label: 'Anonymous Marking & Analysis', icon: ClipboardCheck },
     { id: 'incidents', label: 'Incidents & Supplementary', icon: ShieldAlert },
+    { id: 'supervisor-dashboard', label: 'Supervisor Dashboard', icon: Activity },
     { id: 'supervisor', label: 'Secure Exam Supervisor & Config', icon: Lock },
   ];
 
@@ -2076,6 +2080,10 @@ export default function ExaminationPortal() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'supervisor-dashboard' && (
+        <ExaminationSupervisorDashboard onNotify={notify} />
       )}
 
       {activeTab === 'supervisor' && (

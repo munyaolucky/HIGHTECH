@@ -3,6 +3,7 @@ import type {
   SecureExamAuditLogRecord,
   SecureExamDefinitionRecord,
   SecureExamIncidentRecord,
+  SecureExamMessageRecord,
   SecureExamSecurityEventRecord,
   SecureExamSessionRecord,
 } from './secureExam.types.ts';
@@ -36,6 +37,7 @@ export interface SecureExamStoreSlice {
   secureExamEvents: SecureExamSecurityEventRecord[];
   secureExamIncidents: SecureExamIncidentRecord[];
   secureExamAuditLogs: SecureExamAuditLogRecord[];
+  secureExamMessages: SecureExamMessageRecord[];
 }
 
 export function createSecureExamSeed(): SecureExamStoreSlice {
@@ -271,11 +273,51 @@ export function createSecureExamSeed(): SecureExamStoreSlice {
     },
   ];
 
+  const sampleMessages: SecureExamMessageRecord[] = [
+    {
+      id: 'EXAMMSG-001',
+      sessionId: 'EXAM-SESSION-001',
+      examId: 'sec-exam-net-cat',
+      examTitle: 'Computer Networking CAT',
+      studentId: 'stu-sample-002',
+      studentName: 'Brian Kipkorir',
+      studentRegNo: 'HCA/STU/2026/014',
+      senderRole: 'STUDENT',
+      senderId: 'stu-sample-002',
+      senderName: 'Brian Kipkorir',
+      kind: 'HELP_REQUEST',
+      priority: 'URGENT',
+      body: 'Browser exited fullscreen briefly after a low-battery notification appeared. Can I continue my attempt?',
+      createdAt: new Date(now - 10 * 60 * 1000).toISOString(),
+      readByStudent: true,
+      readBySupervisor: false,
+    },
+    {
+      id: 'EXAMMSG-002',
+      sessionId: 'EXAM-SESSION-001',
+      examId: 'sec-exam-net-cat',
+      examTitle: 'Computer Networking CAT',
+      studentId: 'stu-sample-002',
+      studentName: 'Brian Kipkorir',
+      studentRegNo: 'HCA/STU/2026/014',
+      senderRole: 'SUPERVISOR',
+      senderId: 'usr-exam-01',
+      senderName: 'Dr. Kiprop Chemweno',
+      kind: 'SUPERVISOR_INSTRUCTION',
+      priority: 'NORMAL',
+      body: 'Noted. Click Re-enter Fullscreen and continue your assessment. Your answers remain saved.',
+      createdAt: new Date(now - 9 * 60 * 1000).toISOString(),
+      readByStudent: false,
+      readBySupervisor: true,
+    },
+  ];
+
   return {
     secureExamDefinitions: definitions,
     secureExamSessions: sampleSessions,
     secureExamEvents: sampleEvents,
     secureExamIncidents: sampleIncidents,
     secureExamAuditLogs: sampleLogs,
+    secureExamMessages: sampleMessages,
   };
 }

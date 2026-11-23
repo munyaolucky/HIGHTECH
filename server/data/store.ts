@@ -70,10 +70,24 @@ import type {
   SecureExamAuditLogRecord,
   SecureExamDefinitionRecord,
   SecureExamIncidentRecord,
+  SecureExamMessageRecord,
   SecureExamSecurityEventRecord,
   SecureExamSessionRecord,
 } from '../modules/exams/secure/secureExam.types.ts';
 import { createSecureExamSeed } from '../modules/exams/secure/secureExam.seed.ts';
+import type {
+  FinanceAuditLogRecord,
+  FinanceClearanceRecord,
+  FinanceFeeStructureRecord,
+  FinanceLedgerChargeRecord,
+  FinancePaymentPlanRecord,
+  FinancePaymentRecord,
+  FinanceReceiptRecord,
+  FinanceRefundRequestRecord,
+  FinanceStudentAccountRecord,
+  MpesaTransactionRecord,
+} from '../modules/finance/finance.types.ts';
+import { createFinanceModuleSeed } from '../modules/finance/finance.seed.ts';
 
 export type StaffTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
 
@@ -538,6 +552,7 @@ export interface PortalDatabase {
     eventRegSeq: number;
     eventCodeSeq: number;
     eventCertSeq: number;
+    financeReceiptSeq?: number;
   };
   campuses: CampusRecord[];
   departments: DepartmentRecord[];
@@ -603,6 +618,17 @@ export interface PortalDatabase {
   secureExamEvents: SecureExamSecurityEventRecord[];
   secureExamIncidents: SecureExamIncidentRecord[];
   secureExamAuditLogs: SecureExamAuditLogRecord[];
+  secureExamMessages: SecureExamMessageRecord[];
+  financeStudentAccounts: FinanceStudentAccountRecord[];
+  financeLedgerCharges: FinanceLedgerChargeRecord[];
+  financePayments: FinancePaymentRecord[];
+  mpesaTransactions: MpesaTransactionRecord[];
+  financeReceipts: FinanceReceiptRecord[];
+  financeFeeStructures: FinanceFeeStructureRecord[];
+  financePaymentPlans: FinancePaymentPlanRecord[];
+  financeClearances: FinanceClearanceRecord[];
+  financeRefundRequests: FinanceRefundRequestRecord[];
+  financeAuditLogs: FinanceAuditLogRecord[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -2009,6 +2035,7 @@ function createSeedDatabase(): PortalDatabase {
         collegeEventAuditLogs: eventsSeed.collegeEventAuditLogs,
         eventSettings: eventsSeed.eventSettings,
         ...createSecureExamSeed(),
+        ...createFinanceModuleSeed(),
       };
     })(),
   };
@@ -2245,7 +2272,69 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     secureExamAuditLogs: Array.isArray(loaded.secureExamAuditLogs)
       ? loaded.secureExamAuditLogs
       : seed.secureExamAuditLogs,
+    secureExamMessages: Array.isArray(loaded.secureExamMessages)
+      ? loaded.secureExamMessages
+      : seed.secureExamMessages,
+    financeStudentAccounts: Array.isArray(loaded.financeStudentAccounts)
+      ? loaded.financeStudentAccounts
+      : seed.financeStudentAccounts,
+    financeLedgerCharges: Array.isArray(loaded.financeLedgerCharges)
+      ? loaded.financeLedgerCharges
+      : seed.financeLedgerCharges,
+    financePayments: Array.isArray(loaded.financePayments)
+      ? loaded.financePayments
+      : seed.financePayments,
+    mpesaTransactions: Array.isArray(loaded.mpesaTransactions)
+      ? loaded.mpesaTransactions
+      : seed.mpesaTransactions,
+    financeReceipts: Array.isArray(loaded.financeReceipts)
+      ? loaded.financeReceipts
+      : seed.financeReceipts,
+    financeFeeStructures: Array.isArray(loaded.financeFeeStructures)
+      ? loaded.financeFeeStructures
+      : seed.financeFeeStructures,
+    financePaymentPlans: Array.isArray(loaded.financePaymentPlans)
+      ? loaded.financePaymentPlans
+      : seed.financePaymentPlans,
+    financeClearances: Array.isArray(loaded.financeClearances)
+      ? loaded.financeClearances
+      : seed.financeClearances,
+    financeRefundRequests: Array.isArray(loaded.financeRefundRequests)
+      ? loaded.financeRefundRequests
+      : seed.financeRefundRequests,
+    financeAuditLogs: Array.isArray(loaded.financeAuditLogs)
+      ? loaded.financeAuditLogs
+      : seed.financeAuditLogs,
   };
+}
+
+let postgresSyncHook: ((db: PortalDatabase) => Promise<void>) | null = null;
+let syncChain: Promise<void> = Promise.resolve();
+let suppressSyncHook = false;
+
+function isTestRunnerEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    process.execArgv.some((arg) => arg.includes('test')) ||
+    process.argv.some((arg) => arg.includes('--test'))
+  );
+}
+
+export function registerPostgresSyncHook(
+  hook: (db: PortalDatabase) => Promise<void>
+): void {
+  postgresSyncHook = hook;
+}
+
+export function hydrateDbFromSnapshot(snapshot: Partial<PortalDatabase>): PortalDatabase {
+  const hydrated = hydrateDatabaseDefaults(snapshot);
+  suppressSyncHook = true;
+  try {
+    saveDb(hydrated);
+  } finally {
+    suppressSyncHook = false;
+  }
+  return hydrated;
 }
 
 export function getDb(): PortalDatabase {
@@ -2271,6 +2360,16 @@ export function saveDb(db: PortalDatabase): void {
   const tmpPath = `${DB_PATH}.tmp.${process.pid}`;
   fs.writeFileSync(tmpPath, JSON.stringify(db, null, 2), 'utf8');
   fs.renameSync(tmpPath, DB_PATH);
+
+  if (!suppressSyncHook && postgresSyncHook && !isTestRunnerEnvironment()) {
+    const hook = postgresSyncHook;
+    const snapshotCopy = JSON.parse(JSON.stringify(db)) as PortalDatabase;
+    syncChain = syncChain
+      .then(() => hook(snapshotCopy))
+      .catch((err) => {
+        console.error('Background PostgreSQL sync error:', err);
+      });
+  }
 }
 
 /**
@@ -2333,4 +2432,13 @@ export function allocateCertificateNumber(db: PortalDatabase): string {
   const year = new Date().getFullYear();
   return `HTE-CERT-${year}-${String(next).padStart(4, '0')}`;
 }
+
+export function allocateFinanceReceiptNumber(db: PortalDatabase): string {
+  const current = db.sequences.financeReceiptSeq ?? 2;
+  const next = current + 1;
+  db.sequences.financeReceiptSeq = next;
+  const year = new Date().getFullYear();
+  return `RCT-${year}-${String(next).padStart(4, '0')}`;
+}
+
 

@@ -59,6 +59,7 @@ import ExamClearancePage from '../pages/exams/ExamClearancePage';
 import AssessmentHistoryPage from '../pages/exams/AssessmentHistoryPage';
 import AppealsPage from '../pages/exams/AppealsPage';
 import AcademicProgressPage from '../pages/exams/AcademicProgressPage';
+import { isStudentFeesSection, StudentFeesRouteView } from '../fees/feesRoutes';
 import type { ExamSession } from '../exams/secure/examTypes';
 
 interface StudentSubPagesProps {
@@ -154,12 +155,48 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
     subtitle: 'Registrar-approved marks and verified academic transcripts (read-only student record)',
   },
   finance: {
-    title: 'Fees, Lipa na M-Pesa & Statements',
-    subtitle: 'Live fee balance, online M-Pesa STK settlement, and verified receipts',
+    title: 'Fees & Payments Overview',
+    subtitle: 'Live fee balance, payment progress, quick M-Pesa actions, and recent transactions',
+  },
+  'fees-overview': {
+    title: 'Fees & Payments Overview',
+    subtitle: 'Live fee balance, payment progress, quick M-Pesa actions, and recent transactions',
+  },
+  'fees-statement': {
+    title: 'Student Fee Statement',
+    subtitle: 'Itemized semester charges, M-Pesa/bank payments, credits, and running balance',
+  },
+  'fees-pay': {
+    title: 'Pay Fees (M-Pesa STK & Bank)',
+    subtitle: 'Initiate Safaricom Daraja STK Push or submit an approved bank slip reference',
+  },
+  'fees-history': {
+    title: 'Payment History',
+    subtitle: 'Filter and inspect M-Pesa checkout statuses and bank verification records',
+  },
+  'fees-receipts': {
+    title: 'Official Fee Receipts',
+    subtitle: 'Verified payment receipts with printable sheet and download export',
+  },
+  'fees-structure': {
+    title: 'Programme Fee Structure',
+    subtitle: 'Approved academic year vote heads across tuition, laboratory, exam, and library',
+  },
+  'fees-plans': {
+    title: 'Instalment Payment Plans',
+    subtitle: 'Track scheduled due dates or submit a structured fee instalment request',
+  },
+  'fees-clearance': {
+    title: 'Financial Clearance Standing',
+    subtitle: 'Registration (40%), Examination (75%/100%), Library, and Graduation thresholds',
+  },
+  'fees-refunds': {
+    title: 'Fee Refund Requests',
+    subtitle: 'Apply for verified overpayment or caution deposit refunds and track approvals',
   },
   receipts: {
-    title: 'Verified Payment Receipts',
-    subtitle: 'Immutable tuition payment receipts and downloadable financial statement',
+    title: 'Official Fee Receipts',
+    subtitle: 'Immutable tuition payment receipts and printable financial documents',
   },
   library: {
     title: 'Digital Library, Loans & E-Resources',
@@ -256,11 +293,6 @@ export default function StudentSubPages({
   const [submissionText, setSubmissionText] = useState('');
   const [submissionFile, setSubmissionFile] = useState<{ fileName: string; fileSize: string } | null>(null);
 
-  // M-Pesa payment state
-  const [mpesaPhone, setMpesaPhone] = useState('0712345678');
-  const [mpesaAmount, setMpesaAmount] = useState(String(fin.balance > 0 ? fin.balance : 5000));
-  const [mpesaPending, setMpesaPending] = useState(false);
-
   // Library search
   const [libraryQuery, setLibraryQuery] = useState('');
 
@@ -283,6 +315,15 @@ export default function StudentSubPages({
     'notifications',
     'appeals',
     'finance',
+    'fees-overview',
+    'fees-statement',
+    'fees-pay',
+    'fees-history',
+    'fees-receipts',
+    'fees-structure',
+    'fees-plans',
+    'fees-clearance',
+    'fees-refunds',
     'receipts',
     'course-registration',
     'mobile-companion',
@@ -1350,208 +1391,17 @@ export default function StudentSubPages({
     );
   }
 
-  // 7. FEES, M-PESA STK PUSH & RECEIPTS
-  if (activeSection === 'finance' || activeSection === 'receipts') {
+  // 7. FEES & PAYMENTS MODULE (Overview, Statement, M-Pesa Pay, History, Receipts, Structure, Plans, Clearance, Refunds)
+  if (isStudentFeesSection(activeSection)) {
     return (
       <div className="space-y-5">
-        {SectionShellHeader(
-          <button
-            type="button"
-            onClick={() => {
-              downloadStudentDocument(
-                `Fee_Statement_${regNo.replace(/\//g, '_')}.txt`,
-                `HI-TECH COLLEGE STUDENT FEE STATEMENT\nStudent: ${profile.fullName}\nReg No: ${regNo}\nTotal Billed: KES ${fin.totalBilled.toLocaleString()}\nTotal Paid: KES ${fin.totalPaid.toLocaleString()}\nOutstanding Balance: KES ${fin.balance.toLocaleString()}\n\n` +
-                  state.transactions
-                    .map((t) => `${t.receiptNumber}\t${t.paymentMethod}\t${t.referenceNumber}\tKES ${t.amount}`)
-                    .join('\n')
-              );
-              onNotify('ok', 'Certified fee statement downloaded.');
-            }}
-            className="px-4 py-2 bg-[#092c60] hover:bg-[#061f46] text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
-          >
-            <Download size={14} /> Export Statement
-          </button>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-            <span className="text-slate-600 dark:text-slate-300">Semester Total Billed</span>
-            <strong className="block text-xl font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-1">
-              KES {fin.totalBilled.toLocaleString()}
-            </strong>
-          </div>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-            <span className="text-slate-600 dark:text-slate-300">Verified Payments ({fin.percentPaid}%)</span>
-            <strong className="block text-xl font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums mt-1">
-              KES {fin.totalPaid.toLocaleString()}
-            </strong>
-          </div>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-            <span className="text-slate-600 dark:text-slate-300">Outstanding Balance</span>
-            <strong className="block text-xl font-bold text-[#092c60] dark:text-blue-300 font-mono tabular-nums mt-1">
-              KES {fin.balance.toLocaleString()}
-            </strong>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setMpesaPending(true);
-              const numericAmount = Number(mpesaAmount);
-              window.setTimeout(() => {
-                const res = studentPortalService.recordMpesaPayment(mpesaPhone, numericAmount);
-                setMpesaPending(false);
-                if (!res.ok) return onNotify('err', res.error ?? 'M-Pesa settlement failed.');
-                const updated = studentPortalService.getFinancialSummary();
-                setMpesaAmount(String(updated.balance > 0 ? updated.balance : 1000));
-                onNotify('ok', `M-Pesa payment settled! Verified Receipt ${res.receiptNumber} posted.`);
-                onRefresh();
-              }, 500);
-            }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3.5 text-xs"
-          >
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Smartphone size={16} className="text-emerald-600 dark:text-emerald-400" /> Lipa na M-Pesa Online (STK Push)
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300">
-              Verified callbacks post an immutable receipt immediately and update your dashboard fee balance.
-            </p>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">M-Pesa Phone Number</label>
-              <input
-                type="text"
-                required
-                value={mpesaPhone}
-                onChange={(e) => setMpesaPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">Amount to Pay (KES)</label>
-              <input
-                type="number"
-                min={100}
-                required
-                value={mpesaAmount}
-                onChange={(e) => setMpesaAmount(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono font-bold"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={mpesaPending}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg disabled:opacity-60 transition-colors"
-            >
-              {mpesaPending ? 'Processing M-Pesa Callback...' : 'Send M-Pesa Payment Prompt'}
-            </button>
-          </form>
-
-          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Verified Tuition Receipts (Read-Only Ledger)</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                  <tr>
-                    <th className="py-2.5 px-4 font-semibold">Receipt</th>
-                    <th className="py-2.5 px-4 font-semibold">Channel / Ref</th>
-                    <th className="py-2.5 px-4 font-semibold">Description</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Amount</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {state.transactions.map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400 whitespace-nowrap">{tx.receiptNumber}</td>
-                      <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        {tx.paymentMethod} · {tx.referenceNumber}
-                      </td>
-                      <td className="py-3 px-4 text-slate-700 dark:text-slate-200">{tx.description}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
-                        KES {tx.amount.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            downloadStudentDocument(
-                              `${tx.receiptNumber}.txt`,
-                              `HI-TECH COLLEGE OFFICIAL RECEIPT\nReceipt No: ${tx.receiptNumber}\nStudent: ${profile.fullName} (${regNo})\nAmount: KES ${tx.amount.toLocaleString()}\nChannel: ${tx.paymentMethod}\nRef: ${tx.referenceNumber}\nStatus: ${tx.status}\n`
-                            );
-                            onNotify('ok', `Downloaded receipt ${tx.receiptNumber}.`);
-                          }}
-                          className="text-[#0866d7] dark:text-blue-400 font-semibold hover:underline"
-                        >
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Itemized Semester Fee Structure & Sponsorship Status */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden text-xs">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                Itemized Semester Fee Structure Invoice ({profile.academicYear} · {profile.semester})
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 mt-0.5">
-                Funding Status: <strong className="text-slate-800 dark:text-slate-100">{state.sponsorshipStatus}</strong>
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                downloadStudentDocument(
-                  `Fee_Invoice_${regNo.replace(/\//g, '_')}.txt`,
-                  `HI-TECH COLLEGE SEMESTER FEE INVOICE\nStudent: ${profile.fullName} (${regNo})\nProgramme: ${profile.programme}\nSponsorship: ${state.sponsorshipStatus}\n\n` +
-                    state.feeStructure.map((f) => `${f.code}\t${f.voteHead}\tKES ${f.amount.toLocaleString()}`).join('\n') +
-                    `\n\nTOTAL BILLED: KES ${fin.totalBilled.toLocaleString()}\nTOTAL PAID: KES ${fin.totalPaid.toLocaleString()}\nBALANCE DUE: KES ${fin.balance.toLocaleString()}\n`
-                );
-                onNotify('ok', 'Itemized semester fee invoice downloaded.');
-              }}
-              className="px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-semibold rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
-            >
-              <Download size={14} /> Download Fee Invoice
-            </button>
-          </div>
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-              <tr>
-                <th className="py-2.5 px-4 font-semibold">Vote Head</th>
-                <th className="py-2.5 px-4 font-semibold">Fee Description</th>
-                <th className="py-2.5 px-4 font-semibold text-right">Billed Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {state.feeStructure.map((line) => (
-                <tr key={line.code}>
-                  <td className="py-2.5 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400">{line.code}</td>
-                  <td className="py-2.5 px-4 text-slate-800 dark:text-slate-200">{line.voteHead}</td>
-                  <td className="py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100">
-                    KES {line.amount.toLocaleString()}.00
-                  </td>
-                </tr>
-              ))}
-              <tr className="bg-slate-50 dark:bg-slate-800/80 font-bold text-[#092c60] dark:text-blue-300">
-                <td className="py-3 px-4 font-mono">TOTAL</td>
-                <td className="py-3 px-4">Approved Semester Vote Heads</td>
-                <td className="py-3 px-4 text-right font-mono tabular-nums">
-                  KES {fin.totalBilled.toLocaleString()}.00
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {SectionShellHeader()}
+        <StudentFeesRouteView
+          section={activeSection}
+          onNavigate={onNavigate}
+          onNotify={onNotify}
+          onRefresh={onRefresh}
+        />
       </div>
     );
   }

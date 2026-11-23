@@ -1,12 +1,16 @@
 import crypto from 'node:crypto';
 import { getDb, saveDb } from '../../../data/store.ts';
+import { examEventsStream } from './examEventsStream.ts';
 import type {
   CandidateExamSessionDto,
   ExamIncidentStatus,
+  ExamMessageKind,
+  ExamMessagePriority,
   ExamSecurityEventType,
   ExamSecurityPolicy,
   SecureExamDefinitionRecord,
   SecureExamIncidentRecord,
+  SecureExamMessageRecord,
   SecureExamSecurityEventRecord,
   SecureExamSessionRecord,
   ViolationResponseAction,
@@ -307,6 +311,12 @@ export const secureExamService = {
       `Attempt #${session.attemptNumber} started for ${exam.title} (expires ${session.expiresAt}).`
     );
     saveDb(db);
+    examEventsStream.publish('candidate.started', {
+      sessionId: session.id,
+      examId: exam.id,
+      studentRegNo: session.studentRegNo,
+      studentName: session.studentName,
+    });
 
     return buildSessionDto(session, exam);
   },
@@ -428,6 +438,11 @@ export const secureExamService = {
     session.connectionLost = false;
     session.updatedAt = nowIso;
     saveDb(db);
+    examEventsStream.publish('candidate.heartbeat', {
+      sessionId: session.id,
+      examId: session.examId,
+      answeredCount: session.answers.length,
+    });
 
     return {
       saved: true,
@@ -584,6 +599,26 @@ export const secureExamService = {
     }
 
     saveDb(db);
+    if (input.type === 'CONNECTION_LOST') {
+      examEventsStream.publish('candidate.disconnected', {
+        sessionId: session.id,
+        examId: session.examId,
+        studentName: session.studentName,
+      });
+    } else if (input.type === 'CONNECTION_RESTORED') {
+      examEventsStream.publish('candidate.reconnected', {
+        sessionId: session.id,
+        examId: session.examId,
+        studentName: session.studentName,
+      });
+    } else if (createOrEscalateIncident) {
+      examEventsStream.publish('incident.created', {
+        sessionId: session.id,
+        examId: session.examId,
+        eventType: input.type,
+        severity: incidentSeverity,
+      });
+    }
 
     return {
       recorded: true,
@@ -637,6 +672,11 @@ export const secureExamService = {
       `Finalized ${session.answers.length} saved answer(s). Auto-scored objective marks: ${session.totalMarksAwarded}.`
     );
     saveDb(db);
+    examEventsStream.publish(expired ? 'candidate.expired' : 'candidate.submitted', {
+      sessionId: session.id,
+      examId: exam.id,
+      studentName: session.studentName,
+    });
 
     return buildSessionDto(session, exam);
   },
@@ -723,8 +763,27 @@ export const secureExamService = {
       ).length,
     };
 
+    const sessionById = new Map(sessions.map((s) => [s.id, s]));
+    const securityEvents = [...db.secureExamEvents]
+      .sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))
+      .slice(0, 120)
+      .map((ev) => {
+        const s = sessionById.get(ev.sessionId);
+        return {
+          ...ev,
+          studentName: s?.studentName ?? 'Candidate',
+          studentRegNo: s?.studentRegNo ?? ev.sessionId,
+          examTitle: s?.examTitle ?? 'Online Examination',
+        };
+      });
+
     return {
-      counts,
+      counts: {
+        ...counts,
+        unreadHelpCount: db.secureExamMessages.filter(
+          (m) => m.senderRole === 'STUDENT' && !m.readBySupervisor
+        ).length,
+      },
       exams: db.secureExamDefinitions.map((e) => ({
         id: e.id,
         code: e.code,
@@ -740,6 +799,10 @@ export const secureExamService = {
       })),
       sessions,
       incidents: db.secureExamIncidents,
+      securityEvents,
+      messages: [...db.secureExamMessages].sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt)
+      ),
       auditLogs: db.secureExamAuditLogs.slice(0, 60),
     };
   },
@@ -814,8 +877,200 @@ export const secureExamService = {
       `${input.action} by ${input.actorName}: ${input.reason.trim()}`
     );
     saveDb(db);
+    examEventsStream.publish('supervisor.action', {
+      sessionId: session.id,
+      examId: session.examId,
+      action: input.action,
+      actorName: input.actorName,
+    });
 
     return session;
+  },
+
+  extendSessionTime(input: {
+    sessionId: string;
+    additionalSeconds: number;
+    reason: string;
+    actorId: string;
+    actorName: string;
+  }) {
+    const additionalSeconds = Math.round(Number(input.additionalSeconds));
+    if (!Number.isFinite(additionalSeconds) || additionalSeconds < 60 || additionalSeconds > 7200) {
+      throw new SecureExamHttpError(
+        400,
+        'Time extension must be between 60 seconds (1 min) and 7,200 seconds (120 mins).'
+      );
+    }
+    if (!input.reason || input.reason.trim().length < 5) {
+      throw new SecureExamHttpError(
+        400,
+        'Provide a clear justification for extending exam time (minimum 5 characters).'
+      );
+    }
+
+    const db = getDb();
+    const session = db.secureExamSessions.find((s) => s.id === input.sessionId);
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    if (session.status !== 'ACTIVE' && session.status !== 'EXPIRED') {
+      throw new SecureExamHttpError(
+        409,
+        `Cannot extend time for a session with status ${session.status}.`
+      );
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const previousExpiresAt = session.expiresAt;
+    const baseMs = Math.max(nowMs, new Date(session.expiresAt).getTime() || nowMs);
+    const newExpiresAt = new Date(baseMs + additionalSeconds * 1000).toISOString();
+
+    session.expiresAt = newExpiresAt;
+    if (session.status === 'EXPIRED') {
+      session.status = 'ACTIVE';
+      session.submittedAt = undefined;
+    }
+    session.updatedAt = nowIso;
+    if (!Array.isArray(session.timeAdjustments)) {
+      session.timeAdjustments = [];
+    }
+    session.timeAdjustments.push({
+      id: createId('TIMEADJ'),
+      sessionId: session.id,
+      examId: session.examId,
+      studentId: session.studentId,
+      additionalSeconds,
+      reason: input.reason.trim(),
+      adjustedById: input.actorId,
+      adjustedByName: input.actorName,
+      previousExpiresAt,
+      newExpiresAt,
+      createdAt: nowIso,
+    });
+
+    appendAuditLog(
+      session.id,
+      session.examId,
+      input.actorId,
+      input.actorName,
+      'SUPERVISOR_EXTEND_TIME',
+      `Extended time by +${Math.round(additionalSeconds / 60)} min(s) (new expiry ${newExpiresAt}). Reason: ${input.reason.trim()}`
+    );
+    saveDb(db);
+    examEventsStream.publish('supervisor.action', {
+      sessionId: session.id,
+      examId: session.examId,
+      action: 'EXTEND_TIME',
+      additionalSeconds,
+      newExpiresAt,
+    });
+
+    return session;
+  },
+
+  restoreSession(input: {
+    sessionId: string;
+    reason: string;
+    graceSeconds?: number;
+    actorId: string;
+    actorName: string;
+  }) {
+    if (!input.reason || input.reason.trim().length < 5) {
+      throw new SecureExamHttpError(
+        400,
+        'Provide a clear reason for restoring the candidate session (minimum 5 characters).'
+      );
+    }
+
+    const db = getDb();
+    const session = db.secureExamSessions.find((s) => s.id === input.sessionId);
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    if (session.status === 'SUBMITTED' || session.status === 'TERMINATED') {
+      throw new SecureExamHttpError(
+        409,
+        `Session is finalized (${session.status}) and cannot be restored directly.`
+      );
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const expiresMs = new Date(session.expiresAt).getTime();
+    const graceSeconds = Math.min(3600, Math.max(300, Math.round(Number(input.graceSeconds ?? 600))));
+
+    if (Number.isNaN(expiresMs) || expiresMs <= nowMs) {
+      session.expiresAt = new Date(nowMs + graceSeconds * 1000).toISOString();
+    }
+    session.status = 'ACTIVE';
+    session.submittedAt = undefined;
+    session.connectionLost = false;
+    session.lastHeartbeatAt = nowIso;
+    session.updatedAt = nowIso;
+
+    appendAuditLog(
+      session.id,
+      session.examId,
+      input.actorId,
+      input.actorName,
+      'SUPERVISOR_RESTORE_SESSION',
+      `Restored candidate session ${session.id} to ACTIVE. Reason: ${input.reason.trim()}`
+    );
+    saveDb(db);
+    examEventsStream.publish('supervisor.action', {
+      sessionId: session.id,
+      examId: session.examId,
+      action: 'RESTORE_SESSION',
+      actorName: input.actorName,
+    });
+
+    return session;
+  },
+
+  getExamReports(examId?: string) {
+    const db = getDb();
+    this.expireActiveSessions();
+    const sessions = examId
+      ? db.secureExamSessions.filter((s) => s.examId === examId)
+      : db.secureExamSessions;
+
+    const attendance = sessions.map((s) => {
+      const exam = db.secureExamDefinitions.find((e) => e.id === s.examId);
+      const events = db.secureExamEvents.filter((e) => e.sessionId === s.id);
+      return {
+        sessionId: s.id,
+        examId: s.examId,
+        examTitle: exam?.title ?? s.examId,
+        unitCode: exam?.unitCode ?? 'EXAM',
+        studentRegNo: s.studentRegNo,
+        studentName: s.studentName,
+        attemptNumber: s.attemptNumber,
+        status: s.status,
+        startedAt: s.startedAt,
+        submittedAt: s.submittedAt ?? null,
+        answeredCount: s.answers.length,
+        totalQuestions: exam?.questions.length ?? 0,
+        securityEventCount: events.length,
+        tabSwitchCount: events.filter((e) => e.eventType === 'TAB_HIDDEN').length,
+        fullscreenExitCount: events.filter((e) => e.eventType === 'FULLSCREEN_EXIT').length,
+        timeExtensionsCount: s.timeAdjustments?.length ?? 0,
+      };
+    });
+
+    const incidents = examId
+      ? db.secureExamIncidents.filter((i) => i.examId === examId)
+      : db.secureExamIncidents;
+
+    const auditLogs = examId
+      ? db.secureExamAuditLogs.filter((a) => a.examId === examId)
+      : db.secureExamAuditLogs;
+
+    return {
+      attendance,
+      incidents,
+      auditLogs: auditLogs.slice(0, 150),
+    };
   },
 
   reviewIncident(input: {
@@ -897,5 +1152,290 @@ export const secureExamService = {
     saveDb(db);
 
     return exam;
+  },
+
+  // =========================================================================
+  // REAL-TIME STUDENT <-> SUPERVISOR EXAM MESSAGING
+  // =========================================================================
+
+  assertStudentOwnsSession(sessionId: string, studentId: string): SecureExamSessionRecord {
+    const db = getDb();
+    const session = db.secureExamSessions.find(
+      (s) => s.id === sessionId && s.studentId === studentId
+    );
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    return session;
+  },
+
+  listSessionMessages(sessionId: string, studentId?: string): SecureExamMessageRecord[] {
+    const db = getDb();
+    const session = db.secureExamSessions.find((s) => s.id === sessionId);
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    if (studentId && session.studentId !== studentId) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    return db.secureExamMessages
+      .filter((m) => m.sessionId === sessionId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  },
+
+  listAllSupervisorMessages(sessionId?: string): {
+    messages: SecureExamMessageRecord[];
+    unreadHelpCount: number;
+  } {
+    const db = getDb();
+    const messages = db.secureExamMessages
+      .filter((m) => (!sessionId ? true : m.sessionId === sessionId))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    return {
+      messages,
+      unreadHelpCount: db.secureExamMessages.filter(
+        (m) => m.senderRole === 'STUDENT' && !m.readBySupervisor
+      ).length,
+    };
+  },
+
+  sendStudentHelpMessage(input: {
+    sessionId: string;
+    studentId: string;
+    kind?: ExamMessageKind;
+    priority?: ExamMessagePriority;
+    body: string;
+  }): SecureExamMessageRecord {
+    const body = String(input.body ?? '').trim();
+    if (!body) {
+      throw new SecureExamHttpError(400, 'Please enter a message before sending.');
+    }
+    if (body.length > 1000) {
+      throw new SecureExamHttpError(400, 'Message cannot exceed 1,000 characters.');
+    }
+
+    const db = getDb();
+    const session = db.secureExamSessions.find(
+      (s) => s.id === input.sessionId && s.studentId === input.studentId
+    );
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    if (session.status !== 'ACTIVE') {
+      throw new SecureExamHttpError(409, 'Messaging is only available during an active examination session.');
+    }
+
+    const exam = db.secureExamDefinitions.find((e) => e.id === session.examId);
+    const nowIso = new Date().toISOString();
+    const kind: ExamMessageKind =
+      input.kind === 'GENERAL_NOTE' ? 'GENERAL_NOTE' : 'HELP_REQUEST';
+    const priority: ExamMessagePriority =
+      input.priority === 'URGENT' ? 'URGENT' : 'NORMAL';
+
+    const message: SecureExamMessageRecord = {
+      id: createId('EXAMMSG'),
+      sessionId: session.id,
+      examId: session.examId,
+      examTitle: exam?.title ?? session.examId,
+      studentId: session.studentId,
+      studentName: session.studentName,
+      studentRegNo: session.studentRegNo,
+      senderRole: 'STUDENT',
+      senderId: session.studentId,
+      senderName: session.studentName,
+      kind,
+      priority,
+      body,
+      createdAt: nowIso,
+      readByStudent: true,
+      readBySupervisor: false,
+    };
+
+    db.secureExamMessages.push(message);
+    if (db.secureExamMessages.length > 1000) {
+      db.secureExamMessages.splice(0, db.secureExamMessages.length - 1000);
+    }
+    session.lastHeartbeatAt = nowIso;
+    session.updatedAt = nowIso;
+
+    appendAuditLog(
+      session.id,
+      session.examId,
+      session.studentId,
+      session.studentName,
+      'STUDENT_HELP_REQUEST',
+      `${priority === 'URGENT' ? '[URGENT] ' : ''}${body.slice(0, 120)}`
+    );
+    saveDb(db);
+    return message;
+  },
+
+  sendSupervisorMessage(input: {
+    sessionId: string;
+    actorId: string;
+    actorName: string;
+    priority?: ExamMessagePriority;
+    kind?: ExamMessageKind;
+    body: string;
+  }): SecureExamMessageRecord {
+    const body = String(input.body ?? '').trim();
+    if (!body) {
+      throw new SecureExamHttpError(400, 'Please enter an instruction before sending.');
+    }
+    if (body.length > 1000) {
+      throw new SecureExamHttpError(400, 'Instruction cannot exceed 1,000 characters.');
+    }
+
+    const db = getDb();
+    const session = db.secureExamSessions.find((s) => s.id === input.sessionId);
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+
+    const exam = db.secureExamDefinitions.find((e) => e.id === session.examId);
+    const nowIso = new Date().toISOString();
+    const priority: ExamMessagePriority =
+      input.priority === 'URGENT' ? 'URGENT' : 'NORMAL';
+    const kind: ExamMessageKind =
+      input.kind === 'GENERAL_NOTE' ? 'GENERAL_NOTE' : 'SUPERVISOR_INSTRUCTION';
+
+    const message: SecureExamMessageRecord = {
+      id: createId('EXAMMSG'),
+      sessionId: session.id,
+      examId: session.examId,
+      examTitle: exam?.title ?? session.examId,
+      studentId: session.studentId,
+      studentName: session.studentName,
+      studentRegNo: session.studentRegNo,
+      senderRole: 'SUPERVISOR',
+      senderId: input.actorId,
+      senderName: input.actorName,
+      kind,
+      priority,
+      body,
+      createdAt: nowIso,
+      readByStudent: false,
+      readBySupervisor: true,
+    };
+
+    db.secureExamMessages.push(message);
+    if (db.secureExamMessages.length > 1000) {
+      db.secureExamMessages.splice(0, db.secureExamMessages.length - 1000);
+    }
+
+    appendAuditLog(
+      session.id,
+      session.examId,
+      input.actorId,
+      input.actorName,
+      'SUPERVISOR_INSTRUCTION_SENT',
+      `Direct instruction to ${session.studentName}: ${body.slice(0, 120)}`
+    );
+    saveDb(db);
+    return message;
+  },
+
+  broadcastSupervisorInstruction(input: {
+    examId: string;
+    actorId: string;
+    actorName: string;
+    priority?: ExamMessagePriority;
+    body: string;
+  }): SecureExamMessageRecord[] {
+    const body = String(input.body ?? '').trim();
+    if (!body) {
+      throw new SecureExamHttpError(400, 'Please enter an announcement before broadcasting.');
+    }
+    if (body.length > 1000) {
+      throw new SecureExamHttpError(400, 'Announcement cannot exceed 1,000 characters.');
+    }
+
+    const db = getDb();
+    const exam = db.secureExamDefinitions.find((e) => e.id === input.examId);
+    if (!exam) {
+      throw new SecureExamHttpError(404, 'Examination not found.');
+    }
+
+    const activeSessions = db.secureExamSessions.filter(
+      (s) => s.examId === input.examId && s.status === 'ACTIVE'
+    );
+    if (activeSessions.length === 0) {
+      throw new SecureExamHttpError(409, 'No active candidate sessions found for this examination.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const priority: ExamMessagePriority =
+      input.priority === 'URGENT' ? 'URGENT' : 'NORMAL';
+
+    const created: SecureExamMessageRecord[] = activeSessions.map((session) => {
+      const msg: SecureExamMessageRecord = {
+        id: createId('EXAMMSG'),
+        sessionId: session.id,
+        examId: exam.id,
+        examTitle: exam.title,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        studentRegNo: session.studentRegNo,
+        senderRole: 'SUPERVISOR',
+        senderId: input.actorId,
+        senderName: input.actorName,
+        kind: 'SUPERVISOR_INSTRUCTION',
+        priority,
+        body,
+        createdAt: nowIso,
+        readByStudent: false,
+        readBySupervisor: true,
+      };
+      db.secureExamMessages.push(msg);
+      return msg;
+    });
+
+    if (db.secureExamMessages.length > 1000) {
+      db.secureExamMessages.splice(0, db.secureExamMessages.length - 1000);
+    }
+
+    appendAuditLog(
+      undefined,
+      exam.id,
+      input.actorId,
+      input.actorName,
+      'SUPERVISOR_BROADCAST_INSTRUCTION',
+      `Broadcast instruction to ${created.length} active candidate(s) in ${exam.title}.`
+    );
+    saveDb(db);
+    return created;
+  },
+
+  markSessionMessagesRead(input: {
+    sessionId: string;
+    readerRole: 'STUDENT' | 'SUPERVISOR';
+    studentId?: string;
+  }): { updatedCount: number } {
+    const db = getDb();
+    const session = db.secureExamSessions.find((s) => s.id === input.sessionId);
+    if (!session) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+    if (input.readerRole === 'STUDENT' && input.studentId && session.studentId !== input.studentId) {
+      throw new SecureExamHttpError(404, 'Exam session not found.');
+    }
+
+    let updatedCount = 0;
+    for (const msg of db.secureExamMessages) {
+      if (msg.sessionId !== input.sessionId) continue;
+      if (input.readerRole === 'STUDENT' && !msg.readByStudent) {
+        msg.readByStudent = true;
+        updatedCount++;
+      } else if (input.readerRole === 'SUPERVISOR' && !msg.readBySupervisor) {
+        msg.readBySupervisor = true;
+        updatedCount++;
+      }
+    }
+
+    if (updatedCount > 0) {
+      saveDb(db);
+    }
+    return { updatedCount };
   },
 };
