@@ -483,11 +483,6 @@ export default function PortalAccessModal({
               </button>
             ))}
           </div>
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>

@@ -1341,7 +1341,6 @@ export function getPortalShellConfig(role: ShellRoleKey): UserPortalConfig {
             toneClass: 'text-blue-700',
           },
           {
-          {
             label: 'Active ERP Portals',
             value: '20 Portals',
             toneClass: 'text-emerald-700',
