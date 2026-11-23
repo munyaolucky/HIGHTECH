@@ -1,0 +1,2101 @@
+# **HI-TECH College Events – Public Registration & Event Details**
+
+We will build the public events interface so that **any visitor can browse an event, open its full details, register, and receive a registration confirmation** without needing a college portal account.
+
+This follows your event specification, including event details, registration, capacity, approval, waitlist, ticket and QR check-in.&#x20;
+
+## **Slice 1 — Public Events Website**
+
+### **1. Events listing page**
+
+[Zaytuna College Case Study - Morweb](https://images.openai.com/static-rsc-4/bGjJxJ3jN53tdo-lFcZW9YPoZTFyi2xOqL0Lc0I79nF7l_QFqkuvt--SiTw5ffgXJqQC03u1oFPfZIeOcdAoPGLyocM7u7I78Wk90zcypTX8sQAZKPyJ1vF7RCqKIr2Xv7Fqi8hAqBmShZ1HZ2zjorE7nn-yBKVK6YYGQtQ-P3w?purpose=inline)
+
+[AI-Driven Success: Forsyth Technical Community College's 12% Enrollment Surge with Element451 | Element451](https://images.openai.com/static-rsc-4/KxNfYrJae3MOf-NoURQHoqxupt6LLMiZqHt3LhLRDn9922WSSHsWa5UovXjglBTuSMa568ILa2UIZR1PDGFuUT3b6l87Ebxbz5l7peaqQJvJUU0OZiT-ElM3vQroIo9aWLypl2Gk5lHLtta1uIyMoVvB4R5jvby_CN_uUE2m51M?purpose=inline)
+
+[Upcoming Events | Tshwane University of Technology](https://images.openai.com/static-rsc-4/Nc9i5ySuU3PD0o1of5iu6r8dSClKt6Mm68FNV4SWjyO2ygkk1pVT17tjETPmwYxSyP1S2SuWkfnYxEenLBpLbJdtV7pV1bNwVd0njgRp4NhLqL9lvDzjBtvvNNjYjG2bGVbgpcm_y_SSHOC_Np5okoCdcftK7xhcmkKUA-UT5F4?purpose=inline)
+
+13
+
+Route: `/events`
+
+- Featured event.
+- Upcoming events.
+- Events today.
+- Workshops.
+- Seminars.
+- Open days.
+- Webinars.
+- Graduation events.
+- Past events.
+- Search and filters.
+- Register buttons.
+
+### **2. Event details page**
+
+Route: `/events/:slug`
+
+When someone clicks an event, open a dedicated page containing the full information, not just a small card.
+
+[Educon - Conference Landing Page Template by Laude Pirera Ardi for Agensip - Startup MVP Design Partner on Dribbble](https://images.openai.com/static-rsc-4/8Hv-tcwrgwpKAZ8_apDqs-CWGKL85K6PTmBdQGnemYxmtKPqhST_z40HrGnT-otlQ9XaOsq7zsjTRwOavqeslxcq70tmckYRFsE5vv3Ldqk-qb9nwAeYWDWjTmIVX8P1aq37zsTvl9_Bb48iILv-PhFTV62DP1iph-gWyT9BYmo?purpose=inline)
+
+[Eventu - Event Conference Landing Page by Manowar  on Dribbble](https://images.openai.com/static-rsc-4/WtLBO1JWYoRpLtgC0W_imQjUxXfTZ5I5kz-CqC495aKObGRqXIwMWcFYYMA8meKPi5rnjDeS4r6bo-qA0ceEIu22yvg6XaMvbdTIeJp1rIhikUiWQSgL26cGJVZNCVAs6KBp0xpvsGV9lpy8BOfhsrSMNAuRqYCuNDkENa6dFSI?purpose=inline)
+
+[Event & Conference Landing Page by ilias miah ✪ on Dribbble](https://images.openai.com/static-rsc-4/X5VNlF56r086o50G5YmcqrrEs8ggt3qurOkEud2QpLaHn6NRIXMVx0LjqFYfvNddRrHTKuPamw2Ta73JeFShE2a6wkDokKyDa5ElrfiNGE-_8VZSPsyYAfrwiByKbEbjXmyKvsgaWfmcVIXyoQAD5oPtYy93FbN6dwbplgKKRDM?purpose=inline)
+
+8
+
+The page will display:
+
+- Event cover image.
+- Event name.
+- Date and time.
+- Venue.
+- Physical, online or hybrid mode.
+- Organising department.
+- Event description.
+- Programme.
+- Speakers.
+- Target audience.
+- Requirements.
+- Fees.
+- Registration deadline.
+- Remaining capacity when applicable.
+- Contact information.
+- Register Now button.
+
+## **3. Public Events types and API**
+
+**File:** `apps/web/src/modules/website/events/event-types.ts`
+
+```
+
+export type EventMode = "PHYSICAL" | "ONLINE" | "HYBRID";
+
+export type PublicEventStatus =
+  | "UPCOMING"
+  | "ONGOING"
+  | "PAST";
+
+export interface EventScheduleItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  startAt: string;
+  endAt: string;
+  location?: string | null;
+}
+
+export interface EventSpeaker {
+  id: string;
+  name: string;
+  title?: string | null;
+  biography?: string | null;
+  photoUrl?: string | null;
+}
+
+export interface PublicEvent {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  bannerUrl?: string | null;
+  venue?: string | null;
+  mode: EventMode;
+  meetingUrl?: string | null;
+  startAt: string;
+  endAt: string;
+  registrationDeadline?: string | null;
+  capacity?: number | null;
+  registeredCount?: number;
+  fee: number;
+  currency: string;
+  organizer?: string | null;
+  publicEmail?: string | null;
+  status: PublicEventStatus;
+  requiresApproval: boolean;
+  allowWaitlist: boolean;
+  schedules: EventScheduleItem[];
+  speakers: EventSpeaker[];
+}
+
+export interface EventListResponse {
+  items: PublicEvent[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface EventRegistrationRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  organisation?: string;
+  participantType: string;
+  attendanceMode?: string;
+  specialRequests?: string;
+  consent: boolean;
+}
+
+export interface EventRegistrationResponse {
+  id: string;
+  registrationNo: string;
+  fullName: string;
+  email: string;
+  eventId: string;
+  status: string;
+  ticketToken?: string;
+}
+
+```
+
+**File:** `apps/web/src/modules/website/events/event-api.ts`
+
+```
+
+import type {
+  PublicEvent,
+  EventListResponse,
+  EventRegistrationRequest,
+  EventRegistrationResponse,
+} from "./event-types";
+
+const BASE = "/api/public/events";
+
+export async function getPublicEvents(params?: {
+  q?: string;
+  category?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const query = new URLSearchParams();
+
+  if (params?.q) query.set("q", params.q);
+  if (params?.category) query.set("category", params.category);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize));
+
+  const response = await fetch(`${BASE}?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error("Unable to load events.");
+  }
+
+  return response.json() as Promise<EventListResponse>;
+}
+
+export async function getPublicEvent(
+  slug: string
+): Promise<PublicEvent> {
+  const response = await fetch(
+    `${BASE}/${encodeURIComponent(slug)}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 404
+        ? "Event not found."
+        : "Unable to load event details."
+    );
+  }
+
+  return response.json();
+}
+
+export async function registerForEvent(
+  eventId: string,
+  payload: EventRegistrationRequest
+): Promise<EventRegistrationResponse> {
+  const response = await fetch(
+    `${BASE}/${encodeURIComponent(eventId)}/register`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || "Unable to register for this event."
+    );
+  }
+
+  return data;
+}
+
+```
+
+## **4. Events listing page**
+
+**File:** `apps/web/src/modules/website/events/EventsPage.tsx`
+
+```
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  CalendarDays,
+  MapPin,
+  Search,
+  ArrowRight,
+  Users,
+} from "lucide-react";
+
+import { getPublicEvents } from "./event-api";
+import type { PublicEvent } from "./event-types";
+
+import "./events.css";
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString("en-KE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatTime(date: string) {
+  return new Date(date).toLocaleTimeString("en-KE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function EventsPage() {
+  const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const result = await getPublicEvents({
+          q: query,
+          category,
+          page: 1,
+          pageSize: 50,
+        });
+
+        if (active) setEvents(result.items);
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load events."
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [query, category]);
+
+  const featured = events.find(
+    event => event.status === "UPCOMING"
+  );
+
+  const today = new Date().toDateString();
+
+  const todaysEvents = events.filter(
+    event =>
+      new Date(event.startAt).toDateString() === today
+  );
+
+  const upcoming = events.filter(
+    event => event.status === "UPCOMING"
+  );
+
+  const past = events.filter(
+    event => event.status === "PAST"
+  );
+
+  function EventCard({ event }: { event: PublicEvent }) {
+    return (
+      <article className="event-card">
+        <Link
+          to={`/events/${event.slug}`}
+          className="event-card__image-link"
+          aria-label={`View ${event.title}`}
+        >
+          <div className="event-card__image">
+            {event.bannerUrl ? (
+              <img
+                src={event.bannerUrl}
+                alt=""
+                loading="lazy"
+              />
+            ) : (
+              <div className="event-card__placeholder">
+                <CalendarDays size={42} />
+              </div>
+            )}
+            <span className="event-card__category">
+              {event.category}
+            </span>
+          </div>
+        </Link>
+
+        <div className="event-card__body">
+          <div className="event-card__date">
+            <CalendarDays size={16} />
+            {formatDate(event.startAt)}
+          </div>
+
+          <h3>
+            <Link to={`/events/${event.slug}`}>
+              {event.title}
+            </Link>
+          </h3>
+
+          <p className="event-card__description">
+            {event.description}
+          </p>
+
+          <div className="event-card__meta">
+            <MapPin size={15} />
+            {event.venue || event.mode}
+          </div>
+
+          <div className="event-card__meta">
+            <Users size={15} />
+            {event.capacity
+              ? `${event.capacity} seats`
+              : "Open registration"}
+          </div>
+
+          <div className="event-card__bottom">
+            <span>
+              {event.fee === 0
+                ? "Free"
+                : `${event.currency} ${event.fee}`}
+            </span>
+
+            <Link
+              to={`/events/${event.slug}`}
+              className="event-card__link"
+            >
+              View details <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <main className="public-events">
+      <section className="events-hero">
+        <div className="events-hero__content">
+          <span className="events-eyebrow">
+            HI-TECH COLLEGE
+          </span>
+
+          <h1>
+            Events, ideas &<br />
+            <span>opportunities.</span>
+          </h1>
+
+          <p>
+            Join our workshops, seminars, training sessions,
+            open days and college events.
+          </p>
+
+          <div className="events-search">
+            <Search size={20} />
+
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search events..."
+              aria-label="Search events"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="events-main">
+        <div className="events-filter">
+          <label>
+            Category
+
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+            >
+              <option value="">All categories</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Seminar">Seminar</option>
+              <option value="Open Day">Open Day</option>
+              <option value="Webinar">Webinar</option>
+              <option value="Graduation">Graduation</option>
+              <option value="Competition">Competition</option>
+              <option value="Career Fair">Career Fair</option>
+            </select>
+          </label>
+        </div>
+
+        {error && (
+          <div role="alert" className="events-error">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <p role="status">Loading events...</p>
+        )}
+
+        {!loading && !error && events.length === 0 && (
+          <div className="events-empty">
+            <CalendarDays size={42} />
+            <h2>No events found</h2>
+            <p>
+              New college events will appear here when published.
+            </p>
+          </div>
+        )}
+
+        {!loading && featured && !query && !category && (
+          <section className="featured-event">
+            <div className="featured-event__image">
+              {featured.bannerUrl && (
+                <img src={featured.bannerUrl} alt="" />
+              )}
+            </div>
+
+            <div className="featured-event__content">
+              <span>FEATURED EVENT</span>
+              <h2>{featured.title}</h2>
+              <p>{featured.description}</p>
+
+              <p>
+                <CalendarDays size={16} />
+                {formatDate(featured.startAt)}
+              </p>
+
+              <p>
+                <MapPin size={16} />
+                {featured.venue || featured.mode}
+              </p>
+
+              <Link
+                className="events-button"
+                to={`/events/${featured.slug}`}
+              >
+                Explore event
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {!loading && todaysEvents.length > 0 && (
+          <section className="events-section">
+            <h2>Events happening today</h2>
+
+            <div className="events-grid">
+              {todaysEvents.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!loading && upcoming.length > 0 && (
+          <section className="events-section">
+            <h2>Upcoming events</h2>
+
+            <div className="events-grid">
+              {upcoming.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!loading && past.length > 0 && (
+          <section className="events-section">
+            <h2>Past events</h2>
+
+            <div className="events-grid">
+              {past.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </section>
+        )}
+      </section>
+    </main>
+  );
+}
+
+```
+
+## **5. Detailed event page**
+
+**File:** `apps/web/src/modules/website/events/EventDetailPage.tsx`
+
+```
+
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  Users,
+  Globe,
+  Mail,
+  ArrowLeft,
+  CheckCircle2,
+} from "lucide-react";
+
+import { getPublicEvent } from "./event-api";
+import type { PublicEvent } from "./event-types";
+
+import "./events.css";
+
+export default function EventDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+
+  const [event, setEvent] = useState<PublicEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEvent() {
+      try {
+        if (!slug) return;
+
+        const result = await getPublicEvent(slug);
+
+        if (active) setEvent(result);
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load event."
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadEvent();
+
+    return () => {
+      active = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return <main className="event-detail-loading" role="status">
+      Loading event details...
+    </main>;
+  }
+
+  if (error || !event) {
+    return (
+      <main className="event-detail-error">
+        <h1>Event unavailable</h1>
+        <p>{error || "The event could not be found."}</p>
+        <Link to="/events">Back to events</Link>
+      </main>
+    );
+  }
+
+  const registrationClosed =
+    event.registrationDeadline
+      ? new Date(event.registrationDeadline) < new Date()
+      : false;
+
+  const soldOut =
+    event.capacity != null &&
+    (event.registeredCount ?? 0) >= event.capacity;
+
+  const registrationDisabled =
+    registrationClosed ||
+    soldOut ||
+    event.status === "PAST";
+
+  function formatDate(value: string) {
+    return new Date(value).toLocaleDateString("en-KE", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  function formatTime(value: string) {
+    return new Date(value).toLocaleTimeString("en-KE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  return (
+    <main className="event-detail">
+      <div className="event-detail__breadcrumb">
+        <Link to="/events">
+          <ArrowLeft size={16} /> All events
+        </Link>
+      </div>
+
+      <section className="event-detail__hero">
+        {event.bannerUrl && (
+          <img
+            src={event.bannerUrl}
+            alt=""
+            className="event-detail__banner"
+          />
+        )}
+
+        <div className="event-detail__hero-overlay">
+          <span className="event-detail__category">
+            {event.category}
+          </span>
+
+          <h1>{event.title}</h1>
+
+          <p>{event.description}</p>
+        </div>
+      </section>
+
+      <div className="event-detail__layout">
+        <div className="event-detail__main">
+          <section className="event-detail__section">
+            <h2>About this event</h2>
+            <p>{event.description}</p>
+          </section>
+
+          {event.schedules?.length > 0 && (
+            <section className="event-detail__section">
+              <h2>Event programme</h2>
+
+              <div className="event-schedule">
+                {event.schedules.map(item => (
+                  <article
+                    className="event-schedule__item"
+                    key={item.id}
+                  >
+                    <div className="event-schedule__time">
+                      {formatTime(item.startAt)}
+                      <span> – </span>
+                      {formatTime(item.endAt)}
+                    </div>
+
+                    <div>
+                      <h3>{item.title}</h3>
+
+                      {item.description && (
+                        <p>{item.description}</p>
+                      )}
+
+                      {item.location && (
+                        <small>{item.location}</small>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {event.speakers?.length > 0 && (
+            <section className="event-detail__section">
+              <h2>Speakers</h2>
+
+              <div className="event-speakers">
+                {event.speakers.map(speaker => (
+                  <article
+                    className="event-speaker"
+                    key={speaker.id}
+                  >
+                    {speaker.photoUrl && (
+                      <img
+                        src={speaker.photoUrl}
+                        alt={speaker.name}
+                      />
+                    )}
+
+                    <div>
+                      <h3>{speaker.name}</h3>
+                      {speaker.title && <p>{speaker.title}</p>}
+                      {speaker.biography && (
+                        <p>{speaker.biography}</p>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="event-detail__section">
+            <h2>Who should attend?</h2>
+            <p>
+              Students, professionals, educators, members of the
+              public and interested participants, subject to the
+              event's eligibility requirements.
+            </p>
+          </section>
+
+          {event.mode !== "PHYSICAL" && event.meetingUrl && (
+            <section className="event-detail__section">
+              <h2>Online attendance</h2>
+              <p>
+                Online meeting details will be provided to
+                registered participants.
+              </p>
+            </section>
+          )}
+        </div>
+
+        <aside className="event-detail__sidebar">
+          <div className="event-detail__booking">
+            <h2>Event information</h2>
+
+            <div className="event-info">
+              <CalendarDays />
+              <div>
+                <strong>Date</strong>
+                <span>{formatDate(event.startAt)}</span>
+              </div>
+            </div>
+
+            <div className="event-info">
+              <Clock />
+              <div>
+                <strong>Time</strong>
+                <span>
+                  {formatTime(event.startAt)} – {formatTime(event.endAt)}
+                </span>
+              </div>
+            </div>
+
+            <div className="event-info">
+              <MapPin />
+              <div>
+                <strong>Venue</strong>
+                <span>{event.venue || "Venue to be announced"}</span>
+              </div>
+            </div>
+
+            <div className="event-info">
+              <Globe />
+              <div>
+                <strong>Event mode</strong>
+                <span>{event.mode}</span>
+              </div>
+            </div>
+
+            <div className="event-info">
+              <Users />
+              <div>
+                <strong>Capacity</strong>
+                <span>
+                  {event.capacity
+                    ? `${event.capacity} participants`
+                    : "No published limit"}
+                </span>
+              </div>
+            </div>
+
+            <div className="event-detail__fee">
+              {event.fee === 0
+                ? "FREE EVENT"
+                : `${event.currency} ${event.fee}`}
+            </div>
+
+            {event.registrationDeadline && (
+              <div className="event-info">
+                <Clock />
+                <div>
+                  <strong>Registration deadline</strong>
+                  <span>
+                    {formatDate(event.registrationDeadline)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {soldOut && (
+              <p className="event-status-message">
+                <CheckCircle2 />
+                Event capacity reached.
+              </p>
+            )}
+
+            {registrationClosed && (
+              <p className="event-status-message">
+                Registration has closed.
+              </p>
+            )}
+
+            <Link
+              className={`events-button ${
+                registrationDisabled ? "disabled" : ""
+              }`}
+              aria-disabled={registrationDisabled}
+              to={
+                registrationDisabled
+                  ? "#registration-closed"
+                  : `/events/register/${event.id}`
+              }
+            >
+              {registrationDisabled
+                ? "Registration unavailable"
+                : "Register Now"}
+            </Link>
+
+            {event.publicEmail && (
+              <a
+                className="event-detail__contact"
+                href={`mailto:${event.publicEmail}`}
+              >
+                <Mail size={16} />
+                Contact organiser
+              </a>
+            )}
+          </div>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+```
+
+## **6. Event registration form**
+
+**Public registration — no portal login required**
+
+**File:** `apps/web/src/modules/website/events/EventRegistrationPage.tsx`
+
+The registration form captures participant details, participant type, preferred attendance mode, special requirements and consent.
+
+```
+
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { registerForEvent, getPublicEvent } from "./event-api";
+import type { PublicEvent } from "./event-types";
+import "./events.css";
+
+export default function EventRegistrationPage() {
+  const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
+
+  const [event, setEvent] = useState<PublicEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    organisation: "",
+    participantType: "",
+    attendanceMode: "",
+    specialRequests: "",
+    consent: false,
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        if (!eventId) return;
+
+        const response = await fetch(
+          `/api/public/events/id/${encodeURIComponent(eventId)}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Event not found.");
+        }
+
+        const data = await response.json();
+
+        if (active) setEvent(data);
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error ? err.message : "Unable to load event."
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [eventId]);
+
+  function update(
+    field: keyof typeof form,
+    value: string | boolean
+  ) {
+    setForm(current => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function submit(eventForm: React.FormEvent) {
+    eventForm.preventDefault();
+
+    if (!eventId) return;
+
+    if (!form.consent) {
+      setError("Consent is required to register.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const registration = await registerForEvent(eventId, form);
+
+      navigate(
+        `/events/my-registration/${registration.id}`,
+        { state: { registration } }
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Registration failed."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return <main role="status">Loading registration form...</main>;
+  }
+
+  if (!event || error && !event) {
+    return (
+      <main className="event-registration">
+        <h1>Registration unavailable</h1>
+        <p>{error || "The event could not be found."}</p>
+        <Link to="/events">View events</Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="event-registration">
+      <div className="event-registration__container">
+        <div className="event-registration__intro">
+          <Link to={`/events/${event.slug}`}>
+            ← Back to event
+          </Link>
+
+          <h1>Event registration</h1>
+          <p>Register to attend this HI-TECH College event.</p>
+        </div>
+
+        <div className="event-registration__event">
+          {event.bannerUrl && (
+            <img src={event.bannerUrl} alt="" />
+          )}
+
+          <div>
+            <span>{event.category}</span>
+            <h2>{event.title}</h2>
+
+            <p>
+              {new Date(event.startAt).toLocaleDateString("en-KE", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+
+            <p>{event.venue || event.mode}</p>
+          </div>
+        </div>
+
+        <form
+          className="event-registration__form"
+          onSubmit={submit}
+        >
+          <h2>Participant information</h2>
+
+          <div className="form-grid">
+            <label>
+              Full name *
+              <input
+                required
+                autoComplete="name"
+                value={form.fullName}
+                onChange={e => update("fullName", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Email address *
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={e => update("email", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Phone number *
+              <input
+                required
+                type="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={e => update("phone", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Organisation / Institution
+              <input
+                value={form.organisation}
+                onChange={e => update("organisation", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Participant category *
+              <select
+                required
+                value={form.participantType}
+                onChange={e => update("participantType", e.target.value)}
+              >
+                <option value="">Select category</option>
+                <option value="STUDENT">Student</option>
+                <option value="STAFF">College staff</option>
+                <option value="PROFESSIONAL">Professional</option>
+                <option value="EDUCATOR">Educator</option>
+                <option value="PUBLIC">Member of public</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+
+            <label>
+              Attendance mode
+              <select
+                value={form.attendanceMode}
+                onChange={e => update("attendanceMode", e.target.value)}
+              >
+                <option value="">Choose mode</option>
+                <option value="PHYSICAL">Physical</option>
+                <option value="ONLINE">Online</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Special requirements (optional)
+            <textarea
+              rows={4}
+              value={form.specialRequests}
+              onChange={e =>
+                update("specialRequests", e.target.value)
+              }
+              placeholder="Accessibility requirements or other requests..."
+            />
+          </label>
+
+          <label className="event-consent">
+            <input
+              type="checkbox"
+              checked={form.consent}
+              onChange={e => update("consent", e.target.checked)}
+              required
+            />
+            <span>
+              I consent to the use of my registration information
+              for event coordination and communication.
+            </span>
+          </label>
+
+          {error && (
+            <p className="events-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="events-button"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Submitting registration..."
+              : "Submit registration"}
+          </button>
+
+          <p className="event-registration__privacy">
+            Your information will be used for event coordination
+            according to the college privacy policy.
+          </p>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+```
+
+Note: The registration page currently uses a proposed event-by-ID lookup endpoint. It needs to be implemented on the API or replaced with the existing route contract. The server must enforce eligibility, duplicate checks, deadlines, capacity, waitlist and approval rules.
+
+## **7. Registration confirmation page**
+
+**File:** `apps/web/src/modules/website/events/EventRegistrationConfirmationPage.tsx`
+
+After registering, the visitor should see their registration number, event details and registration status.
+
+```
+
+import { Link, useLocation, useParams } from "react-router-dom";
+import { CheckCircle2, CalendarDays, MapPin } from "lucide-react";
+import type { EventRegistrationResponse } from "./event-types";
+import "./events.css";
+
+type ConfirmationState = {
+  registration?: EventRegistrationResponse;
+};
+
+export default function EventRegistrationConfirmationPage() {
+  const { registrationId } = useParams();
+  const location = useLocation();
+
+  const state = location.state as ConfirmationState | null;
+  const registration = state?.registration;
+
+  return (
+    <main className="event-confirmation">
+      <div className="event-confirmation__card">
+        <div className="event-confirmation__icon">
+          <CheckCircle2 size={52} />
+        </div>
+
+        <h1>Registration received</h1>
+
+        <p>
+          Your event registration has been received.
+          Keep your registration number for reference.
+        </p>
+
+        {registration ? (
+          <div className="event-confirmation__details">
+            <div>
+              <span>Participant</span>
+              <strong>{registration.fullName}</strong>
+            </div>
+
+            <div>
+              <span>Registration number</span>
+              <strong className="registration-number">
+                {registration.registrationNo}
+              </strong>
+            </div>
+
+            <div>
+              <span>Status</span>
+              <strong>{registration.status}</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="event-confirmation__notice">
+            <p>
+              Confirmation details may be retrieved using your
+              registration reference.
+            </p>
+            <p>
+              Reference: {registrationId}
+            </p>
+          </div>
+        )}
+
+        <p className="event-confirmation__message">
+          {registration?.status === "CONFIRMED"
+            ? "You are confirmed for this event."
+            : "Your registration may require approval. You will be notified when your status changes."}
+        </p>
+
+        <Link to="/events" className="events-button">
+          Explore more events
+        </Link>
+      </div>
+    </main>
+  );
+}
+
+```
+
+The confirmation route should not depend exclusively on browser navigation state. A production implementation must retrieve confirmation details through a secure endpoint using a registration-specific token, and must not expose participants' data by predictable IDs.
+
+## **8. Events CSS**
+
+**File:** `apps/web/src/modules/website/events/events.css`
+
+```
+
+/* HI-TECH College public events */
+
+.public-events,
+.event-detail,
+.event-registration,
+.event-confirmation {
+  color: #142b45;
+  font-family: Inter, sans-serif;
+}
+
+.events-hero {
+  position: relative;
+  padding: 90px 24px 72px;
+  background:
+    linear-gradient(120deg, #102d50, #1769aa);
+  color: #fff;
+  overflow: hidden;
+}
+
+.events-hero__content {
+  max-width: 1180px;
+  margin: auto;
+}
+
+.events-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.events-hero h1 {
+  font-size: clamp(38px, 6vw, 72px);
+  line-height: 1.1;
+  margin: 22px 0;
+  font-weight: 800;
+}
+
+.events-hero h1 span {
+  color: #f4c95d;
+}
+
+.events-hero p {
+  max-width: 650px;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.events-search {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 30px;
+  background: #fff;
+  color: #142b45;
+  border-radius: 12px;
+  padding: 15px 20px;
+  max-width: 600px;
+}
+
+.events-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  font: inherit;
+}
+
+.events-main {
+  max-width: 1240px;
+  margin: auto;
+  padding: 40px 24px;
+}
+
+.events-filter {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 30px;
+}
+
+.events-filter label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.events-filter select {
+  min-width: 200px;
+  padding: 12px;
+  border: 1px solid #d6deea;
+  border-radius: 10px;
+  background: #fff;
+  color: #142b45;
+}
+
+.events-section {
+  margin: 50px 0;
+}
+
+.events-section h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+}
+
+.event-card {
+  overflow: hidden;
+  border: 1px solid #e4eaf1;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 25px rgba(16, 45, 80, .05);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 35px rgba(16, 45, 80, .1);
+}
+
+.event-card__image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: #e9eff7;
+}
+
+.event-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-card__placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #1769aa;
+}
+
+.event-card__category {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #fff;
+  color: #102d50;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.event-card__body {
+  padding: 22px;
+}
+
+.event-card__date,
+.event-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #5d7187;
+  margin-bottom: 12px;
+}
+
+.event-card__body h3 {
+  font-size: 21px;
+  line-height: 1.4;
+  margin: 10px 0;
+}
+
+.event-card__body h3 a {
+  color: #102d50;
+  text-decoration: none;
+}
+
+.event-card__description {
+  line-height: 1.7;
+  color: #60748a;
+  overflow-wrap: anywhere;
+}
+
+.event-card__bottom {
+  border-top: 1px solid #e8edf3;
+  padding-top: 18px;
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-card__bottom > span {
+  font-weight: 800;
+  color: #1769aa;
+}
+
+.event-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #1769aa;
+}
+
+.featured-event {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #102d50;
+  color: white;
+  margin-bottom: 50px;
+}
+
+.featured-event__image {
+  min-height: 400px;
+  background: #284b72;
+}
+
+.featured-event__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.featured-event__content {
+  padding: 38px;
+}
+
+.featured-event__content > span {
+  color: #f4c95d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.featured-event__content h2 {
+  font-size: 30px;
+  line-height: 1.4;
+}
+
+.featured-event__content p {
+  line-height: 1.7;
+}
+
+.featured-event__content p svg {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.events-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: #1769aa;
+  color: #fff;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: 10px;
+  padding: 15px 22px;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.events-button:hover {
+  background: #0e5289;
+}
+
+.events-button:focus-visible {
+  outline: 3px solid #f4c95d;
+  outline-offset: 3px;
+}
+
+.events-button.disabled {
+  pointer-events: none;
+  background: #8293a7;
+}
+
+.events-empty {
+  padding: 70px 20px;
+  text-align: center;
+  border: 1px dashed #ccd8e6;
+  border-radius: 18px;
+}
+
+.events-error {
+  color: #a52121;
+  background: #fff0f0;
+  border: 1px solid #f0caca;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.event-detail__breadcrumb {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.event-detail__breadcrumb a {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #1769aa;
+  text-decoration: none;
+}
+
+.event-detail__hero {
+  position: relative;
+  min-height: 450px;
+  background: #102d50;
+  color: #fff;
+  overflow: hidden;
+}
+
+.event-detail__banner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .4;
+}
+
+.event-detail__hero-overlay {
+  position: relative;
+  max-width: 1200px;
+  margin: auto;
+  padding: 100px 25px;
+}
+
+.event-detail__hero-overlay h1 {
+  max-width: 850px;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 1.2;
+}
+
+.event-detail__hero-overlay p {
+  max-width: 700px;
+  line-height: 1.8;
+}
+
+.event-detail__category {
+  background: #f4c95d;
+  color: #102d50;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.event-detail__layout {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 40px;
+}
+
+.event-detail__section {
+  margin-bottom: 45px;
+}
+
+.event-detail__section h2 {
+  font-size: 27px;
+}
+
+.event-detail__section p {
+  line-height: 1.8;
+}
+
+.event-detail__booking {
+  padding: 25px;
+  border: 1px solid #e1e9f2;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(16, 45, 80, .06);
+  position: sticky;
+  top: 100px;
+}
+
+.event-detail__booking h2 {
+  margin-top: 0;
+}
+
+.event-info {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.event-info svg {
+  flex-shrink: 0;
+  color: #1769aa;
+}
+
+.event-info div {
+  display: grid;
+  gap: 5px;
+}
+
+.event-info span {
+  color: #62758a;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.event-detail__fee {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1769aa;
+  padding: 20px 0;
+}
+
+.event-detail__booking .events-button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.event-detail__contact {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: #1769aa;
+  text-decoration: none;
+}
+
+.event-schedule__item {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 20px;
+  border-bottom: 1px solid #e5edf4;
+  padding: 20px 0;
+}
+
+.event-schedule__time {
+  color: #1769aa;
+  font-weight: 700;
+}
+
+.event-speakers {
+  display: grid;
+  gap: 20px;
+}
+
+.event-speaker {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.event-speaker img {
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.event-speaker h3 {
+  margin-top: 0;
+}
+
+.event-registration__container {
+  max-width: 950px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+.event-registration__intro {
+  margin-bottom: 30px;
+}
+
+.event-registration__intro h1 {
+  font-size: 36px;
+}
+
+.event-registration__intro a {
+  color: #1769aa;
+  text-decoration: none;
+}
+
+.event-registration__event {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  border: 1px solid #e1e9f2;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.event-registration__event img {
+  width: 180px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.event-registration__event h2 {
+  margin: 8px 0;
+}
+
+.event-registration__form {
+  border: 1px solid #e1e9f2;
+  border-radius: 18px;
+  padding: 30px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.event-registration__form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.event-registration__form input,
+.event-registration__form select,
+.event-registration__form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid #ccd8e6;
+  border-radius: 10px;
+  background: #fff;
+  color: #142b45;
+  font: inherit;
+}
+
+.event-registration__form input:focus-visible,
+.event-registration__form select:focus-visible,
+.event-registration__form textarea:focus-visible {
+  outline: 3px solid #1769aa;
+  outline-offset: 2px;
+}
+
+.event-consent {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 12px !important;
+}
+
+.event-consent input {
+  width: 20px !important;
+  height: 20px;
+}
+
+.event-registration__privacy {
+  color: #64768b;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-top: 20px;
+}
+
+.event-confirmation {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 30px 20px;
+}
+
+.event-confirmation__card {
+  width: 100%;
+  max-width: 650px;
+  padding: 40px;
+  border: 1px solid #e1e9f2;
+  border-radius: 22px;
+  text-align: center;
+}
+
+.event-confirmation__icon {
+  color: #18824a;
+}
+
+.event-confirmation__details {
+  margin: 30px 0;
+  border: 1px solid #e1e9f2;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: left;
+}
+
+.event-confirmation__details > div {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.event-confirmation__details span {
+  color: #64768b;
+  font-size: 13px;
+}
+
+.registration-number {
+  color: #1769aa;
+  font-size: 20px;
+}
+
+.event-confirmation__message {
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .featured-event {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-event__image {
+    min-height: 250px;
+  }
+
+  .event-detail__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .event-detail__booking {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .events-hero {
+    padding: 60px 20px;
+  }
+
+  .events-main {
+    padding: 30px 15px;
+  }
+
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-card__image {
+    height: 200px;
+  }
+
+  .featured-event__content {
+    padding: 25px;
+  }
+
+  .event-detail__hero-overlay {
+    padding: 70px 20px;
+  }
+
+  .event-detail__layout {
+    padding: 0 15px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-registration__form {
+    padding: 20px;
+  }
+
+  .event-registration__event {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .event-registration__event img {
+    width: 100%;
+  }
+
+  .event-schedule__item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .event-speaker {
+    flex-direction: column;
+  }
+
+  .event-confirmation__card {
+    padding: 25px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-card {
+    transition: none;
+  }
+
+  .event-card:hover {
+    transform: none;
+  }
+}
+
+```
+
+## **9. Website routing**
+
+**File:** `apps/web/src/routes/website-routes.tsx`
+
+Integrate these routes into your existing public website router, preserving the existing layout and navigation.
+
+```
+
+import { Routes, Route } from "react-router-dom";
+
+import EventsPage from "../modules/website/events/EventsPage";
+import EventDetailPage from "../modules/website/events/EventDetailPage";
+import EventRegistrationPage from "../modules/website/events/EventRegistrationPage";
+import EventRegistrationConfirmationPage from "../modules/website/events/EventRegistrationConfirmationPage";
+
+export function WebsiteEventRoutes() {
+  return (
+    <Routes>
+      <Route path="/events" element={<EventsPage />} />
+
+      <Route
+        path="/events/:slug"
+        element={<EventDetailPage />}
+      />
+
+      <Route
+        path="/events/register/:eventId"
+        element={<EventRegistrationPage />}
+      />
+
+      <Route
+        path="/events/my-registration/:registrationId"
+        element={<EventRegistrationConfirmationPage />}
+      />
+    </Routes>
+  );
+}
+
+```
+
+If your project uses a single App.tsx router, merge these paths into its existing Routes instead of creating another nested router.
+
+## **10. Add Events to the website menu**
+
+Update your public website navigation:
+
+```
+
+{
+  label: "Events",
+  path: "/events",
+  icon: "calendar-days"
+}
+
+```
+
+## **11. Event registration workflow**
+
+\#chatgpt-mermaid-\_r_2n5\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_2n5\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_2n5\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_2n5\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_2n5\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_2n5\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_2n5\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_2n5\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_2n5\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_2n5\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2n5\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2n5\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_2n5\_ p{margin:0;}#chatgpt-mermaid-\_r_2n5\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_2n5\_ .label text,#chatgpt-mermaid-\_r_2n5\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .node rect,#chatgpt-mermaid-\_r_2n5\_ .node circle,#chatgpt-mermaid-\_r_2n5\_ .node ellipse,#chatgpt-mermaid-\_r_2n5\_ .node polygon,#chatgpt-mermaid-\_r_2n5\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .rough-node .label text,#chatgpt-mermaid-\_r_2n5\_ .node .label text,#chatgpt-mermaid-\_r_2n5\_ .image-shape .label,#chatgpt-mermaid-\_r_2n5\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_2n5\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .rough-node .label,#chatgpt-mermaid-\_r_2n5\_ .node .label,#chatgpt-mermaid-\_r_2n5\_ .image-shape .label,#chatgpt-mermaid-\_r_2n5\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_2n5\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_2n5\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2n5\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2n5\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_2n5\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_2n5\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2n5\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2n5\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_2n5\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_2n5\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_2n5\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_2n5\_ .icon-shape,#chatgpt-mermaid-\_r_2n5\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_2n5\_ .icon-shape p,#chatgpt-mermaid-\_r_2n5\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_2n5\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_2n5\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_2n5\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_2n5\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_2n5\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_2n5\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_2n5\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_2n5\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_2n5\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2n5\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_2n5\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_2n5\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_2n5\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_2n5\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_2n5\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_2n5\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .node rect,#chatgpt-mermaid-\_r_2n5\_ .node circle,#chatgpt-mermaid-\_r_2n5\_ .node ellipse,#chatgpt-mermaid-\_r_2n5\_ .node polygon,#chatgpt-mermaid-\_r_2n5\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_2n5\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_2n5\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_2n5\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_2n5\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_2n5\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Visitor opens EventsSelects an eventReads full event detailsClicks Register NowCompletes registration formCapacity available?Create registrationWaitlist enabled?Join waitlistRegistration unavailableApproval required?Pending approvalConfirmedOrganiser approvesGenerate ticket and QRParticipant check-inWaitlist managementYesNoYesNoYesNo
+
+## **12. Backend requirements still needed**
+
+The frontend requires these server-side services:
+
+| API                                            | Required function                |
+| ---------------------------------------------- | -------------------------------- |
+| `GET /api/public/events`                       | Published event list             |
+| `GET /api/public/events/:slug`                 | Detailed event                   |
+| `GET /api/public/events/id/:eventId`           | Registration page lookup         |
+| `POST /api/public/events/:eventId/register`    | Registration                     |
+| `GET /api/public/events/:eventId/availability` | Capacity and registration status |
+| `GET /api/public/events/registration/:token`   | Secure confirmation lookup       |
+
+The server must also handle:
+
+- Duplicate registration prevention.
+- Unique registration numbers.
+- Atomic capacity management.
+- Waitlist.
+- Registration approvals.
+- Email notifications.
+- SMS notifications, if configured.
+- Ticket generation.
+- QR token generation.
+- Cancellation.
+- Event audit trail.
+- Data retention and consent.
+
+## **13. Website event checklist**
+
+- Events public page design.
+- Event listing cards.
+- Featured event layout.
+- Event search UI.
+- Category filtering UI.
+- Detailed event page.
+- Programme display.
+- Speaker display.
+- Registration form.
+- Confirmation screen.
+- Responsive CSS.
+- Website routing proposal.
+- API integration.
+- Event CMS.
+- Event approval.
+- Email and SMS.
+- QR tickets.
+- Check-in dashboard.
+- Backend tests.
+
+The code above is the proposed public Events frontend. It has not been integrated or tested against the existing HI-TECH College repository. The next slice is the Staff Event Management CMS: create event, edit event, upload banners, speakers, schedule, venue, capacity, fees, publish and approve.

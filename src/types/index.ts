@@ -49,6 +49,7 @@ export type PortalRole =
   | 'chatbot-admin'
   | 'ai-governance'
   | 'student'
+  | 'staff'
   | 'generator'
   | 'lecturer'
   | 'registrar'

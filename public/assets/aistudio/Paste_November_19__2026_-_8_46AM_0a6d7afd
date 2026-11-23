@@ -1,0 +1,2031 @@
+# **HI-TECH College Portal — Slice 02**
+
+## **Authentication integration, protected routes & Role-Based Access Control (RBAC)**
+
+This slice connects the Staff and Student portals to a secure authentication foundation. It replaces the demonstration-only identity assumption with a reusable auth provider, protected routes, role checks, permission checks, session restoration and redirects.
+
+Goal: No student or staff member can access a portal or function that their authenticated account is not authorized to use.
+
+### **1. Architecture**
+
+\#chatgpt-mermaid-\_r_10i\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_10i\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_10i\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_10i\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_10i\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_10i\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_10i\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_10i\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_10i\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_10i\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_10i\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_10i\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_10i\_ p{margin:0;}#chatgpt-mermaid-\_r_10i\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_10i\_ .label text,#chatgpt-mermaid-\_r_10i\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .node rect,#chatgpt-mermaid-\_r_10i\_ .node circle,#chatgpt-mermaid-\_r_10i\_ .node ellipse,#chatgpt-mermaid-\_r_10i\_ .node polygon,#chatgpt-mermaid-\_r_10i\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .rough-node .label text,#chatgpt-mermaid-\_r_10i\_ .node .label text,#chatgpt-mermaid-\_r_10i\_ .image-shape .label,#chatgpt-mermaid-\_r_10i\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_10i\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .rough-node .label,#chatgpt-mermaid-\_r_10i\_ .node .label,#chatgpt-mermaid-\_r_10i\_ .image-shape .label,#chatgpt-mermaid-\_r_10i\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_10i\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_10i\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_10i\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_10i\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_10i\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_10i\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_10i\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_10i\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_10i\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_10i\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_10i\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_10i\_ .icon-shape,#chatgpt-mermaid-\_r_10i\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_10i\_ .icon-shape p,#chatgpt-mermaid-\_r_10i\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_10i\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_10i\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_10i\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_10i\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_10i\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_10i\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_10i\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_10i\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_10i\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_10i\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_10i\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_10i\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_10i\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_10i\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_10i\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_10i\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .node rect,#chatgpt-mermaid-\_r_10i\_ .node circle,#chatgpt-mermaid-\_r_10i\_ .node ellipse,#chatgpt-mermaid-\_r_10i\_ .node polygon,#chatgpt-mermaid-\_r_10i\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_10i\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_10i\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_10i\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_10i\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_10i\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Portal LoginAuth APIAuthenticated?Login ErrorAuth ProviderAccount statusChange PasswordComplete ProfileProtected RoutePermission checkStaff PortalStudent PortalAccess DeniedNoYesPassword change requiredProfile incompleteActiveAllowedAllowedDenied
+
+### **2. Files for this slice**
+
+```
+
+apps/web/src/
+├── auth/
+│   ├── AuthProvider.tsx
+│   ├── auth-types.ts
+│   ├── auth-api.ts
+│   ├── ProtectedRoute.tsx
+│   ├── PermissionGate.tsx
+│   ├── RoleGate.tsx
+│   ├── useAuth.ts
+│   └── auth-utils.ts
+├── components/
+│   └── portal/
+│       ├── AccessDenied.tsx
+│       ├── SessionLoading.tsx
+│       └── SessionExpired.tsx
+├── modules/
+│   └── auth/
+│       ├── ChangePasswordPage.tsx
+│       └── CompleteProfilePage.tsx
+└── App.tsx
+
+```
+
+## **3. Auth types**
+
+### `src/auth/auth-types.ts`
+
+```
+
+import type { PortalRole, PortalUser } from "../types/portal";
+
+export type AccountStatus =
+  | "ACTIVE"
+  | "PENDING"
+  | "SUSPENDED"
+  | "LOCKED"
+  | "DISABLED";
+
+export interface AuthUser extends PortalUser {
+  status: AccountStatus;
+  permissions: string[];
+  mustChangePassword: boolean;
+  requiresProfileCompletion: boolean;
+  dashboardPath?: string;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+  expiresAt?: string;
+}
+
+export interface LoginRequest {
+  identifier: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  mustChangePassword?: boolean;
+  requiresProfileCompletion?: boolean;
+  dashboardPath?: string;
+}
+
+export interface AuthContextValue {
+  user: AuthUser | null;
+  loading: boolean;
+  authenticated: boolean;
+  error: string | null;
+
+  login: (payload: LoginRequest) => Promise<AuthUser>;
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
+  hasRole: (roles: PortalRole[]) => boolean;
+}
+
+export interface ApiErrorResponse {
+  message?: string;
+  code?: string;
+  errors?: Record<string, string[]>;
+}
+
+```
+
+## **4. Auth API service**
+
+### `src/auth/auth-api.ts`
+
+This service uses HttpOnly session cookies rather than storing access tokens in `localStorage`.
+
+The API contract assumed in this slice:
+
+| Method | Endpoint                     | Purpose                   |
+| ------ | ---------------------------- | ------------------------- |
+| POST   | `/api/auth/login`            | Authenticate              |
+| GET    | `/api/auth/me`               | Restore session           |
+| POST   | `/api/auth/logout`           | Logout                    |
+| POST   | `/api/auth/password/change`  | Change password           |
+| POST   | `/api/auth/profile/complete` | Complete required profile |
+
+```
+
+import type {
+  AuthResponse,
+  LoginRequest,
+} from "./auth-types";
+
+const API_BASE = "/api";
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+
+    throw new Error(
+      body?.message ??
+      `Request failed (${response.status})`,
+    );
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export const authApi = {
+  login(payload: LoginRequest) {
+    return request<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  me() {
+    return request<AuthResponse>("/auth/me");
+  },
+
+  logout() {
+    return request<void>("/auth/logout", {
+      method: "POST",
+    });
+  },
+
+  changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }) {
+    return request<void>("/auth/password/change", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  completeProfile(payload: Record<string, unknown>) {
+    return request<void>("/auth/profile/complete", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
+```
+
+API paths and response formats must be reconciled with the existing Express routes before integration.
+
+## **5. Authentication utilities**
+
+### `src/auth/auth-utils.ts`
+
+```
+
+import type { AuthUser } from "./auth-types";
+
+export function getUserDashboardPath(user: AuthUser): string {
+  if (user.mustChangePassword) {
+    return "/portal/auth/change-password";
+  }
+
+  if (user.requiresProfileCompletion) {
+    return "/portal/auth/complete-profile";
+  }
+
+  if (user.dashboardPath) {
+    return user.dashboardPath;
+  }
+
+  if (user.role === "STUDENT") {
+    return "/portal/student/dashboard";
+  }
+
+  return "/portal/staff/dashboard";
+}
+
+export function isAccountActive(user: AuthUser): boolean {
+  return user.status === "ACTIVE";
+}
+
+export function hasUserPermission(
+  user: AuthUser | null,
+  permission: string,
+): boolean {
+  if (!user) return false;
+
+  return user.permissions.includes(permission);
+}
+
+export function hasAnyUserPermission(
+  user: AuthUser | null,
+  permissions: string[],
+): boolean {
+  if (!user) return false;
+
+  return permissions.some((permission) =>
+    user.permissions.includes(permission),
+  );
+}
+
+```
+
+## **6. Auth Provider**
+
+### `src/auth/AuthProvider.tsx`
+
+```
+
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+
+import type {
+  AuthContextValue,
+  AuthUser,
+  LoginRequest,
+} from "./auth-types";
+
+import { authApi } from "./auth-api";
+
+export const AuthContext = createContext<AuthContextValue | null>(null);
+
+interface Props {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: Props) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshSession = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await authApi.me();
+      setUser(response.user);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreSession() {
+      try {
+        const response = await authApi.me();
+
+        if (!cancelled) {
+          setUser(response.user);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback(
+    async (payload: LoginRequest) => {
+      setError(null);
+      setLoading(true);
+
+      try {
+        const response = await authApi.login(payload);
+        setUser(response.user);
+
+        return response.user;
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Unable to sign in.";
+
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const logout = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      setError(null);
+      setLoading(false);
+    }
+  }, []);
+
+  const hasPermission = useCallback(
+    (permission: string) => {
+      return Boolean(user?.permissions.includes(permission));
+    },
+    [user],
+  );
+
+  const hasAnyPermission = useCallback(
+    (permissions: string[]) => {
+      if (!user) return false;
+
+      return permissions.some((permission) =>
+        user.permissions.includes(permission),
+      );
+    },
+    [user],
+  );
+
+  const hasRole = useCallback(
+    (roles: AuthUser["role"][]) => {
+      if (!user) return false;
+
+      return roles.includes(user.role);
+    },
+    [user],
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      loading,
+      authenticated: Boolean(user),
+      error,
+      login,
+      logout,
+      refreshSession,
+      hasPermission,
+      hasAnyPermission,
+      hasRole,
+    }),
+    [
+      user,
+      loading,
+      error,
+      login,
+      logout,
+      refreshSession,
+      hasPermission,
+      hasAnyPermission,
+      hasRole,
+    ],
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+```
+
+## **7. Auth hook**
+
+### `src/auth/useAuth.ts`
+
+```
+
+import { useContext } from "react";
+import { AuthContext } from "./AuthProvider";
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used inside AuthProvider",
+    );
+  }
+
+  return context;
+}
+
+```
+
+## **8. Session loading screen**
+
+### `src/components/portal/SessionLoading.tsx`
+
+```
+
+export function SessionLoading() {
+  return (
+    <div
+      className="session-loading"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="session-loading-card">
+        <div className="loading-logo">H</div>
+
+        <div className="loading-spinner" />
+
+        <h2>HI-TECH College</h2>
+
+        <p>Securely loading your portal...</p>
+      </div>
+    </div>
+  );
+}
+
+```
+
+## **9. Access denied page**
+
+### `src/components/portal/AccessDenied.tsx`
+
+```
+
+import { Link } from "react-router-dom";
+
+export function AccessDenied() {
+  return (
+    <div className="access-denied-page">
+      <div className="access-denied-card">
+        <div className="access-denied-icon">403</div>
+
+        <h1>Access denied</h1>
+
+        <p>
+          You do not have permission to access this page.
+          If you believe this is an error, contact the
+          College Administrator.
+        </p>
+
+        <Link
+          to="/portal"
+          className="access-denied-link"
+        >
+          Return to portal
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+```
+
+## **10. Session expired page**
+
+### `src/components/portal/SessionExpired.tsx`
+
+```
+
+import { Link } from "react-router-dom";
+
+export function SessionExpired() {
+  return (
+    <div className="access-denied-page">
+      <div className="access-denied-card">
+        <div className="access-denied-icon">!</div>
+
+        <h1>Session expired</h1>
+
+        <p>
+          Your session has expired or is no longer valid.
+          Sign in again to continue.
+        </p>
+
+        <Link
+          to="/portal/login"
+          className="access-denied-link"
+        >
+          Sign in
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+```
+
+## **11. Protected route component**
+
+### `src/auth/ProtectedRoute.tsx`
+
+This component protects pages based on:
+
+- Authentication.
+- Account status.
+- Mandatory password changes.
+- Profile completion.
+- Allowed roles.
+- Required permissions.
+
+```
+
+import {
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
+
+import { useAuth } from "./useAuth";
+import { getUserDashboardPath } from "./auth-utils";
+import { SessionLoading } from "../components/portal/SessionLoading";
+import { AccessDenied } from "../components/portal/AccessDenied";
+
+interface Props {
+  roles?: string[];
+  permissions?: string[];
+  requireAllPermissions?: boolean;
+  allowIncompleteProfile?: boolean;
+}
+
+export function ProtectedRoute({
+  roles,
+  permissions,
+  requireAllPermissions = true,
+  allowIncompleteProfile = false,
+}: Props) {
+  const auth = useAuth();
+  const location = useLocation();
+
+  if (auth.loading) {
+    return <SessionLoading />;
+  }
+
+  if (!auth.user) {
+    return (
+      <Navigate
+        to="/portal/login"
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  if (auth.user.status !== "ACTIVE") {
+    return <AccessDenied />;
+  }
+
+  if (
+    auth.user.mustChangePassword &&
+    location.pathname !== "/portal/auth/change-password"
+  ) {
+    return (
+      <Navigate
+        to="/portal/auth/change-password"
+        replace
+      />
+    );
+  }
+
+  if (
+    auth.user.requiresProfileCompletion &&
+    !allowIncompleteProfile &&
+    location.pathname !== "/portal/auth/complete-profile"
+  ) {
+    return (
+      <Navigate
+        to="/portal/auth/complete-profile"
+        replace
+      />
+    );
+  }
+
+  if (roles && roles.length > 0) {
+    if (!roles.includes(auth.user.role)) {
+      return <AccessDenied />;
+    }
+  }
+
+  if (permissions && permissions.length > 0) {
+    const userPermissions = auth.user.permissions;
+
+    const permitted = requireAllPermissions
+      ? permissions.every((p) => userPermissions.includes(p))
+      : permissions.some((p) => userPermissions.includes(p));
+
+    if (!permitted) {
+      return <AccessDenied />;
+    }
+  }
+
+  return <Outlet />;
+}
+
+```
+
+## **12. Permission gate component**
+
+### `src/auth/PermissionGate.tsx`
+
+This is for hiding or showing sections, buttons and links within an already protected page.
+
+```
+
+import type { ReactNode } from "react";
+import { useAuth } from "./useAuth";
+
+interface Props {
+  permission?: string;
+  permissions?: string[];
+  requireAll?: boolean;
+  fallback?: ReactNode;
+  children: ReactNode;
+}
+
+export function PermissionGate({
+  permission,
+  permissions = [],
+  requireAll = true,
+  fallback = null,
+  children,
+}: Props) {
+  const { user } = useAuth();
+
+  if (!user) return fallback;
+
+  const required = permission
+    ? [permission, ...permissions]
+    : permissions;
+
+  if (required.length === 0) {
+    return children;
+  }
+
+  const permitted = requireAll
+    ? required.every((p) => user.permissions.includes(p))
+    : required.some((p) => user.permissions.includes(p));
+
+  return permitted ? children : fallback;
+}
+
+```
+
+Example:
+
+```
+
+<PermissionGate permission="attendance.record">
+  <button type="button">
+    Record Attendance
+  </button>
+</PermissionGate>
+
+<PermissionGate permission="marks.enter">
+  <button type="button">
+    Enter Marks
+  </button>
+</PermissionGate>
+
+<PermissionGate permission="student.registration.approve">
+  <button type="button">
+    Approve Registration
+  </button>
+</PermissionGate>
+
+```
+
+## **13. Role gate component**
+
+### `src/auth/RoleGate.tsx`
+
+```
+
+import type { ReactNode } from "react";
+import { useAuth } from "./useAuth";
+import type { PortalRole } from "../types/portal";
+
+interface Props {
+  roles: PortalRole[];
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+export function RoleGate({
+  roles,
+  children,
+  fallback = null,
+}: Props) {
+  const { user } = useAuth();
+
+  if (!user) return fallback;
+
+  return roles.includes(user.role)
+    ? children
+    : fallback;
+}
+
+```
+
+Example:
+
+```
+
+<RoleGate roles={["LECTURER", "DEPARTMENT_HEAD"]}>
+  <button type="button">
+    Department Academic Report
+  </button>
+</RoleGate>
+
+```
+
+# **Part O — Authentication workflow screens**
+
+## **14. Change password page**
+
+### `src/modules/auth/ChangePasswordPage.tsx`
+
+This page is used when the account is required to change its password before accessing the normal portal.
+
+```
+
+import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { authApi } from "../../auth/auth-api";
+import { useAuth } from "../../auth/useAuth";
+import { getUserDashboardPath } from "../../auth/auth-utils";
+
+export default function ChangePasswordPage() {
+  const { user, refreshSession } = useAuth();
+  const navigate = useNavigate();
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (newPassword.length < 12) {
+      setError("Use at least 12 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await authApi.changePassword({
+        currentPassword,
+        newPassword,
+      });
+
+      await refreshSession();
+
+      if (user) {
+        navigate(getUserDashboardPath(user), {
+          replace: true,
+        });
+      } else {
+        navigate("/portal", { replace: true });
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to change password.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <div className="brand-logo">H</div>
+          <div>
+            <strong>HI-TECH COLLEGE</strong>
+            <span>SECURE PORTAL</span>
+          </div>
+        </div>
+
+        <h1>Change your password</h1>
+
+        <p>
+          For account security, set a new password
+          before continuing.
+        </p>
+
+        {error && (
+          <div
+            className="auth-error"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="current-password">
+            Current password
+          </label>
+
+          <input
+            id="current-password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={(e) =>
+              setCurrentPassword(e.target.value)
+            }
+          />
+
+          <label htmlFor="new-password">
+            New password
+          </label>
+
+          <input
+            id="new-password"
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            required
+            value={newPassword}
+            onChange={(e) =>
+              setNewPassword(e.target.value)
+            }
+          />
+
+          <label htmlFor="confirm-password">
+            Confirm new password
+          </label>
+
+          <input
+            id="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            required
+            value={confirmPassword}
+            onChange={(e) =>
+              setConfirmPassword(e.target.value)
+            }
+          />
+
+          <div className="password-guidance">
+            Use at least 12 characters. A long,
+            unique passphrase is recommended.
+          </div>
+
+          <button
+            className="auth-submit"
+            disabled={loading}
+            type="submit"
+          >
+            {loading
+              ? "Updating..."
+              : "Update password"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+```
+
+Password rules must be enforced by the API, not only by the frontend. This UI minimum is not the security boundary.
+
+## **15. Complete profile page**
+
+### `src/modules/auth/CompleteProfilePage.tsx`
+
+This screen is for invited users who have activated their account but still need to complete mandatory information.
+
+```
+
+import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { authApi } from "../../auth/auth-api";
+import { useAuth } from "../../auth/useAuth";
+
+export default function CompleteProfilePage() {
+  const { user, refreshSession } = useAuth();
+  const navigate = useNavigate();
+
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [emergencyContact, setEmergencyContact] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await authApi.completeProfile({
+        phone,
+        address,
+        emergencyContact,
+      });
+
+      await refreshSession();
+
+      navigate(
+        user?.role === "STUDENT"
+          ? "/portal/student/dashboard"
+          : "/portal/staff/dashboard",
+        { replace: true },
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Profile completion failed.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <div className="brand-logo">H</div>
+
+          <div>
+            <strong>HI-TECH COLLEGE</strong>
+            <span>PROFILE COMPLETION</span>
+          </div>
+        </div>
+
+        <h1>Complete your profile</h1>
+
+        <p>
+          Complete the required information to
+          continue to your portal.
+        </p>
+
+        {error && (
+          <div role="alert" className="auth-error">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={submit}>
+          <label htmlFor="phone">
+            Phone number
+          </label>
+
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+254..."
+          />
+
+          <label htmlFor="address">
+            Address
+          </label>
+
+          <input
+            id="address"
+            required
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+
+          <label htmlFor="emergency-contact">
+            Emergency contact
+          </label>
+
+          <input
+            id="emergency-contact"
+            required
+            value={emergencyContact}
+            onChange={(e) =>
+              setEmergencyContact(e.target.value)
+            }
+            placeholder="Name and contact number"
+          />
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Saving..."
+              : "Complete profile"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+```
+
+The required fields are illustrative. The actual required profile fields must be defined by student and staff registration rules and validated on the server. Sensitive fields should not be collected unnecessarily.
+
+## **16. Auth UI CSS**
+
+Append to `src/styles/portal.css`.
+
+```
+
+/* Authentication screens */
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(23, 105, 170, 0.12),
+      transparent 35%
+    ),
+    var(--portal-background);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: white;
+  border: 1px solid var(--portal-border);
+  border-radius: 18px;
+  box-shadow: var(--portal-shadow);
+  padding: 32px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.auth-brand > div:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-brand strong {
+  font-size: 14px;
+  color: var(--portal-navy);
+}
+
+.auth-brand span {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  color: var(--portal-muted);
+  margin-top: 4px;
+}
+
+.auth-card h1 {
+  color: var(--portal-navy);
+  font-size: 24px;
+  margin: 0 0 10px;
+}
+
+.auth-card > p {
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-card label {
+  color: var(--portal-text);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--portal-text);
+  background: white;
+}
+
+.auth-card input:focus {
+  border-color: var(--portal-blue);
+}
+
+.auth-submit {
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--portal-navy);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  transition: background 150ms ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: var(--portal-blue);
+}
+
+.auth-error {
+  padding: 12px;
+  border: 1px solid #e5a4a4;
+  border-radius: 10px;
+  color: #8f2222;
+  background: #fff5f5;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.password-guidance {
+  color: var(--portal-muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+.session-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--portal-background);
+  padding: 20px;
+}
+
+.session-loading-card {
+  text-align: center;
+  background: white;
+  border: 1px solid var(--portal-border);
+  border-radius: 18px;
+  padding: 36px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.loading-logo {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 20px;
+  display: grid;
+  place-items: center;
+  background: var(--portal-navy);
+  color: white;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border: 3px solid #e5eaf0;
+  border-top-color: var(--portal-blue);
+  border-radius: 50%;
+  animation: portal-spin 800ms linear infinite;
+}
+
+.session-loading-card h2 {
+  color: var(--portal-navy);
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.session-loading-card p {
+  color: var(--portal-muted);
+  font-size: 12px;
+}
+
+@keyframes portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.access-denied-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--portal-background);
+  padding: 20px;
+}
+
+.access-denied-card {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  background: white;
+  border: 1px solid var(--portal-border);
+  border-radius: 18px;
+  padding: 32px;
+}
+
+.access-denied-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fce8e8;
+  color: var(--portal-red);
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.access-denied-card h1 {
+  color: var(--portal-navy);
+  font-size: 22px;
+}
+
+.access-denied-card p {
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.access-denied-link {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 12px 18px;
+  background: var(--portal-navy);
+  color: white;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.access-denied-link:hover {
+  background: var(--portal-blue);
+}
+
+@media (max-width: 767px) {
+  .auth-card {
+    padding: 24px;
+  }
+}
+
+```
+
+# **Part Q — Integrate the protected routes**
+
+## **17. Portal redirect component**
+
+### `src/auth/PortalRedirect.tsx`
+
+Redirect authenticated users to their correct workspace.
+
+```
+
+import { Navigate } from "react-router-dom";
+import { useAuth } from "./useAuth";
+import { getUserDashboardPath } from "./auth-utils";
+import { SessionLoading } from "../components/portal/SessionLoading";
+
+export default function PortalRedirect() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <SessionLoading />;
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/portal/login"
+        replace
+      />
+    );
+  }
+
+  return (
+    <Navigate
+      to={getUserDashboardPath(user)}
+      replace
+    />
+  );
+}
+
+```
+
+## **18. Update&#x20;**`src/App.tsx`
+
+Replace the preview-only routing with the authenticated routing structure below. The login route remains a placeholder until the next UI slice integrates the existing login page.
+
+```
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import { AuthProvider } from "./auth/AuthProvider";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import PortalRedirect from "./auth/PortalRedirect";
+
+import { PortalShell } from "./components/portal/PortalShell";
+import StaffDashboard from "./modules/staff/StaffDashboard";
+import StudentDashboard from "./modules/student/StudentDashboard";
+import ChangePasswordPage from "./modules/auth/ChangePasswordPage";
+import CompleteProfilePage from "./modules/auth/CompleteProfilePage";
+
+import "./styles/portal.css";
+
+function LoginPlaceholder() {
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1>HI-TECH College Portal</h1>
+        <p>
+          The login screen will be connected in the next
+          implementation slice.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StaffLayout() {
+  return (
+    <PortalShell />
+  );
+}
+
+function StudentLayout() {
+  return (
+    <PortalShell />
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route
+            path="/portal/login"
+            element={<LoginPlaceholder />}
+          />
+
+          <Route
+            path="/portal"
+            element={<PortalRedirect />}
+          />
+
+          <Route
+            path="/portal/auth/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePasswordPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/portal/auth/complete-profile"
+            element={
+              <ProtectedRoute
+                allowIncompleteProfile
+              >
+                <CompleteProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={[
+                  "LECTURER",
+                  "PRINCIPAL",
+                  "REGISTRAR",
+                  "FINANCE_OFFICER",
+                  "HR_OFFICER",
+                  "LIBRARIAN",
+                  "ADMIN",
+                  "SUPER_ADMIN",
+                  "DEPARTMENT_HEAD",
+                  "EXAMINATION_OFFICER",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/portal/staff"
+              element={<StaffLayout />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<StaffDashboard />}
+              />
+            </Route>
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={["STUDENT"]}
+              />
+            }
+          >
+            <Route
+              path="/portal/student"
+              element={<StudentLayout />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<StudentDashboard />}
+              />
+            </Route>
+          </Route>
+
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to="/portal"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/portal"
+                replace
+              />
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+```
+
+### **Important: Outlet integration**
+
+The `ProtectedRoute` above is a route wrapper using `<Outlet />`. The `PortalShell` is also an `<Outlet />` layout.
+
+For the actual implementation, use this nesting:
+
+```
+
+<Route element={<ProtectedRoute roles={["STUDENT"]} />}>
+  <Route
+    path="/portal/student"
+    element={<PortalShell />}
+  >
+    <Route
+      index
+      element={<Navigate to="dashboard" replace />}
+    />
+
+    <Route
+      path="dashboard"
+      element={<StudentDashboard />}
+    />
+  </Route>
+</Route>
+
+```
+
+The `PortalShell` must receive the authenticated user from the provider. The next correction addresses that integration.
+
+## **19. Correct the route guard to support both layouts and standalone screens**
+
+The route guard must support both nested routes and standalone pages. Update it as follows.
+
+### `src/auth/ProtectedRoute.tsx`**&#x20;— corrected**
+
+```
+
+import {
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
+import type { ReactNode } from "react";
+
+import { useAuth } from "./useAuth";
+import { SessionLoading } from "../components/portal/SessionLoading";
+import { AccessDenied } from "../components/portal/AccessDenied";
+
+interface Props {
+  roles?: string[];
+  permissions?: string[];
+  requireAllPermissions?: boolean;
+  allowIncompleteProfile?: boolean;
+  children?: ReactNode;
+}
+
+export function ProtectedRoute({
+  roles,
+  permissions,
+  requireAllPermissions = true,
+  allowIncompleteProfile = false,
+  children,
+}: Props) {
+  const auth = useAuth();
+  const location = useLocation();
+
+  if (auth.loading) {
+    return <SessionLoading />;
+  }
+
+  if (!auth.user) {
+    return (
+      <Navigate
+        to="/portal/login"
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  const user = auth.user;
+
+  if (user.status !== "ACTIVE") {
+    return <AccessDenied />;
+  }
+
+  if (
+    user.mustChangePassword &&
+    location.pathname !== "/portal/auth/change-password"
+  ) {
+    return (
+      <Navigate
+        to="/portal/auth/change-password"
+        replace
+      />
+    );
+  }
+
+  if (
+    user.requiresProfileCompletion &&
+    !allowIncompleteProfile &&
+    location.pathname !== "/portal/auth/complete-profile"
+  ) {
+    return (
+      <Navigate
+        to="/portal/auth/complete-profile"
+        replace
+      />
+    );
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    return <AccessDenied />;
+  }
+
+  if (permissions?.length) {
+    const permitted = requireAllPermissions
+      ? permissions.every((p) => user.permissions.includes(p))
+      : permissions.some((p) => user.permissions.includes(p));
+
+    if (!permitted) {
+      return <AccessDenied />;
+    }
+  }
+
+  return children ?? <Outlet />;
+}
+
+```
+
+## **20. Connect the authenticated user to the portal shell**
+
+### `src/components/portal/PortalShell.tsx`**&#x20;— corrected**
+
+```
+
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+
+import { useAuth } from "../../auth/useAuth";
+import { staffMenu, studentMenu } from "../../data/portal-config";
+
+import { PortalSidebar } from "./PortalSidebar";
+import { PortalHeader } from "./PortalHeader";
+import { MobileNav } from "./MobileNav";
+import { SessionLoading } from "./SessionLoading";
+
+export function PortalShell() {
+  const { user, loading, logout } = useAuth();
+
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (loading) {
+    return <SessionLoading />;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const student = user.role === "STUDENT";
+  const menu = student ? studentMenu : staffMenu;
+
+  return (
+    <div className="portal-layout">
+      <div
+        className={`portal-sidebar-wrapper ${
+          mobileMenuOpen ? "mobile-open" : ""
+        }`}
+      >
+        <PortalSidebar
+          role={user.role}
+          menu={menu}
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((v) => !v)}
+          onClose={() => setMobileMenuOpen(false)}
+        />
+      </div>
+
+      {mobileMenuOpen && (
+        <button
+          className="mobile-sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <div
+        className={`portal-main ${
+          collapsed ? "sidebar-collapsed" : ""
+        }`}
+      >
+        <PortalHeader
+          user={user}
+          onMenuClick={() => setMobileMenuOpen(true)}
+          onLogout={logout}
+        />
+
+        <main
+          className="portal-content"
+          id="main-content"
+        >
+          <Outlet />
+        </main>
+
+        <footer className="portal-footer">
+          <span>HI-TECH College</span>
+          <span>Digital Academic & Certification Platform</span>
+        </footer>
+      </div>
+
+      <MobileNav items={menu} />
+    </div>
+  );
+}
+
+```
+
+## **21. Final route configuration for this slice**
+
+The route structure below uses the corrected `ProtectedRoute` and `PortalShell` implementations.
+
+### `src/App.tsx`
+
+```
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import { AuthProvider } from "./auth/AuthProvider";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import PortalRedirect from "./auth/PortalRedirect";
+
+import { PortalShell } from "./components/portal/PortalShell";
+import StaffDashboard from "./modules/staff/StaffDashboard";
+import StudentDashboard from "./modules/student/StudentDashboard";
+
+import ChangePasswordPage from "./modules/auth/ChangePasswordPage";
+import CompleteProfilePage from "./modules/auth/CompleteProfilePage";
+
+import "./styles/portal.css";
+
+function LoginPlaceholder() {
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1>HI-TECH College Portal</h1>
+        <p>Login screen integration is pending.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route
+            path="/portal/login"
+            element={<LoginPlaceholder />}
+          />
+
+          <Route
+            path="/portal"
+            element={<PortalRedirect />}
+          />
+
+          <Route
+            path="/portal/auth/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePasswordPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/portal/auth/complete-profile"
+            element={
+              <ProtectedRoute
+                allowIncompleteProfile
+              >
+                <CompleteProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={[
+                  "LECTURER",
+                  "PRINCIPAL",
+                  "REGISTRAR",
+                  "FINANCE_OFFICER",
+                  "HR_OFFICER",
+                  "LIBRARIAN",
+                  "ADMIN",
+                  "SUPER_ADMIN",
+                  "DEPARTMENT_HEAD",
+                  "EXAMINATION_OFFICER",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/portal/staff"
+              element={<PortalShell />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<StaffDashboard />}
+              />
+            </Route>
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={["STUDENT"]}
+              />
+            }
+          >
+            <Route
+              path="/portal/student"
+              element={<PortalShell />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<StudentDashboard />}
+              />
+            </Route>
+          </Route>
+
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to="/portal"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/portal"
+                replace
+              />
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+```
+
+# **Part R — Security rules and testing**
+
+## **22. Permission catalog for the Staff and Student portals**
+
+These are permission identifiers for the UI and API to agree on. They are not a substitute for the permissions already defined in the existing database.
+
+| Permission                     | Purpose                                  |
+| ------------------------------ | ---------------------------------------- |
+| `student.profile.view`         | View permitted student profile           |
+| `student.profile.edit`         | Edit permitted student profile           |
+| `student.registration.view`    | View academic registration               |
+| `student.registration.submit`  | Submit registration                      |
+| `student.registration.approve` | Approve registration                     |
+| `attendance.view`              | View attendance                          |
+| `attendance.record`            | Record attendance                        |
+| `attendance.edit`              | Modify attendance within permitted rules |
+| `course.view`                  | View course content                      |
+| `course.manage`                | Manage assigned courses                  |
+| `assignment.create`            | Create assignments                       |
+| `assignment.submit`            | Submit assignments                       |
+| `assignment.mark`              | Mark assignments                         |
+| `exam.manage`                  | Manage permitted examination activities  |
+| `exam.take`                    | Take examinations                        |
+| `marks.enter`                  | Enter marks                              |
+| `marks.view`                   | View permitted results                   |
+| `marks.approve`                | Approve results                          |
+| `finance.student.view`         | View permitted student financial records |
+| `finance.payment.submit`       | Submit payment                           |
+| `finance.receipt.view`         | View receipts                            |
+| `library.access`               | Access library resources                 |
+| `document.upload`              | Upload permitted documents               |
+| `document.view`                | View permitted documents                 |
+| `communication.send`           | Send permitted communication             |
+| `report.view`                  | View permitted reports                   |
+| `report.export`                | Export permitted reports                 |
+| `user.registration.create`     | Create a user registration               |
+| `user.registration.approve`    | Approve user registration                |
+| `support.ticket.create`        | Create support tickets                   |
+
+Permissions must be enforced on the server for every protected endpoint. Hiding a button in React does not enforce authorization.
+
+## **23. Testing checklist**
+
+Before this slice is considered complete:
+
+- Auth provider restores a valid session.
+- Anonymous user cannot open Staff dashboard.
+- Anonymous user cannot open Student dashboard.
+- Student cannot open Staff dashboard.
+- Lecturer cannot open Student dashboard.
+- Suspended accounts are blocked.
+- Disabled accounts are blocked.
+- Password-change requirement is enforced.
+- Profile completion requirement is enforced.
+- Permission checks hide unauthorized actions.
+- API independently enforces permission checks.
+- Logout invalidates the server session.
+- Mobile sidebar opens and closes.
+- Mobile navigation works.
+- Keyboard focus is visible.
+- Reduced-motion setting is respected.
+- No token is stored in `localStorage`.
+- Authentication errors do not reveal whether an account exists.
+
+## **24. Implementation status**
+
+Slice 02 — Code written
+
+Auth types, API contract, provider, hook, guards, role gate, permission gate, profile completion screen, change-password screen and route structure.
+
+Not yet verified
+
+Actual existing API endpoints, database permissions, auth middleware, session cookies, route integration and tests against the repository.
+
+## **25. What comes next**
+
+Slice 03 — Complete HI-TECH College Portal Login & Authentication UI
+
+Next implementation:
+
+- Professional single-pane login.
+- Student and staff login through one portal.
+- Forgot password.
+- Password visibility toggle.
+- Remember me.
+- Invitation activation.
+- Email verification.
+- Login error handling.
+- Account locked messages.
+- MFA/OTP architecture.
+- Session security.
+- Login page desktop and mobile layouts.
+- Secure redirects into Student or Staff dashboard.
+
+The portal is being built in modular slices so that the shared foundation can support the entire HI-TECH College digital academic platform without creating separate, conflicting systems for staff and students.

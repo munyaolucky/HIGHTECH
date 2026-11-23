@@ -17,6 +17,7 @@ import {
   QrCode,
   FileCheck,
   Building2,
+  FileSpreadsheet,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -25,9 +26,12 @@ import {
 } from "../services/registrationService";
 import { RegistrationRecordType, RegistrationIssuance } from "../types";
 import { useSyncedPortalTab } from "../context/PortalShellContext";
+import BulkStudentCsvImport, {
+  type BulkCommittedStudent,
+} from "../modules/registration/BulkStudentCsvImport";
 
 export default function RegistrationGeneratorPortal() {
-  const [activeTab, setActiveTab] = useSyncedPortalTab<"generate" | "registry" | "verify">(
+  const [activeTab, setActiveTab] = useSyncedPortalTab<"generate" | "bulk-csv" | "registry" | "verify">(
     "generator",
     "generate"
   );
@@ -165,41 +169,73 @@ export default function RegistrationGeneratorPortal() {
       </div>
 
       {/* SECTION TABS */}
-      <div className="flex flex-wrap border-b border-slate-200 gap-2 pb-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab("generate")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-            activeTab === "generate"
-              ? "bg-[#092c60] text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <Hash size={14} /> Issue New Reg Number
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("registry")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-            activeTab === "registry"
-              ? "bg-[#092c60] text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <Users size={14} /> Issued Registry Directory ({issuances.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("verify")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-            activeTab === "verify"
-              ? "bg-[#092c60] text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <FileCheck size={14} /> Verification &amp; Audit Desk
-        </button>
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 gap-2 pb-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("generate")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === "generate"
+                ? "bg-[#092c60] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <Hash size={14} /> Issue New Reg Number
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("bulk-csv")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === "bulk-csv"
+                ? "bg-[#092c60] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <FileSpreadsheet size={14} />
+            <span>Bulk Student CSV Import</span>
+            <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-[#102D50]">
+              Registrar Batch
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("registry")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === "registry"
+                ? "bg-[#092c60] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <Users size={14} /> Issued Registry Directory ({issuances.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("verify")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === "verify"
+                ? "bg-[#092c60] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <FileCheck size={14} /> Verification &amp; Audit Desk
+          </button>
+        </div>
+
+        <span className="text-xs text-slate-500 px-2">
+          Total Ledger Issuances: <strong className="text-[#102D50]">{issuances.length}</strong>
+        </span>
       </div>
+
+      {activeTab === "bulk-csv" && (
+        <BulkStudentCsvImport
+          academicYear={year}
+          onYearChange={setYear}
+          onStudentsCommitted={(students: BulkCommittedStudent[]) => {
+            registrationService.recordCommittedStudentIssuances(students);
+            refreshData();
+          }}
+        />
+      )}
 
       {/* GENERATOR + LIVE STATUS GRID */}
       {(activeTab === "generate" || activeTab === "verify") && (

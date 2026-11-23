@@ -1,0 +1,1539 @@
+# **Next: Secure Examination Module — Student Interface**
+
+The next implementation slice separates the examination session from the normal student dashboard. It includes a dedicated layout, exam instructions, question navigation, answer workspace, security event monitoring and submission confirmation.
+
+**Important:** Browser-based restrictions are deterrents and monitoring controls. They cannot guarantee that a student cannot switch applications or use another device. For high-stakes examinations, combine this module with a managed computer lab or lockdown browser.
+
+## **1. File structure**
+
+Create these files under `apps/web/src/modules/student/exams/secure/`:
+
+```
+secure/
+├── SecureExamLayout.tsx
+├── SecureExamPage.tsx
+├── SecureExam.css
+├── examSecurity.ts
+├── examTypes.ts
+└── useExamSession.ts
+```
+
+## **2. Exam types**
+
+**Path:** `apps/web/src/modules/student/exams/secure/examTypes.ts`
+
+```
+
+export type ExamStatus =
+  | "instructions"
+  | "active"
+  | "submitted"
+  | "expired";
+
+export type QuestionType =
+  | "SINGLE_CHOICE"
+  | "MULTIPLE_CHOICE"
+  | "TRUE_FALSE"
+  | "SHORT_ANSWER"
+  | "LONG_ANSWER";
+
+export interface ExamOption {
+  id: string;
+  text: string;
+}
+
+export interface ExamQuestion {
+  id: string;
+  number: number;
+  type: QuestionType;
+  instruction?: string;
+  text: string;
+  marks: number;
+  options?: ExamOption[];
+}
+
+export interface ExamDefinition {
+  id: string;
+  title: string;
+  subject: string;
+  durationMinutes: number;
+  totalMarks: number;
+  instructions: string[];
+  questions: ExamQuestion[];
+  startsAt: string;
+  endsAt: string;
+}
+
+export type ExamAnswerValue = string | string[];
+
+export interface ExamAnswer {
+  questionId: string;
+  value: ExamAnswerValue;
+  updatedAt: string;
+}
+
+export type SecurityEventType =
+  | "TAB_HIDDEN"
+  | "WINDOW_BLUR"
+  | "FULLSCREEN_EXIT"
+  | "COPY_ATTEMPT"
+  | "PASTE_ATTEMPT"
+  | "CUT_ATTEMPT"
+  | "CONTEXT_MENU"
+  | "PROHIBITED_SHORTCUT"
+  | "DRAG_ATTEMPT";
+
+export interface ExamSecurityEvent {
+  type: SecurityEventType;
+  occurredAt: string;
+  details?: string;
+}
+
+export interface ExamSession {
+  id: string;
+  exam: ExamDefinition;
+  status: ExamStatus;
+  startedAt?: string;
+  expiresAt?: string;
+  answers: ExamAnswer[];
+}
+
+```
+
+## **3. Browser security event handling**
+
+**Path:** `apps/web/src/modules/student/exams/secure/examSecurity.ts`
+
+This module blocks common clipboard actions inside the exam page and records focus/fullscreen events. It does not pretend to block operating-system-level application switching.
+
+```
+
+import type {
+  ExamSecurityEvent,
+  SecurityEventType,
+} from "./examTypes";
+
+type SecurityOptions = {
+  onEvent: (event: ExamSecurityEvent) => void;
+  blockClipboard?: boolean;
+  blockContextMenu?: boolean;
+  blockShortcuts?: boolean;
+};
+
+export function installExamSecurity({
+  onEvent,
+  blockClipboard = true,
+  blockContextMenu = true,
+  blockShortcuts = true,
+}: SecurityOptions) {
+  const report = (
+    type: SecurityEventType,
+    details?: string
+  ) => {
+    onEvent({
+      type,
+      occurredAt: new Date().toISOString(),
+      details,
+    });
+  };
+
+  const prevent = (
+    event: Event,
+    type: SecurityEventType,
+    details?: string
+  ) => {
+    event.preventDefault();
+    report(type, details);
+  };
+
+  const handleCopy = (event: ClipboardEvent) => {
+    if (blockClipboard) {
+      prevent(event, "COPY_ATTEMPT");
+    }
+  };
+
+  const handlePaste = (event: ClipboardEvent) => {
+    if (blockClipboard) {
+      prevent(event, "PASTE_ATTEMPT");
+    }
+  };
+
+  const handleCut = (event: ClipboardEvent) => {
+    if (blockClipboard) {
+      prevent(event, "CUT_ATTEMPT");
+    }
+  };
+
+  const handleContextMenu = (event: MouseEvent) => {
+    if (blockContextMenu) {
+      prevent(event, "CONTEXT_MENU");
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (!blockShortcuts) return;
+
+    const key = event.key.toLowerCase();
+    const modifier = event.ctrlKey || event.metaKey;
+
+    const blocked =
+      (modifier && ["c", "v", "x", "p", "s", "u"].includes(key)) ||
+      event.key === "F12" ||
+      (event.altKey && event.key === "Tab");
+
+    if (blocked) {
+      prevent(
+        event,
+        "PROHIBITED_SHORTCUT",
+        `Key: ${event.key}`
+      );
+    }
+  };
+
+  const handleVisibility = () => {
+    if (document.visibilityState === "hidden") {
+      report("TAB_HIDDEN");
+    }
+  };
+
+  const handleBlur = () => {
+    report("WINDOW_BLUR");
+  };
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      report("FULLSCREEN_EXIT");
+    }
+  };
+
+  const handleDragStart = (event: DragEvent) => {
+    prevent(event, "DRAG_ATTEMPT");
+  };
+
+  document.addEventListener("copy", handleCopy);
+  document.addEventListener("paste", handlePaste);
+  document.addEventListener("cut", handleCut);
+  document.addEventListener("contextmenu", handleContextMenu);
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("visibilitychange", handleVisibility);
+  document.addEventListener("dragstart", handleDragStart);
+  document.addEventListener("fullscreenchange", handleFullscreen);
+  window.addEventListener("blur", handleBlur);
+
+  return () => {
+    document.removeEventListener("copy", handleCopy);
+    document.removeEventListener("paste", handlePaste);
+    document.removeEventListener("cut", handleCut);
+    document.removeEventListener("contextmenu", handleContextMenu);
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("visibilitychange", handleVisibility);
+    document.removeEventListener("dragstart", handleDragStart);
+    document.removeEventListener("fullscreenchange", handleFullscreen);
+    window.removeEventListener("blur", handleBlur);
+  };
+}
+
+export async function enterExamFullscreen(): Promise<boolean> {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    }
+
+    return Boolean(document.fullscreenElement);
+  } catch {
+    return false;
+  }
+}
+
+export async function exitExamFullscreen(): Promise<void> {
+  if (document.fullscreenElement) {
+    await document.exitFullscreen();
+  }
+}
+
+```
+
+## **4. Exam session hook**
+
+**Path:** `apps/web/src/modules/student/exams/secure/useExamSession.ts`
+
+This hook keeps answers in React state, saves them to the API, and maintains a local recovery copy. The server must remain authoritative for the actual start time and expiry time.
+
+```
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  ExamAnswer,
+  ExamAnswerValue,
+  ExamSession,
+  ExamSecurityEvent,
+} from "./examTypes";
+
+const API = "/api/student/exam-sessions";
+
+type SaveState = "saved" | "saving" | "offline" | "error";
+
+export function useExamSession(initialSession: ExamSession) {
+  const [session, setSession] = useState(initialSession);
+  const [answers, setAnswers] = useState<ExamAnswer[]>(
+    initialSession.answers ?? []
+  );
+  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+
+  const saveTimer = useRef<number | undefined>(undefined);
+  const latestAnswers = useRef(answers);
+
+  useEffect(() => {
+    latestAnswers.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    if (!session.expiresAt || session.status !== "active") return;
+
+    const updateTime = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor(
+          (new Date(session.expiresAt!).getTime() - Date.now()) / 1000
+        )
+      );
+
+      setRemainingSeconds(remaining);
+
+      if (remaining === 0) {
+        setSession((current) => ({
+          ...current,
+          status: "expired",
+        }));
+      }
+    };
+
+    updateTime();
+    const interval = window.setInterval(updateTime, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [session.expiresAt, session.status]);
+
+  const persistAnswers = useCallback(async () => {
+    if (session.status !== "active") return;
+
+    setSaveState("saving");
+
+    try {
+      const response = await fetch(
+        `${API}/${session.id}/answers`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answers: latestAnswers.current,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Answer save failed");
+      }
+
+      setSaveState("saved");
+      localStorage.removeItem(`exam-recovery-${session.id}`);
+    } catch {
+      setSaveState(navigator.onLine ? "error" : "offline");
+
+      localStorage.setItem(
+        `exam-recovery-${session.id}`,
+        JSON.stringify(latestAnswers.current)
+      );
+    }
+  }, [session.id, session.status]);
+
+  const updateAnswer = useCallback(
+    (questionId: string, value: ExamAnswerValue) => {
+      if (session.status !== "active") return;
+
+      setAnswers((current) => {
+        const next = [...current];
+        const index = next.findIndex(
+          (answer) => answer.questionId === questionId
+        );
+
+        const answer: ExamAnswer = {
+          questionId,
+          value,
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (index >= 0) next[index] = answer;
+        else next.push(answer);
+
+        latestAnswers.current = next;
+        return next;
+      });
+
+      if (saveTimer.current) {
+        window.clearTimeout(saveTimer.current);
+      }
+
+      saveTimer.current = window.setTimeout(
+        () => void persistAnswers(),
+        800
+      );
+    },
+    [persistAnswers, session.status]
+  );
+
+  const recordSecurityEvent = useCallback(
+    async (event: ExamSecurityEvent) => {
+      try {
+        await fetch(`${API}/${session.id}/security-events`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(event),
+        });
+      } catch {
+        // Do not discard the event if temporarily offline.
+        const key = `exam-events-${session.id}`;
+        const existing = JSON.parse(
+          localStorage.getItem(key) || "[]"
+        ) as ExamSecurityEvent[];
+
+        localStorage.setItem(
+          key,
+          JSON.stringify([...existing, event])
+        );
+      }
+    },
+    [session.id]
+  );
+
+  const submitExam = useCallback(async () => {
+    await persistAnswers();
+
+    const response = await fetch(`${API}/${session.id}/submit`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("The exam could not be submitted.");
+    }
+
+    setSession((current) => ({
+      ...current,
+      status: "submitted",
+    }));
+  }, [persistAnswers, session.id]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        window.clearTimeout(saveTimer.current);
+      }
+    };
+  }, []);
+
+  return {
+    session,
+    answers,
+    saveState,
+    remainingSeconds,
+    updateAnswer,
+    recordSecurityEvent,
+    persistAnswers,
+    submitExam,
+  };
+}
+
+```
+
+**Integration note:** The example uses a cookie-authenticated API contract. Adapt the URL, authentication and response schema to the existing HI-TECH API before using it. A local recovery copy is not proof that the server received an answer; reconcile it with the server when the connection returns.
+
+## **5. Secure exam layout**
+
+**Path:** `apps/web/src/modules/student/exams/secure/SecureExamLayout.tsx`
+
+The layout deliberately excludes the normal student sidebar and portal navigation.
+
+```
+
+import type { ReactNode } from "react";
+import "./SecureExam.css";
+
+interface SecureExamLayoutProps {
+  title: string;
+  subject: string;
+  remainingSeconds: number;
+  saveState: "saved" | "saving" | "offline" | "error";
+  children: ReactNode;
+  onSubmit: () => void;
+}
+
+function formatTime(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  return [hours, minutes, secs]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+}
+
+export default function SecureExamLayout({
+  title,
+  subject,
+  remainingSeconds,
+  saveState,
+  children,
+  onSubmit,
+}: SecureExamLayoutProps) {
+  return (
+    <main className="secure-exam">
+      <header className="secure-exam__header">
+        <div className="secure-exam__brand">
+          <div className="secure-exam__logo">HT</div>
+          <div>
+            <strong>HI-TECH COLLEGE</strong>
+            <span>Secure Examination Environment</span>
+          </div>
+        </div>
+
+        <div className="secure-exam__header-right">
+          <span className="secure-exam__secure-label">
+            <span className="secure-exam__secure-dot" />
+            SECURE EXAM MODE
+          </span>
+          <div
+            className={`secure-exam__timer ${
+              remainingSeconds <= 300 ? "is-warning" : ""
+            }`}
+            aria-live="off"
+          >
+            <small>TIME REMAINING</small>
+            <strong>{formatTime(remainingSeconds)}</strong>
+          </div>
+        </div>
+      </header>
+
+      <section className="secure-exam__exam-heading">
+        <div>
+          <p>{subject}</p>
+          <h1>{title}</h1>
+        </div>
+
+        <div className="secure-exam__save-state" role="status">
+          {saveState === "saved" && "All answers saved"}
+          {saveState === "saving" && "Saving answers…"}
+          {saveState === "offline" && "Offline — recovery copy stored"}
+          {saveState === "error" && "Save failed — reconnect"}
+        </div>
+      </section>
+
+      <div className="secure-exam__content">{children}</div>
+
+      <footer className="secure-exam__footer">
+        <span>HI-TECH College · Examination Services</span>
+        <button
+          type="button"
+          className="secure-exam__submit"
+          onClick={onSubmit}
+        >
+          Submit examination
+        </button>
+      </footer>
+    </main>
+  );
+}
+
+```
+
+## **6. Examination page**
+
+**Path:** `apps/web/src/modules/student/exams/secure/SecureExamPage.tsx`
+
+This page provides question navigation, answer inputs, a review list, fullscreen entry and a final submission confirmation.
+
+```
+
+import { useEffect, useMemo, useState } from "react";
+import SecureExamLayout from "./SecureExamLayout";
+import { useExamSession } from "./useExamSession";
+import {
+  enterExamFullscreen,
+  installExamSecurity,
+} from "./examSecurity";
+import type {
+  ExamSession,
+  ExamSecurityEvent,
+} from "./examTypes";
+
+interface Props {
+  initialSession: ExamSession;
+}
+
+export default function SecureExamPage({ initialSession }: Props) {
+  const exam = useExamSession(initialSession);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [started, setStarted] = useState(
+    initialSession.status === "active"
+  );
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [securityWarning, setSecurityWarning] = useState("");
+
+  const questions = exam.session.exam.questions;
+  const question = questions[currentIndex];
+
+  const answerMap = useMemo(
+    () =>
+      new Map(
+        exam.answers.map((answer) => [
+          answer.questionId,
+          answer.value,
+        ])
+      ),
+    [exam.answers]
+  );
+
+  const answeredCount = exam.answers.filter((answer) => {
+    if (Array.isArray(answer.value)) return answer.value.length > 0;
+    return answer.value.trim().length > 0;
+  }).length;
+
+  useEffect(() => {
+    if (!started || exam.session.status !== "active") return;
+
+    const cleanup = installExamSecurity({
+      onEvent: (event: ExamSecurityEvent) => {
+        void exam.recordSecurityEvent(event);
+
+        if (
+          event.type === "TAB_HIDDEN" ||
+          event.type === "FULLSCREEN_EXIT"
+        ) {
+          setSecurityWarning(
+            "Your exam window lost focus or exited fullscreen. Return to the examination."
+          );
+        }
+      },
+    });
+
+    return cleanup;
+  }, [started, exam.session.status, exam.recordSecurityEvent]);
+
+  useEffect(() => {
+    if (exam.session.status === "expired") {
+      void exam.submitExam().catch(() => {
+        setSecurityWarning(
+          "Time has expired. Submission could not be confirmed. Please contact the examination supervisor."
+        );
+      });
+    }
+  }, [exam.session.status, exam.submitExam]);
+
+  async function startExam() {
+    const fullscreen = await enterExamFullscreen();
+
+    if (!fullscreen) {
+      setSecurityWarning(
+        "Fullscreen could not be enabled. Please allow fullscreen and try again."
+      );
+      return;
+    }
+
+    setStarted(true);
+  }
+
+  async function confirmSubmit() {
+    try {
+      await exam.submitExam();
+      setShowSubmitDialog(false);
+    } catch {
+      setSecurityWarning(
+        "Submission failed. Your answers remain available for retry."
+      );
+    }
+  }
+
+  if (exam.session.status === "submitted") {
+    return (
+      <main className="secure-exam__complete">
+        <div className="secure-exam__complete-card">
+          <div className="secure-exam__complete-icon">✓</div>
+          <h1>Examination submitted</h1>
+          <p>Your submission has been received.</p>
+          <p className="secure-exam__reference">
+            Session reference: {exam.session.id}
+          </p>
+          <p>You may now leave the examination environment.</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!started) {
+    return (
+      <main className="secure-exam__instructions">
+        <div className="secure-exam__instructions-card">
+          <div className="secure-exam__brand">
+            <div className="secure-exam__logo">HT</div>
+            <div>
+              <strong>HI-TECH COLLEGE</strong>
+              <span>Secure Examination Environment</span>
+            </div>
+          </div>
+
+          <p className="secure-exam__eyebrow">EXAMINATION INSTRUCTIONS</p>
+          <h1>{exam.session.exam.title}</h1>
+          <p>{exam.session.exam.subject}</p>
+
+          <div className="secure-exam__exam-facts">
+            <span>
+              <strong>{exam.session.exam.durationMinutes}</strong>
+              Minutes
+            </span>
+            <span>
+              <strong>{exam.session.exam.questions.length}</strong>
+              Questions
+            </span>
+            <span>
+              <strong>{exam.session.exam.totalMarks}</strong>
+              Total marks
+            </span>
+          </div>
+
+          <h2>Before you begin</h2>
+          <ul>
+            {exam.session.exam.instructions.map((instruction) => (
+              <li key={instruction}>{instruction}</li>
+            ))}
+          </ul>
+
+          <div className="secure-exam__notice">
+            Copying, pasting and prohibited shortcuts are disabled
+            within this examination page. Focus and fullscreen
+            events may be recorded.
+          </div>
+
+          {securityWarning && (
+            <p className="secure-exam__warning" role="alert">
+              {securityWarning}
+            </p>
+          )}
+
+          <button
+            className="secure-exam__start"
+            type="button"
+            onClick={() => void startExam()}
+          >
+            Enter secure examination
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (!question) {
+    return <p>No examination questions are available.</p>;
+  }
+
+  const selected = answerMap.get(question.id) ?? "";
+
+  return (
+    <SecureExamLayout
+      title={exam.session.exam.title}
+      subject={exam.session.exam.subject}
+      remainingSeconds={exam.remainingSeconds}
+      saveState={exam.saveState}
+      onSubmit={() => setShowSubmitDialog(true)}
+    >
+      {securityWarning && (
+        <div className="secure-exam__warning" role="alert">
+          {securityWarning}
+          <button
+            type="button"
+            onClick={() => setSecurityWarning("")}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="secure-exam__progress">
+        <div>
+          <strong>{answeredCount}</strong> of {questions.length} answered
+        </div>
+        <div className="secure-exam__progress-track">
+          <span
+            style={{
+              width: `${(answeredCount / Math.max(questions.length, 1)) * 100}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="secure-exam__workspace">
+        <section className="secure-exam__question">
+          <div className="secure-exam__question-top">
+            <span>QUESTION {question.number}</span>
+            <span>{question.marks} marks</span>
+          </div>
+
+          <h2>{question.text}</h2>
+
+          {question.instruction && (
+            <p className="secure-exam__question-instruction">
+              {question.instruction}
+            </p>
+          )}
+
+          {question.type === "SINGLE_CHOICE" ||
+          question.type === "TRUE_FALSE" ? (
+            <div className="secure-exam__options">
+              {(question.options ?? []).map((option) => (
+                <label key={option.id}>
+                  <input
+                    type="radio"
+                    name={question.id}
+                    value={option.id}
+                    checked={selected === option.id}
+                    onChange={() =>
+                      exam.updateAnswer(question.id, option.id)
+                    }
+                  />
+                  <span>{option.text}</span>
+                </label>
+              ))}
+            </div>
+          ) : question.type === "MULTIPLE_CHOICE" ? (
+            <div className="secure-exam__options">
+              {(question.options ?? []).map((option) => {
+                const values = Array.isArray(selected) ? selected : [];
+
+                return (
+                  <label key={option.id}>
+                    <input
+                      type="checkbox"
+                      checked={values.includes(option.id)}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...values, option.id]
+                          : values.filter((value) => value !== option.id);
+
+                        exam.updateAnswer(question.id, next);
+                      }}
+                    />
+                    <span>{option.text}</span>
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <textarea
+              className="secure-exam__answer"
+              value={typeof selected === "string" ? selected : ""}
+              onChange={(event) =>
+                exam.updateAnswer(question.id, event.target.value)
+              }
+              placeholder="Type your answer here..."
+              rows={8}
+              spellCheck={false}
+              autoComplete="off"
+            />
+          )}
+
+          <div className="secure-exam__question-actions">
+            <button
+              type="button"
+              disabled={currentIndex === 0}
+              onClick={() => setCurrentIndex((index) => index - 1)}
+            >
+              Previous
+            </button>
+
+            <button
+              type="button"
+              disabled={currentIndex === questions.length - 1}
+              onClick={() => setCurrentIndex((index) => index + 1)}
+            >
+              Next question
+            </button>
+          </div>
+        </section>
+
+        <aside className="secure-exam__navigator">
+          <h2>Question navigator</h2>
+          <div className="secure-exam__question-grid">
+            {questions.map((item, index) => {
+              const value = answerMap.get(item.id);
+              const isAnswered = Array.isArray(value)
+                ? value.length > 0
+                : Boolean(value?.trim());
+
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={[
+                    index === currentIndex ? "is-current" : "",
+                    isAnswered ? "is-answered" : "",
+                  ].join(" ")}
+                  aria-label={`Question ${item.number}${
+                    isAnswered ? ", answered" : ", not answered"
+                  }`}
+                  aria-current={index === currentIndex ? "step" : undefined}
+                  onClick={() => setCurrentIndex(index)}
+                >
+                  {item.number}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="secure-exam__legend">
+            <span><i className="answered" /> Answered</span>
+            <span><i className="unanswered" /> Not answered</span>
+            <span><i className="current" /> Current</span>
+          </div>
+
+          <button
+            className="secure-exam__review"
+            type="button"
+            onClick={() => setShowSubmitDialog(true)}
+          >
+            Review and submit
+          </button>
+        </aside>
+      </div>
+
+      {showSubmitDialog && (
+        <div
+          className="secure-exam__modal-backdrop"
+          role="presentation"
+        >
+          <section
+            className="secure-exam__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="submit-title"
+          >
+            <h2 id="submit-title">Submit examination?</h2>
+            <p>
+              You have answered {answeredCount} of {questions.length} questions.
+            </p>
+            {answeredCount < questions.length && (
+              <p className="secure-exam__warning">
+                Some questions have not been answered.
+              </p>
+            )}
+            <div className="secure-exam__modal-actions">
+              <button
+                type="button"
+                onClick={() => setShowSubmitDialog(false)}
+              >
+                Continue exam
+              </button>
+              <button
+                type="button"
+                className="secure-exam__submit"
+                onClick={() => void confirmSubmit()}
+              >
+                Confirm submission
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </SecureExamLayout>
+  );
+}
+
+```
+
+## **7. Responsive styling**
+
+**Path:** `apps/web/src/modules/student/exams/secure/SecureExam.css`
+
+```
+
+:root {
+  --exam-navy: #102d50;
+  --exam-blue: #1769aa;
+  --exam-red: #b83232;
+  --exam-cream: #f5ebdd;
+  --exam-border: #dce3eb;
+  --exam-text: #25364a;
+  --exam-muted: #65758b;
+}
+
+.secure-exam {
+  min-height: 100vh;
+  background: #f5f7fa;
+  color: var(--exam-text);
+}
+
+.secure-exam__header {
+  min-height: 76px;
+  padding: 12px 4%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: white;
+  background: var(--exam-navy);
+}
+
+.secure-exam__brand,
+.secure-exam__header-right {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.secure-exam__brand strong,
+.secure-exam__brand span {
+  display: block;
+}
+
+.secure-exam__brand span {
+  margin-top: 4px;
+  color: #d3deeb;
+  font-size: 12px;
+}
+
+.secure-exam__logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: white;
+  color: var(--exam-navy);
+  font-weight: 800;
+}
+
+.secure-exam__secure-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.secure-exam__secure-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #52d69a;
+}
+
+.secure-exam__timer {
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #203e60;
+  text-align: center;
+}
+
+.secure-exam__timer small,
+.secure-exam__timer strong {
+  display: block;
+}
+
+.secure-exam__timer small {
+  font-size: 9px;
+  color: #d3deeb;
+}
+
+.secure-exam__timer strong {
+  margin-top: 3px;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.secure-exam__timer.is-warning {
+  background: #762b2b;
+}
+
+.secure-exam__exam-heading {
+  padding: 22px 4%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  border-bottom: 1px solid var(--exam-border);
+}
+
+.secure-exam__exam-heading p {
+  margin: 0 0 5px;
+  color: var(--exam-muted);
+  font-size: 13px;
+}
+
+.secure-exam__exam-heading h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.secure-exam__save-state {
+  font-size: 12px;
+  color: #23734f;
+}
+
+.secure-exam__content {
+  max-width: 1400px;
+  margin: auto;
+  padding: 24px 4%;
+}
+
+.secure-exam__progress {
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.secure-exam__progress-track {
+  height: 7px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e4eaf0;
+}
+
+.secure-exam__progress-track span {
+  display: block;
+  height: 100%;
+  background: #237b59;
+  transition: width 180ms ease;
+}
+
+.secure-exam__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 22px;
+}
+
+.secure-exam__question,
+.secure-exam__navigator,
+.secure-exam__instructions-card,
+.secure-exam__complete-card {
+  padding: 25px;
+  background: white;
+  border: 1px solid var(--exam-border);
+  border-radius: 12px;
+}
+
+.secure-exam__question-top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--exam-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.secure-exam__question h2 {
+  margin: 22px 0 12px;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.secure-exam__question-instruction {
+  color: var(--exam-muted);
+  font-size: 13px;
+}
+
+.secure-exam__options {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.secure-exam__options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--exam-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.secure-exam__options label:focus-within {
+  outline: 3px solid #a8d0f2;
+  outline-offset: 2px;
+}
+
+.secure-exam__options input {
+  accent-color: var(--exam-blue);
+}
+
+.secure-exam__answer {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 20px;
+  padding: 15px;
+  resize: vertical;
+  border: 1px solid #cbd5df;
+  border-radius: 8px;
+  color: var(--exam-text);
+  font: inherit;
+  line-height: 1.6;
+}
+
+.secure-exam__answer:focus {
+  outline: 3px solid #a8d0f2;
+  border-color: var(--exam-blue);
+}
+
+.secure-exam__question-actions,
+.secure-exam__modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.secure-exam button {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--exam-border);
+  border-radius: 7px;
+  background: white;
+  color: var(--exam-navy);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secure-exam button:hover:not(:disabled) {
+  border-color: var(--exam-blue);
+  background: #f0f6fc;
+}
+
+.secure-exam button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.secure-exam button:focus-visible {
+  outline: 3px solid #83b9e6;
+  outline-offset: 3px;
+}
+
+.secure-exam .secure-exam__submit,
+.secure-exam__start {
+  border-color: var(--exam-blue);
+  background: var(--exam-blue);
+  color: white;
+}
+
+.secure-exam .secure-exam__submit:hover,
+.secure-exam__start:hover {
+  background: var(--exam-navy);
+  color: white;
+}
+
+.secure-exam__navigator h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.secure-exam__question-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.secure-exam__question-grid button {
+  padding: 5px;
+  min-width: 0;
+}
+
+.secure-exam__question-grid button.is-answered {
+  border-color: #237b59;
+  background: #e8f5ed;
+  color: #17583b;
+}
+
+.secure-exam__question-grid button.is-current {
+  outline: 2px solid var(--exam-blue);
+  outline-offset: 1px;
+}
+
+.secure-exam__legend {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+  color: var(--exam-muted);
+  font-size: 11px;
+}
+
+.secure-exam__legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.secure-exam__legend i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #b9c4d0;
+  border-radius: 3px;
+}
+
+.secure-exam__legend i.answered {
+  background: #e8f5ed;
+  border-color: #237b59;
+}
+
+.secure-exam__legend i.current {
+  outline: 2px solid var(--exam-blue);
+}
+
+.secure-exam__review {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.secure-exam__footer {
+  min-height: 65px;
+  padding: 12px 4%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  border-top: 1px solid var(--exam-border);
+  color: var(--exam-muted);
+  font-size: 12px;
+}
+
+.secure-exam__warning {
+  margin: 14px 0;
+  padding: 13px;
+  border: 1px solid #e6c16d;
+  border-radius: 8px;
+  background: #fff8e7;
+  color: #765316;
+  font-size: 13px;
+}
+
+.secure-exam__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(10 25 43 / 65%);
+}
+
+.secure-exam__modal {
+  width: min(100%, 450px);
+  padding: 25px;
+  border-radius: 12px;
+  background: white;
+}
+
+.secure-exam__modal h2 {
+  margin-top: 0;
+}
+
+.secure-exam__instructions,
+.secure-exam__complete {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 25px;
+  background: #f5f7fa;
+}
+
+.secure-exam__instructions-card,
+.secure-exam__complete-card {
+  width: min(100%, 650px);
+  box-sizing: border-box;
+}
+
+.secure-exam__eyebrow {
+  margin-top: 30px;
+  color: var(--exam-blue);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.secure-exam__exam-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin: 25px 0;
+}
+
+.secure-exam__exam-facts span,
+.secure-exam__exam-facts strong {
+  display: block;
+}
+
+.secure-exam__exam-facts strong {
+  font-size: 22px;
+  color: var(--exam-navy);
+}
+
+.secure-exam__instructions-card li {
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.secure-exam__start {
+  width: 100%;
+  margin-top: 20px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secure-exam__notice {
+  padding: 14px;
+  border-radius: 8px;
+  background: #eef5fb;
+  color: var(--exam-navy);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.secure-exam__complete-card {
+  text-align: center;
+}
+
+.secure-exam__complete-icon {
+  width: 60px;
+  height: 60px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8f5ed;
+  color: #237b59;
+  font-size: 30px;
+}
+
+.secure-exam__reference {
+  color: var(--exam-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 850px) {
+  .secure-exam__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .secure-exam__navigator {
+    order: -1;
+  }
+
+  .secure-exam__question-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .secure-exam__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secure-exam__header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .secure-exam__exam-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .secure-exam__exam-heading h1 {
+    font-size: 19px;
+  }
+
+  .secure-exam__content {
+    padding: 15px;
+  }
+
+  .secure-exam__question,
+  .secure-exam__navigator,
+  .secure-exam__instructions-card {
+    padding: 17px;
+  }
+
+  .secure-exam__question-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .secure-exam__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .secure-exam__footer button {
+    width: 100%;
+  }
+
+  .secure-exam__modal-actions {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secure-exam *,
+  .secure-exam *::before,
+  .secure-exam *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+```
+
+## **8. Required backend API contract**
+
+The frontend above expects these endpoints. They must be implemented and protected by student ownership checks, exam eligibility checks and server-side session validation.
+
+| Method | Endpoint                                                | Purpose                                |
+| ------ | ------------------------------------------------------- | -------------------------------------- |
+| `POST` | `/api/student/exam-sessions/:examId/start`              | Validate eligibility and start session |
+| `GET`  | `/api/student/exam-sessions/:sessionId`                 | Load session and questions             |
+| `PUT`  | `/api/student/exam-sessions/:sessionId/answers`         | Save answers                           |
+| `POST` | `/api/student/exam-sessions/:sessionId/security-events` | Record security events                 |
+| `POST` | `/api/student/exam-sessions/:sessionId/submit`          | Finalize submission                    |
+| `GET`  | `/api/student/exam-sessions/:sessionId/status`          | Check session and submission state     |
+
+**Important backend requirements:**
+
+1. Calculate expiry using server time, not the student's device clock.
+2. Reject answer updates after expiry or submission.
+3. Make submission idempotent so repeated requests do not create duplicate submissions.
+4. Store answers and security events against the authenticated student and exam session.
+5. Validate question IDs and answer formats on the server.
+6. Never trust a browser-reported security event as conclusive proof of misconduct.
+7. Preserve an audit trail of session start, answer changes, submission and supervisor decisions.
+
+## **9. Important corrections before production**
+
+This is a proposed frontend slice, not yet integrated with the existing HI-TECH repository. A few production requirements remain:
+
+- The page needs a server-issued session before it can begin. Do not pass an arbitrary client-created session.
+- The expiry handler must submit the final answer state even after the local status becomes `expired`; the sample hook currently needs that adjustment.
+- Offline answer recovery needs a reconciliation endpoint and conflict policy.
+- The confirmation dialog needs focus management and Escape-key handling.
+- The exam route must be protected by the existing authentication and RBAC middleware.
+- Practical exams involving MS Word, Excel, programming software or other desktop applications need a managed-lab assessment workflow; a browser page cannot lock down those external programs.
+
+**Next slice:** implement the Express + Prisma backend for exam sessions, server-authoritative timers, answer autosave, security-event audit logs, automatic submission and supervisor incident review.

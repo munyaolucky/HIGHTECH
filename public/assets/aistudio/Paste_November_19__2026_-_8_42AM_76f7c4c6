@@ -1,0 +1,710 @@
+# **HI-TECH College Staff & Student Portal**
+
+## **Complete UI/UX specification — Desktop, Tablet and Mobile**
+
+The implementation will use the established `hitech-college-website/apps` architecture:
+
+- `apps/web` — React, Vite and TypeScript.
+- `apps/api` — Express, TypeScript, Prisma and PostgreSQL.
+- `apps/mobile` — Expo and React Native.
+
+Both portals will share a design system, authentication, navigation infrastructure and reusable components. Their dashboards, permissions, workflows and module access will remain role-specific.
+
+**Important implementation boundary:** I can define the complete target specification now, but I cannot honestly claim to have inspected or modified your repository without its current source. I will not invent existing component names, API contracts, Prisma relations or routes.
+
+Please provide the current project source so I can align the code with the real implementation.
+
+Upload the project ZIP, preferably the current `hitech-college-website` source. If it is too large, include `apps/web`, `apps/mobile`, `apps/api/prisma/schema.prisma`, and the package configuration files.
+
+# **Part A — Shared portal design system**
+
+## **1. Visual identity**
+
+# **H**
+
+# **HI-TECH COLLEGE**
+
+Integrated Academic & Certification Platform
+
+Navy
+
+\#102D50
+
+Blue
+
+\#1769AA
+
+Red
+
+\#B83232
+
+Cream
+
+\#F5EBDD
+
+Background
+
+\#F4F7FB
+
+| Design token             | Specification |
+| ------------------------ | ------------- |
+| Primary                  | `#102D50`     |
+| Secondary                | `#1769AA`     |
+| Accent                   | `#B83232`     |
+| Cream                    | `#F5EBDD`     |
+| Page background          | `#F4F7FB`     |
+| Surface                  | `#FFFFFF`     |
+| Font                     | Inter         |
+| Icon library             | Lucide        |
+| Border radius            | 8–16px        |
+| Desktop sidebar          | 256px         |
+| Compact sidebar          | 76px          |
+| Header                   | 68px          |
+| Mobile bottom navigation | 64–72px       |
+
+Use semantic design tokens rather than hardcoding colours across individual pages. Ensure text and interactive controls meet WCAG 2.2 AA contrast and keyboard requirements.
+
+## **2. Shared application structure**
+
+Every authenticated portal page uses this shell:
+
+**HI-TECH COLLEGE**
+
+**NAVIGATION**
+
+Dashboard
+
+My Profile
+
+Academic
+
+Services
+
+Reports
+
+Settings
+
+## **Page content**
+
+Illustrative shared shell. Actual navigation is generated from the authenticated user's permissions.
+
+### **Shared components**
+
+- Portal header and institutional branding.
+- Responsive desktop sidebar.
+- Mobile drawer and bottom navigation.
+- Breadcrumb navigation.
+- Global search.
+- Notification centre.
+- User profile menu.
+- Page title and action toolbar.
+- Dashboard statistic cards.
+- Data tables with filters and pagination.
+- Accessible forms and validation.
+- Confirmation dialogs.
+- Empty states and loading skeletons.
+- Error boundaries and retry actions.
+- Activity timeline.
+- File upload and document preview.
+- Contextual help and support chatbot.
+- Theme and accessibility preferences.
+
+# **Part B — Staff Portal specification**
+
+## **3. Staff Portal navigation**
+
+The sidebar is generated from permissions, department assignments and staff role.
+
+| Main navigation    | Subsections                            |
+| ------------------ | -------------------------------------- |
+| Dashboard          | Overview, tasks, activity              |
+| My Workspace       | Profile, preferences, calendar         |
+| Academic           | Teaching, units, classes, timetable    |
+| Students           | Directory, student profiles, guardians |
+| Attendance         | Class attendance, reports, exceptions  |
+| Assessments        | CATs, assignments, examinations        |
+| Results            | Mark entry, moderation, approval       |
+| Learning Resources | Notes, videos, e-learning              |
+| Communication      | Announcements, messages, notices       |
+| Staff Services     | Leave, HR documents, requests          |
+| Reports            | Academic, departmental, attendance     |
+| Support Centre     | IT tickets, help articles              |
+| Settings           | Notifications, security, preferences   |
+
+The Finance Officer, Registrar, Principal and other administrative roles receive additional modules only where authorised.
+
+## **4. Staff screen catalogue**
+
+| ID      | Screen                 | Required interface                         |
+| ------- | ---------------------- | ------------------------------------------ |
+| STF-001 | Staff Dashboard        | Statistics, timetable, tasks, alerts       |
+| STF-002 | My Profile             | Personal and employment information        |
+| STF-003 | Profile Documents      | Qualifications, contracts, certificates    |
+| STF-004 | My Timetable           | Daily, weekly and monthly views            |
+| STF-005 | My Classes             | Assigned classes and cohorts               |
+| STF-006 | Class Details          | Student list, units and class information  |
+| STF-007 | Student Directory      | Search, filter, authorised student records |
+| STF-008 | Student Profile        | Academic details and permitted information |
+| STF-009 | Teaching Units         | Assigned units and learning outcomes       |
+| STF-010 | Lesson Planning        | Lesson plans and schemes of work           |
+| STF-011 | Learning Materials     | Upload and manage course materials         |
+| STF-012 | Attendance             | Manual and QR attendance                   |
+| STF-013 | Attendance History     | Search, corrections and exceptions         |
+| STF-014 | Assignment Management  | Create, edit and publish assignments       |
+| STF-015 | Assignment Submissions | View and assess submissions                |
+| STF-016 | Assessment Builder     | Question creation and examination setup    |
+| STF-017 | Question Bank          | Categorised question library               |
+| STF-018 | Examination Sessions   | Examination scheduling                     |
+| STF-019 | Mark Entry             | Marks and assessment scores                |
+| STF-020 | Mark Moderation        | Second marking and moderation              |
+| STF-021 | Results Approval       | Authorised results workflow                |
+| STF-022 | Results Reports        | Class performance and academic analysis    |
+| STF-023 | Communication          | Announcements and messages                 |
+| STF-024 | Calendar               | Academic and departmental events           |
+| STF-025 | Leave Application      | Leave requests and tracking                |
+| STF-026 | Staff Requests         | HR and administrative requests             |
+| STF-027 | Department Dashboard   | Department-specific overview               |
+| STF-028 | Notifications          | Alerts and notification preferences        |
+| STF-029 | Support Centre         | IT and institutional support               |
+| STF-030 | Security               | Password, sessions and MFA                 |
+| STF-031 | Settings               | Theme, language, accessibility             |
+| STF-032 | Activity History       | Personal and permitted audit activity      |
+
+## **5. Staff dashboard detailed layout**
+
+[University dashboard design by Madhav Khandal on Dribbble](https://images.openai.com/static-rsc-4/ZnGJqobSnjwHfswM383jNPrlrOAMRvqRtHysbh6bcmXCAsRQA3hrkqRQ9sEFqEXpsfn6raLlfAb2A_Jh6_jebHJDCS1Rc0soK4_0qhgNn0DKGkgHfwdDsF61HBfcLEsHp8LhZDvpb1VXU_oN_nGoUQPaPbrydFZRelmau6GNQqQ?purpose=inline)
+
+[dribbble.com](https://dribbble.com/shots/24663657-University-dashboard-design?utm_source=chatgpt.com)
+
+**Header**
+
+- Greeting and staff profile.
+- Global search.
+- Notifications.
+- Calendar.
+- Help and support.
+- Profile menu.
+
+**Dashboard widgets**
+
+| Widget              | Information                          |
+| ------------------- | ------------------------------------ |
+| Assigned classes    | Active classes                       |
+| Assigned units      | Current teaching units               |
+| Student count       | Students in assigned classes         |
+| Pending assessments | Items requiring marking              |
+| Attendance tasks    | Sessions requiring attendance        |
+| Pending approvals   | Only approvals assigned to user      |
+| Today's timetable   | Upcoming teaching sessions           |
+| Recent activity     | Relevant account and academic events |
+| Announcements       | Institutional communications         |
+| Quick actions       | Common authorised tasks              |
+
+The dashboard must not display invented performance numbers. Every statistic should be sourced from the API and respect the user's permissions.
+
+## **6. Lecturer workflow**
+
+**Teaching workflow**
+
+1. Open assigned class.
+2. Review the timetable and unit information.
+3. Open lesson plan and learning materials.
+4. Record class attendance.
+5. Publish learning resources.
+6. Create assignment or assessment.
+7. Review student submissions.
+8. Mark using an authorised marking scheme.
+9. Submit results for moderation or approval.
+10. Review approved student performance.
+
+## **7. Other staff dashboard specifications**
+
+| Role                | Special dashboard features                                          |
+| ------------------- | ------------------------------------------------------------------- |
+| Principal           | College overview, approvals, strategic performance                  |
+| Registrar           | Admissions, registration, progression and records                   |
+| Finance Officer     | Fee collection, receivables, reconciliations                        |
+| HR Officer          | Staff directory, contracts, leave and payroll                       |
+| Librarian           | Book circulation, cataloguing, overdue items                        |
+| Administrator       | Assigned operational management                                     |
+| Department Head     | Staff, units, timetables and departmental reports                   |
+| Examination Officer | Examination sessions, candidate lists and results workflows         |
+| Super Admin         | Platform configuration, security, integrations and technical health |
+
+# **Part C — Student Portal specification**
+
+## **8. Student Portal navigation**
+
+| Main navigation  | Subsections                             |
+| ---------------- | --------------------------------------- |
+| Dashboard        | Overview, alerts, quick actions         |
+| My Profile       | Personal details, guardians, documents  |
+| My Registration  | Registration, units, change requests    |
+| My Academics     | Programme, courses, academic progress   |
+| Timetable        | Daily, weekly, examination schedule     |
+| Attendance       | Attendance history, queries             |
+| Assignments      | Tasks, submissions, feedback            |
+| Examinations     | CATs, examinations, results             |
+| Fees & Payments  | Fee statement, invoices, receipts       |
+| E-Learning       | Notes, videos, quizzes, online learning |
+| Digital Library  | Books, journals, borrowing              |
+| Documents        | Letters, transcripts, certificates      |
+| Student Services | Welfare, complaints, requests           |
+| Communication    | Announcements, messages                 |
+| Support Centre   | IT and academic support                 |
+| Settings         | Security, preferences, accessibility    |
+
+## **9. Student screen catalogue**
+
+| ID      | Screen                | Required interface                      |
+| ------- | --------------------- | --------------------------------------- |
+| STD-001 | Student Dashboard     | Academic summary, alerts, tasks         |
+| STD-002 | My Profile            | Personal and contact information        |
+| STD-003 | Profile Completion    | Missing required profile details        |
+| STD-004 | My Programme          | Programme and academic level            |
+| STD-005 | Academic Registration | Semester and unit registration          |
+| STD-006 | Unit Selection        | Eligible academic units                 |
+| STD-007 | Registration Status   | Submission and approval tracking        |
+| STD-008 | Change Unit Request   | Add/drop/change unit request            |
+| STD-009 | My Courses            | Enrolled units and lecturers            |
+| STD-010 | Course Details        | Description and learning outcomes       |
+| STD-011 | Learning Materials    | Notes, videos, resources                |
+| STD-012 | Timetable             | Daily and weekly class timetable        |
+| STD-013 | Attendance            | Attendance percentage and records       |
+| STD-014 | Attendance Query      | Report incorrect or missing records     |
+| STD-015 | Assignments           | Active, upcoming and completed          |
+| STD-016 | Assignment Details    | Instructions and resources              |
+| STD-017 | Assignment Submission | Upload files and submit                 |
+| STD-018 | Submission History    | Attempts and feedback                   |
+| STD-019 | Examinations          | Examination calendar                    |
+| STD-020 | Examination Details   | Venue, time and instructions            |
+| STD-021 | Results               | Published academic results              |
+| STD-022 | Results Breakdown     | Unit scores and feedback                |
+| STD-023 | Fee Dashboard         | Current fee status                      |
+| STD-024 | Fee Statement         | Charges, payments and balances          |
+| STD-025 | Pay Fees              | Supported payment methods               |
+| STD-026 | Payment History       | Transactions and receipts               |
+| STD-027 | E-Learning            | Courses and learning activities         |
+| STD-028 | Online Assessments    | Authorised online assessments           |
+| STD-029 | Digital Library       | Search and browse resources             |
+| STD-030 | Borrowed Books        | Loans and due dates                     |
+| STD-031 | Documents             | Letters, transcripts and certificates   |
+| STD-032 | Download Centre       | Available downloadable records          |
+| STD-033 | Student Welfare       | Support services                        |
+| STD-034 | Counselling Requests  | Private authorised requests             |
+| STD-035 | Complaints            | Submit and track complaints             |
+| STD-036 | Communication         | Messages and notices                    |
+| STD-037 | Career Services       | Attachment and internship opportunities |
+| STD-038 | Notifications         | Alerts and preferences                  |
+| STD-039 | Security              | Password, MFA and sessions              |
+| STD-040 | Settings              | Theme, accessibility and preferences    |
+
+## **10. Student dashboard detailed layout**
+
+[Canvas Dashboard Fullerton College at Rita Eustice blog](https://images.openai.com/static-rsc-4/2Fy6da_23DNH0Jev7f3dO3rKLkYkjpiKjOgcknZlgvFeY98_vjOPFGNsyNTE2uui4tHPvSLyYVt7zTEtq6r6RsPIB8J5jZl5e-d8rFo8N_l0lFTxw0aDnoE8z2cvK9xJFf47A_Mso4kr4Kw_fJlH-JU15N_zp6TxkesIwWF2eK0?purpose=inline)
+
+[storage.googleapis.com](https://storage.googleapis.com/dmhazzxpcwivge/canvas-dashboard-fullerton-college.html?utm_source=chatgpt.com)
+
+Dashboard sections:
+
+1. Welcome and academic identity.
+2. Student registration number and programme.
+3. Academic registration status.
+4. Fee statement summary.
+5. Attendance overview.
+6. Active units and courses.
+7. Upcoming assessments.
+8. Examination schedule.
+9. Learning progress.
+10. Notices and announcements.
+11. Outstanding student actions.
+12. Support and communication.
+
+**Student dashboard quick actions**
+
+- Register units.
+- View timetable.
+- Check attendance.
+- Submit assignment.
+- View results.
+- Pay fees.
+- Download documents.
+- Open library.
+- Contact support.
+
+## **11. Student lifecycle and portal states**
+
+The portal should change based on the student's academic lifecycle.
+
+| Lifecycle state      | Portal behaviour                                    |
+| -------------------- | --------------------------------------------------- |
+| Invited              | Account activation page                             |
+| Activated            | First login and password setup                      |
+| Profile incomplete   | Profile completion workflow                         |
+| Admitted             | Admission information and onboarding                |
+| Registration pending | Registration submission and tracking                |
+| Active               | Full authorised student dashboard                   |
+| Deferred             | Deferment status and resumption instructions        |
+| Suspended            | Restricted access and official notices              |
+| Completed            | Completion and clearance information                |
+| Graduated            | Alumni and certificate services                     |
+| Withdrawn            | Restricted historical records and relevant services |
+
+Do not grant academic services simply because an account exists. Account activation, student admission, academic registration and active enrolment are distinct states.
+
+# **Part D — Mobile application specification**
+
+## **12. Mobile application architecture**
+
+The mobile app should use the same API and permission model as the web portal.
+
+**Mobile navigation architecture**
+
+**Home**
+
+Dashboard and alerts
+
+**Learning**
+
+Courses and resources
+
+**Activities**
+
+Timetable and tasks
+
+**Messages**
+
+Notifications and support
+
+**More**
+
+Profile, finance, documents and settings
+
+### **Staff mobile functions**
+
+- Take attendance.
+- View classes and students.
+- Upload learning materials.
+- Mark assignments.
+- Review student submissions.
+- View timetable.
+- Receive approval requests.
+- Submit leave requests.
+- Receive institutional notifications.
+
+### **Student mobile functions**
+
+- View courses.
+- Register units.
+- Check attendance.
+- Submit assignments.
+- View results.
+- Pay fees.
+- Download learning materials.
+- Access digital library.
+- Receive notices.
+- Submit support requests.
+
+### **Mobile-specific requirements**
+
+- Secure session management.
+- Biometric unlock where supported and enabled.
+- Camera-based QR attendance.
+- File upload from device storage.
+- Push notifications with user consent.
+- Offline access to previously downloaded learning resources.
+- Network failure and retry handling.
+- Clear sync status for offline activity.
+- No sensitive information exposed in notification previews by default.
+
+# **Part E — Permissions and security**
+
+## **13. Permission model**
+
+Use granular permissions, not only role names.
+
+Examples:
+
+```
+
+student.profile.view.self
+student.profile.update.self
+student.registration.view.self
+student.registration.submit.self
+student.registration.change.submit.self
+student.attendance.view.self
+student.assignment.view.self
+student.assignment.submit.self
+student.results.view.self
+student.finance.statement.view.self
+student.payment.initiate.self
+
+staff.profile.view.self
+staff.profile.update.self
+academic.class.view.assigned
+academic.student.view.assigned
+academic.attendance.create.assigned
+academic.attendance.correct.request
+academic.assignment.create.assigned
+academic.assignment.mark.assigned
+academic.results.submit.assigned
+academic.results.moderate.assigned
+academic.results.approve.assigned
+
+finance.statement.view
+finance.payment.reconcile
+finance.receipt.issue
+finance.refund.approve
+
+registrar.admission.review
+registrar.student.registration.approve
+registrar.student.record.update
+registrar.academic.progression.manage
+
+hr.staff.record.view
+hr.staff.record.manage
+hr.leave.review
+
+platform.configuration.manage
+platform.integration.manage
+platform.security.audit.view
+
+```
+
+### **Access control rules**
+
+1. Students only access their own records.
+2. Lecturers access students in their assigned teaching groups.
+3. Department Heads access authorised departmental records.
+4. Finance staff access authorised finance records, not confidential counselling records.
+5. HR staff access authorised employment records.
+6. Results approval is separated from mark entry.
+7. Super Admin technical privileges do not automatically grant access to confidential business records.
+8. Every sensitive action is audited.
+9. APIs validate permissions independently of the frontend.
+10. File downloads enforce the same record-level permissions as page views.
+
+# **Part F — Forms and workflows**
+
+## **14. Common forms**
+
+**Staff forms**
+
+- Personal profile.
+- Employment information.
+- Qualification records.
+- Leave application.
+- Lesson plan.
+- Attendance submission.
+- Assignment creation.
+- Examination creation.
+- Mark entry.
+- Student academic request review.
+
+**Student forms**
+
+- Profile completion.
+- Academic registration.
+- Unit change request.
+- Assignment submission.
+- Attendance correction request.
+- Fee payment initiation.
+- Complaint submission.
+- Counselling request.
+- Document request.
+
+All forms require:
+
+- Field labels and instructions.
+- Client and server validation.
+- Accessible error summaries.
+- Save draft where appropriate.
+- Unsaved-changes warning.
+- Submission confirmation.
+- Status tracking.
+- Audit history for regulated workflows.
+
+## **15. Important workflows**
+
+**Student academic registration**
+
+1. Student signs in.
+2. System checks admission and academic status.
+3. Student selects eligible semester and units.
+4. System validates prerequisites and unit limits.
+5. Student submits registration.
+6. Registrar reviews and approves or requests changes.
+7. Approved registration becomes the official academic record.
+
+**Assessment and results**
+
+1. Lecturer creates assessment.
+2. Authorised examination officer schedules it.
+3. Students complete assessment.
+4. Lecturer marks submissions.
+5. Second marker or moderator reviews where required.
+6. Authorised officer approves results.
+7. Published results appear in the student portal.
+
+**Student fee payment**
+
+1. Student views current fee statement.
+2. Student selects an available payment method.
+3. System initiates the payment transaction.
+4. Payment callback is verified server-side.
+5. Finance ledger is updated once.
+6. Receipt is generated and made available.
+
+# **Part G — Technical implementation specification**
+
+## **16. Target repository structure**
+
+The following is the proposed target structure. It must be reconciled with the real source before files are created or replaced.
+
+```
+
+hitech-college-website/
+├── apps/
+│   ├── api/
+│   │   ├── prisma/
+│   │   │   └── schema.prisma
+│   │   └── src/
+│   │       ├── middleware/
+│   │       ├── modules/
+│   │       ├── routes/
+│   │       ├── services/
+│   │       └── utils/
+│   │
+│   ├── web/
+│   │   └── src/
+│   │       ├── app/
+│   │       ├── components/
+│   │       │   ├── layout/
+│   │       │   ├── navigation/
+│   │       │   ├── forms/
+│   │       │   └── ui/
+│   │       ├── modules/
+│   │       │   ├── auth/
+│   │       │   ├── staff/
+│   │       │   ├── student/
+│   │       │   ├── academic/
+│   │       │   ├── finance/
+│   │       │   └── shared/
+│   │       ├── hooks/
+│   │       ├── services/
+│   │       ├── styles/
+│   │       └── types/
+│   │
+│   └── mobile/
+│       └── src/
+│           ├── app/
+│           ├── components/
+│           ├── navigation/
+│           ├── modules/
+│           │   ├── auth/
+│           │   ├── staff/
+│           │   ├── student/
+│           │   └── shared/
+│           ├── services/
+│           └── theme/
+
+```
+
+## **17. Shared API integration contract**
+
+These are proposed API responsibilities, not verified existing endpoints.
+
+| Area              | Proposed API                  |
+| ----------------- | ----------------------------- |
+| Authentication    | `/api/auth/*`                 |
+| Current user      | `/api/users/me`               |
+| Permissions       | `/api/permissions/me`         |
+| Notifications     | `/api/notifications/*`        |
+| Staff dashboard   | `/api/staff/dashboard`        |
+| Student dashboard | `/api/student/dashboard`      |
+| Student profile   | `/api/sis/students/me`        |
+| Staff profile     | `/api/hr/staff/me`            |
+| Timetable         | `/api/academic/timetable/*`   |
+| Attendance        | `/api/academic/attendance/*`  |
+| Assignments       | `/api/academic/assignments/*` |
+| Results           | `/api/academic/results/*`     |
+| Fees              | `/api/finance/student/*`      |
+| Documents         | `/api/documents/*`            |
+| Support           | `/api/support/*`              |
+
+Every endpoint must use the established authentication middleware, Zod validation conventions, central error handling and record-level authorization.
+
+## **18. Responsive design breakpoints**
+
+| Screen        | Width       | Behaviour            |
+| ------------- | ----------- | -------------------- |
+| Small mobile  | 320–374px   | Single-column layout |
+| Mobile        | 375–767px   | Bottom navigation    |
+| Tablet        | 768–1023px  | Collapsible sidebar  |
+| Desktop       | 1024–1439px | Full sidebar         |
+| Large desktop | 1440px+     | Expanded workspace   |
+
+## **19. Accessibility requirements**
+
+- WCAG 2.2 AA.
+- Full keyboard navigation.
+- Visible focus indicator.
+- Skip-to-content link.
+- Semantic headings and landmarks.
+- Accessible names for icon-only controls.
+- Screen-reader announcements for status changes.
+- Accessible tables and pagination.
+- Form error summaries.
+- Reduced-motion support.
+- Minimum comfortable touch targets.
+- No colour-only status indicators.
+- Accessible authentication and session expiry warnings.
+
+## **20. Implementation sequence**
+
+| Phase | Scope                     | Acceptance criteria                                        |
+| ----- | ------------------------- | ---------------------------------------------------------- |
+| 0     | Source inspection         | Existing routes, components and models inventoried         |
+| 1     | Design system             | Shared tokens, typography and UI primitives                |
+| 2     | Application shell         | Desktop and mobile navigation                              |
+| 3     | Authentication            | Shared login and role-based redirects                      |
+| 4     | Staff portal              | All staff screens and permissions                          |
+| 5     | Student portal            | All student screens and permissions                        |
+| 6     | Academic services         | Registration, timetable and attendance                     |
+| 7     | Learning services         | Courses, assignments and library                           |
+| 8     | Examination services      | Assessment, marking and results                            |
+| 9     | Finance services          | Statements, payments and receipts                          |
+| 10    | Support and communication | Notifications, messaging and help                          |
+| 11    | Mobile                    | Expo staff and student experiences                         |
+| 12    | Quality assurance         | Accessibility, responsive, security and regression testing |
+
+# **Part H — Definition of done**
+
+Each portal module must pass the following before being considered complete:
+
+- Desktop layout works at supported widths.
+- Mobile layout works at supported widths.
+- All buttons perform their advertised actions.
+- Loading, empty, success and error states exist.
+- Forms validate on client and server.
+- Permissions are enforced on the API.
+- Data comes from real API endpoints, not hardcoded demo values.
+- Sensitive data is not exposed in logs or browser storage.
+- Keyboard navigation works.
+- WCAG 2.2 AA checks are completed.
+- Unit and integration tests pass.
+- Existing functionality remains intact.
+- Database migrations are reviewed and tested before deployment.
+
+## **Next: source inspection and code implementation**
+
+Once the source ZIP is available, I will proceed in this order:
+
+1. Inspect `apps/web`, `apps/mobile`, `apps/api` and the existing Prisma schema.
+2. Identify existing layouts, routes, authentication, permissions and shared UI components.
+3. Map the specification to existing code and identify gaps.
+4. Produce exact file-by-file changes.
+5. Write the complete implementation code here, in manageable, ordered sections.
+6. Run available checks against the supplied source and report actual results.
+
+The first implementation slice will be the **shared responsive portal shell and design system**, followed by both role-specific dashboards. This avoids building two inconsistent portals or duplicating existing functionality.

@@ -1,0 +1,1410 @@
+# **Phase 10 — Examination Supervisor Dashboard**
+
+The next implementation slice is the live exam supervision workspace. It should be a separate staff interface, not part of the student examination screen.
+
+The supervisor should be able to monitor candidates in real time, inspect individual sessions, review security incidents, intervene when necessary and generate examination reports.
+
+## **1. Dashboard layout**
+
+# **Examination Control**
+
+Supervisor monitoring workspace
+
+LIVE
+
+Total candidates
+
+# **120**
+
+Active
+
+# **96**
+
+Disconnected
+
+# **8**
+
+Submitted
+
+# **12**
+
+Not started
+
+# **3**
+
+Expired
+
+# **1**
+
+**Candidate completion**
+
+80%
+
+96 candidates currently active out of 120 registered.
+
+Illustrative mock dashboard data, not live examination records.
+
+## **2. File structure**
+
+```
+apps/web/src/modules/staff/examination-supervisor/
+├── pages/
+│   └── ExaminationSupervisorDashboard.tsx
+├── components/
+│   ├── SupervisorStats.tsx
+│   ├── CandidateLiveTable.tsx
+│   ├── IncidentPanel.tsx
+│   ├── CandidateSessionModal.tsx
+│   ├── SupervisorInterventionModal.tsx
+│   └── ExamReportPanel.tsx
+├── types/
+│   └── supervisor.types.ts
+├── services/
+│   └── supervisorExamApi.ts
+└── styles/
+    └── supervisor-dashboard.css
+```
+
+## **3. Types —&#x20;**`types/supervisor.types.ts`
+
+```
+export type CandidateExamStatus =
+  | "NOT_STARTED"
+  | "ACTIVE"
+  | "DISCONNECTED"
+  | "SUBMITTED"
+  | "EXPIRED"
+  | "TERMINATED";
+
+export type SecurityEventType =
+  | "TAB_SWITCH"
+  | "FULLSCREEN_EXIT"
+  | "COPY_ATTEMPT"
+  | "PASTE_ATTEMPT"
+  | "MULTIPLE_DISCONNECTS"
+  | "UNUSUAL_ACTIVITY"
+  | "OTHER";
+
+export interface CandidateSession {
+  id: string;
+  studentId: string;
+  registrationNumber: string;
+  studentName: string;
+  examName: string;
+  status: CandidateExamStatus;
+  startedAt?: string;
+  submittedAt?: string;
+  lastSeenAt?: string;
+  remainingSeconds?: number;
+  progress: number;
+  securityEvents: number;
+  connection: "ONLINE" | "OFFLINE";
+}
+
+export interface SecurityIncident {
+  id: string;
+  candidateSessionId: string;
+  studentName: string;
+  registrationNumber: string;
+  eventType: SecurityEventType;
+  description: string;
+  occurredAt: string;
+  severity: "LOW" | "MEDIUM" | "HIGH";
+  reviewed: boolean;
+  reviewNotes?: string;
+}
+
+export interface SupervisorAction {
+  id: string;
+  candidateSessionId: string;
+  action:
+    | "EXTEND_TIME"
+    | "FORCE_SUBMIT"
+    | "TERMINATE"
+    | "RECONNECT"
+    | "MARK_ATTENDANCE"
+    | "REVIEW_INCIDENT";
+  reason: string;
+  performedBy: string;
+  performedAt: string;
+}
+```
+
+## **4. Main dashboard —&#x20;**`pages/ExaminationSupervisorDashboard.tsx`
+
+This is a standalone front-end prototype. It uses sample data until connected to the existing exam-session API.
+
+```
+import React, { useMemo, useState } from "react";
+import type {
+  CandidateSession,
+  CandidateExamStatus,
+  SecurityIncident,
+} from "../types/supervisor.types";
+import "../styles/supervisor-dashboard.css";
+
+const initialCandidates: CandidateSession[] = [
+  {
+    id: "SES-001",
+    studentId: "ST-001",
+    registrationNumber: "HTC/2026/001",
+    studentName: "John Mwangi",
+    examName: "Computer Packages",
+    status: "ACTIVE",
+    startedAt: "2026-11-23T08:00:00",
+    lastSeenAt: "2026-11-23T08:30:00",
+    remainingSeconds: 3600,
+    progress: 65,
+    securityEvents: 0,
+    connection: "ONLINE",
+  },
+  {
+    id: "SES-002",
+    studentId: "ST-002",
+    registrationNumber: "HTC/2026/002",
+    studentName: "Mary Wanjiku",
+    examName: "Computer Packages",
+    status: "DISCONNECTED",
+    startedAt: "2026-11-23T08:02:00",
+    lastSeenAt: "2026-11-23T08:25:00",
+    remainingSeconds: 2400,
+    progress: 40,
+    securityEvents: 2,
+    connection: "OFFLINE",
+  },
+  {
+    id: "SES-003",
+    studentId: "ST-003",
+    registrationNumber: "HTC/2026/003",
+    studentName: "Peter Kamau",
+    examName: "Computer Packages",
+    status: "SUBMITTED",
+    startedAt: "2026-11-23T08:00:00",
+    submittedAt: "2026-11-23T08:20:00",
+    progress: 100,
+    securityEvents: 0,
+    connection: "ONLINE",
+  },
+  {
+    id: "SES-004",
+    studentId: "ST-004",
+    registrationNumber: "HTC/2026/004",
+    studentName: "Ann Njeri",
+    examName: "Computer Packages",
+    status: "NOT_STARTED",
+    progress: 0,
+    securityEvents: 0,
+    connection: "ONLINE",
+  },
+  {
+    id: "SES-005",
+    studentId: "ST-005",
+    registrationNumber: "HTC/2026/005",
+    studentName: "David Otieno",
+    examName: "Computer Packages",
+    status: "EXPIRED",
+    progress: 72,
+    securityEvents: 1,
+    connection: "OFFLINE",
+  },
+];
+
+const initialIncidents: SecurityIncident[] = [
+  {
+    id: "INC-001",
+    candidateSessionId: "SES-002",
+    studentName: "Mary Wanjiku",
+    registrationNumber: "HTC/2026/002",
+    eventType: "TAB_SWITCH",
+    description: "Exam window lost focus",
+    occurredAt: "2026-11-23T08:24:00",
+    severity: "MEDIUM",
+    reviewed: false,
+  },
+  {
+    id: "INC-002",
+    candidateSessionId: "SES-002",
+    studentName: "Mary Wanjiku",
+    registrationNumber: "HTC/2026/002",
+    eventType: "FULLSCREEN_EXIT",
+    description: "Fullscreen mode exited",
+    occurredAt: "2026-11-23T08:25:00",
+    severity: "MEDIUM",
+    reviewed: false,
+  },
+];
+
+const statusLabels: Record<CandidateExamStatus, string> = {
+  NOT_STARTED: "Not started",
+  ACTIVE: "Active",
+  DISCONNECTED: "Disconnected",
+  SUBMITTED: "Submitted",
+  EXPIRED: "Expired",
+  TERMINATED: "Terminated",
+};
+
+function formatTime(seconds?: number) {
+  if (seconds == null) return "--:--";
+
+  const safe = Math.max(0, seconds);
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const remaining = safe % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+      remaining
+    ).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(remaining).padStart(2, "0")}`;
+}
+
+function formatDate(date?: string) {
+  if (!date) return "—";
+
+  return new Date(date).toLocaleTimeString("en-KE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function ExaminationSupervisorDashboard() {
+  const [candidates, setCandidates] =
+    useState<CandidateSession[]>(initialCandidates);
+
+  const [incidents, setIncidents] =
+    useState<SecurityIncident[]>(initialIncidents);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<CandidateExamStatus | "ALL">("ALL");
+
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<CandidateSession | null>(null);
+
+  const [activeTab, setActiveTab] = useState<
+    "candidates" | "incidents" | "reports" | "audit"
+  >("candidates");
+
+  const counts = useMemo(() => {
+    const count = (status: CandidateExamStatus) =>
+      candidates.filter((c) => c.status === status).length;
+
+    return {
+      total: candidates.length,
+      active: count("ACTIVE"),
+      disconnected: count("DISCONNECTED"),
+      submitted: count("SUBMITTED"),
+      notStarted: count("NOT_STARTED"),
+      expired: count("EXPIRED"),
+      terminated: count("TERMINATED"),
+    };
+  }, [candidates]);
+
+  const filteredCandidates = candidates.filter((candidate) => {
+    const matchesSearch =
+      candidate.studentName.toLowerCase().includes(search.toLowerCase()) ||
+      candidate.registrationNumber
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "ALL" || candidate.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  function updateStatus(
+    id: string,
+    status: CandidateExamStatus,
+    reason: string
+  ) {
+    if (!reason.trim()) {
+      window.alert("An intervention reason is required.");
+      return;
+    }
+
+    setCandidates((previous) =>
+      previous.map((candidate) =>
+        candidate.id === id
+          ? {
+              ...candidate,
+              status,
+              connection:
+                status === "ACTIVE" ? "ONLINE" : candidate.connection,
+            }
+          : candidate
+      )
+    );
+
+    setSelectedCandidate(null);
+  }
+
+  function reviewIncident(id: string, notes: string) {
+    setIncidents((previous) =>
+      previous.map((incident) =>
+        incident.id === id
+          ? {
+              ...incident,
+              reviewed: true,
+              reviewNotes: notes,
+            }
+          : incident
+      )
+    );
+  }
+
+  return (
+    <main className="supervisor-dashboard">
+      <header className="supervisor-header">
+        <div>
+          <span className="supervisor-eyebrow">
+            EXAMINATION MANAGEMENT
+          </span>
+
+          <h1>Examination Supervisor</h1>
+
+          <p>
+            Monitor candidates, manage exam sessions and review
+            examination incidents.
+          </p>
+        </div>
+
+        <div className="live-indicator">
+          <span className="live-dot" />
+          Monitoring
+        </div>
+      </header>
+
+      <section className="exam-session-banner">
+        <div>
+          <span className="session-label">CURRENT EXAMINATION</span>
+          <h2>Computer Packages</h2>
+          <p>November 2026 · CAT / Final Assessment</p>
+        </div>
+
+        <div className="session-banner-meta">
+          <div>
+            <span>Session status</span>
+            <strong>Running</strong>
+          </div>
+          <div>
+            <span>Exam duration</span>
+            <strong>2 Hours</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="supervisor-stats">
+        <StatCard label="Candidates" value={counts.total} />
+        <StatCard label="Active" value={counts.active} tone="success" />
+        <StatCard
+          label="Disconnected"
+          value={counts.disconnected}
+          tone="warning"
+        />
+        <StatCard label="Submitted" value={counts.submitted} tone="blue" />
+        <StatCard label="Not started" value={counts.notStarted} />
+        <StatCard label="Expired" value={counts.expired} tone="danger" />
+      </section>
+
+      <nav className="supervisor-tabs" aria-label="Exam monitoring sections">
+        {(["candidates", "incidents", "reports", "audit"] as const).map(
+          (tab) => (
+            <button
+              key={tab}
+              className={activeTab === tab ? "active" : ""}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "candidates"
+                ? "Candidates"
+                : tab === "incidents"
+                ? `Incidents (${incidents.filter((i) => !i.reviewed).length})`
+                : tab === "reports"
+                ? "Reports"
+                : "Audit trail"}
+            </button>
+          )
+        )}
+      </nav>
+
+      {activeTab === "candidates" && (
+        <section className="supervisor-panel">
+          <div className="panel-heading">
+            <div>
+              <h2>Candidate monitoring</h2>
+              <p>Inspect and manage examination sessions.</p>
+            </div>
+          </div>
+
+          <div className="candidate-filters">
+            <input
+              aria-label="Search candidate"
+              placeholder="Search name or registration number..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <select
+              aria-label="Filter candidate status"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as CandidateExamStatus | "ALL"
+                )
+              }
+            >
+              <option value="ALL">All statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="DISCONNECTED">Disconnected</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="NOT_STARTED">Not started</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="TERMINATED">Terminated</option>
+            </select>
+          </div>
+
+          <CandidateTable
+            candidates={filteredCandidates}
+            onInspect={setSelectedCandidate}
+          />
+        </section>
+      )}
+
+      {activeTab === "incidents" && (
+        <IncidentList
+          incidents={incidents}
+          onReview={reviewIncident}
+        />
+      )}
+
+      {activeTab === "reports" && (
+        <ExamReport candidates={candidates} />
+      )}
+
+      {activeTab === "audit" && (
+        <AuditTrail />
+      )}
+
+      {selectedCandidate && (
+        <CandidateInspection
+          candidate={selectedCandidate}
+          onClose={() => setSelectedCandidate(null)}
+          onIntervention={updateStatus}
+        />
+      )}
+    </main>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  tone = "",
+}: {
+  label: string;
+  value: number;
+  tone?: string;
+}) {
+  return (
+    <article className={`supervisor-stat ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </article>
+  );
+}
+
+function CandidateTable({
+  candidates,
+  onInspect,
+}: {
+  candidates: CandidateSession[];
+  onInspect: (candidate: CandidateSession) => void;
+}) {
+  return (
+    <div className="supervisor-table-wrap">
+      <table className="supervisor-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Connection</th>
+            <th>Status</th>
+            <th>Time left</th>
+            <th>Progress</th>
+            <th>Incidents</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {candidates.map((candidate) => (
+            <tr key={candidate.id}>
+              <td>
+                <strong>{candidate.studentName}</strong>
+                <small>{candidate.registrationNumber}</small>
+              </td>
+
+              <td>
+                <span
+                  className={`connection ${candidate.connection.toLowerCase()}`}
+                >
+                  {candidate.connection}
+                </span>
+              </td>
+
+              <td>
+                <span
+                  className={`candidate-status ${candidate.status.toLowerCase()}`}
+                >
+                  {statusLabels[candidate.status]}
+                </span>
+              </td>
+
+              <td>{formatTime(candidate.remainingSeconds)}</td>
+
+              <td>
+                <div className="candidate-progress">
+                  <div>
+                    <span style={{ width: `${candidate.progress}%` }} />
+                  </div>
+                  <small>{candidate.progress}%</small>
+                </div>
+              </td>
+
+              <td>{candidate.securityEvents}</td>
+
+              <td>
+                <button
+                  className="inspect-button"
+                  onClick={() => onInspect(candidate)}
+                >
+                  Inspect
+                </button>
+              </td>
+            </tr>
+          ))}
+
+          {candidates.length === 0 && (
+            <tr>
+              <td colSpan={7}>No candidates found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function IncidentList({
+  incidents,
+  onReview,
+}: {
+  incidents: SecurityIncident[];
+  onReview: (id: string, notes: string) => void;
+}) {
+  return (
+    <section className="supervisor-panel">
+      <h2>Security incident monitoring</h2>
+
+      {incidents.length === 0 ? (
+        <p>No recorded incidents.</p>
+      ) : (
+        <div className="incident-list">
+          {incidents.map((incident) => (
+            <article key={incident.id} className="incident-item">
+              <div>
+                <strong>{incident.studentName}</strong>
+                <small>{incident.registrationNumber}</small>
+              </div>
+
+              <div>
+                <span className={`severity ${incident.severity.toLowerCase()}`}>
+                  {incident.severity}
+                </span>
+
+                <strong>{incident.eventType.replace(/_/g, " ")}</strong>
+                <p>{incident.description}</p>
+                <small>{formatDate(incident.occurredAt)}</small>
+              </div>
+
+              <div>
+                {incident.reviewed ? (
+                  <span className="reviewed">Reviewed</span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const notes = window.prompt(
+                        "Enter incident review notes:"
+                      );
+
+                      if (notes?.trim()) {
+                        onReview(incident.id, notes);
+                      }
+                    }}
+                  >
+                    Review
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CandidateInspection({
+  candidate,
+  onClose,
+  onIntervention,
+}: {
+  candidate: CandidateSession;
+  onClose: () => void;
+  onIntervention: (
+    id: string,
+    status: CandidateExamStatus,
+    reason: string
+  ) => void;
+}) {
+  const [reason, setReason] = useState("");
+
+  return (
+    <div className="supervisor-modal-backdrop">
+      <section
+        className="supervisor-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="candidate-inspection-title"
+      >
+        <header>
+          <div>
+            <h2 id="candidate-inspection-title">Candidate inspection</h2>
+            <p>{candidate.registrationNumber}</p>
+          </div>
+          <button onClick={onClose} aria-label="Close inspection">
+            ×
+          </button>
+        </header>
+
+        <div className="candidate-details">
+          <Detail label="Student" value={candidate.studentName} />
+          <Detail label="Exam" value={candidate.examName} />
+          <Detail label="Status" value={statusLabels[candidate.status]} />
+          <Detail label="Connection" value={candidate.connection} />
+          <Detail label="Started" value={formatDate(candidate.startedAt)} />
+          <Detail
+            label="Remaining"
+            value={formatTime(candidate.remainingSeconds)}
+          />
+          <Detail label="Progress" value={`${candidate.progress}%`} />
+          <Detail
+            label="Incidents"
+            value={String(candidate.securityEvents)}
+          />
+        </div>
+
+        <div className="intervention-section">
+          <h3>Supervisor intervention</h3>
+
+          <label htmlFor="intervention-reason">
+            Reason for action
+          </label>
+
+          <textarea
+            id="intervention-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Enter the reason. This will be recorded in the audit trail."
+          />
+
+          <div className="intervention-actions">
+            <button
+              onClick={() =>
+                onIntervention(candidate.id, "ACTIVE", reason)
+              }
+            >
+              Restore session
+            </button>
+
+            <button
+              className="warning-action"
+              onClick={() =>
+                onIntervention(candidate.id, "SUBMITTED", reason)
+              }
+            >
+              Manual submit
+            </button>
+
+            <button
+              className="danger-action"
+              onClick={() =>
+                onIntervention(candidate.id, "TERMINATED", reason)
+              }
+            >
+              Terminate session
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="candidate-detail">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ExamReport({ candidates }: { candidates: CandidateSession[] }) {
+  const submitted = candidates.filter((c) => c.status === "SUBMITTED");
+  const active = candidates.filter((c) => c.status === "ACTIVE");
+  const disconnected = candidates.filter(
+    (c) => c.status === "DISCONNECTED"
+  );
+
+  return (
+    <section className="supervisor-panel">
+      <h2>Examination report</h2>
+
+      <div className="report-summary">
+        <Detail label="Registered" value={String(candidates.length)} />
+        <Detail label="Submitted" value={String(submitted.length)} />
+        <Detail label="Active" value={String(active.length)} />
+        <Detail label="Disconnected" value={String(disconnected.length)} />
+      </div>
+
+      <button
+        onClick={() => {
+          const csv = [
+            [
+              "Student",
+              "Registration",
+              "Status",
+              "Progress",
+              "Incidents",
+            ],
+            ...candidates.map((c) => [
+              c.studentName,
+              c.registrationNumber,
+              c.status,
+              String(c.progress),
+              String(c.securityEvents),
+            ]),
+          ]
+            .map((row) =>
+              row
+                .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+                .join(",")
+            )
+            .join("\r\n");
+
+          const blob = new Blob([csv], {
+            type: "text/csv;charset=utf-8",
+          });
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "exam-supervisor-report.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        }}
+      >
+        Export CSV
+      </button>
+    </section>
+  );
+}
+
+function AuditTrail() {
+  return (
+    <section className="supervisor-panel">
+      <h2>Supervisor audit trail</h2>
+      <p>
+        The audit trail will record supervisor interventions,
+        submissions, incident reviews and termination actions.
+      </p>
+
+      <p>
+        The live audit table will be populated from the server's
+        examination audit records.
+      </p>
+    </section>
+  );
+}
+```
+
+This prototype implements candidate filtering, inspection, incident review UI, CSV export and local intervention actions. The remaining components and persistence are completed in the following slices.
+
+## **5. Dashboard CSS —&#x20;**`styles/supervisor-dashboard.css`
+
+```
+.supervisor-dashboard {
+  padding: 24px;
+  color: #172b43;
+  background: #f5f7fa;
+  min-height: 100vh;
+  font-family: Inter, sans-serif;
+}
+
+.supervisor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.supervisor-header h1 {
+  margin: 8px 0;
+  font-size: 26px;
+}
+
+.supervisor-header p,
+.panel-heading p {
+  color: #64748b;
+  margin: 0;
+}
+
+.supervisor-eyebrow,
+.session-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.exam-session-banner {
+  background: #102d50;
+  color: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.exam-session-banner h2 {
+  margin: 8px 0;
+}
+
+.exam-session-banner p {
+  color: #d1d9e4;
+}
+
+.session-banner-meta {
+  display: flex;
+  gap: 24px;
+}
+
+.session-banner-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-banner-meta span {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.supervisor-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.supervisor-stat {
+  padding: 18px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.supervisor-stat span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.supervisor-stat strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 28px;
+}
+
+.supervisor-stat.success strong {
+  color: #15803d;
+}
+
+.supervisor-stat.warning strong {
+  color: #d97706;
+}
+
+.supervisor-stat.blue strong {
+  color: #2563eb;
+}
+
+.supervisor-stat.danger strong {
+  color: #dc2626;
+}
+
+.supervisor-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #dbe2ea;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.supervisor-tabs button {
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+
+.supervisor-tabs button.active {
+  color: #102d50;
+  border-bottom-color: #1769aa;
+  font-weight: 700;
+}
+
+.supervisor-panel {
+  background: white;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.panel-heading h2,
+.supervisor-panel h2 {
+  margin-top: 0;
+}
+
+.candidate-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.candidate-filters input,
+.candidate-filters select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 42px;
+  background: white;
+}
+
+.candidate-filters input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.supervisor-table-wrap {
+  overflow-x: auto;
+}
+
+.supervisor-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 850px;
+}
+
+.supervisor-table th,
+.supervisor-table td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.supervisor-table th {
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.supervisor-table td strong,
+.supervisor-table td small {
+  display: block;
+}
+
+.supervisor-table td small {
+  margin-top: 5px;
+  color: #64748b;
+}
+
+.candidate-status,
+.connection,
+.severity,
+.reviewed {
+  padding: 5px 9px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.candidate-status.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.candidate-status.disconnected {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.candidate-status.submitted {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.candidate-status.expired,
+.candidate-status.terminated {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.candidate-status.not_started {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.connection.online {
+  color: #15803d;
+}
+
+.connection.offline {
+  color: #b45309;
+}
+
+.candidate-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidate-progress div {
+  width: 65px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.candidate-progress div span {
+  height: 100%;
+  display: block;
+  background: #1769aa;
+}
+
+.inspect-button,
+.incident-item button,
+.supervisor-panel button {
+  cursor: pointer;
+}
+
+.inspect-button {
+  border: 1px solid #1769aa;
+  color: #1769aa;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.incident-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.incident-item {
+  display: grid;
+  grid-template-columns: 1fr 2fr 120px;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 0;
+}
+
+.incident-item small,
+.incident-item p {
+  color: #64748b;
+}
+
+.incident-item p {
+  margin: 6px 0;
+}
+
+.severity.high {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.severity.medium {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.severity.low {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.reviewed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.supervisor-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(15 23 42 / 55%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.supervisor-modal {
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: auto;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.supervisor-modal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.supervisor-modal header button {
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.candidate-details,
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.candidate-detail {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.candidate-detail span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.candidate-detail strong {
+  font-size: 14px;
+}
+
+.intervention-section {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+}
+
+.intervention-section textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.intervention-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.intervention-actions button {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+}
+
+.warning-action {
+  color: #92400e;
+  border-color: #f59e0b !important;
+}
+
+.danger-action {
+  color: #991b1b;
+  border-color: #dc2626 !important;
+}
+
+.supervisor-dashboard button:focus-visible,
+.supervisor-dashboard input:focus-visible,
+.supervisor-dashboard select:focus-visible,
+.supervisor-dashboard textarea:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1000px) {
+  .supervisor-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .supervisor-dashboard {
+    padding: 14px;
+  }
+
+  .supervisor-header,
+  .exam-session-banner {
+    flex-direction: column;
+  }
+
+  .session-banner-meta {
+    flex-wrap: wrap;
+  }
+
+  .supervisor-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .candidate-filters {
+    flex-direction: column;
+  }
+
+  .incident-item {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-details,
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .intervention-actions {
+    flex-direction: column;
+  }
+
+  .intervention-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+## **6. Router integration**
+
+File: `apps/web/src/modules/staff/examination-supervisor/routes.tsx`
+
+```
+import ExaminationSupervisorDashboard from "./pages/ExaminationSupervisorDashboard";
+
+export const examinationSupervisorRoute = {
+  path: "/portal/staff/examinations/supervisor",
+  element: <ExaminationSupervisorDashboard />,
+};
+```
+
+This is a route definition example. Register it in the existing router and apply the actual staff authorization guard; do not create a second router.
+
+## **7. Supervisor permissions**
+
+| Action                    | Principal  | Exam Supervisor | Lecturer       | Admin      |
+| ------------------------- | ---------- | --------------- | -------------- | ---------- |
+| View live exam            | Yes        | Yes             | Assigned only  | Yes        |
+| Inspect candidate session | Yes        | Yes             | Assigned only  | Yes        |
+| Review security incidents | Yes        | Yes             | Assigned only  | Yes        |
+| Extend time               | Authorized | Authorized      | Restricted     | Authorized |
+| Manual submission         | Authorized | Authorized      | Restricted     | Authorized |
+| Terminate session         | Authorized | Authorized      | Restricted     | Authorized |
+| Export reports            | Yes        | Yes             | Assigned exams | Yes        |
+| View audit trail          | Yes        | Assigned exams  | Limited        | Yes        |
+
+These are proposed permission defaults, subject to your existing RBAC configuration.
+
+## **8. Next backend implementation**
+
+The next code slice should be the actual API and database layer, so the dashboard stops using mock data.
+
+1. `ExamSupervisorController`
+2. `ExamSupervisorService`
+3. `ExamSupervisorRoutes`
+4. Live session API
+5. Candidate session inspection API
+6. Supervisor time-extension API
+7. Manual submission API
+8. Termination API
+9. Incident review API
+10. Audit trail API
+11. Attendance and submission report API
+12. WebSocket/SSE live monitoring
+13. Supervisor authorization middleware
+14. Prisma audit and intervention records
+
+Phase 10 UI foundation: Dashboard, candidate statistics, candidate table, filtering, inspection modal, incident review interface, CSV export prototype and intervention interface.
+
+Not production-connected: Real-time feeds, server-side intervention, persistence, authentication/authorization enforcement, actual audit history and report generation.
+
+The next step is **Phase 10B — Examination Supervisor Backend, Prisma Database, Live API, WebSocket/SSE, Audit Logs and Secure Supervisor Interventions**.

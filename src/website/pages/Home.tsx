@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import Hero from "../components/Hero";
 import CourseCard from "../components/CourseCard";
+import ScrollView from "../../components/ScrollView";
 import { COURSES_CATALOGUE, NEWS_AND_EVENTS, COLLEGE_INFO, FAQS_LIST } from "../../data/college";
 import { CourseProgramme } from "../../types";
 import {
@@ -13,7 +14,6 @@ import {
   CheckCircle2,
   ArrowRight,
   Lock,
-  Sparkles,
   Calendar,
   Building,
   Layers,
@@ -27,6 +27,7 @@ interface HomeProps {
 }
 
 export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: HomeProps) {
+  const [courseLayout, setCourseLayout] = useState<"scroll" | "grid">("scroll");
   const featuredCourses = COURSES_CATALOGUE.filter((c) => c.featured);
   const latestNews = NEWS_AND_EVENTS.slice(0, 3);
 
@@ -43,27 +44,26 @@ export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: 
         <div className="bg-gradient-to-r from-[#153b70] via-[#102b55] to-[#07162c] text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-blue-900/40 relative overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-3">
-              <div className="inline-flex items-center gap-1.5 bg-red-600/30 text-red-200 border border-red-500/40 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                <Lock className="w-3.5 h-3.5" />
-                <span>Student Portal Access Information</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              <p className="text-xs font-semibold text-amber-300">
+                Student Portal Access Information
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-balance">
                 How Can a Student Access the HI-TECH Portal?
               </h2>
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
                 Every admitted student receives an official <strong>Student Registration Number</strong> (e.g., <code>HCA/STU/2026/001</code>). Simply click <strong>"Student Portal"</strong> on the top right of this website to view units, download official transcripts, pay fees via M-Pesa STK push, and take online CBT assessments.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-3">
                 <button
                   onClick={onOpenPortalModal}
-                  className="bg-[#d92332] hover:bg-[#b81d2a] text-white px-5 py-2.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer"
+                  className="bg-[#d92332] hover:bg-[#b81d2a] text-white px-5 py-2.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Lock className="w-4 h-4" />
                   <span>Launch Student Portal Now</span>
                 </button>
                 <button
                   onClick={() => onNavigate("portal-guide")}
-                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <HelpCircle className="w-4 h-4 text-amber-300" />
                   <span>Read Full Access Guide</span>
@@ -71,29 +71,28 @@ export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: 
               </div>
             </div>
 
-            <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-xl p-5 space-y-3 text-xs backdrop-blur-sm">
-              <div className="font-bold text-amber-300 text-sm flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                <span>4-Step Portal Journey</span>
+            <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-white/15 pt-5 lg:pt-0 lg:pl-6 space-y-3 text-xs">
+              <div className="font-semibold text-amber-300 text-sm">
+                4-Step Portal Journey
               </div>
-              <div className="space-y-2 text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">1</span>
-                  <span>Apply online & submit KCSE index</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">2</span>
-                  <span>System issues <strong>HCA/STU/2026/001</strong></span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">3</span>
-                  <span>Log in with Reg No & initial PIN</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">4</span>
-                  <span>Manage units, timetable & results</span>
-                </div>
-              </div>
+              <ol className="space-y-2.5 text-slate-200">
+                <li className="flex items-baseline gap-2.5">
+                  <span className="font-mono font-bold text-amber-300 shrink-0">01.</span>
+                  <span>Apply online &amp; submit KCSE index</span>
+                </li>
+                <li className="flex items-baseline gap-2.5">
+                  <span className="font-mono font-bold text-amber-300 shrink-0">02.</span>
+                  <span>System issues <strong className="font-mono">HCA/STU/2026/001</strong></span>
+                </li>
+                <li className="flex items-baseline gap-2.5">
+                  <span className="font-mono font-bold text-amber-300 shrink-0">03.</span>
+                  <span>Log in with Reg No &amp; initial PIN</span>
+                </li>
+                <li className="flex items-baseline gap-2.5">
+                  <span className="font-mono font-bold text-emerald-300 shrink-0">04.</span>
+                  <span>Manage units, timetable &amp; results</span>
+                </li>
+              </ol>
             </div>
           </div>
         </div>
@@ -103,10 +102,10 @@ export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-[#d92332] mb-1">
-              Top Ranked TVET Qualifications
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <p className="text-xs font-semibold text-[#d92332] mb-1">
+              Accredited TVET Qualifications
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight text-balance">
               Featured Academic Programmes
             </h2>
             <p className="text-slate-600 text-sm mt-1 max-w-xl">
@@ -114,39 +113,91 @@ export default function Home({ onNavigate, onSelectCourse, onOpenPortalModal }: 
             </p>
           </div>
 
-          <button
-            onClick={() => onNavigate("academics")}
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-[#153b70] hover:text-[#0f274a] transition self-start md:self-auto"
-          >
-            <span>View All {COURSES_CATALOGUE.length} Programmes</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setCourseLayout("scroll")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  courseLayout === "scroll"
+                    ? "bg-white text-[#153b70] shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ScrollView Carousel
+              </button>
+              <button
+                type="button"
+                onClick={() => setCourseLayout("grid")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  courseLayout === "grid"
+                    ? "bg-white text-[#153b70] shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Grid View
+              </button>
+            </div>
+
+            <button
+              onClick={() => onNavigate("academics")}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#153b70] hover:text-[#0f274a] transition whitespace-nowrap shrink-0"
+            >
+              <span>View All {COURSES_CATALOGUE.length} Programmes</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Courses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onSelect={onSelectCourse}
-              onApply={() => {
-                onSelectCourse(course);
-                onNavigate("apply");
-              }}
-            />
-          ))}
-        </div>
+        {/* Courses ScrollView Carousel or Grid */}
+        {courseLayout === "scroll" ? (
+          <ScrollView
+            direction="horizontal"
+            snap
+            showArrows
+            fadeColor="from-slate-50"
+            ariaLabel="Academic programmes horizontal showcase"
+          >
+            <div className="flex gap-5 pb-3 px-1">
+              {COURSES_CATALOGUE.map((course) => (
+                <div key={course.id} className="w-[300px] sm:w-[340px] shrink-0 scrollview-snap-item flex">
+                  <CourseCard
+                    course={course}
+                    onSelect={onSelectCourse}
+                    onApply={() => {
+                      onSelectCourse(course);
+                      onNavigate("apply");
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </ScrollView>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onSelect={onSelectCourse}
+                onApply={() => {
+                  onSelectCourse(course);
+                  onNavigate("apply");
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Why Choose HI-TECH College */}
       <section className="bg-slate-100 py-16 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#d92332]">
+            <span className="text-xs font-semibold text-[#d92332]">
               Institutional Advantages
             </span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight text-balance">
               Why Choose HI-TECH College?
             </h2>
             <p className="text-slate-600 text-sm">

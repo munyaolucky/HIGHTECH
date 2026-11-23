@@ -1,0 +1,406 @@
+# **HI-TECH College — Document Management & Permission System**
+
+The next module should provide a complete document management system for students, lecturers, administrators and every department. It should control how documents are created, uploaded, designed, reviewed, approved, signed, issued, shared, downloaded and archived.
+
+The system should support official college documents with consistent branding, templates, document numbering, approval workflows and secure access.
+
+[Document Management Dashboard UI by Tushar vaghasiya  on Dribbble](https://images.openai.com/static-rsc-4/RACY-37r_1aOwFpYCoBEHm5i_9Kv_AhxW-bTxM_5az_kz5LYQguF_yAjMwrejCHqLGJN_Jp-9fytHOys16lTBTe9FJ3P9P97eaCc2oNIhiY8xSP-UVDEBjDbTEqQfWwsOmY-RSmpCOrsS8fY-qMIYDs-MvZDcjs-L-PpiwtL91c?purpose=inline)
+
+[eformsign 기능 임베딩하기 — eformsign API 가이드 2025.08.25 documentation](https://images.openai.com/static-rsc-4/LtfdJ05v7F1rzFzU1TYW4M1BKomaVCdjobo3ZakH96JzpfAA_nsAGmkOVRWO_HF29pfqEqb1pNHQZp0mPj6UxAAI8J6AD3l4BrSGSI9CsHB3r4DPYHSMpvxuytg_O4kxpliWdc-tRDWWbsoio5Hgznk8y_k_AXxZff5ghATS6pY?purpose=inline)
+
+[Document Approval Workflow System - NocoBase](https://images.openai.com/static-rsc-4/nR_ZbTWIrf5n2U8XYQaJolDTtn4SEBQ-UVa0u26HxDGH3gEFTI2subnWCw7M0xbNmlRmKTgdkY1UuHqadtEV_BZ4ZN3CDuoR6M8pdUX775oXxVqLZteeOiRCDfi5OkqU4zVdPu9-Ojxp6D4zPpnUi6UKHqgmh3DKis_VfLXeyD4?purpose=inline)
+
+12
+
+## **1. Document management modules**
+
+| Module                | Features                                                   |
+| --------------------- | ---------------------------------------------------------- |
+| Document Dashboard    | Document statistics, recent files, pending approvals       |
+| Document Designer     | Create professional documents using templates              |
+| Template Management   | Design, edit, publish and archive templates                |
+| Document Repository   | Organize documents by department, campus and category      |
+| Document Upload       | PDF, DOCX, XLSX, PPTX and image uploads                    |
+| Document Approval     | Review, approve, reject and request corrections            |
+| Digital Signatures    | Authorized signing and signature verification              |
+| Document Sharing      | Internal sharing with permission controls                  |
+| Document Versioning   | Version history, revisions and restoration                 |
+| Document Issuance     | Generate letters, certificates, transcripts and statements |
+| Document Verification | QR codes and document verification numbers                 |
+| Document Archive      | Retention, archiving and controlled disposal               |
+| Audit Trail           | Track views, downloads, edits, approvals and sharing       |
+
+## **2. Document designer**
+
+[Marq - Opiniones, precios y características - Capterra Chile 2026](https://images.openai.com/static-rsc-4/fua7nYjmDBN1Ju-dYyxrgvAgNfKzzv4YTKSszWOLzpKVlP7pigM-m3pRjf5csslSkySdbLamvPFyrFz6k-K6nxVLbBGg1scfwEc9nA3l2kniEjSor-xlDHl9VNyYMA5un1jyBSTH-Jdx2T9wvKmKYM_PcvB8yIwzEODgKD_KQKg?purpose=inline)
+
+[capterra.cl](https://www.capterra.cl/software/1017063/lucidpress?utm_source=chatgpt.com)
+
+The document designer should have a professional editing workspace with:
+
+**Design toolbar**
+
+- Font family, size, colour and alignment.
+- Bold, italic, underline and highlighting.
+- Paragraph spacing, margins and indentation.
+- Tables, columns, page breaks and headers.
+- Images, logos, watermarks and signatures.
+- Page numbers, dates and document references.
+- Editable headers and footers.
+
+**Design elements**
+
+- College logo and institutional letterhead.
+- College name, address and contact details.
+- Official blue, red and cream colour scheme.
+- Document title and reference number.
+- Prepared by, reviewed by and approved by.
+- QR verification code where applicable.
+
+**Export**
+
+- PDF for official distribution.
+- DOCX for editable Microsoft Word documents.
+- Print-ready A4 and other supported page sizes.
+- Preview before publishing.
+
+## **3. Official college document templates**
+
+[Stationery - Brand Standards](https://images.openai.com/static-rsc-4/c_KoK4E-vv6FVAzXXkCgmjvV5d7ollAnWp0Eeu6DNmdnk2bYBZ6Du9HQlhkzH1MGyC8VkHh-c6WrOONTSyK8bE3KFYOigrjnLxhcSgvX7M_YbiPjuF0iWk9F8PMAf9yvn7gaDO2xln7Bs7T2X0f4SqVYnMjLHmmtJjdNKRUD2HM?purpose=inline)
+
+**Official letters**
+
+Admission, employment, confirmation and correspondence.
+
+[Sac State Acceptance Letter - Fill Online, Printable, Fillable, Blank | pdfFiller](https://images.openai.com/static-rsc-4/KtxKTEf_p4U70kN0CVrdSbuta6jNDPsiRB6WKetb7bYo6-c6YdW0XsNxAKWM62JGRwO_DOWsZsGbz1nUj6j0Wjj4lvTiKlw_gFXEK4eDOPooQxBoxEKyZXr3hVQ1bxd3p7zJxh2N_vmDUrqgZFKmXwk29z8mZ47hBEagcMjDQbk?purpose=inline)
+
+**Admission letters**
+
+Student details, programme, intake and fee information.
+
+**Transcripts and certificates**
+
+Academic records, awards and completion documents.
+
+[Free University Invoice Templates, Editable and Printable](https://images.openai.com/static-rsc-4/EVhDbXcGcsb9krUeHukBpjvPbdn35JpjdHabaqo88_yasKSGIKeWowHgL0YFhbSFjMqoCUjNCTzKVCj5Eo87BmOfTZfyr7DDHsTQL1wOX6T8Mj337N3v5glrKLeRsdN-VHk39TSmnDO8PdvNvUiLQA-oGpT76Py7dP3I6du2FH8?purpose=inline)
+
+**Financial documents**
+
+Invoices, receipts and fee statements.
+
+[Appointment Letter - Format in Word, & Pdf (Download Templates)](https://images.openai.com/static-rsc-4/iC9JltARsbGx8sDh2BImYZ7x_vE4fXMPZAZ6wmdYkZw9CS365XkwXz0w_4bsBaWoMimzBCwIz26cwXf4OMwZLupDDmdOn8FYWHdqUB_eisu7-2_SyI8_LhI9Sa10BXHr8dVxdKPxsIZeOafbbRhQLcwCEjCdsjKSUbz2gQvQKB0?purpose=inline)
+
+**HR documents**
+
+Contracts, appointment letters and leave approvals.
+
+[Exam Time Table 2024 - 2025 | PDF](https://images.openai.com/static-rsc-4/PPqKp_9_I5UgvFjY0u0tK4PZt0cL81jpdYxeKurNEGuLa2OInElBOt8a_5nUth0O848WWPqp_h0w-sn3DmShqB8t1L2jsFHKFE2rHpGdCFc2Vr936ePV1sMGn0aoFJzAcx995KlOm_fljAw5LhEu_ZgkTlZmvJt8j8Ah0wV4mrg?purpose=inline)
+
+**Academic documents**
+
+Timetables, examination records and result reports.
+
+## **4. Document permission matrix**
+
+Permissions must be assigned by role, document category, ownership, department, campus and workflow state.
+
+| Role            | Create           | View                            | Edit             | Approve               | Issue    |
+| --------------- | ---------------- | ------------------------------- | ---------------- | --------------------- | -------- |
+| Super Admin     | Config only      | Technical metadata              | Templates/config | No automatic approval | No       |
+| Administrator   | Yes              | Authorized                      | Authorized       | Assigned              | Assigned |
+| Principal       | Yes              | Authorized                      | Own/assigned     | Assigned              | Assigned |
+| Registrar       | Yes              | Academic                        | Academic         | Academic              | Academic |
+| Finance Officer | Yes              | Finance                         | Finance          | Assigned finance      | Finance  |
+| HR Officer      | Yes              | HR                              | HR               | Assigned HR           | HR       |
+| Lecturer        | Yes              | Assigned academic               | Own/assigned     | Assigned              | No       |
+| HOD             | Yes              | Department                      | Department       | Department            | Assigned |
+| Librarian       | Yes              | Library                         | Library          | Assigned              | Library  |
+| Student         | Personal uploads | Own permitted files             | Drafts/own files | No                    | No       |
+| Parent          | No               | Authorized linked student files | No               | No                    | No       |
+
+**Critical security rule:** a Super Admin must not automatically gain access to confidential counselling records, HR files, student financial details or private academic documents merely because they administer the platform.
+
+## **5. Detailed permission catalogue**
+
+Use granular permissions rather than relying on role names alone.
+
+| Permission                     | Purpose                       |
+| ------------------------------ | ----------------------------- |
+| `documents.view`               | View permitted documents      |
+| `documents.create`             | Create documents              |
+| `documents.upload`             | Upload attachments            |
+| `documents.edit`               | Edit permitted drafts         |
+| `documents.delete`             | Delete eligible drafts        |
+| `documents.submit`             | Submit for approval           |
+| `documents.review`             | Review submitted documents    |
+| `documents.approve`            | Approve documents             |
+| `documents.reject`             | Reject with a reason          |
+| `documents.issue`              | Officially issue documents    |
+| `documents.download`           | Download permitted files      |
+| `documents.print`              | Print permitted files         |
+| `documents.share`              | Share documents               |
+| `documents.sign`               | Apply an authorized signature |
+| `documents.verify`             | Verify issued documents       |
+| `documents.archive`            | Archive documents             |
+| `documents.restore`            | Restore archived documents    |
+| `documents.audit.view`         | View document audit records   |
+| `documents.templates.manage`   | Manage document templates     |
+| `documents.permissions.manage` | Manage delegated permissions  |
+
+## **6. Document approval workflow**
+
+\#chatgpt-mermaid-\_r_14f\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_14f\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_14f\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_14f\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_14f\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_14f\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_14f\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_14f\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_14f\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_14f\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_14f\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_14f\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_14f\_ p{margin:0;}#chatgpt-mermaid-\_r_14f\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_14f\_ .label text,#chatgpt-mermaid-\_r_14f\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .node rect,#chatgpt-mermaid-\_r_14f\_ .node circle,#chatgpt-mermaid-\_r_14f\_ .node ellipse,#chatgpt-mermaid-\_r_14f\_ .node polygon,#chatgpt-mermaid-\_r_14f\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .rough-node .label text,#chatgpt-mermaid-\_r_14f\_ .node .label text,#chatgpt-mermaid-\_r_14f\_ .image-shape .label,#chatgpt-mermaid-\_r_14f\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_14f\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .rough-node .label,#chatgpt-mermaid-\_r_14f\_ .node .label,#chatgpt-mermaid-\_r_14f\_ .image-shape .label,#chatgpt-mermaid-\_r_14f\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_14f\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_14f\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_14f\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_14f\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_14f\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_14f\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_14f\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_14f\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_14f\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_14f\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_14f\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_14f\_ .icon-shape,#chatgpt-mermaid-\_r_14f\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_14f\_ .icon-shape p,#chatgpt-mermaid-\_r_14f\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_14f\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_14f\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_14f\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_14f\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_14f\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_14f\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_14f\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_14f\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_14f\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_14f\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_14f\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_14f\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_14f\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_14f\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_14f\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_14f\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .node rect,#chatgpt-mermaid-\_r_14f\_ .node circle,#chatgpt-mermaid-\_r_14f\_ .node ellipse,#chatgpt-mermaid-\_r_14f\_ .node polygon,#chatgpt-mermaid-\_r_14f\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_14f\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_14f\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_14f\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_14f\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_14f\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Create documentSave as draftSubmit for reviewReviewer decisionReturn to authorRejected with reasonAuthorized approvalOfficial issuance required?Assign document numberApproved recordAuthorized signatureGenerate PDF and QRIssue and notify recipientStore and auditRequest changesRejectApproveYesNo
+
+Documents must not become official simply because a user saves or exports them. Approval, issuance and signature are separate controlled actions.
+
+## **7. Database models**
+
+Proposed Prisma models for the module. Check the existing schema before adding these because the college platform may already contain document-related models.
+
+```
+
+enum DocumentStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  ISSUED
+  ARCHIVED
+  REVOKED
+}
+
+enum DocumentVisibility {
+  PRIVATE
+  DEPARTMENT
+  CAMPUS
+  INSTITUTION
+  EXPLICIT_RECIPIENTS
+}
+
+enum DocumentAction {
+  CREATED
+  VIEWED
+  UPDATED
+  SUBMITTED
+  REVIEWED
+  APPROVED
+  REJECTED
+  DOWNLOADED
+  PRINTED
+  SHARED
+  SIGNED
+  ISSUED
+  ARCHIVED
+  RESTORED
+  REVOKED
+}
+
+model ManagedDocument {
+  id              String             @id @default(cuid())
+  referenceNumber String?            @unique
+  title           String
+  description     String?
+  category        String
+  status          DocumentStatus     @default(DRAFT)
+  visibility      DocumentVisibility @default(PRIVATE)
+
+  ownerId         String
+  campusId        String?
+  departmentId    String?
+  templateId      String?
+
+  currentVersion  Int                @default(1)
+  issuedAt        DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  versions        DocumentVersion[]
+  approvals       DocumentApproval[]
+  auditLogs       DocumentAuditLog[]
+  recipients      DocumentRecipient[]
+
+  @@index([ownerId, status])
+  @@index([campusId, departmentId])
+  @@index([category, status])
+}
+
+model DocumentVersion {
+  id            String   @id @default(cuid())
+  documentId    String
+  version       Int
+  storageKey    String
+  originalName  String
+  mimeType      String
+  fileSize      Int
+  checksum      String
+  uploadedById  String
+  createdAt     DateTime @default(now())
+
+  document      ManagedDocument @relation(
+    fields: [documentId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  @@unique([documentId, version])
+}
+
+model DocumentApproval {
+  id            String   @id @default(cuid())
+  documentId    String
+  reviewerId    String
+  stage         Int
+  decision      String
+  comments      String?
+  decidedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  document      ManagedDocument @relation(
+    fields: [documentId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  @@index([reviewerId, decision])
+}
+
+model DocumentRecipient {
+  id            String   @id @default(cuid())
+  documentId    String
+  recipientId   String
+  grantedById   String
+  canView       Boolean  @default(true)
+  canDownload   Boolean  @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  document      ManagedDocument @relation(
+    fields: [documentId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  @@unique([documentId, recipientId])
+}
+
+model DocumentAuditLog {
+  id            String         @id @default(cuid())
+  documentId    String
+  actorId       String
+  action        DocumentAction
+  ipAddress     String?
+  userAgent     String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+
+  document      ManagedDocument @relation(
+    fields: [documentId],
+    references: [id],
+    onDelete: Restrict
+  )
+
+  @@index([documentId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model DocumentTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  category      String
+  description   String?
+  contentJson   Json
+  version       Int      @default(1)
+  isPublished   Boolean  @default(false)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, isPublished])
+}
+
+```
+
+Additional production requirements:
+
+- Use private object storage, not publicly accessible upload folders.
+- Verify file signatures and MIME types, scan uploads for malware and enforce size limits.
+- Store cryptographic checksums and preserve previous versions.
+- Use immutable or tamper-evident audit records.
+- Use signed, short-lived download URLs after authorization.
+- Do not expose private storage keys through API responses.
+- Use separate approval records and enforce approval-stage ordering.
+- Store actual signature evidence and verification metadata; a typed name or pasted signature image alone is not a legally validated digital signature.
+
+## **8. Document management dashboard**
+
+[Document Table by Prasenjit Mondal on Dribbble](https://images.openai.com/static-rsc-4/Uyv4yPgAGSQdo1an1D1EfogDIkVPZC7UlHFuUEz223MLm36i7qj3mu_xwcSmRyha7R6iDSEF1Or7EYi9EgxMDW-7AAuNWCNHrPh7A5AJFCNryLxQ6e5uLo2ZNh6d_08PCLdNxXIuF4SOl7Puj9YIhpoKHOFOoUCr94tEMhFup90?purpose=inline)
+
+[dribbble.com](https://dribbble.com/shots/24285342-Document-Table?utm_source=chatgpt.com)
+
+Suggested navigation:
+
+```
+DOCUMENT MANAGEMENT
+├── Dashboard
+├── All Documents
+├── My Documents
+├── Create Document
+├── Document Designer
+├── Templates
+├── Incoming Documents
+├── Pending Approvals
+├── Issued Documents
+├── Shared With Me
+├── Certificates
+├── Transcripts
+├── Letters
+├── Financial Documents
+├── HR Documents
+├── Academic Documents
+├── Digital Signatures
+├── Verification
+├── Archive
+├── Audit Trail
+└── Document Settings
+```
+
+## **9. Document actions and button behaviour**
+
+| Button              | Required behaviour                     |
+| ------------------- | -------------------------------------- |
+| New Document        | Open document creation form            |
+| Design              | Open visual document editor            |
+| Save Draft          | Save without issuing                   |
+| Preview             | Render document preview                |
+| Upload              | Validate and securely upload file      |
+| Submit for Approval | Start approval workflow                |
+| Approve             | Record authorized approval             |
+| Request Changes     | Return to author with reason           |
+| Reject              | Reject with mandatory explanation      |
+| Sign                | Start authorized signing workflow      |
+| Issue               | Assign official reference and publish  |
+| Download            | Verify permission and download         |
+| Share               | Select authorized recipients           |
+| Verify              | Check authenticity and issuance status |
+| Archive             | Move eligible document into archive    |
+
+## **10. Next implementation stage**
+
+The best next step is to implement the actual Document Management module in your existing monorepo, including:
+
+1. Prisma migration after schema inspection.
+2. Express API with permission middleware.
+3. Secure document storage.
+4. React document dashboard.
+5. Visual A4 document designer.
+6. Approval workflow.
+7. Official letterhead and document templates.
+8. PDF/DOCX generation and QR verification.
+9. Tests for unauthorized access, approval and document issuance.
+
+**One important design decision:** should the document designer be a full Word-like editor inside the portal, or a professional template-based editor with editable fields, drag-and-drop sections, preview and PDF/DOCX export?
+
+My recommendation is the second approach initially: it is easier to control official college branding, approval and document security while still providing a powerful design experience.

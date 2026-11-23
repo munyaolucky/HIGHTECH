@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   X,
   Lock,
@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Sparkles,
 } from "lucide-react";
+import { AuthContext } from "../../auth/AuthProvider";
+import { getUserDashboardPath } from "../../auth/auth-utils";
 
 interface PortalAccessModalProps {
   isOpen: boolean;
@@ -29,39 +31,75 @@ export default function PortalAccessModal({
   onSwitchToERP,
   onNavigateToApply,
 }: PortalAccessModalProps) {
+  const authCtx = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState<"signin" | "guide">("signin");
-  const [regNumber, setRegNumber] = useState("HCA/STU/2026/001");
-  const [password, setPassword] = useState("••••••••");
+  const [regNumber, setRegNumber] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState("");
 
   if (!isOpen) return null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regNumber.trim()) {
-      setLoginError("Please enter your Student Registration Number.");
+    if (!regNumber.trim() || !password) {
+      setLoginError("Please enter your Registration Number / Email and Password.");
       return;
     }
 
     setIsLoggingIn(true);
     setLoginError("");
 
-    setTimeout(() => {
-      setIsLoggingIn(false);
-      onLaunchStudentDashboard();
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: regNumber.trim(),
+          password,
+          rememberMe: false,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setLoginError(json?.error || "Invalid email/registration number or password.");
+        return;
+      }
+
+      const data = json.data as {
+        mfaRequired?: boolean;
+        destination?: string;
+        user?: { primaryRole?: string };
+      };
+
+      if (data.mfaRequired) {
+        onClose();
+        onSwitchToERP("portal-login");
+        return;
+      }
+
+      const refreshedUser = authCtx ? await authCtx.refreshSession() : null;
+      const dest = refreshedUser ? getUserDashboardPath(refreshedUser) : data.destination;
       onClose();
-    }, 450);
+
+      if (dest === "/portal/student") {
+        onLaunchStudentDashboard();
+      } else if (dest) {
+        onSwitchToERP(dest);
+      } else {
+        onLaunchStudentDashboard();
+      }
+    } catch {
+      setLoginError("Unable to reach authentication service. Please use the Unified Portal Login page.");
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleDemoLogin = () => {
-    setRegNumber("HCA/STU/2026/001");
-    setIsLoggingIn(true);
-    setTimeout(() => {
-      setIsLoggingIn(false);
-      onLaunchStudentDashboard();
-      onClose();
-    }, 350);
+    onLaunchStudentDashboard();
+    onClose();
   };
 
   return (
@@ -178,21 +216,45 @@ export default function PortalAccessModal({
                 </button>
               </form>
 
-              {/* Instant 1-Click Demo Shortcut */}
-              <div className="pt-2 border-t border-slate-200">
+              {/* Instant 1-Click Demo Shortcut & Full Student / Unified Portal Sign In */}
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onSwitchToERP("student-login");
+                    }}
+                    className="w-full bg-[#1769AA] hover:bg-[#102D50] text-white py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    <GraduationCap className="w-4 h-4 shrink-0" />
+                    <span>Dedicated Student Login</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onSwitchToERP("portal-login");
+                    }}
+                    className="w-full bg-[#0f274a] hover:bg-[#1769AA] text-white py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span>Unified / Staff Login</span>
+                  </button>
+                </div>
                 <button
                   onClick={handleDemoLogin}
                   disabled={isLoggingIn}
                   className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-between"
                 >
                   <div className="text-left">
-                    <div>1-Click Student Launch: Amina Wanjiku</div>
-                    <div className="text-[10px] font-mono text-emerald-600 font-normal">
-                      Reg: HCA/STU/2026/001 • Diploma in Computer Science
+                    <div>Student Preview Mode: Amina Wanjiku</div>
+                    <div className="text-[10px] font-mono text-emerald-700 font-normal">
+                      Sample Record: HCA/STU/2026/001 • Diploma in Computer Science
                     </div>
                   </div>
-                  <span className="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded font-semibold">
-                    Launch
+                  <span className="bg-emerald-700 text-white text-[10px] px-2 py-1 rounded font-semibold">
+                    Preview
                   </span>
                 </button>
               </div>
@@ -296,10 +358,24 @@ export default function PortalAccessModal({
         </div>
 
         {/* Modal Footer with Staff & Administration Links */}
+        {/* Modal Footer with Staff & Administration Links */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-col gap-2.5 text-[11px] text-slate-600">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-bold text-[#092c60]">Quick Launch Institutional Role Dashboards:</span>
-            <span className="text-[10px] text-slate-400">20 Portals Connected</span>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-slate-400">20 Portals Connected</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onSwitchToERP("activate-account");
+                }}
+                className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-bold"
+              >
+                <KeyRound className="w-3 h-3" />
+                <span>Activate Invited Account</span>
+              </button>
+            </div>
           </div>
 
           {/* Persona Direct Jumps */}
@@ -375,6 +451,7 @@ export default function PortalAccessModal({
           <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200 text-[10px] font-semibold text-slate-600">
             <span className="text-slate-400">Other Portals:</span>
             {[
+              { role: "staff", label: "Staff Portal (21 Roles)" },
               { role: "admissions", label: "Admissions" },
               { role: "library", label: "Library" },
               { role: "generator", label: "Reg Generator" },
@@ -396,7 +473,16 @@ export default function PortalAccessModal({
                   onClose();
                   onSwitchToERP(item.role);
                 }}
-                className="px-2 py-0.5 rounded bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 transition"
+                className={`px-2 py-0.5 rounded border transition ${
+                  item.role === "staff"
+                    ? "bg-[#153b70] text-white border-[#153b70] hover:bg-[#0f274a]"
+                    : "bg-white hover:bg-blue-50 border-slate-200 hover:border-blue-300 text-slate-700"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
               >
                 {item.label}
               </button>
