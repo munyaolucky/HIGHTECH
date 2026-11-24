@@ -13,6 +13,7 @@ import {
   type LessonDeliveryDTO,
   type SchemeOfWorkDTO,
 } from '../../../services/teachingModuleApi';
+import UniversalDocumentUploader from '../../documents/UniversalDocumentUploader';
 
 export default function RecordLessonDeliveryPage() {
   const [lessons, setLessons] = useState<LessonDeliveryDTO[]>([]);
@@ -465,6 +466,30 @@ export default function RecordLessonDeliveryPage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-[#102D50] dark:text-white">
+            Attach Signed Attendance Register / Record of Work Evidence (Central DMS)
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Files uploaded here are automatically linked to your {unitCode} lesson delivery record for HOD verification.
+          </p>
+        </div>
+        <UniversalDocumentUploader
+          moduleKey="LECTURER"
+          fixedCategory="RECORD_OF_WORK"
+          courseOrClass={unitCode}
+          defaultTitle={`${unitCode} Lesson Delivery Evidence (${lessonDate})`}
+          defaultRecipient="Head of Department"
+          relatedEntityType="LESSON_DELIVERY"
+          relatedEntityId={`${unitCode}-${lessonDate}`}
+          compact={true}
+          onUploaded={(res) => {
+            setNotice(`Uploaded "${res.document.title}" to Central DMS (SHA-256 verified).`);
+          }}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   X,
   ShieldCheck,
@@ -33,6 +33,14 @@ export default function StaffIdentityDrawer({
   onSwitchPortal,
   onLogout,
 }: StaffIdentityDrawerProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const currentAssignment: StaffChannelAssignment | undefined =
@@ -55,8 +63,13 @@ export default function StaffIdentityDrawer({
     : 'HT';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-xs flex justify-end animate-fadeIn">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col transform transition-transform duration-200">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-xs flex justify-end animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transform transition-transform duration-200">
         {/* HEADER */}
         <div className="bg-gradient-to-r from-[#061d40] to-[#0d346c] text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -73,7 +86,9 @@ export default function StaffIdentityDrawer({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close staff identity drawer"
             className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition"
             title="Close Drawer (Esc)"
           >

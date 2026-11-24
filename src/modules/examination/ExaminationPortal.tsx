@@ -45,6 +45,7 @@ import QuestionRunnerWidget from './components/QuestionRunnerWidget';
 import { useSyncedPortalTab } from '../../context/PortalShellContext';
 import SecureExamSupervisorPanel from './SecureExamSupervisorPanel';
 import ExaminationSupervisorDashboard from './ExaminationSupervisorDashboard';
+import ModuleDocumentRepository from '../documents/ModuleDocumentRepository';
 
 type ExamTab =
   | 'schedule'
@@ -54,7 +55,8 @@ type ExamTab =
   | 'marking'
   | 'incidents'
   | 'supervisor-dashboard'
-  | 'supervisor';
+  | 'supervisor'
+  | 'exam_files';
 
 export default function ExaminationPortal() {
   const [role, setRole] = useState<ExamRolePersona>('LECTURER_AUTHOR');
@@ -318,6 +320,7 @@ export default function ExaminationPortal() {
     { id: 'runner', label: 'Live CBT Runner', icon: Code2 },
     { id: 'marking', label: 'Anonymous Marking & Analysis', icon: ClipboardCheck },
     { id: 'incidents', label: 'Incidents & Supplementary', icon: ShieldAlert },
+    { id: 'exam_files', label: 'Examination Files & Papers', icon: FileCheck2 },
     { id: 'supervisor-dashboard', label: 'Supervisor Dashboard', icon: Activity },
     { id: 'supervisor', label: 'Secure Exam Supervisor & Config', icon: Lock },
   ];
@@ -2088,6 +2091,17 @@ export default function ExaminationPortal() {
 
       {activeTab === 'supervisor' && (
         <SecureExamSupervisorPanel onNotify={notify} />
+      )}
+
+      {activeTab === 'exam_files' && (
+        <ModuleDocumentRepository
+          moduleKey="EXAMINATION"
+          allowedCategories={['EXAM_SCHEDULE', 'ACADEMIC_CLASS_RESOURCE']}
+          defaultRecipient="Examinations & Moderation Directorate"
+          title="Examination Papers, Marking Schemes & Moderated Scripts"
+          description="Restricted Examination Directorate repository for exam question papers, marking schemes, answer keys, and moderation reports."
+          securityBanner="Unpublished Exam Paper Isolation Guard: Students are strictly blocked by server RBAC from accessing unpublished EXAM_SCHEDULE files, marking schemes, or answer keys."
+        />
       )}
     </div>
   );

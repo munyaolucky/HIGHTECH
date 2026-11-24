@@ -6,6 +6,18 @@ import {
   academicRegistrations,
   campuses,
   departments,
+  documentAccessLogs,
+  documentApprovals,
+  documentAttachments,
+  documentCategories,
+  documentComments,
+  documentPermissions,
+  documentRequests,
+  documentRetentionPolicies,
+  documentShares,
+  documentTemplates,
+  documentVersions,
+  documents,
   financeAuditLogs,
   financeClearances,
   financeFeeStructures,
@@ -60,31 +72,44 @@ const DEFAULT_SEEDED_HASH = hashPasswordScrypt(
   process.env.SEED_DEFAULT_PASSWORD || 'Hitech@2026!'
 );
 
+function isTestEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    Boolean(process.env.NODE_TEST_CONTEXT) ||
+    process.execArgv.some((arg) => arg.includes('test')) ||
+    process.argv.some((arg) => arg.includes('--test') || /\.test\.[cm]?[jt]sx?$/i.test(arg))
+  );
+}
+
 async function runSeed(): Promise<void> {
-  if (!isPostgresConfigured()) return;
+  if (!isPostgresConfigured() || isTestEnvironment()) return;
 
   const store = getDb();
+  const [{ value: existingUserCount }] = await db.select({ value: count() }).from(users);
 
-  // 1. Sync Staff Accounts into PostgreSQL `users`
-  for (const staff of store.staffAccounts) {
-    await db
-      .insert(users)
-      .values({
-        uid: staff.id,
-        email: staff.email.toLowerCase(),
-        registrationNumber: staff.employeeNumber,
-        fullName: staff.fullName,
-        primaryRole: staff.role,
-        accountStatus: staff.status,
-        passwordHash: DEFAULT_SEEDED_HASH,
-        mustChangePassword: false,
-        requiresProfileCompletion: false,
-        mfaEnabled: false,
-        campusId: staff.campusId,
-        departmentId: staff.departmentId,
-      })
-      .onConflictDoNothing();
-  }
+  if (Number(existingUserCount) === 0) {
+    // 1. Sync Staff Accounts into PostgreSQL `users`
+    if (store.staffAccounts.length > 0) {
+      await db
+        .insert(users)
+        .values(
+          store.staffAccounts.map((staff) => ({
+            uid: staff.id,
+            email: staff.email.toLowerCase(),
+            registrationNumber: staff.employeeNumber,
+            fullName: staff.fullName,
+            primaryRole: staff.role,
+            accountStatus: staff.status,
+            passwordHash: DEFAULT_SEEDED_HASH,
+            mustChangePassword: false,
+            requiresProfileCompletion: false,
+            mfaEnabled: false,
+            campusId: staff.campusId,
+            departmentId: staff.departmentId,
+          }))
+        )
+        .onConflictDoNothing();
+    }
 
   // 2. Sync Student & Demo Users into PostgreSQL `users`
   const seededStudents = [
@@ -299,24 +324,25 @@ async function runSeed(): Promise<void> {
     .onConflictDoNothing();
 
   // 4. Sync activated registrations from JSON store
-  for (const reg of store.registrations) {
-    if (reg.status === 'ACTIVATED' && reg.passwordHash) {
-      await db
-        .insert(users)
-        .values({
-          uid: reg.userAccountId ?? reg.id,
-          email: reg.email.toLowerCase(),
-          registrationNumber: reg.registrationNumber,
-          fullName: reg.fullName,
-          primaryRole: reg.assignedRole ?? reg.proposedRole,
-          accountStatus: reg.portalAccessStatus === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE',
-          passwordHash: reg.passwordHash,
-          mustChangePassword: Boolean(reg.mustChangePasswordOnFirstLogin),
-          requiresProfileCompletion: Boolean(reg.mustCompleteProfileOnFirstLogin),
-          campusId: reg.campusId,
-          departmentId: reg.departmentId,
-        })
-        .onConflictDoNothing();
+    for (const reg of store.registrations) {
+      if (reg.status === 'ACTIVATED' && reg.passwordHash) {
+        await db
+          .insert(users)
+          .values({
+            uid: reg.userAccountId ?? reg.id,
+            email: reg.email.toLowerCase(),
+            registrationNumber: reg.registrationNumber,
+            fullName: reg.fullName,
+            primaryRole: reg.assignedRole ?? reg.proposedRole,
+            accountStatus: reg.portalAccessStatus === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE',
+            passwordHash: reg.passwordHash,
+            mustChangePassword: Boolean(reg.mustChangePasswordOnFirstLogin),
+            requiresProfileCompletion: Boolean(reg.mustCompleteProfileOnFirstLogin),
+            campusId: reg.campusId,
+            departmentId: reg.departmentId,
+          })
+          .onConflictDoNothing();
+      }
     }
   }
 
@@ -1305,6 +1331,299 @@ export async function syncPortalStoreToPostgres(storeData: PortalDatabase): Prom
         })
         .onConflictDoNothing();
     }
+
+    // 10. Sync 12 Centralised DMS Cloud SQL Tables
+    for (const cat of storeData.documentCategories ?? []) {
+      await db
+        .insert(documentCategories)
+        .values({
+          code: cat.code,
+          name: cat.name,
+          moduleKey: cat.moduleKey,
+          description: cat.description,
+          allowedMimeTypes: cat.allowedMimeTypes,
+          maxSizeMb: cat.maxSizeMb,
+          defaultConfidentiality: cat.defaultConfidentiality,
+          approvalRequired: cat.approvalRequired,
+          isUnpublishedExamProtected: cat.isUnpublishedExamProtected,
+          active: cat.active,
+          createdAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: documentCategories.code,
+          set: {
+            name: cat.name,
+            description: cat.description,
+            allowedMimeTypes: cat.allowedMimeTypes,
+            maxSizeMb: cat.maxSizeMb,
+            defaultConfidentiality: cat.defaultConfidentiality,
+            approvalRequired: cat.approvalRequired,
+            isUnpublishedExamProtected: cat.isUnpublishedExamProtected,
+            active: cat.active,
+          },
+        });
+    }
+
+    for (const doc of storeData.documents) {
+      await db
+        .insert(documents)
+        .values({
+          id: doc.id,
+          documentNumber: doc.documentNumber ?? null,
+          referenceNumber: doc.referenceNumber ?? null,
+          title: doc.title,
+          categoryCode: doc.category,
+          moduleKey: doc.moduleKey ?? 'ADMIN_GOVERNANCE',
+          originalFileName: doc.originalFileName ?? null,
+          storagePath: doc.storagePath ?? null,
+          mimeType: doc.mimeType ?? null,
+          fileSizeBytes: doc.fileSizeBytes ?? 0,
+          checksumSha256: doc.checksumSha256 ?? null,
+          scanStatus: doc.scanStatus ?? 'VERIFIED_CLEAN',
+          description: doc.description ?? null,
+          subjectLine: doc.subjectLine,
+          bodyContent: doc.bodyContent,
+          metadataFields: doc.metadataFields,
+          design: doc.design as unknown as Record<string, unknown>,
+          templateId: doc.templateId ?? null,
+          uploadedById: doc.createdById,
+          uploadedByName: doc.createdByName,
+          uploadedByRole: doc.uploadedByRole ?? 'STAFF',
+          relatedEntityType: doc.relatedEntityType ?? null,
+          relatedEntityId: doc.relatedEntityId ?? null,
+          relatedStudentOrStaffId: doc.relatedStudentOrStaffId ?? doc.ownerId,
+          departmentId: doc.departmentId ?? null,
+          departmentName: doc.departmentName ?? null,
+          campusId: doc.campusId ?? null,
+          campusName: doc.campusName ?? null,
+          courseOrClass: doc.courseOrClass ?? null,
+          academicYear: doc.academicYear ?? '2026',
+          termLabel: doc.termLabel ?? 'Term 1',
+          recipientLabel: doc.recipientLabel,
+          recipientEmail: doc.recipientEmail ?? null,
+          uploadedAt: doc.uploadedAt ?? doc.createdAt,
+          verificationStatus: doc.status,
+          approvalOfficerId: doc.approvalOfficerId ?? null,
+          approvalOfficerName: doc.approvalOfficerName ?? null,
+          approvalDate: doc.approvalDate ?? null,
+          confidentialityLevel: doc.confidentiality,
+          currentVersion: doc.currentVersion,
+          verificationHash: doc.verificationHash ?? null,
+          retentionDate: doc.retentionDate ?? null,
+          issuedAt: doc.issuedAt ?? null,
+          issuedById: doc.issuedById ?? null,
+          issuedByName: doc.issuedByName ?? null,
+          archivedAt: doc.archivedAt ?? null,
+          revokedReason: doc.revokedReason ?? null,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: documents.id,
+          set: {
+            referenceNumber: doc.referenceNumber ?? null,
+            title: doc.title,
+            originalFileName: doc.originalFileName ?? null,
+            storagePath: doc.storagePath ?? null,
+            mimeType: doc.mimeType ?? null,
+            fileSizeBytes: doc.fileSizeBytes ?? 0,
+            checksumSha256: doc.checksumSha256 ?? null,
+            scanStatus: doc.scanStatus ?? 'VERIFIED_CLEAN',
+            subjectLine: doc.subjectLine,
+            bodyContent: doc.bodyContent,
+            metadataFields: doc.metadataFields,
+            design: doc.design as unknown as Record<string, unknown>,
+            verificationStatus: doc.status,
+            approvalOfficerId: doc.approvalOfficerId ?? null,
+            approvalOfficerName: doc.approvalOfficerName ?? null,
+            approvalDate: doc.approvalDate ?? null,
+            confidentialityLevel: doc.confidentiality,
+            currentVersion: doc.currentVersion,
+            verificationHash: doc.verificationHash ?? null,
+            issuedAt: doc.issuedAt ?? null,
+            issuedById: doc.issuedById ?? null,
+            issuedByName: doc.issuedByName ?? null,
+            archivedAt: doc.archivedAt ?? null,
+            revokedReason: doc.revokedReason ?? null,
+            updatedAt: doc.updatedAt,
+          },
+        });
+    }
+
+    const docIds = new Set(storeData.documents.map((d) => d.id));
+
+    for (const ver of storeData.documentVersions) {
+      if (!docIds.has(ver.documentId)) continue;
+      await db
+        .insert(documentVersions)
+        .values({
+          id: ver.id,
+          documentId: ver.documentId,
+          versionNumber: ver.versionNumber,
+          title: ver.title,
+          fileName: ver.fileName ?? null,
+          storagePath: ver.storagePath ?? null,
+          mimeType: ver.mimeType ?? null,
+          fileSizeBytes: ver.fileSizeBytes ?? 0,
+          checksumSha256: ver.checksumSha256 ?? null,
+          subjectLine: ver.subjectLine,
+          bodyContent: ver.bodyContent,
+          metadataFields: ver.metadataFields,
+          editedById: ver.editedById,
+          editedByName: ver.editedByName,
+          changeNote: ver.changeNote,
+          createdAt: ver.createdAt,
+        })
+        .onConflictDoNothing();
+    }
+
+    for (const att of storeData.documentAttachments ?? []) {
+      if (!docIds.has(att.documentId)) continue;
+      await db
+        .insert(documentAttachments)
+        .values(att)
+        .onConflictDoNothing();
+    }
+
+    for (const perm of storeData.documentPermissions ?? []) {
+      if (!docIds.has(perm.documentId)) continue;
+      await db
+        .insert(documentPermissions)
+        .values(perm)
+        .onConflictDoNothing();
+    }
+
+    for (const app of storeData.documentApprovals) {
+      if (!docIds.has(app.documentId)) continue;
+      await db
+        .insert(documentApprovals)
+        .values({
+          id: app.id,
+          documentId: app.documentId,
+          stepOrder: app.stepOrder,
+          reviewerId: app.reviewerId,
+          reviewerName: app.reviewerName,
+          reviewerRole: app.reviewerRole,
+          status: app.status,
+          comment: app.comment ?? null,
+          decidedAt: app.decidedAt ?? null,
+          createdAt: app.createdAt,
+        })
+        .onConflictDoUpdate({
+          target: documentApprovals.id,
+          set: {
+            status: app.status,
+            comment: app.comment ?? null,
+            reviewerId: app.reviewerId,
+            reviewerName: app.reviewerName,
+            decidedAt: app.decidedAt ?? null,
+          },
+        });
+    }
+
+    for (const cmt of storeData.documentComments ?? []) {
+      if (!docIds.has(cmt.documentId)) continue;
+      await db.insert(documentComments).values(cmt).onConflictDoNothing();
+    }
+
+    for (const rcp of storeData.documentRecipients) {
+      if (!docIds.has(rcp.documentId)) continue;
+      await db
+        .insert(documentShares)
+        .values({
+          id: rcp.id,
+          documentId: rcp.documentId,
+          userId: rcp.userId,
+          userName: rcp.userName,
+          userRole: rcp.userRole,
+          canView: rcp.canView,
+          canDownload: rcp.canDownload,
+          canPrint: rcp.canPrint,
+          grantedById: rcp.grantedById,
+          grantedByName: rcp.grantedByName,
+          expiresAt: rcp.expiresAt ?? null,
+          revokedAt: null,
+          createdAt: rcp.createdAt,
+        })
+        .onConflictDoUpdate({
+          target: documentShares.id,
+          set: {
+            canView: rcp.canView,
+            canDownload: rcp.canDownload,
+            canPrint: rcp.canPrint,
+            expiresAt: rcp.expiresAt ?? null,
+          },
+        });
+    }
+
+    for (const log of storeData.documentAuditLogs.slice(0, 200)) {
+      await db
+        .insert(documentAccessLogs)
+        .values({
+          id: log.id,
+          documentId: log.documentId,
+          actorId: log.actorId,
+          actorName: log.actorName,
+          actorRole: log.actorRole,
+          action: log.action,
+          detail: log.detail,
+          ipAddress: log.ipAddress ?? '127.0.0.1',
+          createdAt: log.createdAt,
+        })
+        .onConflictDoNothing();
+    }
+
+    for (const ret of storeData.documentRetentionPolicies ?? []) {
+      await db
+        .insert(documentRetentionPolicies)
+        .values(ret)
+        .onConflictDoUpdate({
+          target: documentRetentionPolicies.id,
+          set: {
+            retentionDays: ret.retentionDays,
+            actionAfterExpiry: ret.actionAfterExpiry,
+            odpcBasis: ret.odpcBasis,
+            active: ret.active,
+            updatedById: ret.updatedById ?? null,
+            updatedAt: ret.updatedAt,
+          },
+        });
+    }
+
+    for (const reqItem of storeData.documentRequests ?? []) {
+      await db
+        .insert(documentRequests)
+        .values(reqItem)
+        .onConflictDoUpdate({
+          target: documentRequests.id,
+          set: {
+            status: reqItem.status,
+            fulfilledDocumentId: reqItem.fulfilledDocumentId ?? null,
+            updatedAt: reqItem.updatedAt,
+          },
+        });
+    }
+
+    for (const tpl of storeData.documentTemplates) {
+      await db
+        .insert(documentTemplates)
+        .values({
+          id: tpl.id,
+          code: tpl.code,
+          name: tpl.name,
+          categoryCode: tpl.category,
+          moduleKey: tpl.moduleKey ?? 'ADMIN_GOVERNANCE',
+          defaultConfidentiality: tpl.defaultConfidentiality,
+          description: tpl.description,
+          subjectTemplate: tpl.subjectTemplate,
+          bodyTemplate: tpl.bodyTemplate,
+          defaultFields: tpl.defaultFields,
+          design: tpl.design as unknown as Record<string, unknown>,
+          createdById: tpl.createdById,
+          createdAt: tpl.createdAt,
+        })
+        .onConflictDoNothing();
+    }
   } catch (error) {
     console.error('Database sync failed in syncPortalStoreToPostgres:', error);
     throw new Error('Database synchronization failed. Please try again later.', {
@@ -1314,7 +1633,7 @@ export async function syncPortalStoreToPostgres(storeData: PortalDatabase): Prom
 }
 
 export async function ensurePostgresSeeded(): Promise<void> {
-  if (!isPostgresConfigured()) return;
+  if (!isPostgresConfigured() || isTestEnvironment()) return;
   if (!seedPromise) {
     seedPromise = runSeed().catch((err) => {
       seedPromise = null;

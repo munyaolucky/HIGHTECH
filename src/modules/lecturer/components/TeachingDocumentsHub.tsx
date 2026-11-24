@@ -16,6 +16,7 @@ import {
   teachingModuleApi,
   type TeachingDocumentDTO,
 } from '../../../services/teachingModuleApi';
+import ModuleDocumentRepository from '../../documents/ModuleDocumentRepository';
 
 const UNIT_OPTIONS = [
   { code: 'CSC 301', title: 'Data Structures & Algorithms', assignmentId: 'asg-csc301', classGroupId: 'DICT-2026-A' },
@@ -503,6 +504,23 @@ export default function TeachingDocumentsHub() {
           </div>
         )}
       </div>
+
+      <ModuleDocumentRepository
+        moduleKey="LECTURER"
+        allowedCategories={[
+          'LESSON_PLAN',
+          'SCHEME_OF_WORK',
+          'RECORD_OF_WORK',
+          'LEARNING_MATERIAL',
+          'ATTENDANCE_REGISTER_DOC',
+          'ACADEMIC_CLASS_RESOURCE',
+          'EXAM_SCHEDULE',
+          'DEPARTMENT_REPORT',
+        ]}
+        defaultRecipient="Head of Department"
+        title="Centralised Teaching Documents DMS Repository"
+        description="Unified Central DMS vault with full SHA-256 verification, revision threads, signed downloads, and HOD/Principal review."
+      />
     </div>
   );
 }

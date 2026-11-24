@@ -681,6 +681,7 @@ export const ROLE_STAFF_NAV: Record<StaffRole, StaffNavItem[]> = {
   ADMIN: [
     { label: 'Users & Role Access', path: '/staff/admin/users', icon: 'ShieldCheck', permission: 'admin.users.manage' },
     { label: 'Campuses & Departments', path: '/staff/admin/campuses', icon: 'Building2', permission: 'admin.campuses.read' },
+    { label: 'Document System Config', path: '/staff/admin/document-config', icon: 'FolderCheck', permission: 'teaching.policy.configure' },
     { label: 'Attendance Escalation Policy', path: '/staff/admin/attendance-policy', icon: 'Gauge', permission: 'teaching.policy.configure' },
     { label: 'Central Reg Generator', path: '/staff/module/generator', icon: 'Network', permission: 'erp.generator.access' },
     { label: 'Workflows & Approvals', path: '/staff/admin/approvals', icon: 'CheckCircle', permission: 'admin.workflows.approve' },
@@ -691,6 +692,7 @@ export const ROLE_STAFF_NAV: Record<StaffRole, StaffNavItem[]> = {
     { label: 'Teaching & Attendance Oversight', path: '/staff/principal/attendance', icon: 'ClipboardCheck', permission: 'principal.performance.read' },
     { label: 'Institutional Performance', path: '/staff/principal/performance', icon: 'ChartNoAxesCombined', permission: 'principal.performance.read' },
     { label: 'Executive Approvals', path: '/staff/principal/approvals', icon: 'CheckCircle', permission: 'principal.approvals.manage' },
+    { label: 'Document System Config', path: '/staff/admin/document-config', icon: 'FolderCheck', permission: 'teaching.policy.configure' },
     { label: 'Quality & TVETA Reports', path: '/staff/module/quality-reports', icon: 'TrendingUp', permission: 'principal.reports.read' },
     { label: 'Policy & Compliance', path: '/staff/module/campus-services', icon: 'ShieldCheck', permission: 'principal.reports.read' },
     { label: 'Feature Register & Baseline', path: '/staff/admin/baseline', icon: 'ClipboardCheck', permission: 'platform.baseline.read' },

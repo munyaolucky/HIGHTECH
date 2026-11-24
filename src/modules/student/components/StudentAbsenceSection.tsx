@@ -15,6 +15,7 @@ import {
   teachingModuleApi,
   type AbsenceCaseDTO,
 } from '../../../services/teachingModuleApi';
+import UniversalDocumentUploader from '../../documents/UniversalDocumentUploader';
 
 export default function StudentAbsenceSection({
   onNotify,
@@ -371,6 +372,32 @@ export default function StudentAbsenceSection({
                         >
                           <FileUp size={13} /> {busyCaseId === c.id ? 'Submitting...' : 'Submit Explanation'}
                         </button>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                        <div className="text-[11px] font-bold text-[#102D50] dark:text-blue-300">
+                          Or upload directly via Central DMS (automatically links evidence &amp; updates absence case to Document Submitted)
+                        </div>
+                        <UniversalDocumentUploader
+                          moduleKey="STUDENT"
+                          fixedCategory="ABSENCE_EXPLANATION"
+                          isStudent={true}
+                          lockConfidentiality={true}
+                          compact={true}
+                          courseOrClass={c.unitCode}
+                          defaultTitle={`${c.unitCode} Absence Evidence (${c.absenceDate})`}
+                          defaultRecipient={`HOD & ${c.lecturerName}`}
+                          relatedEntityType="ABSENCE_CASE"
+                          relatedEntityId={c.id}
+                          onUploaded={async (res) => {
+                            onNotify(
+                              'ok',
+                              `DMS absence evidence "${res.document.title}" linked to ${c.unitCode}.`
+                            );
+                            setActiveCaseId(null);
+                            await load();
+                          }}
+                        />
                       </div>
                     </form>
                   )}

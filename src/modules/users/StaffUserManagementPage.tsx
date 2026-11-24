@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   Search,
   RefreshCw,
@@ -18,8 +17,10 @@ import {
   Filter,
   KeyRound,
   ShieldCheck,
+  ArrowUpRight,
 } from "lucide-react";
-import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import { usePortalShellContext, useSyncedPortalTab } from "../../context/PortalShellContext";
+import { institutionalEventBus } from "../../services/institutionalEventBus";
 import "./staff-user-management.css";
 
 export type AccountCategory =
@@ -68,239 +69,100 @@ export interface DashboardResponse {
   permissions: string[];
 }
 
+type PendingAccountAction = {
+  account: PortalAccount;
+  action: "resend-invitation" | "suspend" | "reactivate";
+};
+
 const API_BASE = "/api";
 
-// Seed fallback data for offline / standalone frontend simulation
-const MOCK_FALLBACK_ACCOUNTS: PortalAccount[] = [
-  {
-    id: "usr-001",
-    registrationNumber: "HCA/STAFF/2026/001",
-    fullName: "Dr. Margaret Nduta",
-    email: "m.nduta@hitech.ac.ke",
-    phone: "+254 712 345 678",
-    category: "STAFF",
-    status: "ACTIVE",
-    roleNames: ["Super Administrator", "Academic Registrar"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "Office of the Registrar",
-    createdAt: "2026-01-10T08:00:00Z",
-    lastLoginAt: "2026-11-14T09:15:00Z",
-  },
-  {
-    id: "usr-002",
-    registrationNumber: "HCA/STU/2026/001",
-    fullName: "Amina Wanjiku",
-    email: "amina.wanjiku@student.hitech.ac.ke",
-    phone: "+254 722 000 111",
-    category: "STUDENT",
-    status: "ACTIVE",
-    roleNames: ["Student Candidate", "Class Representative"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "School of Computing & Informatics",
-    createdAt: "2026-02-01T10:00:00Z",
-    lastLoginAt: "2026-11-14T11:30:00Z",
-  },
-  {
-    id: "usr-003",
-    registrationNumber: "HCA/STAFF/2026/002",
-    fullName: "Eng. Dennis Mutiso",
-    email: "d.mutiso@hitech.ac.ke",
-    phone: "+254 733 444 555",
-    category: "STAFF",
-    status: "ACTIVE",
-    roleNames: ["Senior Lecturer", "CBT Test Author"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "Department of Software Engineering",
-    createdAt: "2026-01-15T08:30:00Z",
-    lastLoginAt: "2026-11-13T16:20:00Z",
-  },
-  {
-    id: "usr-004",
-    registrationNumber: "HCA/PARENT/2026/001",
-    fullName: "Grace Muthoni Wanjiku",
-    email: "grace.muthoni@gmail.com",
-    phone: "+254 711 999 888",
-    category: "PARENT",
-    status: "ACTIVE",
-    roleNames: ["Guardian / Sponsor"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "Student Affairs & Welfare",
-    createdAt: "2026-02-05T12:00:00Z",
-    lastLoginAt: "2026-11-10T14:45:00Z",
-  },
-  {
-    id: "usr-005",
-    registrationNumber: "HCA/APP/2026/012",
-    fullName: "Kevin Ochieng",
-    email: "kevin.ochieng@yahoo.com",
-    phone: "+254 799 123 456",
-    category: "STUDENT",
-    status: "PENDING_ACTIVATION",
-    roleNames: ["Applicant"],
-    campusName: "Mombasa Coastal Campus",
-    departmentName: "School of Business & ICT",
-    createdAt: "2026-11-01T09:00:00Z",
-    lastLoginAt: null,
-  },
-  {
-    id: "usr-006",
-    registrationNumber: "HCA/ALUMNI/2025/088",
-    fullName: "Sarah Chebet",
-    email: "s.chebet@alumni.hitech.ac.ke",
-    phone: "+254 720 555 777",
-    category: "ALUMNI",
-    status: "ACTIVE",
-    roleNames: ["Alumni Associate"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "Computing Alumni Chapter",
-    createdAt: "2025-08-12T08:00:00Z",
-    lastLoginAt: "2026-10-25T17:10:00Z",
-  },
-  {
-    id: "usr-007",
-    registrationNumber: null,
-    fullName: "Brian Kiprop",
-    email: "brian.kiprop@securityguard.co.ke",
-    phone: "+254 714 888 222",
-    category: "CONTRACTOR",
-    status: "SUSPENDED",
-    roleNames: ["Campus Security Contractor"],
-    campusName: "Nakuru Campus",
-    departmentName: "Facilities & Estates",
-    createdAt: "2026-03-01T08:00:00Z",
-    lastLoginAt: "2026-09-12T10:00:00Z",
-  },
-  {
-    id: "usr-008",
-    registrationNumber: "HCA/STAFF/2026/015",
-    fullName: "Catherine Njeri",
-    email: "c.njeri@hitech.ac.ke",
-    phone: "+254 718 333 444",
-    category: "STAFF",
-    status: "DISABLED",
-    roleNames: ["Finance Clerk"],
-    campusName: "Nairobi Main Campus",
-    departmentName: "Directorate of Finance",
-    createdAt: "2026-01-20T08:00:00Z",
-    lastLoginAt: "2026-07-15T12:00:00Z",
-  },
+const ROLE_OPTIONS_BY_CATEGORY: Record<AccountCategory, { value: string; label: string }[]> = {
+  STAFF: [
+    { value: "LECTURER", label: "Lecturer / Faculty" },
+    { value: "REGISTRAR", label: "Academic Registrar" },
+    { value: "FINANCE_OFFICER", label: "Finance Officer / Bursar" },
+    { value: "EXAMINATIONS_OFFICER", label: "Examinations Officer" },
+    { value: "ADMISSIONS_OFFICER", label: "Admissions Officer" },
+    { value: "LIBRARIAN", label: "College Librarian" },
+    { value: "HR", label: "HR & People Operations" },
+    { value: "HOD", label: "Head of Department" },
+    { value: "QUALITY_ASSURANCE", label: "Quality Assurance Officer" },
+    { value: "STUDENT_AFFAIRS", label: "Student Affairs & Welfare" },
+    { value: "HOSTEL_OFFICER", label: "Hostel Warden" },
+    { value: "IT_SUPPORT", label: "IT Support Lead" },
+    { value: "ADMIN", label: "Super Administrator" },
+  ],
+  STUDENT: [{ value: "STUDENT", label: "Student Candidate" }],
+  PARENT: [{ value: "PARENT", label: "Parent / Guardian" }],
+  ALUMNI: [{ value: "ALUMNI", label: "Alumni Associate" }],
+  CONTRACTOR: [{ value: "CONTRACTOR", label: "Campus Contractor" }],
+  PARTNER: [{ value: "PARTNER", label: "Industry Partner" }],
+  GUEST: [{ value: "GUEST", label: "Guest Visitor" }],
+};
+
+const CAMPUS_OPTIONS = [
+  { id: "cmp-nairobi", name: "Nairobi Main Campus" },
+  { id: "cmp-mombasa", name: "Mombasa Coastal Campus" },
+  { id: "cmp-nakuru", name: "Nakuru Campus" },
 ];
 
-let localAccountsState = [...MOCK_FALLBACK_ACCOUNTS];
+const DEPARTMENT_OPTIONS = [
+  { id: "dept-computing", name: "School of Computing & Informatics" },
+  { id: "dept-business", name: "School of Business & Management" },
+  { id: "dept-engineering", name: "Department of Engineering & Applied Tech" },
+  { id: "dept-registrar", name: "Office of the Academic Registrar" },
+  { id: "dept-finance", name: "Directorate of Finance & Treasury" },
+];
+
+let staffSessionSyncPromise: Promise<boolean> | null = null;
+
+async function ensureAdminPreviewSession(): Promise<boolean> {
+  if (!staffSessionSyncPromise) {
+    staffSessionSyncPromise = fetch(`${API_BASE}/staff/session`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "ADMIN", explicitSwitch: false }),
+    })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        staffSessionSyncPromise = null;
+      });
+  }
+  return staffSessionSyncPromise;
+}
 
 async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
+  retryOn401 = true,
 ): Promise<T> {
-  try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
 
-    const body = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      throw new Error(body?.message || `Request failed (${response.status})`);
+  if (response.status === 401 && retryOn401) {
+    const synced = await ensureAdminPreviewSession();
+    if (synced) {
+      return apiRequest<T>(path, options, false);
     }
-
-    return body as T;
-  } catch (error) {
-    // If backend endpoint is not yet mounted, gracefully simulate response using local storage / memory
-    if (path.startsWith("/users")) {
-      const url = new URL(`http://dummy${path}`);
-      const pathname = url.pathname;
-
-      // POST /users/:id/resend-invitation
-      if (pathname.includes("/resend-invitation")) {
-        return { ok: true, message: "Invitation resent." } as T;
-      }
-
-      // POST /users/:id/suspend
-      if (pathname.includes("/suspend")) {
-        const id = pathname.split("/")[2];
-        localAccountsState = localAccountsState.map((u) =>
-          u.id === id ? { ...u, status: "SUSPENDED" as AccountStatus } : u
-        );
-        return { ok: true, message: "Account suspended." } as T;
-      }
-
-      // POST /users/:id/reactivate
-      if (pathname.includes("/reactivate")) {
-        const id = pathname.split("/")[2];
-        localAccountsState = localAccountsState.map((u) =>
-          u.id === id ? { ...u, status: "ACTIVE" as AccountStatus } : u
-        );
-        return { ok: true, message: "Account reactivated." } as T;
-      }
-
-      // GET /users?page=1&pageSize=10...
-      const page = Number(url.searchParams.get("page") || "1");
-      const pageSize = Number(url.searchParams.get("pageSize") || "10");
-      const search = url.searchParams.get("search")?.toLowerCase().trim();
-      const category = url.searchParams.get("category");
-      const status = url.searchParams.get("status");
-
-      let filtered = [...localAccountsState];
-      if (search) {
-        filtered = filtered.filter(
-          (u) =>
-            u.fullName.toLowerCase().includes(search) ||
-            u.email.toLowerCase().includes(search) ||
-            (u.registrationNumber && u.registrationNumber.toLowerCase().includes(search))
-        );
-      }
-      if (category && category !== "ALL") {
-        filtered = filtered.filter((u) => u.category === category);
-      }
-      if (status && status !== "ALL") {
-        filtered = filtered.filter((u) => u.status === status);
-      }
-
-      const total = filtered.length;
-      const start = (page - 1) * pageSize;
-      const items = filtered.slice(start, start + pageSize);
-
-      const summary = {
-        total: localAccountsState.length,
-        active: localAccountsState.filter((u) => u.status === "ACTIVE").length,
-        pendingActivation: localAccountsState.filter(
-          (u) => u.status === "PENDING_ACTIVATION"
-        ).length,
-        suspended: localAccountsState.filter((u) => u.status === "SUSPENDED").length,
-        disabled: localAccountsState.filter((u) => u.status === "DISABLED").length,
-      };
-
-      const permissions = [
-        "users.view",
-        "users.registration.create",
-        "users.registration.view",
-        "users.registration.approve",
-        "users.registration.resend_invite",
-        "users.account.suspend",
-        "users.account.reactivate",
-        "users.roles.view",
-        "users.roles.assign",
-        "users.audit.view",
-        "users.export",
-      ];
-
-      return {
-        items,
-        total,
-        page,
-        pageSize,
-        summary,
-        permissions,
-      } as unknown as T;
-    }
-
-    throw error;
   }
+
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      body?.message || body?.error || `Request failed (${response.status})`,
+    );
+  }
+
+  return body as T;
 }
 
 const can = (permissions: string[], permission: string) =>
@@ -312,6 +174,12 @@ function formatDate(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+export function sanitizeCsvCell(value: unknown): string {
+  const str = String(value ?? "");
+  const safe = /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
 
 function StatusBadge({ status }: { status: AccountStatus }) {
@@ -332,7 +200,11 @@ function StatusBadge({ status }: { status: AccountStatus }) {
 }
 
 export default function StaffUserManagementPage() {
-  const [activeTab, setActiveTab] = useSyncedPortalTab<'accounts' | 'roles' | 'invitations'>('staff-users', 'accounts');
+  const ctx = usePortalShellContext();
+  const [activeTab, setActiveTab] = useSyncedPortalTab<"accounts" | "roles" | "invitations">(
+    "staff-users",
+    "accounts",
+  );
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -342,15 +214,47 @@ export default function StaffUserManagementPage() {
   const [status, setStatus] = useState("ALL");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<PortalAccount | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAccountAction | null>(null);
   const [busyAccountId, setBusyAccountId] = useState<string | null>(null);
 
+  // Register Portal Account modal state
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [registerForm, setRegisterForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    category: "STAFF" as AccountCategory,
+    role: "LECTURER",
+    campusId: "cmp-nairobi",
+    departmentId: "dept-computing",
+  });
+
   useEffect(() => {
-    if (activeTab === 'invitations') {
-      setStatus('PENDING_ACTIVATION');
-    } else if (activeTab === 'accounts') {
-      setStatus('ALL');
+    if (activeTab === "invitations") {
+      setStatus("PENDING_ACTIVATION");
+      setPage(1);
+    } else if (activeTab === "accounts") {
+      setStatus("ALL");
+      setPage(1);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (pendingAction) {
+        setPendingAction(null);
+      } else if (isRegisterModalOpen) {
+        setIsRegisterModalOpen(false);
+      } else if (selected) {
+        setSelected(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [pendingAction, isRegisterModalOpen, selected]);
 
   const pageSize = 10;
 
@@ -393,37 +297,106 @@ export default function StaffUserManagementPage() {
     [data?.total],
   );
 
-  async function performAction(
-    account: PortalAccount,
-    action: "resend-invitation" | "suspend" | "reactivate",
-  ) {
-    const confirmation = {
-      "resend-invitation": `Resend the activation invitation to ${account.email}?`,
-      suspend: `Suspend the portal account for ${account.fullName}?`,
-      reactivate: `Reactivate the portal account for ${account.fullName}?`,
-    }[action];
-
-    if (!window.confirm(confirmation)) return;
-
+  async function executeAccountAction(target: PendingAccountAction) {
+    const { account, action } = target;
     setBusyAccountId(account.id);
     setError("");
     setNotice("");
 
     try {
-      await apiRequest(`/users/${account.id}/${action}`, {
-        method: "POST",
-        body: JSON.stringify({}),
+      const result = await apiRequest<{ message?: string }>(
+        `/users/${encodeURIComponent(account.id)}/${action}`,
+        {
+          method: "POST",
+          body: JSON.stringify({}),
+        },
+      );
+
+      const actionTitles = {
+        "resend-invitation": "Account Activation Invitation Resent",
+        suspend: "Portal Account Suspended",
+        reactivate: "Portal Account Reactivated",
+      } as const;
+
+      institutionalEventBus.publish({
+        channel: "system_admin",
+        title: actionTitles[action],
+        summary: `${account.fullName} (${account.email}) — ${result.message ?? "Action recorded in audit trail."}`,
+        severity: action === "suspend" ? "ACTION_REQUIRED" : "SUCCESS",
+        sourceRole: "User Management Desk",
+        targetStaffName: "System Administrator",
+        targetStaffRegNo: "HCA/ADMIN/2026/010",
+        status: "ACKNOWLEDGED",
+        actionLabel: "Inspect Accounts",
+        actionTab: action === "resend-invitation" ? "invitations" : "accounts",
+        actionRole: "staff-users",
       });
 
-      setNotice("The account action was completed.");
+      setNotice(result.message || "The account action was completed.");
+      setPendingAction(null);
       setSelected(null);
       await loadAccounts();
     } catch (err) {
+      setPendingAction(null);
       setError(
         err instanceof Error ? err.message : "The account action failed.",
       );
     } finally {
       setBusyAccountId(null);
+    }
+  }
+
+  async function handleRegisterSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRegisterSubmitting(true);
+    setRegisterError("");
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await apiRequest<{ success: boolean; account: PortalAccount }>(
+        "/users",
+        {
+          method: "POST",
+          body: JSON.stringify(registerForm),
+        },
+      );
+
+      institutionalEventBus.publish({
+        channel: "system_admin",
+        title: "New Portal Account Provisioned",
+        summary: `${response.account.fullName} (${response.account.registrationNumber ?? response.account.email}) created with status Pending Activation.`,
+        severity: "INFO",
+        sourceRole: "User Management Desk",
+        targetStaffName: "System Administrator",
+        targetStaffRegNo: "HCA/ADMIN/2026/010",
+        status: "PENDING",
+        actionLabel: "Track Invitations",
+        actionTab: "invitations",
+        actionRole: "staff-users",
+      });
+
+      setIsRegisterModalOpen(false);
+      setRegisterForm({
+        fullName: "",
+        email: "",
+        phone: "",
+        category: "STAFF",
+        role: "LECTURER",
+        campusId: "cmp-nairobi",
+        departmentId: "dept-computing",
+      });
+      setNotice(
+        `Registered ${response.account.fullName} (${response.account.registrationNumber ?? response.account.email}) and queued activation invitation.`,
+      );
+      setPage(1);
+      await loadAccounts();
+    } catch (err) {
+      setRegisterError(
+        err instanceof Error ? err.message : "Unable to register portal account.",
+      );
+    } finally {
+      setRegisterSubmitting(false);
     }
   }
 
@@ -455,11 +428,7 @@ export default function StaffUserManagementPage() {
     ]);
 
     const csv = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-          .join(","),
-      )
+      .map((row) => row.map((value) => sanitizeCsvCell(value)).join(","))
       .join("\r\n");
 
     const url = URL.createObjectURL(
@@ -472,6 +441,29 @@ export default function StaffUserManagementPage() {
     link.click();
     URL.revokeObjectURL(url);
   }
+
+  const confirmationCopy = pendingAction
+    ? {
+        "resend-invitation": {
+          title: "Resend Activation Invitation",
+          message: `Send a fresh portal activation invitation email to ${pendingAction.account.fullName} (${pendingAction.account.email})?`,
+          confirmLabel: "Resend Invitation",
+          tone: "primary" as const,
+        },
+        suspend: {
+          title: "Suspend Portal Account",
+          message: `Suspend portal access for ${pendingAction.account.fullName} (${pendingAction.account.email})? Active sessions will be revoked immediately.`,
+          confirmLabel: "Confirm Suspension",
+          tone: "danger" as const,
+        },
+        reactivate: {
+          title: "Reactivate Portal Account",
+          message: `Restore active portal access for ${pendingAction.account.fullName} (${pendingAction.account.email})?`,
+          confirmLabel: "Reactivate Account",
+          tone: "primary" as const,
+        },
+      }[pendingAction.action]
+    : null;
 
   return (
     <main className="user-management">
@@ -488,6 +480,7 @@ export default function StaffUserManagementPage() {
 
         <div className="user-management__header-actions">
           <button
+            type="button"
             className="um-button um-button--secondary"
             onClick={() => void loadAccounts()}
             disabled={loading}
@@ -498,9 +491,11 @@ export default function StaffUserManagementPage() {
 
           {can(permissions, "users.registration.create") && (
             <button
+              type="button"
               className="um-button um-button--primary"
               onClick={() => {
-                window.location.href = "/portal/users/register";
+                setRegisterError("");
+                setIsRegisterModalOpen(true);
               }}
             >
               <UserPlus size={17} />
@@ -543,7 +538,7 @@ export default function StaffUserManagementPage() {
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
           }`}
         >
-          <UserCheck size={14} /> Activation &amp; Invitations ({data?.summary?.pendingActivation ?? 1})
+          <UserCheck size={14} /> Activation &amp; Invitations ({data?.summary?.pendingActivation ?? 0})
         </button>
       </div>
 
@@ -636,7 +631,7 @@ export default function StaffUserManagementPage() {
         <div className="um-alert um-alert--error" role="alert">
           <ShieldAlert size={18} />
           {error}
-          <button onClick={() => setError("")} aria-label="Dismiss error">
+          <button type="button" onClick={() => setError("")} aria-label="Dismiss error">
             <X size={16} />
           </button>
         </div>
@@ -646,7 +641,7 @@ export default function StaffUserManagementPage() {
         <div className="um-alert um-alert--success" role="status">
           <CheckCircle2 size={18} />
           {notice}
-          <button onClick={() => setNotice("")} aria-label="Dismiss message">
+          <button type="button" onClick={() => setNotice("")} aria-label="Dismiss message">
             <X size={16} />
           </button>
         </div>
@@ -686,6 +681,7 @@ export default function StaffUserManagementPage() {
           </div>
 
           <button
+            type="button"
             className="um-button um-button--secondary"
             onClick={exportCurrentPage}
             disabled={!data?.items.length}
@@ -799,6 +795,7 @@ export default function StaffUserManagementPage() {
                     <td>{formatDate(account.lastLoginAt)}</td>
                     <td>
                       <button
+                        type="button"
                         className="um-icon-button"
                         title="View account details"
                         aria-label={`View ${account.fullName}`}
@@ -807,6 +804,7 @@ export default function StaffUserManagementPage() {
                         <Eye size={17} />
                       </button>
                       <button
+                        type="button"
                         className="um-icon-button"
                         title="More account actions"
                         aria-label={`More actions for ${account.fullName}`}
@@ -827,6 +825,7 @@ export default function StaffUserManagementPage() {
           </span>
           <div>
             <button
+              type="button"
               className="um-button um-button--secondary"
               disabled={page <= 1 || loading}
               onClick={() => setPage((current) => current - 1)}
@@ -834,6 +833,7 @@ export default function StaffUserManagementPage() {
               Previous
             </button>
             <button
+              type="button"
               className="um-button um-button--secondary"
               disabled={page >= totalPages || loading}
               onClick={() => setPage((current) => current + 1)}
@@ -863,6 +863,7 @@ export default function StaffUserManagementPage() {
                 <h2 id="um-modal-title">{selected.fullName}</h2>
               </div>
               <button
+                type="button"
                 className="um-icon-button"
                 onClick={() => setSelected(null)}
                 aria-label="Close account details"
@@ -907,10 +908,14 @@ export default function StaffUserManagementPage() {
               {selected.status === "PENDING_ACTIVATION" &&
                 can(permissions, "users.registration.resend_invite") && (
                   <button
+                    type="button"
                     className="um-button um-button--primary"
                     disabled={busyAccountId === selected.id}
                     onClick={() =>
-                      void performAction(selected, "resend-invitation")
+                      setPendingAction({
+                        account: selected,
+                        action: "resend-invitation",
+                      })
                     }
                   >
                     <Mail size={16} />
@@ -921,9 +926,15 @@ export default function StaffUserManagementPage() {
               {selected.status === "ACTIVE" &&
                 can(permissions, "users.account.suspend") && (
                   <button
+                    type="button"
                     className="um-button um-button--danger"
                     disabled={busyAccountId === selected.id}
-                    onClick={() => void performAction(selected, "suspend")}
+                    onClick={() =>
+                      setPendingAction({
+                        account: selected,
+                        action: "suspend",
+                      })
+                    }
                   >
                     <Ban size={16} />
                     Suspend account
@@ -933,9 +944,15 @@ export default function StaffUserManagementPage() {
               {selected.status === "SUSPENDED" &&
                 can(permissions, "users.account.reactivate") && (
                   <button
+                    type="button"
                     className="um-button um-button--primary"
                     disabled={busyAccountId === selected.id}
-                    onClick={() => void performAction(selected, "reactivate")}
+                    onClick={() =>
+                      setPendingAction({
+                        account: selected,
+                        action: "reactivate",
+                      })
+                    }
                   >
                     <CheckCircle2 size={16} />
                     Reactivate account
@@ -947,6 +964,267 @@ export default function StaffUserManagementPage() {
               Account actions are permission-checked by the server and recorded
               in the audit log. This screen does not grant or change roles.
             </p>
+          </section>
+        </div>
+      )}
+
+      {pendingAction && confirmationCopy && (
+        <div
+          className="um-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busyAccountId) {
+              setPendingAction(null);
+            }
+          }}
+        >
+          <section
+            className="um-modal max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="um-confirm-title"
+          >
+            <header>
+              <div>
+                <span className="user-management__eyebrow">SECURITY CONFIRMATION</span>
+                <h2 id="um-confirm-title">{confirmationCopy.title}</h2>
+              </div>
+              <button
+                type="button"
+                className="um-icon-button"
+                disabled={Boolean(busyAccountId)}
+                onClick={() => setPendingAction(null)}
+                aria-label="Cancel confirmation"
+              >
+                <X />
+              </button>
+            </header>
+
+            <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+              {confirmationCopy.message}
+            </p>
+
+            <div className="um-modal__actions mt-6 justify-end">
+              <button
+                type="button"
+                className="um-button um-button--secondary"
+                disabled={Boolean(busyAccountId)}
+                onClick={() => setPendingAction(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`um-button ${
+                  confirmationCopy.tone === "danger"
+                    ? "um-button--danger"
+                    : "um-button--primary"
+                }`}
+                disabled={Boolean(busyAccountId)}
+                onClick={() => void executeAccountAction(pendingAction)}
+              >
+                {busyAccountId ? "Processing…" : confirmationCopy.confirmLabel}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isRegisterModalOpen && (
+        <div
+          className="um-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !registerSubmitting) {
+              setIsRegisterModalOpen(false);
+            }
+          }}
+        >
+          <section
+            className="um-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="um-register-title"
+          >
+            <header>
+              <div>
+                <span className="user-management__eyebrow">NEW PORTAL IDENTITY</span>
+                <h2 id="um-register-title">Register Portal Account</h2>
+              </div>
+              <button
+                type="button"
+                className="um-icon-button"
+                disabled={registerSubmitting}
+                onClick={() => setIsRegisterModalOpen(false)}
+                aria-label="Close registration modal"
+              >
+                <X />
+              </button>
+            </header>
+
+            {registerError && (
+              <div className="um-alert um-alert--error mt-4" role="alert">
+                <ShieldAlert size={18} />
+                {registerError}
+              </div>
+            )}
+
+            <form onSubmit={(e) => void handleRegisterSubmit(e)} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Full Name *</span>
+                  <input
+                    type="text"
+                    required
+                    minLength={3}
+                    value={registerForm.fullName}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({ ...prev, fullName: e.target.value }))
+                    }
+                    placeholder="e.g. Dr. Jane Kamau"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Institutional / Personal Email *</span>
+                  <input
+                    type="email"
+                    required
+                    value={registerForm.email}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="j.kamau@hitech.ac.ke"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Phone Number</span>
+                  <input
+                    type="tel"
+                    value={registerForm.phone}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                    placeholder="+254712345678"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Account Category *</span>
+                  <select
+                    value={registerForm.category}
+                    onChange={(e) => {
+                      const nextCategory = e.target.value as AccountCategory;
+                      const defaultRole = ROLE_OPTIONS_BY_CATEGORY[nextCategory][0]?.value ?? nextCategory;
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        category: nextCategory,
+                        role: defaultRole,
+                      }));
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="STAFF">Staff / Faculty</option>
+                    <option value="STUDENT">Student</option>
+                    <option value="PARENT">Parent / Guardian</option>
+                    <option value="ALUMNI">Alumni</option>
+                    <option value="CONTRACTOR">Contractor</option>
+                    <option value="PARTNER">Industry Partner</option>
+                    <option value="GUEST">Guest</option>
+                  </select>
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Assigned Role *</span>
+                  <select
+                    value={registerForm.role}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({ ...prev, role: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {ROLE_OPTIONS_BY_CATEGORY[registerForm.category].map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700">Campus</span>
+                  <select
+                    value={registerForm.campusId}
+                    onChange={(e) =>
+                      setRegisterForm((prev) => ({ ...prev, campusId: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {CAMPUS_OPTIONS.map((cmp) => (
+                      <option key={cmp.id} value={cmp.id}>
+                        {cmp.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="block space-y-1">
+                <span className="text-xs font-bold text-slate-700">Department / Faculty</span>
+                <select
+                  value={registerForm.departmentId}
+                  onChange={(e) =>
+                    setRegisterForm((prev) => ({ ...prev, departmentId: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  {DEPARTMENT_OPTIONS.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
+                {ctx?.setCurrentRole ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegisterModalOpen(false);
+                      ctx.setCurrentRole?.("generator");
+                    }}
+                    className="text-xs font-semibold text-blue-700 hover:text-blue-900 inline-flex items-center gap-1"
+                  >
+                    Open Full Registration Number Generator
+                    <ArrowUpRight size={14} />
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="um-button um-button--secondary"
+                    disabled={registerSubmitting}
+                    onClick={() => setIsRegisterModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="um-button um-button--primary"
+                    disabled={registerSubmitting}
+                  >
+                    <UserPlus size={16} />
+                    {registerSubmitting ? "Provisioning…" : "Create & Send Invite"}
+                  </button>
+                </div>
+              </div>
+            </form>
           </section>
         </div>
       )}
@@ -984,4 +1262,3 @@ function Detail({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

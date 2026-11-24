@@ -10,6 +10,11 @@ import {
   type DocumentPermission,
 } from '../modules/documents/documents.permissions.ts';
 import {
+  INITIAL_DOCUMENT_CATEGORIES,
+  type DmsModuleKey,
+  type DocumentCategoryConfig,
+} from '../modules/documents/documents.catalog.ts';
+import {
   REGISTRATION_NUMBER_PREFIX,
   type RegistrationCategory,
   type RegistrationStatus,
@@ -229,19 +234,42 @@ export type DocumentCategory =
   | 'EMPLOYMENT_CONTRACT'
   | 'INSTITUTIONAL_POLICY'
   | 'OFFICIAL_MEMO'
-  | 'STUDENT_WELFARE_CONFIDENTIAL';
+  | 'STUDENT_WELFARE_CONFIDENTIAL'
+  | 'STUDENT_REGISTRATION_RECORD'
+  | 'ABSENCE_EXPLANATION'
+  | 'ASSIGNMENT_SUBMISSION'
+  | 'PRACTICAL_PROJECT_FILE'
+  | 'INDUSTRIAL_ATTACHMENT_DOC'
+  | 'SCHOLARSHIP_BURSARY_DOC'
+  | 'LESSON_PLAN'
+  | 'SCHEME_OF_WORK'
+  | 'RECORD_OF_WORK'
+  | 'LEARNING_MATERIAL'
+  | 'ATTENDANCE_REGISTER_DOC'
+  | 'ACADEMIC_CLASS_RESOURCE'
+  | 'DEPARTMENT_REPORT'
+  | 'MEETING_MINUTES'
+  | 'INSTITUTIONAL_REPORT'
+  | 'LIBRARY_DIGITAL_RESOURCE'
+  | 'EVENT_MEDIA_PROGRAMME'
+  | 'WEBSITE_MEDIA_ASSET';
 
 export type DocumentConfidentiality = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
 
 export type DocumentWorkflowStatus =
   | 'DRAFT'
+  | 'UPLOADED'
   | 'SUBMITTED'
+  | 'PENDING_REVIEW'
   | 'UNDER_REVIEW'
+  | 'UNDER_VERIFICATION'
   | 'CHANGES_REQUESTED'
+  | 'REQUIRES_CORRECTION'
   | 'APPROVED'
   | 'SIGNED'
   | 'ISSUED'
   | 'ARCHIVED'
+  | 'EXPIRED'
   | 'REJECTED'
   | 'REVOKED';
 
@@ -260,19 +288,35 @@ export interface DocumentDesignConfig {
 
 export interface DocumentRecord {
   id: string;
+  documentNumber?: string | null;
   referenceNumber: string | null;
   title: string;
   category: DocumentCategory;
+  moduleKey?: DmsModuleKey;
+  originalFileName?: string | null;
+  storagePath?: string | null;
+  mimeType?: string | null;
+  fileSizeBytes?: number;
+  checksumSha256?: string | null;
+  scanStatus?: 'VERIFIED_CLEAN' | 'QUARANTINED';
+  description?: string;
   confidentiality: DocumentConfidentiality;
   status: DocumentWorkflowStatus;
   ownerId: string;
   ownerName: string;
   createdById: string;
   createdByName: string;
+  uploadedByRole?: string;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
+  relatedStudentOrStaffId?: string | null;
   departmentId: string | null;
   departmentName: string | null;
   campusId: string | null;
   campusName: string | null;
+  courseOrClass?: string | null;
+  academicYear?: string;
+  termLabel?: string;
   recipientLabel: string;
   recipientEmail?: string;
   subjectLine: string;
@@ -282,6 +326,11 @@ export interface DocumentRecord {
   templateId: string | null;
   currentVersion: number;
   verificationHash: string | null;
+  uploadedAt?: string;
+  approvalOfficerId?: string | null;
+  approvalOfficerName?: string | null;
+  approvalDate?: string | null;
+  retentionDate?: string | null;
   issuedAt: string | null;
   issuedById: string | null;
   issuedByName: string | null;
@@ -296,12 +345,47 @@ export interface DocumentVersionRecord {
   documentId: string;
   versionNumber: number;
   title: string;
+  fileName?: string | null;
+  storagePath?: string | null;
+  mimeType?: string | null;
+  fileSizeBytes?: number;
+  checksumSha256?: string | null;
   subjectLine: string;
   bodyContent: string;
   metadataFields: Record<string, string>;
   editedById: string;
   editedByName: string;
   changeNote: string;
+  createdAt: string;
+}
+
+export interface DocumentAttachmentRecord {
+  id: string;
+  documentId: string;
+  versionNumber: number;
+  fileName: string;
+  storagePath: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  checksumSha256: string;
+  scanStatus: 'VERIFIED_CLEAN' | 'QUARANTINED';
+  uploadedById: string;
+  uploadedByName: string;
+  createdAt: string;
+}
+
+export interface DocumentPermissionRuleRecord {
+  id: string;
+  documentId: string;
+  roleCode: string | null;
+  userId: string | null;
+  departmentId: string | null;
+  scopeLevel: 'PERSONAL' | 'DEPARTMENT' | 'CAMPUS' | 'INSTITUTIONAL';
+  canView: boolean;
+  canDownload: boolean;
+  canApprove: boolean;
+  canEdit: boolean;
+  grantedById: string;
   createdAt: string;
 }
 
@@ -315,6 +399,17 @@ export interface DocumentApprovalRecord {
   status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED';
   comment: string | null;
   decidedAt: string | null;
+  createdAt: string;
+}
+
+export interface DocumentCommentRecord {
+  id: string;
+  documentId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  body: string;
+  isInternal: boolean;
   createdAt: string;
 }
 
@@ -349,6 +444,7 @@ export interface DocumentTemplateRecord {
   code: string;
   name: string;
   category: DocumentCategory;
+  moduleKey?: DmsModuleKey;
   defaultConfidentiality: DocumentConfidentiality;
   description: string;
   subjectTemplate: string;
@@ -367,7 +463,41 @@ export interface DocumentAuditLogRecord {
   actorRole: string;
   action: string;
   detail: string;
+  ipAddress?: string;
   createdAt: string;
+}
+
+export interface DocumentRetentionPolicyRecord {
+  id: string;
+  categoryCode: string;
+  moduleKey: DmsModuleKey;
+  retentionDays: number;
+  actionAfterExpiry: 'ARCHIVE' | 'REVIEW' | 'SECURE_PURGE';
+  odpcBasis: string;
+  active: boolean;
+  updatedById: string | null;
+  updatedAt: string;
+}
+
+export interface DocumentRequestRecord {
+  id: string;
+  requestNumber: string;
+  targetUserId: string;
+  targetUserName: string;
+  targetRegNo: string | null;
+  targetRole: string;
+  requestedById: string;
+  requestedByName: string;
+  requestedByRole: string;
+  categoryCode: string;
+  moduleKey: DmsModuleKey;
+  title: string;
+  instructions: string;
+  dueDate: string | null;
+  status: 'OPEN' | 'SUBMITTED' | 'FULFILLED' | 'OVERDUE' | 'CANCELLED';
+  fulfilledDocumentId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface RegistrationDocumentChecklistItem {
@@ -545,6 +675,7 @@ export interface CookieConsentAuditRecord {
 export interface PortalDatabase {
   sequences: {
     documentIssuedSeq: number;
+    documentRequestSeq?: number;
     staffSeq: number;
     studentSeq: number;
     workflowSeq: number;
@@ -564,13 +695,19 @@ export interface PortalDatabase {
   approvalWorkflows: ApprovalWorkflowRecord[];
   tasks: ServerStaffTask[];
   staffAuditLogs: StaffAuditLogRecord[];
+  documentCategories: DocumentCategoryConfig[];
   documents: DocumentRecord[];
   documentVersions: DocumentVersionRecord[];
+  documentAttachments: DocumentAttachmentRecord[];
+  documentPermissions: DocumentPermissionRuleRecord[];
   documentApprovals: DocumentApprovalRecord[];
+  documentComments: DocumentCommentRecord[];
   documentRecipients: DocumentRecipientRecord[];
   documentSignatures: DocumentSignatureRecord[];
   documentTemplates: DocumentTemplateRecord[];
   documentAuditLogs: DocumentAuditLogRecord[];
+  documentRetentionPolicies: DocumentRetentionPolicyRecord[];
+  documentRequests: DocumentRequestRecord[];
   registrations: UserRegistrationRecord[];
   activationInvitations: ActivationInvitationRecord[];
   registrationAuditLogs: RegistrationAuditLogRecord[];
@@ -1341,6 +1478,7 @@ function createSeedDatabase(): PortalDatabase {
   return {
     sequences: {
       documentIssuedSeq: 1,
+      documentRequestSeq: 2,
       staffSeq: 22,
       studentSeq: 145,
       workflowSeq: 2,
@@ -1487,6 +1625,7 @@ function createSeedDatabase(): PortalDatabase {
         createdAt: '2026-02-10T11:05:00.000Z',
       },
     ],
+    documentCategories: INITIAL_DOCUMENT_CATEGORIES.map((c) => ({ ...c, allowedMimeTypes: [...c.allowedMimeTypes] })),
     documents: [sampleDoc1, sampleDoc2, sampleDoc3],
     documentVersions: [
       {
@@ -1529,6 +1668,8 @@ function createSeedDatabase(): PortalDatabase {
         createdAt: sampleDoc3.createdAt,
       },
     ],
+    documentAttachments: [],
+    documentPermissions: [],
     documentApprovals: [
       {
         id: 'app-seed-1',
@@ -1553,6 +1694,18 @@ function createSeedDatabase(): PortalDatabase {
         comment: null,
         decidedAt: null,
         createdAt: '2026-02-14T08:30:00.000Z',
+      },
+    ],
+    documentComments: [
+      {
+        id: 'dcmt-seed-1',
+        documentId: 'doc-seed-003',
+        authorId: 'usr-hod-001',
+        authorName: 'Dr. Margaret Wambui',
+        authorRole: 'HOD',
+        body: 'Confirm lab workstation count before final Examinations Office sign-off.',
+        isInternal: true,
+        createdAt: '2026-02-14T09:15:00.000Z',
       },
     ],
     documentRecipients: [],
@@ -1589,6 +1742,59 @@ function createSeedDatabase(): PortalDatabase {
         action: 'DOCUMENT_SUBMITTED',
         detail: 'Submitted practical exam schedule draft to HOD (Dr. Margaret Wambui).',
         createdAt: '2026-02-14T08:30:00.000Z',
+      },
+    ],
+    documentRetentionPolicies: INITIAL_DOCUMENT_CATEGORIES.map((cat) => ({
+      id: `ret-${cat.code.toLowerCase()}`,
+      categoryCode: cat.code,
+      moduleKey: cat.moduleKey,
+      retentionDays: cat.retentionDays,
+      actionAfterExpiry: cat.retentionDays >= 18250 ? ('ARCHIVE' as const) : ('REVIEW' as const),
+      odpcBasis: cat.odpcBasis,
+      active: cat.active,
+      updatedById: 'usr-admin-001',
+      updatedAt: now,
+    })),
+    documentRequests: [
+      {
+        id: 'dreq-seed-001',
+        requestNumber: 'HCA/DREQ/2026/0001',
+        targetUserId: 'acc-stu-001',
+        targetUserName: 'Brian Kiprop Mutai',
+        targetRegNo: 'HCA/STU/2026/0001',
+        targetRole: 'STUDENT',
+        requestedById: 'usr-reg-001',
+        requestedByName: 'H. Oduor',
+        requestedByRole: 'REGISTRAR',
+        categoryCode: 'STUDENT_REGISTRATION_RECORD',
+        moduleKey: 'STUDENT',
+        title: 'Signed Trimester 2 Unit Registration Confirmation Form',
+        instructions: 'Upload your signed Trimester 2 registration confirmation and national ID copy for academic registry audit.',
+        dueDate: '2026-12-05',
+        status: 'OPEN',
+        fulfilledDocumentId: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'dreq-seed-002',
+        requestNumber: 'HCA/DREQ/2026/0002',
+        targetUserId: 'usr-lecturer-kamau',
+        targetUserName: 'Eng. Peter Kamau Njoroge',
+        targetRegNo: 'HCA/STAFF/2026/004',
+        targetRole: 'LECTURER',
+        requestedById: 'usr-hod-001',
+        requestedByName: 'Dr. Margaret Wambui',
+        requestedByRole: 'HOD',
+        categoryCode: 'SCHEME_OF_WORK',
+        moduleKey: 'LECTURER',
+        title: 'Trimester 3 Scheme of Work — ICT 2101',
+        instructions: 'Submit approved Scheme of Work prior to Week 1 lecture commencement.',
+        dueDate: '2026-12-01',
+        status: 'OPEN',
+        fulfilledDocumentId: null,
+        createdAt: now,
+        updatedAt: now,
       },
     ],
     registrations: [
@@ -2060,9 +2266,15 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
         existingSet.add(perm);
       }
     }
+    const roleDocPerms = ROLE_DOCUMENT_PERMISSIONS[acc.role] ?? [];
+    const existingDocSet = new Set(acc.documentPermissions || []);
+    for (const docPerm of roleDocPerms) {
+      existingDocSet.add(docPerm);
+    }
     return {
       ...acc,
       permissions: Array.from(existingSet),
+      documentPermissions: Array.from(existingDocSet),
     };
   });
   for (const sAcc of seed.staffAccounts) {
@@ -2305,6 +2517,24 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     financeAuditLogs: Array.isArray(loaded.financeAuditLogs)
       ? loaded.financeAuditLogs
       : seed.financeAuditLogs,
+    documentCategories: Array.isArray(loaded.documentCategories) && loaded.documentCategories.length > 0
+      ? loaded.documentCategories
+      : seed.documentCategories,
+    documentAttachments: Array.isArray(loaded.documentAttachments)
+      ? loaded.documentAttachments
+      : seed.documentAttachments,
+    documentPermissions: Array.isArray(loaded.documentPermissions)
+      ? loaded.documentPermissions
+      : seed.documentPermissions,
+    documentComments: Array.isArray(loaded.documentComments)
+      ? loaded.documentComments
+      : seed.documentComments,
+    documentRetentionPolicies: Array.isArray(loaded.documentRetentionPolicies) && loaded.documentRetentionPolicies.length > 0
+      ? loaded.documentRetentionPolicies
+      : seed.documentRetentionPolicies,
+    documentRequests: Array.isArray(loaded.documentRequests)
+      ? loaded.documentRequests
+      : seed.documentRequests,
   };
 }
 
@@ -2315,8 +2545,9 @@ let suppressSyncHook = false;
 function isTestRunnerEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
+    Boolean(process.env.NODE_TEST_CONTEXT) ||
     process.execArgv.some((arg) => arg.includes('test')) ||
-    process.argv.some((arg) => arg.includes('--test'))
+    process.argv.some((arg) => arg.includes('--test') || /\.test\.[cm]?[jt]sx?$/i.test(arg))
   );
 }
 
@@ -2440,5 +2671,14 @@ export function allocateFinanceReceiptNumber(db: PortalDatabase): string {
   const year = new Date().getFullYear();
   return `RCT-${year}-${String(next).padStart(4, '0')}`;
 }
+
+export function allocateDocumentRequestNumber(db: PortalDatabase): string {
+  const current = db.sequences.documentRequestSeq ?? 2;
+  const next = current + 1;
+  db.sequences.documentRequestSeq = next;
+  const year = new Date().getFullYear();
+  return `HCA/DREQ/${year}/${String(next).padStart(4, '0')}`;
+}
+
 
 

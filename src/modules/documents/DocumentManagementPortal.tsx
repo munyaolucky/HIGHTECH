@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Archive,
   Award,
   CheckCircle2,
+  ClipboardList,
+  DatabaseBackup,
+  Download,
   Eye,
   FileCheck2,
   FilePlus2,
@@ -10,13 +13,17 @@ import {
   FileUp,
   History,
   Lock,
+  MessageSquare,
+  Paperclip,
   PenTool,
   QrCode,
   RotateCcw,
   Send,
+  Settings2,
   Share2,
   ShieldAlert,
   ShieldCheck,
+  Upload,
   XCircle,
 } from 'lucide-react';
 import type { StaffUserAccount } from '../../config/staff-navigation';
@@ -28,6 +35,11 @@ import {
   StaffStatusTag,
 } from '../staff/components/StaffDashboardUI';
 import { DashboardError, DashboardLoading } from '../staff/components/DashboardStates';
+import {
+  DMS_CATEGORY_CATALOG,
+  formatBytesCompact,
+  getDmsCategoryMeta,
+} from './dmsCatalog';
 import DocumentDesigner, {
   type DesignerDraftPayload,
   type DocumentCategory,
@@ -39,6 +51,7 @@ import DocumentUploadPage from './DocumentUploadPage';
 
 interface DocumentRecordDto {
   id: string;
+  documentNumber?: string | null;
   referenceNumber: string | null;
   title: string;
   category: DocumentCategory;
@@ -54,6 +67,9 @@ interface DocumentRecordDto {
   metadataFields: Record<string, string>;
   design: DocumentDesignConfig;
   templateId: string | null;
+  originalFileName?: string | null;
+  fileSizeBytes?: number;
+  checksumSha256?: string | null;
   currentVersion: number;
   verificationHash: string | null;
   issuedAt: string | null;
@@ -68,8 +84,25 @@ interface DocumentDetailDto {
   versions: {
     id: string;
     versionNumber: number;
+    fileName?: string | null;
+    fileSizeBytes?: number;
     editedByName: string;
     changeNote: string;
+    createdAt: string;
+  }[];
+  attachments?: {
+    id: string;
+    fileName: string;
+    fileSizeBytes: number;
+    uploadedByName: string;
+    createdAt: string;
+  }[];
+  comments?: {
+    id: string;
+    authorName: string;
+    authorRole: string;
+    body: string;
+    isInternal: boolean;
     createdAt: string;
   }[];
   approvals: {
@@ -123,21 +156,82 @@ interface DocumentDetailDto {
   };
 }
 
-type DocWorkspaceTab =
-  | 'all'
+interface CategoryConfigDto {
+  code: string;
+  slug: string;
+  name: string;
+  moduleKey: string;
+  maxSizeMb: number;
+  defaultConfidentiality: DocumentConfidentiality;
+  approvalRequired: boolean;
+  isUnpublishedExamProtected: boolean;
+  studentUploadAllowed: boolean;
+  retentionDays: number;
+  active: boolean;
+}
+
+interface DocumentRequestDto {
+  id: string;
+  requestNumber: string;
+  targetUserId: string;
+  targetUserName: string;
+  targetRegNo: string | null;
+  categoryCode: string;
+  title: string;
+  instructions: string;
+  dueDate: string | null;
+  status: string;
+  requestedByName: string;
+  fulfilledDocumentId: string | null;
+  createdAt: string;
+}
+
+interface BackupReportDto {
+  checkedAt: string;
+  checkedBy: string;
+  totalDocumentRecords: number;
+  storedBinaryFiles: number;
+  verifiedChecksums: number;
+  missingFiles: number;
+  checksumMismatches: number;
+  totalStoredBytes: number;
+  status: string;
+}
+
+export type DocWorkspaceTab =
   | 'mine'
+  | 'upload'
   | 'pending_approvals'
-  | 'issued'
   | 'shared'
   | 'archived'
-  | 'upload'
-  | 'designer'
-  | 'templates'
   | 'verify'
-  | 'audit';
+  | 'all'
+  | 'issued'
+  | 'requests'
+  | 'templates'
+  | 'designer'
+  | 'audit'
+  | 'config';
 
-export default function DocumentManagementPortal({ user }: { user: StaffUserAccount }) {
-  const [tab, setTab] = useState<DocWorkspaceTab>('all');
+export default function DocumentManagementPortal({
+  user,
+  initialTab = 'all',
+}: {
+  user: StaffUserAccount;
+  initialTab?: DocWorkspaceTab;
+}) {
+  const canManageConfig =
+    user.role === 'ADMIN' ||
+    user.role === 'PRINCIPAL' ||
+    user.role === 'QUALITY_ASSURANCE' ||
+    user.documentPermissions.includes('documents.config.manage');
+
+  const revisionInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [tab, setTab] = useState<DocWorkspaceTab>(
+    initialTab === 'config' && !canManageConfig ? 'all' : initialTab
+  );
   const [docs, setDocs] = useState<DocumentRecordDto[]>([]);
   const [stats, setStats] = useState({
     totalAccessible: 0,
@@ -153,6 +247,9 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
   const [auditLogs, setAuditLogs] = useState<
     { id: string; actorName: string; action: string; detail: string; createdAt: string }[]
   >([]);
+  const [requests, setRequests] = useState<DocumentRequestDto[]>([]);
+  const [categoriesConfig, setCategoriesConfig] = useState<CategoryConfigDto[]>([]);
+  const [backupReport, setBackupReport] = useState<BackupReportDto | null>(null);
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -166,11 +263,21 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
 
   // Workflow inputs
   const [reviewComment, setReviewComment] = useState('');
+  const [commentText, setCommentText] = useState('');
+  const [commentInternal, setCommentInternal] = useState(false);
   const [signatureTitle, setSignatureTitle] = useState(user.roleTitle);
   const [shareUserId, setShareUserId] = useState('');
   const [shareExpiry, setShareExpiry] = useState('');
   const [shareCanDownload, setShareCanDownload] = useState(true);
   const [revokeReason, setRevokeReason] = useState('');
+
+  // Document Request creator
+  const [reqTargetName, setReqTargetName] = useState('Brian Kiprop Mutai');
+  const [reqTargetRegNo, setReqTargetRegNo] = useState('HCA-2026-0041');
+  const [reqCategory, setReqCategory] = useState<DocumentCategory>('STUDENT_REGISTRATION_RECORD');
+  const [reqTitle, setReqTitle] = useState('');
+  const [reqInstructions, setReqInstructions] = useState('');
+  const [reqDueDate, setReqDueDate] = useState('');
 
   // Verify input
   const [verifyInput, setVerifyInput] = useState('HCA/DOC/2026/000001');
@@ -184,6 +291,10 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
     message: string;
     signatures?: { signerName: string; signerTitle: string; signatureDigest: string }[];
   } | null>(null);
+
+  useEffect(() => {
+    setTab(initialTab === 'config' && !canManageConfig ? 'all' : initialTab);
+  }, [initialTab, canManageConfig]);
 
   const loadList = useCallback(async () => {
     try {
@@ -203,7 +314,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
         view: viewParam,
         category: categoryFilter,
         search,
-        pageSize: '25',
+        pageSize: '30',
       });
 
       const [docsRes, tplRes, dirRes] = await Promise.all([
@@ -239,8 +350,17 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
   }, [tab, categoryFilter, search, user.id, shareUserId]);
 
   useEffect(() => {
-    if (tab === 'designer' || tab === 'verify' || tab === 'upload') return;
-    loadList();
+    if (
+      tab === 'designer' ||
+      tab === 'verify' ||
+      tab === 'upload' ||
+      tab === 'requests' ||
+      tab === 'config' ||
+      tab === 'audit'
+    ) {
+      return;
+    }
+    void loadList();
   }, [tab, loadList]);
 
   const loadAudit = useCallback(async () => {
@@ -251,9 +371,27 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
     }
   }, []);
 
+  const loadRequests = useCallback(async () => {
+    const res = await fetch('/api/documents/requests', { credentials: 'include' });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.success) {
+      setRequests(json.data);
+    }
+  }, []);
+
+  const loadConfig = useCallback(async () => {
+    const res = await fetch('/api/documents/config/categories', { credentials: 'include' });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.success) {
+      setCategoriesConfig(json.data);
+    }
+  }, []);
+
   useEffect(() => {
-    if (tab === 'audit') loadAudit();
-  }, [tab, loadAudit]);
+    if (tab === 'audit') void loadAudit();
+    if (tab === 'requests') void loadRequests();
+    if (tab === 'config' && canManageConfig) void loadConfig();
+  }, [tab, loadAudit, loadRequests, loadConfig, canManageConfig]);
 
   const openDocument = async (docId: string) => {
     setNotice(null);
@@ -266,6 +404,72 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
     setSelectedDetail(json.data as DocumentDetailDto);
     setReviewComment('');
     setRevokeReason('');
+    setCommentText('');
+  };
+
+  const triggerSignedDownload = async (docId: string, attachmentId?: string, version?: number) => {
+    setNotice(null);
+    const qs = new URLSearchParams();
+    if (attachmentId) qs.set('attachmentId', attachmentId);
+    if (version) qs.set('version', String(version));
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    const res = await fetch(`/api/documents/${docId}/download-url${suffix}`, {
+      credentials: 'include',
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      setNotice(json.error || 'Signed download denied.');
+      return;
+    }
+    const anchor = document.createElement('a');
+    anchor.href = json.data.url;
+    anchor.download = json.data.fileName || 'document';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  };
+
+  const handleUploadChildFile = (mode: 'version' | 'attachment', file: File | undefined) => {
+    if (!file || !selectedDetail) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      const contentBase64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      setSaving(true);
+      try {
+        const endpoint =
+          mode === 'version'
+            ? `/api/documents/${selectedDetail.document.id}/versions`
+            : `/api/documents/${selectedDetail.document.id}/attachments`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            mimeType: file.type || 'application/pdf',
+            sizeBytes: file.size,
+            contentBase64,
+            changeNote: mode === 'version' ? `Uploaded revision "${file.name}"` : undefined,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          setNotice(json.error || `Failed to upload ${mode}.`);
+          return;
+        }
+        setNotice(
+          mode === 'version'
+            ? `Uploaded revision v${json.data.document.currentVersion} cleanly.`
+            : `Attached "${file.name}" cleanly.`
+        );
+        await openDocument(selectedDetail.document.id);
+        await loadList();
+      } finally {
+        setSaving(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveDraft = async (payload: DesignerDraftPayload): Promise<string | null> => {
@@ -341,6 +545,96 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
     await loadList();
   };
 
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDetail || commentText.trim().length < 2) return;
+    const res = await fetch(`/api/documents/${selectedDetail.document.id}/comments`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body: commentText.trim(), isInternal: commentInternal }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      setNotice(json.error || 'Could not post comment.');
+      return;
+    }
+    setCommentText('');
+    await openDocument(selectedDetail.document.id);
+  };
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/documents/requests', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: reqTargetRegNo.trim() || 'stu-001',
+          targetUserName: reqTargetName.trim(),
+          targetRegNo: reqTargetRegNo.trim() || undefined,
+          targetRole: 'STUDENT',
+          categoryCode: reqCategory,
+          title: reqTitle.trim(),
+          instructions: reqInstructions.trim(),
+          dueDate: reqDueDate || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setNotice(json.error || 'Failed to issue document request.');
+        return;
+      }
+      setNotice(`Issued document request ${json.data.requestNumber} to ${json.data.targetUserName}.`);
+      setReqTitle('');
+      setReqInstructions('');
+      await loadRequests();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateCategoryPolicy = async (
+    code: string,
+    patch: { maxSizeMb?: number; approvalRequired?: boolean; active?: boolean; retentionDays?: number }
+  ) => {
+    const res = await fetch(`/api/documents/config/categories/${code}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      setNotice(json.error || 'Failed to update category policy.');
+      return;
+    }
+    setNotice(`Updated DMS policy for ${code}.`);
+    await loadConfig();
+  };
+
+  const handleRunBackupCheck = async () => {
+    setSaving(true);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/documents/config/backup-check', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setNotice(json.error || 'Backup integrity verification failed.');
+        return;
+      }
+      setBackupReport(json.data as BackupReportDto);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleVerify = async () => {
     if (!verifyInput.trim()) return;
     const res = await fetch(`/api/documents/verify/${encodeURIComponent(verifyInput.trim())}`);
@@ -350,11 +644,36 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
     }
   };
 
+  const navTabs: [DocWorkspaceTab, string][] = [
+    ['mine', 'My Documents'],
+    ['upload', 'Upload Centre'],
+    ['pending_approvals', 'Pending Approval'],
+    ['shared', 'Shared Documents'],
+    ['archived', 'Document Archive'],
+    ['verify', 'Verification'],
+    ['all', 'All Accessible'],
+    ['issued', 'Issued Official'],
+    ['requests', 'Document Requests'],
+    ['templates', 'Templates'],
+    ['designer', 'A4 Designer'],
+    ['audit', 'Audit Trail'],
+    ...(canManageConfig ? ([['config', 'System Config & Backups']] as [DocWorkspaceTab, string][]) : []),
+  ];
+
+  const isListView =
+    tab !== 'designer' &&
+    tab !== 'templates' &&
+    tab !== 'verify' &&
+    tab !== 'audit' &&
+    tab !== 'upload' &&
+    tab !== 'requests' &&
+    tab !== 'config';
+
   return (
     <div className="space-y-6">
       <StaffPageHeader
-        title="Institutional Document Management & Issuance"
-        description={`Permission-scoped repository, independent review workflow, digital signatures, and template A4 designer for ${user.roleTitle}.`}
+        title="Centralised Document Management System (DMS)"
+        description={`Unified secure upload, verification, approval workflow, digital signatures, and A4 official issuance for ${user.roleTitle}.`}
         breadcrumb="Document Management"
         actions={
           <div className="flex flex-wrap gap-2">
@@ -365,7 +684,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                 setTab('upload');
               }}
             >
-              <FileUp size={15} /> Upload File
+              <FileUp size={15} /> Upload Centre
             </StaffButton>
             <StaffButton
               variant="secondary"
@@ -374,7 +693,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                 setTab('verify');
               }}
             >
-              <QrCode size={15} /> Verify Ref / QR
+              <QrCode size={15} /> Verification
             </StaffButton>
             <StaffButton
               onClick={() => {
@@ -383,7 +702,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                 setTab('designer');
               }}
             >
-              <FilePlus2 size={15} /> Create With Designer
+              <FilePlus2 size={15} /> A4 Designer
             </StaffButton>
           </div>
         }
@@ -398,7 +717,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
         </div>
       )}
 
-      {/* KPI Strip (computed strictly from policy-filtered accessible records) */}
+      {/* KPI Strip */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StaffStatCard
           label="Accessible Documents"
@@ -411,9 +730,9 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
           }}
         />
         <StaffStatCard
-          label="Drafts & Revisions"
+          label="Drafts & Corrections"
           value={stats.drafts}
-          description="Awaiting submission or changes"
+          description="Awaiting submission or update"
           icon={PenTool}
           onClick={() => {
             setSelectedDetail(null);
@@ -421,7 +740,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
           }}
         />
         <StaffStatCard
-          label="Pending My Approval"
+          label="Pending Approval"
           value={stats.pendingApprovals}
           description="Independent review queue (no self-approval)"
           icon={ShieldCheck}
@@ -444,21 +763,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
 
       {/* Navigation Tabs */}
       <div className="no-print flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2">
-        {(
-          [
-            ['all', 'All Accessible'],
-            ['mine', 'My Documents'],
-            ['pending_approvals', 'Pending Approvals'],
-            ['issued', 'Issued'],
-            ['shared', 'Shared With Me'],
-            ['templates', 'Templates'],
-            ['upload', 'Upload File'],
-            ['designer', 'A4 Designer'],
-            ['verify', 'QR Verify'],
-            ['archived', 'Archive'],
-            ['audit', 'Audit Trail'],
-          ] as const
-        ).map(([key, label]) => (
+        {navTabs.map(([key, label]) => (
           <button
             key={key}
             type="button"
@@ -478,7 +783,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
         ))}
       </div>
 
-      {/* Upload File View */}
+      {/* Upload Centre */}
       {tab === 'upload' && (
         <DocumentUploadPage
           onUploaded={async (docId) => {
@@ -549,7 +854,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
         </div>
       )}
 
-      {/* Public/QR Document Verification */}
+      {/* Verification */}
       {tab === 'verify' && (
         <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4 max-w-2xl">
           <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
@@ -566,7 +871,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
               placeholder="HCA/DOC/2026/000001"
               className="flex-1 min-w-[220px] rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm font-mono text-slate-900 dark:text-slate-100"
             />
-            <StaffButton onClick={handleVerify}>Verify Authenticity</StaffButton>
+            <StaffButton onClick={() => void handleVerify()}>Verify Authenticity</StaffButton>
           </div>
           {verifyResult && (
             <div
@@ -605,11 +910,253 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
         </section>
       )}
 
+      {/* Document Requests */}
+      {tab === 'requests' && (
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] items-start">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+            <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
+              <ClipboardList size={17} className="text-[#1769AA]" /> Outstanding Document Requests
+            </h2>
+            {requests.length === 0 ? (
+              <p className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                No document requests logged yet.
+              </p>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {requests.map((r) => (
+                  <div key={r.id} className="py-3 flex items-start justify-between gap-3 text-xs">
+                    <div>
+                      <div className="font-mono font-bold text-[#1769AA] dark:text-blue-400">
+                        {r.requestNumber} · {r.targetUserName} {r.targetRegNo ? `(${r.targetRegNo})` : ''}
+                      </div>
+                      <div className="font-bold text-slate-900 dark:text-white mt-0.5">{r.title}</div>
+                      <p className="text-slate-500 dark:text-slate-400 mt-0.5">{r.instructions}</p>
+                      <div className="text-[11px] text-slate-400 mt-1">
+                        Requested by {r.requestedByName}
+                        {r.dueDate ? ` · Due ${r.dueDate.slice(0, 10)}` : ''}
+                      </div>
+                    </div>
+                    <StaffStatusTag status={r.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+            <h3 className="text-sm font-bold text-[#102D50] dark:text-white">
+              Request Document From Student / Staff
+            </h3>
+            <form onSubmit={handleCreateRequest} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Student / Recipient Name
+                  <input
+                    type="text"
+                    required
+                    value={reqTargetName}
+                    onChange={(e) => setReqTargetName(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Registration / Staff No.
+                  <input
+                    type="text"
+                    required
+                    value={reqTargetRegNo}
+                    onChange={(e) => setReqTargetRegNo(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-mono"
+                  />
+                </label>
+              </div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Required Document Category
+                <select
+                  value={reqCategory}
+                  onChange={(e) => setReqCategory(e.target.value as DocumentCategory)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs"
+                >
+                  {DMS_CATEGORY_CATALOG.map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Request Title
+                <input
+                  type="text"
+                  required
+                  value={reqTitle}
+                  onChange={(e) => setReqTitle(e.target.value)}
+                  placeholder="e.g. Certified KCSE Result Slip"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                Instructions &amp; Due Date
+                <textarea
+                  rows={2}
+                  required
+                  value={reqInstructions}
+                  onChange={(e) => setReqInstructions(e.target.value)}
+                  placeholder="Specify scan clarity, certification stamp, or submission deadline..."
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs"
+                />
+              </label>
+              <input
+                type="date"
+                value={reqDueDate}
+                onChange={(e) => setReqDueDate(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs"
+              />
+              <StaffButton type="submit" disabled={saving}>
+                <Send size={14} /> Issue Document Request
+              </StaffButton>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {/* System Config & Backups (Admin / Principal / QA only) */}
+      {tab === 'config' && canManageConfig && (
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
+                  <DatabaseBackup size={18} className="text-[#1769AA]" /> Private Vault Integrity &amp; Backup Audit
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Verifies stored files outside public/ against registered SHA-256 checksums. Super Admin retains governance configuration without overriding restricted medical, welfare, or HR confidentiality.
+                </p>
+              </div>
+              <StaffButton onClick={() => void handleRunBackupCheck()} disabled={saving}>
+                <ShieldCheck size={14} /> Run Backup Integrity Check
+              </StaffButton>
+            </div>
+
+            {backupReport && (
+              <div className="grid gap-3 sm:grid-cols-4 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
+                <div>
+                  <div className="text-slate-500">Vault Status</div>
+                  <div className="mt-1">
+                    <StaffStatusTag status={backupReport.status} />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Verified Checksums</div>
+                  <div className="mt-1 font-bold text-[#102D50] dark:text-white tabular-nums">
+                    {backupReport.verifiedChecksums} / {backupReport.storedBinaryFiles}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Missing / Mismatches</div>
+                  <div className="mt-1 font-bold text-[#102D50] dark:text-white tabular-nums">
+                    {backupReport.missingFiles} missing · {backupReport.checksumMismatches} mismatch
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Private Storage Footprint</div>
+                  <div className="mt-1 font-bold text-[#102D50] dark:text-white tabular-nums">
+                    {formatBytesCompact(backupReport.totalStoredBytes)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+            <h3 className="text-sm font-bold text-[#102D50] dark:text-white flex items-center gap-2">
+              <Settings2 size={16} className="text-[#1769AA]" /> Category Limits, Retention Policies &amp; Approval Rules ({categoriesConfig.length})
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th className="py-2 pr-3">Category</th>
+                    <th className="py-2 pr-3">Module</th>
+                    <th className="py-2 pr-3">Default Policy</th>
+                    <th className="py-2 pr-3">Max MB</th>
+                    <th className="py-2 pr-3">Retention (Days)</th>
+                    <th className="py-2 pr-3">Approval</th>
+                    <th className="py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {categoriesConfig.map((cat) => (
+                    <tr key={cat.code}>
+                      <td className="py-2.5 pr-3 font-semibold text-slate-900 dark:text-white">
+                        {cat.name}
+                        <div className="font-mono text-[10px] text-slate-400">{cat.code}</div>
+                      </td>
+                      <td className="py-2.5 pr-3 font-mono text-[11px]">{cat.moduleKey}</td>
+                      <td className="py-2.5 pr-3">
+                        <StaffStatusTag status={cat.defaultConfidentiality} />
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums">
+                        <select
+                          aria-label={`Max size for ${cat.code}`}
+                          value={cat.maxSizeMb}
+                          onChange={(e) =>
+                            void handleUpdateCategoryPolicy(cat.code, {
+                              maxSizeMb: Number(e.target.value),
+                            })
+                          }
+                          className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-xs"
+                        >
+                          {[5, 10, 15, 20, 25, 30].map((mb) => (
+                            <option key={mb} value={mb}>
+                              {mb} MB
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums">{cat.retentionDays}d</td>
+                      <td className="py-2.5 pr-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleUpdateCategoryPolicy(cat.code, {
+                              approvalRequired: !cat.approvalRequired,
+                            })
+                          }
+                          className="rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[11px] font-semibold"
+                        >
+                          {cat.approvalRequired ? 'Required' : 'Direct'}
+                        </button>
+                      </td>
+                      <td className="py-2.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleUpdateCategoryPolicy(cat.code, { active: !cat.active })
+                          }
+                          className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
+                            cat.active
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                              : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          }`}
+                        >
+                          {cat.active ? 'Active' : 'Disabled'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* Global Audit Trail */}
       {tab === 'audit' && (
         <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
           <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
-            <History size={17} /> Immutable Document Audit Trail
+            <History size={17} /> Immutable Document &amp; Security Audit Trail
           </h2>
           {auditLogs.length === 0 ? (
             <p className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
@@ -631,7 +1178,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       — {log.actorName}
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 shrink-0">
+                  <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 shrink-0 tabular-nums">
                     {log.createdAt.slice(0, 16).replace('T', ' ')}
                   </span>
                 </div>
@@ -642,7 +1189,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
       )}
 
       {/* Document Register & Inspector */}
-      {tab !== 'designer' && tab !== 'templates' && tab !== 'verify' && tab !== 'audit' && tab !== 'upload' && (
+      {isListView && (
         <>
           {loading && docs.length === 0 ? (
             <DashboardLoading />
@@ -654,7 +1201,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                 <StaffSearchToolbar
                   search={search}
                   onSearch={setSearch}
-                  placeholder="Search reference, title, or recipient..."
+                  placeholder="Search reference, title, filename, or recipient..."
                   actions={
                     <select
                       aria-label="Filter by category"
@@ -663,31 +1210,29 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200"
                     >
                       <option value="ALL">All Categories</option>
-                      <option value="ADMISSION_LETTER">Admission Letters</option>
-                      <option value="TRANSCRIPT_CERTIFICATE">Transcripts</option>
-                      <option value="FEE_STATEMENT">Fee Statements</option>
-                      <option value="EXAM_SCHEDULE">Exam Schedules</option>
-                      <option value="EMPLOYMENT_CONTRACT">HR Contracts</option>
-                      <option value="INSTITUTIONAL_POLICY">Policies</option>
-                      <option value="OFFICIAL_MEMO">Official Memos</option>
-                      <option value="STUDENT_WELFARE_CONFIDENTIAL">Confidential Welfare</option>
+                      {DMS_CATEGORY_CATALOG.map((cat) => (
+                        <option key={cat.code} value={cat.code}>
+                          {cat.name}
+                        </option>
+                      ))}
                     </select>
                   }
                 />
 
                 {docs.length === 0 ? (
                   <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                    No authorized documents match this view. Click &ldquo;Create With Designer&rdquo; to compose a new draft.
+                    No authorized documents match this view.
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800">
                     {docs.map((doc) => {
                       const active = selectedDetail?.document.id === doc.id;
+                      const catMeta = getDmsCategoryMeta(doc.category);
                       return (
                         <button
                           key={doc.id}
                           type="button"
-                          onClick={() => openDocument(doc.id)}
+                          onClick={() => void openDocument(doc.id)}
                           className={`w-full text-left py-4 px-3 rounded-xl transition-colors flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${
                             active
                               ? 'bg-[#eef4fd] dark:bg-slate-800/80'
@@ -697,13 +1242,17 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2 text-xs">
                               <span className="font-mono font-bold text-[#1769AA] dark:text-blue-400">
-                                {doc.referenceNumber ?? 'DRAFT · NO REF'}
+                                {doc.referenceNumber ?? doc.documentNumber ?? 'DRAFT · NO REF'}
                               </span>
                               <span className="text-slate-400" aria-hidden="true">
                                 ·
                               </span>
                               <span className="text-slate-500 dark:text-slate-400">
+                                {catMeta?.name ?? doc.category}
+                              </span>
+                              <span className="text-slate-500 dark:text-slate-400 tabular-nums">
                                 v{doc.currentVersion}
+                                {doc.fileSizeBytes ? ` · ${formatBytesCompact(doc.fileSizeBytes)}` : ''}
                               </span>
                               {doc.confidentiality !== 'PUBLIC' && (
                                 <span className="inline-flex items-center gap-1 rounded border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">
@@ -738,7 +1287,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       Select a document to inspect
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Review immutable version history, independent approvals, digital signatures, sharing grants, and official issuance actions.
+                      Download via signed URLs, review version history, post verification comments, approve, sign, or issue.
                     </p>
                   </div>
                 ) : (
@@ -747,7 +1296,8 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-mono text-xs font-bold text-[#1769AA] dark:text-blue-400">
                           {selectedDetail.document.referenceNumber ??
-                            'UNISSUED DRAFT (Reference assigned only on issuance)'}
+                            selectedDetail.document.documentNumber ??
+                            'UNISSUED DRAFT'}
                         </span>
                         <StaffStatusTag status={selectedDetail.document.status} />
                       </div>
@@ -759,6 +1309,11 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                         {selectedDetail.document.confidentiality} · Version v
                         {selectedDetail.document.currentVersion}
                       </p>
+                      {selectedDetail.document.checksumSha256 && (
+                        <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 break-all">
+                          SHA-256: {selectedDetail.document.checksumSha256}
+                        </p>
+                      )}
                       {selectedDetail.document.verificationHash && (
                         <p className="font-mono text-xs text-emerald-700 dark:text-emerald-400">
                           Verification Code: {selectedDetail.document.verificationHash}
@@ -771,37 +1326,74 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       <div className="font-bold text-[#102D50] dark:text-white uppercase">
                         {selectedDetail.document.subjectLine}
                       </div>
-                      <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed max-h-48 overflow-y-auto">
+                      <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed max-h-40 overflow-y-auto">
                         {selectedDetail.document.bodyContent}
                       </p>
                     </div>
 
-                    {/* Lifecycle Actions (strictly permission-gated) */}
+                    {/* Lifecycle & File Actions */}
                     <div className="space-y-3">
                       <div className="text-xs font-bold text-[#102D50] dark:text-white">
-                        Authorized Lifecycle Actions
+                        Authorized Document Actions
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {selectedDetail.allowedActions.canEdit && (
+                        {selectedDetail.allowedActions.canExport && (
                           <StaffButton
                             variant="secondary"
-                            onClick={() => {
-                              setEditingPayload({
-                                ...selectedDetail.document,
-                                signatures: selectedDetail.signatures,
-                              });
-                              setTab('designer');
-                            }}
+                            onClick={() => void triggerSignedDownload(selectedDetail.document.id)}
                           >
-                            <PenTool size={14} /> Edit in A4 Designer
+                            <Download size={14} /> Signed Download
                           </StaffButton>
+                        )}
+
+                        {selectedDetail.allowedActions.canEdit && (
+                          <>
+                            <StaffButton
+                              variant="secondary"
+                              onClick={() => {
+                                setEditingPayload({
+                                  ...selectedDetail.document,
+                                  signatures: selectedDetail.signatures,
+                                });
+                                setTab('designer');
+                              }}
+                            >
+                              <PenTool size={14} /> Edit in A4 Designer
+                            </StaffButton>
+                            <input
+                              ref={revisionInputRef}
+                              type="file"
+                              className="hidden"
+                              onChange={(e) => handleUploadChildFile('version', e.target.files?.[0])}
+                            />
+                            <StaffButton
+                              variant="secondary"
+                              disabled={saving}
+                              onClick={() => revisionInputRef.current?.click()}
+                            >
+                              <Upload size={14} /> New Version
+                            </StaffButton>
+                            <input
+                              ref={attachmentInputRef}
+                              type="file"
+                              className="hidden"
+                              onChange={(e) => handleUploadChildFile('attachment', e.target.files?.[0])}
+                            />
+                            <StaffButton
+                              variant="secondary"
+                              disabled={saving}
+                              onClick={() => attachmentInputRef.current?.click()}
+                            >
+                              <Paperclip size={14} /> Add Attachment
+                            </StaffButton>
+                          </>
                         )}
 
                         {selectedDetail.allowedActions.canSubmit && (
                           <StaffButton
                             onClick={() =>
-                              runWorkflowAction(selectedDetail.document.id, 'submit', {})
+                              void runWorkflowAction(selectedDetail.document.id, 'submit', {})
                             }
                           >
                             <Send size={14} /> Submit for Approval
@@ -812,7 +1404,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                           <StaffButton
                             variant="success"
                             onClick={() =>
-                              runWorkflowAction(selectedDetail.document.id, 'issue', {})
+                              void runWorkflowAction(selectedDetail.document.id, 'issue', {})
                             }
                           >
                             <Award size={14} /> Issue Official Reference
@@ -824,7 +1416,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             <StaffButton
                               variant="secondary"
                               onClick={() =>
-                                runWorkflowAction(selectedDetail.document.id, 'archive', {})
+                                void runWorkflowAction(selectedDetail.document.id, 'archive', {})
                               }
                             >
                               <Archive size={14} /> Archive
@@ -836,7 +1428,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             <StaffButton
                               variant="secondary"
                               onClick={() =>
-                                runWorkflowAction(selectedDetail.document.id, 'restore', {})
+                                void runWorkflowAction(selectedDetail.document.id, 'restore', {})
                               }
                             >
                               <RotateCcw size={14} /> Restore
@@ -856,7 +1448,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             type="text"
                             value={reviewComment}
                             onChange={(e) => setReviewComment(e.target.value)}
-                            placeholder="Review comment (required for changes/reject)..."
+                            placeholder="Review comment (required for correction/reject)..."
                             className="w-full rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs"
                           />
                           <div className="flex flex-wrap gap-2">
@@ -864,7 +1456,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                               <StaffButton
                                 variant="success"
                                 onClick={() =>
-                                  runWorkflowAction(selectedDetail.document.id, 'approve', {
+                                  void runWorkflowAction(selectedDetail.document.id, 'approve', {
                                     comment: reviewComment,
                                   })
                                 }
@@ -876,7 +1468,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                               <StaffButton
                                 variant="secondary"
                                 onClick={() =>
-                                  runWorkflowAction(
+                                  void runWorkflowAction(
                                     selectedDetail.document.id,
                                     'request-changes',
                                     { comment: reviewComment }
@@ -890,7 +1482,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                               <StaffButton
                                 variant="danger"
                                 onClick={() =>
-                                  runWorkflowAction(selectedDetail.document.id, 'reject', {
+                                  void runWorkflowAction(selectedDetail.document.id, 'reject', {
                                     comment: reviewComment,
                                   })
                                 }
@@ -906,7 +1498,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       {selectedDetail.allowedActions.canSign && (
                         <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 space-y-2">
                           <div className="text-xs font-bold text-[#102D50] dark:text-white">
-                            Apply Digital Signature (Separate From Approval &amp; Issuance)
+                            Apply Digital Signature
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <input
@@ -918,7 +1510,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             />
                             <StaffButton
                               onClick={() =>
-                                runWorkflowAction(selectedDetail.document.id, 'sign', {
+                                void runWorkflowAction(selectedDetail.document.id, 'sign', {
                                   signatureTitle,
                                 })
                               }
@@ -969,7 +1561,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             <StaffButton
                               variant="secondary"
                               onClick={() =>
-                                runWorkflowAction(selectedDetail.document.id, 'share', {
+                                void runWorkflowAction(selectedDetail.document.id, 'share', {
                                   userId: shareUserId,
                                   canView: true,
                                   canDownload: shareCanDownload,
@@ -1001,7 +1593,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                             <StaffButton
                               variant="danger"
                               onClick={() =>
-                                runWorkflowAction(selectedDetail.document.id, 'revoke', {
+                                void runWorkflowAction(selectedDetail.document.id, 'revoke', {
                                   comment: revokeReason,
                                 })
                               }
@@ -1013,7 +1605,7 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                       )}
                     </div>
 
-                    {/* Versions, Approvals, Signatures */}
+                    {/* Versions, Attachments, Comments, Approvals, Signatures */}
                     <div className="space-y-3 border-t border-slate-200 dark:border-slate-800 pt-4 text-xs">
                       <div>
                         <div className="font-bold text-[#102D50] dark:text-white mb-1">
@@ -1023,19 +1615,67 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                           {selectedDetail.versions.map((v) => (
                             <div
                               key={v.id}
-                              className="flex items-center justify-between text-slate-600 dark:text-slate-300"
+                              className="flex items-center justify-between gap-2 text-slate-600 dark:text-slate-300"
                             >
                               <span>
                                 <strong className="font-mono">v{v.versionNumber}</strong> —{' '}
                                 {v.changeNote} ({v.editedByName})
                               </span>
-                              <span className="font-mono text-[11px] text-slate-400">
-                                {v.createdAt.slice(0, 10)}
-                              </span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="font-mono text-[11px] text-slate-400">
+                                  {v.createdAt.slice(0, 10)}
+                                </span>
+                                {selectedDetail.allowedActions.canExport && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void triggerSignedDownload(
+                                        selectedDetail.document.id,
+                                        undefined,
+                                        v.versionNumber
+                                      )
+                                    }
+                                    className="text-[#1769AA] hover:underline"
+                                  >
+                                    Download
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
+
+                      {selectedDetail.attachments && selectedDetail.attachments.length > 0 && (
+                        <div>
+                          <div className="font-bold text-[#102D50] dark:text-white mb-1">
+                            Supporting Attachments ({selectedDetail.attachments.length})
+                          </div>
+                          <div className="space-y-1">
+                            {selectedDetail.attachments.map((att) => (
+                              <div
+                                key={att.id}
+                                className="flex items-center justify-between gap-2 text-slate-600 dark:text-slate-300"
+                              >
+                                <span className="truncate">
+                                  {att.fileName} ({formatBytesCompact(att.fileSizeBytes)})
+                                </span>
+                                {selectedDetail.allowedActions.canExport && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void triggerSignedDownload(selectedDetail.document.id, att.id)
+                                    }
+                                    className="text-[#1769AA] hover:underline shrink-0"
+                                  >
+                                    Download
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {selectedDetail.approvals.length > 0 && (
                         <div>
@@ -1072,6 +1712,55 @@ export default function DocumentManagementPortal({ user }: { user: StaffUserAcco
                           ))}
                         </div>
                       )}
+
+                      {/* Comments */}
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
+                        <div className="font-bold text-[#102D50] dark:text-white flex items-center gap-1.5">
+                          <MessageSquare size={13} /> Comments &amp; Review Thread (
+                          {selectedDetail.comments?.length ?? 0})
+                        </div>
+                        {selectedDetail.comments && selectedDetail.comments.length > 0 && (
+                          <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                            {selectedDetail.comments.map((c) => (
+                              <div
+                                key={c.id}
+                                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5 text-[11px]"
+                              >
+                                <div className="flex justify-between text-slate-500">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                    {c.authorName} ({c.authorRole})
+                                  </span>
+                                  <span>{c.isInternal ? 'Staff Only' : c.createdAt.slice(0, 10)}</span>
+                                </div>
+                                <p className="mt-0.5 text-slate-700 dark:text-slate-300">{c.body}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <form onSubmit={handleAddComment} className="space-y-2">
+                          <input
+                            type="text"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder="Write review comment or note..."
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs"
+                          />
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={commentInternal}
+                                onChange={(e) => setCommentInternal(e.target.checked)}
+                                className="accent-[#1769AA]"
+                              />
+                              <span>Internal staff note</span>
+                            </label>
+                            <StaffButton type="submit" variant="secondary" disabled={commentText.trim().length < 2}>
+                              Post Comment
+                            </StaffButton>
+                          </div>
+                        </form>
+                      </div>
                     </div>
                   </>
                 )}

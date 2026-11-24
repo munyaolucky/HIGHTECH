@@ -450,6 +450,20 @@ export default function StaffDashboardRouter({
     }
     return <DocumentManagementPortal user={user} />;
   }
+  if (activePath === '/staff/admin/document-config') {
+    if (
+      !hasStaffPermission(user.permissions, 'teaching.policy.configure') &&
+      !hasStaffPermission(user.permissions, 'qa.frameworks.manage')
+    ) {
+      return (
+        <StaffAccessDeniedView
+          message="Document System Configuration requires Administrator, Principal, or Quality Assurance privileges."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    return <DocumentManagementPortal user={user} initialTab="config" />;
+  }
   if (activePath === '/staff/registration') {
     if (!hasStaffPermission(user.permissions, 'staff.registration.view')) {
       return (

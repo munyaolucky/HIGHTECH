@@ -61,6 +61,8 @@ import AppealsPage from '../pages/exams/AppealsPage';
 import AcademicProgressPage from '../pages/exams/AcademicProgressPage';
 import { isStudentFeesSection, StudentFeesRouteView } from '../fees/feesRoutes';
 import type { ExamSession } from '../exams/secure/examTypes';
+import StudentDmsWorkspace from './StudentDmsWorkspace';
+import UniversalDocumentUploader from '../../documents/UniversalDocumentUploader';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
@@ -1602,9 +1604,11 @@ export default function StudentSubPages({
               setShowDocUpload((v) => !v);
             }}
           >
-            <UploadCloud size={15} /> {showDocUpload ? 'Close Upload Form' : 'Upload Document'}
+            <UploadCloud size={15} /> {showDocUpload ? 'Close Legacy Form' : 'Quick Registry Upload'}
           </PortalButton>
         )}
+
+        <StudentDmsWorkspace onNotify={onNotify} />
 
         {showDocUpload && (
           <PortalCard
@@ -2143,6 +2147,32 @@ export default function StudentSubPages({
                 </div>
               )}
             </form>
+
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-[#102D50] dark:text-white">
+                  Restricted Counselling &amp; Welfare Document Upload (Admin Blocked)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Attach referral letters, medical notes, or bursary welfare evidence directly to the Student Welfare &amp; Counselling Desk under RESTRICTED access.
+                </p>
+              </div>
+              <UniversalDocumentUploader
+                moduleKey="STUDENT"
+                fixedCategory="STUDENT_WELFARE_CONFIDENTIAL"
+                isStudent={true}
+                lockConfidentiality={true}
+                compact={true}
+                defaultRecipient="Student Counsellor / Welfare Desk"
+                relatedEntityType="WELFARE_SUPPORT"
+                onUploaded={(res) => {
+                  onNotify(
+                    'ok',
+                    `Confidential welfare document "${res.document.title}" uploaded securely (RESTRICTED).`
+                  );
+                }}
+              />
+            </div>
           </div>
         )}
       </div>

@@ -35,14 +35,27 @@ let dbSnapshot: PortalDatabase | null = null;
 test.before(() => {
   const db = getDb();
   dbSnapshot = structuredClone(db);
+  const today = new Date().toISOString().slice(0, 10);
+  const futureIso = new Date(Date.now() + 14 * 86400000).toISOString();
+  const futureDate = futureIso.slice(0, 10);
+
   const clinic = db.collegeEvents.find((e) => e.id === 'evt-cyber-career-clinic');
   if (clinic) {
-    const today = new Date().toISOString().slice(0, 10);
     clinic.eventDate = today;
     clinic.endDate = today;
     clinic.registrationDeadline = `${today}T23:59:00.000Z`;
-    saveDb(db);
   }
+
+  for (const futureId of ['evt-ai-symposium-2026', 'evt-graduation-2026']) {
+    const evt = db.collegeEvents.find((e) => e.id === futureId);
+    if (evt) {
+      evt.eventDate = futureDate;
+      evt.endDate = futureDate;
+      evt.registrationDeadline = futureIso;
+    }
+  }
+
+  saveDb(db);
 });
 
 test.after(() => {

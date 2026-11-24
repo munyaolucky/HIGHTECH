@@ -24,8 +24,9 @@ import {
 } from '../../types/hr';
 import { COLLEGE_INFO } from '../../data/college';
 import { useSyncedPortalTab } from '../../context/PortalShellContext';
+import ModuleDocumentRepository from '../documents/ModuleDocumentRepository';
 
-type TabId = 'directory' | 'contracts' | 'leave' | 'attendance' | 'workloads';
+type TabId = 'directory' | 'contracts' | 'leave' | 'attendance' | 'workloads' | 'hr_docs';
 
 const ACTORS: Record<HROperatorRole, { userId: string; name: string; label: string; isHR: boolean }> = {
   HR_OFFICER_PRIMARY: {
@@ -236,6 +237,7 @@ export default function HRStaffPortal() {
           { id: 'leave', label: 'Leave Requests', icon: CalendarClock },
           { id: 'attendance', label: 'Daily Attendance (EAT)', icon: Clock },
           { id: 'workloads', label: 'Faculty Workloads', icon: Layers },
+          { id: 'hr_docs', label: 'Staff HR Files (Confidential)', icon: FileText },
         ].map((t) => {
           const Icon = t.icon;
           return (
@@ -1051,6 +1053,17 @@ export default function HRStaffPortal() {
             </div>
           )}
         </div>
+      )}
+
+      {/* STAFF HR FILES DMS */}
+      {activeTab === 'hr_docs' && (
+        <ModuleDocumentRepository
+          moduleKey="HR"
+          defaultRecipient="Human Resources Directorate"
+          title="Confidential Staff HR Files & Contracts (Central DMS)"
+          description="Restricted repository for employment contracts, academic certificates, appraisal letters, and medical/leave documentation."
+          securityBanner="HR Confidentiality Guard: Access is restricted to authorized HR officers and the Principal. Super Admin does NOT automatically bypass CONFIDENTIAL or RESTRICTED HR personnel files."
+        />
       )}
     </div>
   );

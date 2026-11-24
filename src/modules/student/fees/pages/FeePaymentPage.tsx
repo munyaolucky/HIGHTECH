@@ -17,6 +17,7 @@ import {
 } from '../feesApi';
 import type { FinancePaymentRecord, StudentFeesOverviewDto } from '../fees.types';
 import type { StudentFeesPageProps } from './StudentFeesDashboard';
+import ModuleDocumentRepository from '../../../documents/ModuleDocumentRepository';
 
 export default function FeePaymentPage({
   onNavigate,
@@ -528,6 +529,16 @@ export default function FeePaymentPage({
           </div>
         </aside>
       </div>
+
+      <ModuleDocumentRepository
+        moduleKey="FINANCE"
+        allowedCategories={['FEE_STATEMENT', 'SCHOLARSHIP_BURSARY_DOC']}
+        isStudentView={true}
+        compact={true}
+        defaultRecipient="Finance & Cash Office"
+        title="Payment Slips, Receipts & Bursary Evidence (Central DMS)"
+        description="Upload bank deposit slips, M-Pesa confirmation evidence, or HELB/county bursary letters for Finance Officer verification."
+      />
     </main>
   );
 }

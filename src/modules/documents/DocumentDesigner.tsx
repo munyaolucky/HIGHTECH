@@ -11,17 +11,13 @@ import {
 import type { StaffUserAccount } from '../../config/staff-navigation';
 import { StaffButton } from '../staff/components/StaffDashboardUI';
 
-export type DocumentCategory =
-  | 'ADMISSION_LETTER'
-  | 'TRANSCRIPT_CERTIFICATE'
-  | 'FEE_STATEMENT'
-  | 'EXAM_SCHEDULE'
-  | 'EMPLOYMENT_CONTRACT'
-  | 'INSTITUTIONAL_POLICY'
-  | 'OFFICIAL_MEMO'
-  | 'STUDENT_WELFARE_CONFIDENTIAL';
+import {
+  DMS_CATEGORY_CATALOG,
+  type DocumentCategory,
+  type DocumentConfidentiality,
+} from './dmsCatalog';
 
-export type DocumentConfidentiality = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
+export type { DocumentCategory, DocumentConfidentiality };
 
 export interface DocumentDesignConfig {
   fontFamily: 'serif' | 'sans' | 'mono';
@@ -406,14 +402,11 @@ export default function DocumentDesigner({
                 onChange={(e) => setCategory(e.target.value as DocumentCategory)}
                 className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100"
               >
-                <option value="ADMISSION_LETTER">Admission Letter</option>
-                <option value="TRANSCRIPT_CERTIFICATE">Transcript / Completion</option>
-                <option value="FEE_STATEMENT">Fee Statement</option>
-                <option value="EXAM_SCHEDULE">Exam Schedule</option>
-                <option value="EMPLOYMENT_CONTRACT">Employment Contract</option>
-                <option value="INSTITUTIONAL_POLICY">Institutional Policy</option>
-                <option value="OFFICIAL_MEMO">Official Memo</option>
-                <option value="STUDENT_WELFARE_CONFIDENTIAL">Confidential Welfare</option>
+                {DMS_CATEGORY_CATALOG.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </label>
 

@@ -113,8 +113,13 @@ export default function StaffEventFeedPane({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-xs flex justify-end animate-fadeIn">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col transform transition-transform duration-200">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-xs flex justify-end animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col transform transition-transform duration-200">
         {/* DRAWER HEADER */}
         <div className="bg-gradient-to-r from-[#061d40] to-[#0a2f64] text-white p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -132,7 +137,9 @@ export default function StaffEventFeedPane({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close staff event feed"
               className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition"
               title="Close Feed (Esc)"
             >
@@ -271,7 +278,7 @@ export default function StaffEventFeedPane({
                           isResolved
                             ? 'bg-slate-400'
                             : isAction
-                            ? 'bg-amber-500 animate-pulse'
+                            ? 'bg-amber-500 ring-2 ring-amber-200'
                             : isSuccess
                             ? 'bg-emerald-500'
                             : 'bg-blue-500'

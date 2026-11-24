@@ -22,11 +22,15 @@ import {
   Sun,
   Moon,
   ArrowRight,
+  Bell,
 } from "lucide-react";
 import { PortalRole } from "../../types";
 import { usePortalShellContext } from "../../context/PortalShellContext";
 import { useTheme } from "../../context/ThemeContext";
 import { PortalConfirmDialog } from "../../components/ui/PortalUI";
+import StaffEventFeedPane from "../../components/StaffEventFeedPane";
+import StaffIdentityDrawer from "../../components/StaffIdentityDrawer";
+import { institutionalEventBus } from "../../services/institutionalEventBus";
 
 import "./lecturer.css";
 
@@ -124,9 +128,22 @@ export default function LecturerPortal({ onLogout, onSwitchPortal }: LecturerPor
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [eventFeedOpen, setEventFeedOpen] = useState(false);
+  const [identityDrawerOpen, setIdentityDrawerOpen] = useState(false);
+  const [unreadChannelCount, setUnreadChannelCount] = useState(() =>
+    institutionalEventBus.getUnreadCountForRole("lecturer")
+  );
 
   useEffect(() => {
     void teachingModuleApi.ensureLecturerSession();
+  }, []);
+
+  useEffect(() => {
+    const syncUnread = () => {
+      setUnreadChannelCount(institutionalEventBus.getUnreadCountForRole("lecturer"));
+    };
+    syncUnread();
+    return institutionalEventBus.subscribe(syncUnread);
   }, []);
 
   useEffect(() => {
@@ -260,7 +277,7 @@ export default function LecturerPortal({ onLogout, onSwitchPortal }: LecturerPor
             className={`lecturer-nav-link ${activeTab === "teaching_documents" ? "active" : ""}`}
           >
             <BookOpen size={16} />
-            <span>Teaching Documents (17)</span>
+            <span>Teaching Documents</span>
           </button>
           <button
             type="button"
@@ -579,6 +596,32 @@ export default function LecturerPortal({ onLogout, onSwitchPortal }: LecturerPor
 
             <button
               type="button"
+              onClick={() => setEventFeedOpen(true)}
+              aria-label="Open Faculty Channel Event Feed"
+              className="relative p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Faculty Channel Alerts"
+            >
+              <Bell size={17} />
+              {unreadChannelCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadChannelCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIdentityDrawerOpen(true)}
+              aria-label="Open Faculty Identity Drawer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Officer Identity &amp; Channels"
+            >
+              <UserCheck size={14} />
+              <span>Dr. Otieno</span>
+            </button>
+
+            <button
+              type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
               className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -770,6 +813,21 @@ export default function LecturerPortal({ onLogout, onSwitchPortal }: LecturerPor
           onCancel={() => setLogoutModalOpen(false)}
         />
       )}
+      <StaffEventFeedPane
+        isOpen={eventFeedOpen}
+        onClose={() => setEventFeedOpen(false)}
+        currentRole="lecturer"
+        onNavigateTab={handleNavigate}
+        onSwitchPortal={(role) => onSwitchPortal?.(role)}
+      />
+
+      <StaffIdentityDrawer
+        isOpen={identityDrawerOpen}
+        onClose={() => setIdentityDrawerOpen(false)}
+        currentRole="lecturer"
+        onSwitchPortal={(role) => onSwitchPortal?.(role)}
+        onLogout={() => onLogout?.()}
+      />
     </div>
   );
 }

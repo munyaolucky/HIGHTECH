@@ -3,6 +3,7 @@ import { CheckCircle2, Save, UploadCloud } from 'lucide-react';
 import { PortalCard, PortalPageHeader } from '../../../../components/ui/PortalUI';
 import { studentPortalService } from '../../../../services/studentPortalService';
 import { ExamWorkspaceProps, getStatusTextClasses } from './examWorkspaceUtils';
+import ModuleDocumentRepository from '../../../documents/ModuleDocumentRepository';
 
 export default function PracticalAssessmentsPage({
   onNavigate,
@@ -222,6 +223,17 @@ export default function PracticalAssessmentsPage({
           )}
         </div>
       </div>
+
+      <ModuleDocumentRepository
+        moduleKey="STUDENT"
+        fixedCategory="PRACTICAL_PROJECT_FILE"
+        isStudentView={true}
+        compact={true}
+        courseOrClass={activePractical?.unitCode}
+        defaultRecipient="Practical Assessor / Examiner"
+        title="Practical & Project Evidence Vault (Central DMS)"
+        description="Upload source bundles, screenshots, lab reports, and TVET CDACC competency evidence securely."
+      />
     </div>
   );
 }

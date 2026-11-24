@@ -23,6 +23,7 @@ import {
 } from '../../../services/studentPortalService';
 import StudentAbsenceSection from './StudentAbsenceSection';
 import StudentEventsPanel from './StudentEventsPanel';
+import ModuleDocumentRepository from '../../documents/ModuleDocumentRepository';
 
 interface Props {
   activeSection: Extract<
@@ -421,6 +422,16 @@ export default function StudentAcademicExtras({
             })}
           </div>
         </div>
+
+        <ModuleDocumentRepository
+          moduleKey="STUDENT"
+          fixedCategory="INDUSTRIAL_ATTACHMENT_DOC"
+          isStudentView={true}
+          compact={true}
+          defaultRecipient="Industrial Attachment Coordinator"
+          title="Attachment Documents & Logbook Repository"
+          description="Upload signed introduction letters, scanned weekly logbooks, assessment forms, and employer reports."
+        />
       </div>
     );
   }

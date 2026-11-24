@@ -245,7 +245,7 @@ const CAMPUS_SERVICE_LINKS: MainNavLink[] = [
   { label: 'Campus Events & Passes', page: 'events', path: STUDENT_SECTION_PATHS.events, icon: CalendarCheck },
   { label: 'Clubs & SRC Voting', page: 'campus-life', path: STUDENT_SECTION_PATHS['campus-life'], icon: Vote },
   { label: 'Digital Student ID', page: 'student-id', path: STUDENT_SECTION_PATHS['student-id'], icon: CreditCard },
-  { label: 'Documents & Downloads', page: 'documents', path: STUDENT_SECTION_PATHS.documents, icon: Download },
+  { label: 'My Documents', page: 'documents', path: STUDENT_SECTION_PATHS.documents, icon: Download },
   { label: 'Notifications', page: 'notifications', path: STUDENT_SECTION_PATHS.notifications, icon: Bell },
   { label: 'Settings', page: 'settings', path: STUDENT_SECTION_PATHS.settings, icon: Settings },
 ];

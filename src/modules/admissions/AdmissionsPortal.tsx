@@ -17,7 +17,9 @@ import confetti from "canvas-confetti";
 import { collegeErpService } from "../../services/collegeErpService";
 import { AdmissionApplication, PortalRole } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import { institutionalEventBus } from "../../services/institutionalEventBus";
 import AdmissionOfferLetterModal from "../../components/AdmissionOfferLetterModal";
+import ModuleDocumentRepository from "../documents/ModuleDocumentRepository";
 
 interface AdmissionsPortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -101,7 +103,7 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useSyncedPortalTab<
-    "applications" | "new_apply" | "conversion"
+    "applications" | "new_apply" | "conversion" | "admissions_docs"
   >("admissions", "applications");
 
   const [selectedOfferApp, setSelectedOfferApp] = useState<AdmissionApplication | null>(null);
@@ -193,6 +195,18 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
       setApplicationSuccess(
         `Application ${json.data.applicationNumber} created and persisted in the Admissions Registry.`
       );
+      institutionalEventBus.publish({
+        channel: "admissions",
+        title: "New Admission Application Submitted",
+        summary: `${applicantName} applied for ${targetProgramme} (${json.data.applicationNumber}).`,
+        severity: "ACTION_REQUIRED",
+        sourceRole: "Admissions Intake Desk",
+        targetStaffName: "Grace Wangari",
+        targetStaffRegNo: "HCA/STAFF/2026/007",
+        actionLabel: "Review Application",
+        actionTab: "applications",
+        actionRole: "admissions",
+      });
       await loadApplications();
       setTimeout(() => {
         setApplicationSuccess(null);
@@ -230,6 +244,21 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
           json.data.offerLetterRef ? ` (${json.data.offerLetterRef})` : ""
         }.`
       );
+      institutionalEventBus.publish({
+        channel: "admissions",
+        title: `Application ${json.data.applicationNumber} Updated`,
+        summary: `${json.data.applicantName} moved to ${json.data.status}${
+          json.data.offerLetterRef ? ` · Offer ${json.data.offerLetterRef}` : ""
+        }.`,
+        severity: status === "OFFER_SENT" || status === "APPROVED" ? "SUCCESS" : "INFO",
+        sourceRole: "Admissions Desk",
+        targetStaffName: "Grace Wangari",
+        targetStaffRegNo: "HCA/STAFF/2026/007",
+        status: "ACKNOWLEDGED",
+        actionLabel: "Open Pipeline",
+        actionTab: "applications",
+        actionRole: "admissions",
+      });
       await loadApplications();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update admission status.");
@@ -260,6 +289,19 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
       setStatusNotice(
         `Official Student Identity Created! Assigned Registration Number: ${json.data.generatedStudentRegNo}`
       );
+      institutionalEventBus.publish({
+        channel: "academic",
+        title: "New Student Converted from Admissions",
+        summary: `${app.applicantName} enrolled with registration number ${json.data.generatedStudentRegNo}.`,
+        severity: "SUCCESS",
+        sourceRole: "Admissions Conversion Engine",
+        targetStaffName: "Dr. Kiprop Chemweno",
+        targetStaffRegNo: "HCA/STAFF/2026/001",
+        status: "PENDING",
+        actionLabel: "View Nominal Roll",
+        actionTab: "nominal",
+        actionRole: "registrar",
+      });
       await loadApplications();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Conversion failed.");
@@ -406,6 +448,17 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
           }`}
         >
           <FileText size={16} /> Intake Application Form
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("admissions_docs")}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 ${
+            activeTab === "admissions_docs"
+              ? "border-blue-600 text-blue-800"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <FileCheck2 size={16} /> Applicant Documents DMS
         </button>
       </div>
 
@@ -915,6 +968,17 @@ export default function AdmissionsPortal({ onSwitchPortal }: AdmissionsPortalPro
             </form>
           )}
         </div>
+      )}
+
+      {/* APPLICANT DOCUMENTS DMS TAB */}
+      {activeTab === "admissions_docs" && (
+        <ModuleDocumentRepository
+          moduleKey="ADMISSIONS_REGISTRAR"
+          allowedCategories={["ADMISSION_LETTER", "STUDENT_REGISTRATION_RECORD", "SCHOLARSHIP_BURSARY_DOC"]}
+          defaultRecipient="Admissions & Enrolment Desk"
+          title="Admissions & Applicant Verification DMS"
+          description="Verify applicant KCSE slips, national IDs, birth certificates, passport photos, and issued admission offer letters."
+        />
       )}
 
       {/* INLINE MISSING DOCUMENTS REQUEST MODAL */}

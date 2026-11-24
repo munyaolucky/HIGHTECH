@@ -3,6 +3,7 @@ import path from 'node:path';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import staffRoutes from './server/modules/staff/staff.routes.ts';
+import usersRoutes from './server/modules/users/users.routes.ts';
 import documentsRoutes from './server/modules/documents/documents.routes.ts';
 import registrationRoutes from './server/modules/registration/registration.routes.ts';
 import authRoutes from './server/modules/auth/auth.routes.ts';
@@ -44,7 +45,7 @@ async function startServer() {
   const PORT = Number(process.env.PORT ?? 3000);
   const isProd = process.env.NODE_ENV === 'production';
 
-  app.use(express.json({ limit: '5mb' }));
+  app.use(express.json({ limit: '35mb' }));
 
   // Healthcheck
   app.get('/api/health', (_req, res) => {
@@ -74,6 +75,7 @@ async function startServer() {
   app.use('/api/account', accountRoutes);
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/staff', staffRoutes);
+  app.use('/api/users', usersRoutes);
   app.use('/api/documents', documentsRoutes);
   app.use('/api/signatures', signaturesRoutes);
   app.use('/api/registrations', registrationRoutes);

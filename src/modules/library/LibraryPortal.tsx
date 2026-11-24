@@ -21,6 +21,7 @@ import { INITIAL_DIGITAL_RESOURCES } from "../../data/mockCollegeData";
 import { collegeErpService, subscribeErpSync } from "../../services/collegeErpService";
 import { LibraryBook, BookLoan, DigitalResource, PortalRole } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
+import ModuleDocumentRepository from "../documents/ModuleDocumentRepository";
 
 interface LibraryPortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -342,6 +343,14 @@ export default function LibraryPortal({ onSwitchPortal }: LibraryPortalProps) {
               </div>
             ))}
           </div>
+
+          <ModuleDocumentRepository
+            moduleKey="LIBRARY"
+            defaultRecipient="College Chief Librarian"
+            title="Library E-Books, Past Papers & Institutional Guides (Central DMS)"
+            description="Upload and curate licensed digital textbooks, past examination papers, academic handbooks, and policy manuals."
+            securityBanner="Copyright & Licensing Guard: Ensure uploaded library materials carry valid institutional licensing or open educational rights before setting PUBLIC visibility."
+          />
         </div>
       )}
 

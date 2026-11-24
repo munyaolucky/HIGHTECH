@@ -6,6 +6,7 @@ import {
   studentPortalService,
 } from '../../../../services/studentPortalService';
 import { ExamWorkspaceProps, getStatusTextClasses } from './examWorkspaceUtils';
+import ModuleDocumentRepository from '../../../documents/ModuleDocumentRepository';
 
 export default function AssignmentsPage({
   onNavigate,
@@ -249,6 +250,16 @@ export default function AssignmentsPage({
           ))}
         </div>
       </PortalCard>
+
+      <ModuleDocumentRepository
+        moduleKey="STUDENT"
+        fixedCategory="ASSIGNMENT_SUBMISSION"
+        isStudentView={true}
+        compact={true}
+        defaultRecipient="Unit Lecturer"
+        title="Assignment File Submissions (Central DMS)"
+        description="Upload Word, PDF, PowerPoint, Excel, or archived lab coursework directly into the audited submission vault."
+      />
     </div>
   );
 }

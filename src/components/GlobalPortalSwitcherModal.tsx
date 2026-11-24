@@ -349,7 +349,9 @@ export default function GlobalPortalSwitcherModal({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close portal switcher"
               className="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-white/10 transition"
               title="Close Switcher (Esc)"
             >

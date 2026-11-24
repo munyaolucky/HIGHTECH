@@ -1,4 +1,6 @@
 import type { Request, Response } from 'express';
+import { resolveSessionContextFromCookieHeader } from '../../middleware/auth.ts';
+import { resolveDocumentActor } from './documents.policy.ts';
 import {
   validateCommentDecision,
   validateCreateDocument,
@@ -7,6 +9,7 @@ import {
   validateSignDocument,
   validateSubmitDocument,
   validateUpdateDocument,
+  validateUploadDocument,
 } from './documents.schemas.ts';
 import { DocumentAccessError, documentsService } from './documents.service.ts';
 
@@ -21,16 +24,33 @@ function handleError(res: Response, err: unknown): void {
   });
 }
 
+function getActorOrThrow(req: Request) {
+  const actor = resolveDocumentActor(req);
+  if (!actor) {
+    throw new DocumentAccessError(401, 'Authentication required.');
+  }
+  return actor;
+}
+
 export const documentsController = {
   list(req: Request, res: Response): void {
     try {
-      const data = documentsService.listDocuments(req.staffUser!, {
+      const actor = getActorOrThrow(req);
+      const data = documentsService.listDocuments(actor, {
         view: req.query.view ? String(req.query.view) : undefined,
         status: req.query.status ? String(req.query.status) : undefined,
         category: req.query.category ? String(req.query.category) : undefined,
+        moduleKey: req.query.moduleKey ? String(req.query.moduleKey) : undefined,
         confidentiality: req.query.confidentiality
           ? String(req.query.confidentiality)
           : undefined,
+        relatedEntityType: req.query.relatedEntityType
+          ? String(req.query.relatedEntityType)
+          : undefined,
+        relatedEntityId: req.query.relatedEntityId
+          ? String(req.query.relatedEntityId)
+          : undefined,
+        academicYear: req.query.academicYear ? String(req.query.academicYear) : undefined,
         search: req.query.search ? String(req.query.search) : undefined,
         page: req.query.page ? Number(req.query.page) : 1,
         pageSize: req.query.pageSize ? Number(req.query.pageSize) : 12,
@@ -43,7 +63,8 @@ export const documentsController = {
 
   getById(req: Request, res: Response): void {
     try {
-      const data = documentsService.getDocumentDetail(req.staffUser!, String(req.params.id));
+      const actor = getActorOrThrow(req);
+      const data = documentsService.getDocumentDetail(actor, String(req.params.id));
       res.json({ success: true, data });
     } catch (err) {
       handleError(res, err);
@@ -57,7 +78,8 @@ export const documentsController = {
       return;
     }
     try {
-      const doc = documentsService.createDraft(req.staffUser!, parsed.data);
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.createDraft(actor, parsed.data);
       res.status(201).json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -65,28 +87,149 @@ export const documentsController = {
   },
 
   upload(req: Request, res: Response): void {
+    const parsed = validateUploadDocument(req.body);
+    if (!parsed.ok) {
+      res.status(400).json({ success: false, error: parsed.error });
+      return;
+    }
     try {
+      const actor = getActorOrThrow(req);
+      const result = documentsService.uploadDocument(actor, parsed.data);
+      res.status(201).json({ success: true, data: result });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  uploadVersion(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
       const body = req.body ?? {};
-      const title = String(body.title ?? '').trim();
       const fileName = String(body.fileName ?? '').trim();
       const mimeType = String(body.mimeType ?? 'application/pdf').trim();
       const sizeBytes = Number(body.sizeBytes ?? 0);
-      if (!title || !fileName) {
-        res.status(400).json({ success: false, error: 'Document title and file name are required.' });
+      if (!fileName) {
+        res.status(400).json({ success: false, error: 'Revision file name is required.' });
         return;
       }
-      const result = documentsService.uploadDocument(req.staffUser!, {
-        title,
+      const data = documentsService.addNewVersion(actor, String(req.params.id), {
         fileName,
         mimeType,
         sizeBytes,
         contentBase64: body.contentBase64 ? String(body.contentBase64) : undefined,
-        category: body.category || 'OFFICIAL_MEMO',
-        confidentiality: body.confidentiality || 'INTERNAL',
-        recipientLabel: String(body.recipientLabel || 'Academic Registry'),
-        description: body.description ? String(body.description) : undefined,
+        changeNote: body.changeNote ? String(body.changeNote) : undefined,
       });
-      res.status(201).json({ success: true, data: result });
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  addAttachment(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const body = req.body ?? {};
+      const fileName = String(body.fileName ?? '').trim();
+      const mimeType = String(body.mimeType ?? 'application/pdf').trim();
+      const sizeBytes = Number(body.sizeBytes ?? 0);
+      if (!fileName) {
+        res.status(400).json({ success: false, error: 'Attachment file name is required.' });
+        return;
+      }
+      const data = documentsService.addAttachment(actor, String(req.params.id), {
+        fileName,
+        mimeType,
+        sizeBytes,
+        contentBase64: body.contentBase64 ? String(body.contentBase64) : undefined,
+      });
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  issueDownloadUrl(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const attachmentId = req.query.attachmentId ? String(req.query.attachmentId) : undefined;
+      const version = req.query.version ? Number(req.query.version) : undefined;
+      const data = documentsService.issueSignedDownloadUrl(
+        actor,
+        String(req.params.id),
+        attachmentId,
+        version
+      );
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  async downloadSigned(req: Request, res: Response): Promise<void> {
+    try {
+      const token = String(req.query.token ?? '');
+      const { staffUser, portalUser } = await resolveSessionContextFromCookieHeader(
+        req.headers.cookie
+      );
+      if (staffUser) req.staffUser = staffUser;
+      if (portalUser) req.portalUser = portalUser;
+      const actor = resolveDocumentActor(req);
+      const { buffer, fileName, mimeType } = documentsService.streamAuthorizedDownload(token, actor);
+      res.setHeader('Content-Type', mimeType || 'application/octet-stream');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${encodeURIComponent(fileName)}"`
+      );
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.send(buffer);
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  listComments(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const data = documentsService.listComments(actor, String(req.params.id));
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  addComment(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const body = req.body ?? {};
+      const data = documentsService.addComment(
+        actor,
+        String(req.params.id),
+        String(body.body ?? ''),
+        Boolean(body.isInternal)
+      );
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  verifyTransition(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const body = req.body ?? {};
+      const action = String(body.action ?? 'START_VERIFICATION').toUpperCase() as
+        | 'START_VERIFICATION'
+        | 'APPROVE'
+        | 'REJECT'
+        | 'REQUIRES_CORRECTION'
+        | 'MARK_EXPIRED';
+      const data = documentsService.verifyTransition(
+        actor,
+        String(req.params.id),
+        action,
+        String(body.comment ?? '')
+      );
+      res.json({ success: true, data });
     } catch (err) {
       handleError(res, err);
     }
@@ -99,11 +242,8 @@ export const documentsController = {
       return;
     }
     try {
-      const doc = documentsService.updateDraft(
-        req.staffUser!,
-        String(req.params.id),
-        parsed.data
-      );
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.updateDraft(actor, String(req.params.id), parsed.data);
       res.json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -117,11 +257,8 @@ export const documentsController = {
       return;
     }
     try {
-      const doc = documentsService.submitForApproval(
-        req.staffUser!,
-        String(req.params.id),
-        parsed.data
-      );
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.submitForApproval(actor, String(req.params.id), parsed.data);
       res.json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -135,8 +272,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const doc = documentsService.approveDocument(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data.comment
       );
@@ -153,8 +291,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const doc = documentsService.requestChanges(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data.comment
       );
@@ -171,8 +310,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const doc = documentsService.rejectDocument(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data.comment
       );
@@ -189,8 +329,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const doc = documentsService.signDocument(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data.signatureTitle
       );
@@ -202,7 +343,8 @@ export const documentsController = {
 
   issue(req: Request, res: Response): void {
     try {
-      const doc = documentsService.issueDocument(req.staffUser!, String(req.params.id));
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.issueDocument(actor, String(req.params.id));
       res.json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -216,8 +358,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const recipients = documentsService.shareDocument(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data
       );
@@ -229,7 +372,8 @@ export const documentsController = {
 
   archive(req: Request, res: Response): void {
     try {
-      const doc = documentsService.archiveDocument(req.staffUser!, String(req.params.id));
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.archiveDocument(actor, String(req.params.id));
       res.json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -238,7 +382,8 @@ export const documentsController = {
 
   restore(req: Request, res: Response): void {
     try {
-      const doc = documentsService.restoreDocument(req.staffUser!, String(req.params.id));
+      const actor = getActorOrThrow(req);
+      const doc = documentsService.restoreDocument(actor, String(req.params.id));
       res.json({ success: true, data: doc });
     } catch (err) {
       handleError(res, err);
@@ -252,8 +397,9 @@ export const documentsController = {
       return;
     }
     try {
+      const actor = getActorOrThrow(req);
       const doc = documentsService.revokeDocument(
-        req.staffUser!,
+        actor,
         String(req.params.id),
         parsed.data.comment
       );
@@ -279,7 +425,8 @@ export const documentsController = {
       return;
     }
     try {
-      const tpl = documentsService.createTemplate(req.staffUser!, parsed.data);
+      const actor = getActorOrThrow(req);
+      const tpl = documentsService.createTemplate(actor, parsed.data);
       res.status(201).json({ success: true, data: tpl });
     } catch (err) {
       handleError(res, err);
@@ -288,8 +435,85 @@ export const documentsController = {
 
   auditLogs(req: Request, res: Response): void {
     try {
-      const logs = documentsService.listGlobalAuditLogs(req.staffUser!);
+      const actor = getActorOrThrow(req);
+      const logs = documentsService.listGlobalAuditLogs(actor);
       res.json({ success: true, data: logs });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  listCategories(_req: Request, res: Response): void {
+    res.json({ success: true, data: documentsService.listCategories() });
+  },
+
+  updateCategory(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const updated = documentsService.updateCategoryConfig(
+        actor,
+        String(req.params.code),
+        req.body ?? {}
+      );
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  listRetentionPolicies(_req: Request, res: Response): void {
+    res.json({ success: true, data: documentsService.listRetentionPolicies() });
+  },
+
+  updateRetentionPolicy(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const updated = documentsService.updateRetentionPolicy(
+        actor,
+        String(req.params.code),
+        req.body ?? {}
+      );
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  runBackupCheck(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const report = documentsService.runBackupIntegrityCheck(actor);
+      res.json({ success: true, data: report });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  listRequests(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const data = documentsService.listRequests(actor);
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  },
+
+  createRequest(req: Request, res: Response): void {
+    try {
+      const actor = getActorOrThrow(req);
+      const body = req.body ?? {};
+      const data = documentsService.createDocumentRequest(actor, {
+        targetUserId: String(body.targetUserId ?? ''),
+        targetUserName: String(body.targetUserName ?? ''),
+        targetRegNo: body.targetRegNo ? String(body.targetRegNo) : undefined,
+        targetRole: body.targetRole ? String(body.targetRole) : 'STUDENT',
+        categoryCode: String(body.categoryCode ?? ''),
+        title: String(body.title ?? ''),
+        instructions: String(body.instructions ?? ''),
+        dueDate: body.dueDate ? String(body.dueDate) : null,
+      });
+      res.status(201).json({ success: true, data });
     } catch (err) {
       handleError(res, err);
     }

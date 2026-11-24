@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CreditCard,
   Eye,
+  FileText,
   Printer,
   Receipt,
   RefreshCw,
@@ -28,6 +29,7 @@ import type {
   FinanceRefundRequestRecord,
   MpesaTransactionRecord,
 } from '../student/fees/fees.types';
+import ModuleDocumentRepository from '../documents/ModuleDocumentRepository';
 
 interface FinancePortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -60,6 +62,7 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
     | 'approvals'
     | 'feestructure'
     | 'stk_push'
+    | 'finance_docs'
     | 'audit'
   >('finance', 'overview');
 
@@ -439,6 +442,7 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
             ['approvals', 'Plans & Refunds Approvals', CheckCircle2],
             ['feestructure', 'Fee Structures', CreditCard],
             ['stk_push', 'M-Pesa STK Simulator', Smartphone],
+            ['finance_docs', 'Financial Documents', FileText],
             ['audit', 'Finance Audit Trail', ScrollText],
           ] as const
         ).map(([key, label, Icon]) => (
@@ -999,6 +1003,16 @@ export default function FinancePortal({ onSwitchPortal }: FinancePortalProps) {
             )}
           </div>
         </div>
+      )}
+
+      {/* FINANCIAL DOCUMENTS DMS TAB */}
+      {activeTab === 'finance_docs' && (
+        <ModuleDocumentRepository
+          moduleKey="FINANCE"
+          defaultRecipient="Finance & Cash Office"
+          title="Financial Documents, Bank Slips & Bursary Evidence (Central DMS)"
+          description="Audited Finance repository for bank deposit slips, M-Pesa confirmation evidence, fee statements, bursary letters, and refund support files."
+        />
       )}
 
       {/* SAFARICOM M-PESA STK PHONE PROMPT MODAL */}

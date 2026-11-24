@@ -1593,5 +1593,238 @@ export const portalStateSnapshots = pgTable('portal_state_snapshots', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// ============================================================================
+// 12. CENTRALISED DOCUMENT MANAGEMENT SYSTEM (DMS) — 12 TABLES
+// ============================================================================
+
+export const documentCategories = pgTable('document_categories', {
+  code: text('code').primaryKey(),
+  name: text('name').notNull(),
+  moduleKey: text('module_key').notNull(), // STUDENT | LECTURER | EXAMINATION | ADMISSIONS_REGISTRAR | FINANCE | HR | ADMIN_GOVERNANCE | LIBRARY | EVENTS
+  description: text('description').notNull(),
+  allowedMimeTypes: jsonb('allowed_mime_types').$type<string[]>().notNull().default([]),
+  maxSizeMb: integer('max_size_mb').notNull().default(10),
+  defaultConfidentiality: text('default_confidentiality').notNull().default('INTERNAL'),
+  approvalRequired: boolean('approval_required').notNull().default(true),
+  isUnpublishedExamProtected: boolean('is_unpublished_exam_protected').notNull().default(false),
+  active: boolean('active').notNull().default(true),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documents = pgTable('documents', {
+  id: text('id').primaryKey(),
+  documentNumber: text('document_number'),
+  referenceNumber: text('reference_number'),
+  title: text('title').notNull(),
+  categoryCode: text('category_code').notNull(),
+  moduleKey: text('module_key').notNull().default('ADMIN_GOVERNANCE'),
+  originalFileName: text('original_file_name'),
+  storagePath: text('storage_path'),
+  mimeType: text('mime_type'),
+  fileSizeBytes: integer('file_size_bytes').notNull().default(0),
+  checksumSha256: text('checksum_sha256'),
+  scanStatus: text('scan_status').notNull().default('VERIFIED_CLEAN'),
+  description: text('description'),
+  subjectLine: text('subject_line').notNull(),
+  bodyContent: text('body_content').notNull(),
+  metadataFields: jsonb('metadata_fields').$type<Record<string, string>>().notNull().default({}),
+  design: jsonb('design').$type<Record<string, unknown>>().notNull().default({}),
+  templateId: text('template_id'),
+  uploadedById: text('uploaded_by_id').notNull(),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  uploadedByRole: text('uploaded_by_role').notNull(),
+  relatedEntityType: text('related_entity_type'), // STUDENT | STAFF | LESSON_DELIVERY | TIMETABLE | ATTENDANCE | EXAM | ADMISSION | FEE | EVENT
+  relatedEntityId: text('related_entity_id'),
+  relatedStudentOrStaffId: text('related_student_or_staff_id'),
+  departmentId: text('department_id'),
+  departmentName: text('department_name'),
+  campusId: text('campus_id'),
+  campusName: text('campus_name'),
+  courseOrClass: text('course_or_class'),
+  academicYear: text('academic_year').notNull().default('2026'),
+  termLabel: text('term_label').notNull().default('Term 1'),
+  recipientLabel: text('recipient_label').notNull(),
+  recipientEmail: text('recipient_email'),
+  uploadedAt: text('uploaded_at').notNull(),
+  verificationStatus: text('verification_status').notNull().default('DRAFT'),
+  approvalOfficerId: text('approval_officer_id'),
+  approvalOfficerName: text('approval_officer_name'),
+  approvalDate: text('approval_date'),
+  confidentialityLevel: text('confidentiality_level').notNull().default('INTERNAL'),
+  currentVersion: integer('current_version').notNull().default(1),
+  verificationHash: text('verification_hash'),
+  retentionDate: text('retention_date'),
+  issuedAt: text('issued_at'),
+  issuedById: text('issued_by_id'),
+  issuedByName: text('issued_by_name'),
+  archivedAt: text('archived_at'),
+  revokedReason: text('revoked_reason'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const documentVersions = pgTable('document_versions', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  versionNumber: integer('version_number').notNull(),
+  title: text('title').notNull(),
+  fileName: text('file_name'),
+  storagePath: text('storage_path'),
+  mimeType: text('mime_type'),
+  fileSizeBytes: integer('file_size_bytes').notNull().default(0),
+  checksumSha256: text('checksum_sha256'),
+  subjectLine: text('subject_line').notNull(),
+  bodyContent: text('body_content').notNull(),
+  metadataFields: jsonb('metadata_fields').$type<Record<string, string>>().notNull().default({}),
+  editedById: text('edited_by_id').notNull(),
+  editedByName: text('edited_by_name').notNull(),
+  changeNote: text('change_note').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentAttachments = pgTable('document_attachments', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  versionNumber: integer('version_number').notNull().default(1),
+  fileName: text('file_name').notNull(),
+  storagePath: text('storage_path').notNull(),
+  mimeType: text('mime_type').notNull(),
+  fileSizeBytes: integer('file_size_bytes').notNull(),
+  checksumSha256: text('checksum_sha256').notNull(),
+  scanStatus: text('scan_status').notNull().default('VERIFIED_CLEAN'),
+  uploadedById: text('uploaded_by_id').notNull(),
+  uploadedByName: text('uploaded_by_name').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentPermissions = pgTable('document_permissions', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  roleCode: text('role_code'),
+  userId: text('user_id'),
+  departmentId: text('department_id'),
+  scopeLevel: text('scope_level').notNull().default('DEPARTMENT'),
+  canView: boolean('can_view').notNull().default(true),
+  canDownload: boolean('can_download').notNull().default(false),
+  canApprove: boolean('can_approve').notNull().default(false),
+  canEdit: boolean('can_edit').notNull().default(false),
+  grantedById: text('granted_by_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentApprovals = pgTable('document_approvals', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  stepOrder: integer('step_order').notNull().default(1),
+  reviewerId: text('reviewer_id').notNull(),
+  reviewerName: text('reviewer_name').notNull(),
+  reviewerRole: text('reviewer_role').notNull(),
+  status: text('status').notNull().default('PENDING'),
+  comment: text('comment'),
+  decidedAt: text('decided_at'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentComments = pgTable('document_comments', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  authorId: text('author_id').notNull(),
+  authorName: text('author_name').notNull(),
+  authorRole: text('author_role').notNull(),
+  body: text('body').notNull(),
+  isInternal: boolean('is_internal').notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentShares = pgTable('document_shares', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id')
+    .references(() => documents.id, { onDelete: 'cascade' })
+    .notNull(),
+  userId: text('user_id').notNull(),
+  userName: text('user_name').notNull(),
+  userRole: text('user_role').notNull(),
+  canView: boolean('can_view').notNull().default(true),
+  canDownload: boolean('can_download').notNull().default(true),
+  canPrint: boolean('can_print').notNull().default(true),
+  grantedById: text('granted_by_id').notNull(),
+  grantedByName: text('granted_by_name').notNull(),
+  expiresAt: text('expires_at'),
+  revokedAt: text('revoked_at'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentAccessLogs = pgTable('document_access_logs', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull(),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  actorRole: text('actor_role').notNull(),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
+  ipAddress: text('ip_address').notNull().default('127.0.0.1'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const documentRetentionPolicies = pgTable('document_retention_policies', {
+  id: text('id').primaryKey(),
+  categoryCode: text('category_code').notNull().unique(),
+  moduleKey: text('module_key').notNull(),
+  retentionDays: integer('retention_days').notNull().default(2555), // 7 years default
+  actionAfterExpiry: text('action_after_expiry').notNull().default('ARCHIVE'), // ARCHIVE | REVIEW | SECURE_PURGE
+  odpcBasis: text('odpc_basis').notNull(),
+  active: boolean('active').notNull().default(true),
+  updatedById: text('updated_by_id'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const documentRequests = pgTable('document_requests', {
+  id: text('id').primaryKey(),
+  requestNumber: text('request_number').notNull().unique(),
+  targetUserId: text('target_user_id').notNull(),
+  targetUserName: text('target_user_name').notNull(),
+  targetRegNo: text('target_reg_no'),
+  targetRole: text('target_role').notNull().default('STUDENT'),
+  requestedById: text('requested_by_id').notNull(),
+  requestedByName: text('requested_by_name').notNull(),
+  requestedByRole: text('requested_by_role').notNull(),
+  categoryCode: text('category_code').notNull(),
+  moduleKey: text('module_key').notNull(),
+  title: text('title').notNull(),
+  instructions: text('instructions').notNull(),
+  dueDate: text('due_date'),
+  status: text('status').notNull().default('OPEN'), // OPEN | SUBMITTED | FULFILLED | OVERDUE | CANCELLED
+  fulfilledDocumentId: text('fulfilled_document_id'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const documentTemplates = pgTable('document_templates', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  name: text('name').notNull(),
+  categoryCode: text('category_code').notNull(),
+  moduleKey: text('module_key').notNull().default('ADMIN_GOVERNANCE'),
+  defaultConfidentiality: text('default_confidentiality').notNull().default('INTERNAL'),
+  description: text('description').notNull(),
+  subjectTemplate: text('subject_template').notNull(),
+  bodyTemplate: text('body_template').notNull(),
+  defaultFields: jsonb('default_fields').$type<Record<string, string>>().notNull().default({}),
+  design: jsonb('design').$type<Record<string, unknown>>().notNull().default({}),
+  createdById: text('created_by_id').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+
 
 

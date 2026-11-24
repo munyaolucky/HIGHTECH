@@ -1,8 +1,15 @@
+import type { Request } from 'express';
 import type { DocumentRecipientRecord, DocumentRecord } from '../../data/store.ts';
-import type { AuthenticatedSessionUser } from '../../middleware/auth.ts';
+import type { AuthenticatedSessionUser, PortalSessionContext } from '../../middleware/auth.ts';
+import {
+  canStudentUploadDocumentCategory,
+  getDocumentCategoryConfig,
+  isStaffDocumentRole,
+} from './documents.catalog.ts';
 import {
   DOCUMENT_PERMISSIONS,
   hasDocumentPermission,
+  STUDENT_DOCUMENT_PERMISSIONS,
   type AuthenticatedDocumentUser,
 } from './documents.permissions.ts';
 
@@ -23,12 +30,57 @@ export type DocumentAccessAction =
   | 'PRINT'
   | 'EXPORT';
 
-export function toDocumentUser(user: AuthenticatedSessionUser): AuthenticatedDocumentUser {
+export type DocumentActor = AuthenticatedSessionUser | {
+  id: string;
+  employeeNumber: string;
+  registrationNumber?: string | null;
+  fullName: string;
+  email: string;
+  role: string;
+  roleTitle: string;
+  departmentId: string | null;
+  department: string;
+  campusId: string | null;
+  campus: string;
+  permissions: string[];
+  documentPermissions: string[];
+};
+
+export function resolveDocumentActor(req: Request): DocumentActor | null {
+  if (req.staffUser) {
+    return req.staffUser;
+  }
+  const p: PortalSessionContext | undefined = req.portalUser;
+  if (!p) return null;
+  const roleUpper = p.primaryRole.toUpperCase();
+  const actorId = p.registrationNumber && roleUpper === 'STUDENT' ? p.uid : p.uid;
+  return {
+    id: actorId,
+    employeeNumber: p.registrationNumber || p.uid,
+    registrationNumber: p.registrationNumber,
+    fullName: p.fullName,
+    email: p.email,
+    role: roleUpper,
+    roleTitle: roleUpper === 'STUDENT' ? 'Registered Student' : roleUpper,
+    departmentId: p.departmentId,
+    department: roleUpper === 'STUDENT' ? 'Student Body' : 'Portal Member',
+    campusId: p.campusId,
+    campus: 'Nairobi Main Campus',
+    permissions: [],
+    documentPermissions:
+      roleUpper === 'STUDENT'
+        ? [...STUDENT_DOCUMENT_PERMISSIONS]
+        : [DOCUMENT_PERMISSIONS.DOCUMENT_VIEW, DOCUMENT_PERMISSIONS.TEMPLATE_VIEW],
+  };
+}
+
+export function toDocumentUser(user: DocumentActor): AuthenticatedDocumentUser {
   return {
     id: user.id,
-    role: user.role,
+    role: user.role as AuthenticatedDocumentUser['role'],
     fullName: user.fullName,
     employeeNumber: user.employeeNumber,
+    registrationNumber: 'registrationNumber' in user ? user.registrationNumber : null,
     campusId: user.campusId,
     departmentId: user.departmentId,
     permissions: user.documentPermissions,
@@ -54,12 +106,63 @@ function isRecipientAccessValid(
   return false;
 }
 
+export function canUploadToCategory(
+  user: AuthenticatedDocumentUser,
+  categoryCode: string
+): { allowed: boolean; reason?: string } {
+  const cfg = getDocumentCategoryConfig(categoryCode);
+  if (!cfg || !cfg.active) {
+    return { allowed: false, reason: 'Selected document category is inactive or unknown.' };
+  }
+  if (!isStaffDocumentRole(user.role)) {
+    if (user.role !== 'STUDENT') {
+      return { allowed: false, reason: 'Your portal role is not permitted to upload documents.' };
+    }
+    if (!canStudentUploadDocumentCategory(cfg.code)) {
+      return {
+        allowed: false,
+        reason: `Students cannot upload records to restricted category "${cfg.name}".`,
+      };
+    }
+  }
+  return { allowed: true };
+}
+
+function isDomainOfficeAuthorized(
+  user: AuthenticatedDocumentUser,
+  doc: DocumentRecord
+): boolean {
+  return (
+    (doc.category === 'STUDENT_WELFARE_CONFIDENTIAL' && user.role === 'STUDENT_AFFAIRS') ||
+    (doc.category === 'ABSENCE_EXPLANATION' &&
+      (user.role === 'STUDENT_AFFAIRS' ||
+        user.role === 'REGISTRAR' ||
+        user.role === 'PRINCIPAL' ||
+        (user.role === 'HOD' &&
+          (!doc.departmentId || !user.departmentId || doc.departmentId === user.departmentId)))) ||
+    (doc.category === 'EMPLOYMENT_CONTRACT' &&
+      (user.role === 'HR' || user.role === 'PRINCIPAL')) ||
+    ((doc.category === 'FEE_STATEMENT' || doc.category === 'SCHOLARSHIP_BURSARY_DOC') &&
+      user.role === 'FINANCE_OFFICER') ||
+    ((doc.category === 'ADMISSION_LETTER' ||
+      doc.category === 'STUDENT_REGISTRATION_RECORD' ||
+      doc.category === 'TRANSCRIPT_CERTIFICATE') &&
+      (user.role === 'ADMISSIONS_OFFICER' || user.role === 'REGISTRAR')) ||
+    (doc.category === 'EXAM_SCHEDULE' &&
+      (user.role === 'EXAMINATIONS_OFFICER' ||
+        user.role === 'REGISTRAR' ||
+        user.role === 'PRINCIPAL' ||
+        (user.role === 'HOD' &&
+          (!doc.departmentId || !user.departmentId || doc.departmentId === user.departmentId))))
+  );
+}
+
 /**
  * Strongly-typed zero-bypass document policy engine.
  * - Super Admin / ADMIN never automatically bypass CONFIDENTIAL or RESTRICTED records.
- * - Confidential Student Welfare & HR Contracts require owner/recipient or domain authority.
+ * - Confidential Student Welfare, Medical Absence Evidence, & HR Contracts require owner/recipient or domain authority.
+ * - Unpublished examination papers & marking schemes are strictly isolated from students & non-exam roles.
  * - Self-approval is strictly prohibited.
- * - APPROVE, SIGN, and ISSUE require distinct permissions.
  */
 export function canAccessDocument(
   user: AuthenticatedDocumentUser,
@@ -67,7 +170,13 @@ export function canAccessDocument(
   recipientGrants: DocumentRecipientRecord[],
   action: DocumentAccessAction = 'VIEW'
 ): { allowed: boolean; reason?: string } {
-  const isOwner = doc.ownerId === user.id || doc.createdById === user.id;
+  const isOwner =
+    doc.ownerId === user.id ||
+    doc.createdById === user.id ||
+    (Boolean(user.registrationNumber) &&
+      (doc.relatedStudentOrStaffId === user.registrationNumber ||
+        doc.ownerId === user.registrationNumber));
+
   const activeRecipientGrant = recipientGrants.find(
     (g) => g.documentId === doc.id && g.userId === user.id
   );
@@ -96,14 +205,36 @@ export function canAccessDocument(
     return { allowed: false, reason: `Missing required permission: ${reqPerm}.` };
   }
 
-  // 2. Confidentiality enforcement (No Super Admin bypass!)
-  if (doc.confidentiality === 'CONFIDENTIAL' || doc.confidentiality === 'RESTRICTED') {
-    const isConfidentialDomainAuthorized =
-      (doc.category === 'STUDENT_WELFARE_CONFIDENTIAL' && user.role === 'STUDENT_AFFAIRS') ||
-      (doc.category === 'EMPLOYMENT_CONTRACT' &&
-        (user.role === 'HR' || user.role === 'PRINCIPAL')) ||
-      (doc.category === 'FEE_STATEMENT' && user.role === 'FINANCE_OFFICER');
+  // 2. Unpublished Examination Isolation (strictly blocks students & unauthorized roles)
+  const catConfig = getDocumentCategoryConfig(doc.category);
+  const isUnpublishedExam =
+    (doc.category === 'EXAM_SCHEDULE' || Boolean(catConfig?.isUnpublishedExamProtected)) &&
+    !(doc.status === 'ISSUED' && (doc.confidentiality === 'PUBLIC' || doc.confidentiality === 'INTERNAL'));
 
+  if (isUnpublishedExam) {
+    const examAuthorizedRoles = new Set([
+      'EXAMINATIONS_OFFICER',
+      'REGISTRAR',
+      'PRINCIPAL',
+      'QUALITY_ASSURANCE',
+    ]);
+    const isSameDeptFaculty =
+      (user.role === 'HOD' || user.role === 'LECTURER') &&
+      Boolean(doc.departmentId) &&
+      user.departmentId === doc.departmentId;
+
+    if (!isOwner && !examAuthorizedRoles.has(user.role) && !isSameDeptFaculty && !isRecipientAccessValid(activeRecipientGrant, action)) {
+      return {
+        allowed: false,
+        reason:
+          'Examination integrity boundary: unpublished exam papers, schedules, and marking schemes are isolated from students and unauthorized staff.',
+      };
+    }
+  }
+
+  // 3. Confidentiality enforcement (No Super Admin bypass!)
+  const isConfidentialDomainAuthorized = isDomainOfficeAuthorized(user, doc);
+  if (doc.confidentiality === 'CONFIDENTIAL' || doc.confidentiality === 'RESTRICTED') {
     const hasValidShare =
       action === 'EXPORT' || action === 'PRINT' || action === 'VIEW'
         ? isRecipientAccessValid(activeRecipientGrant, action)
@@ -118,7 +249,7 @@ export function canAccessDocument(
     }
   }
 
-  // 3. Action-specific workflow rules
+  // 4. Action-specific workflow rules
   if (action === 'APPROVE' || action === 'REJECT' || action === 'REQUEST_CHANGES') {
     if (isOwner) {
       return {
@@ -126,7 +257,14 @@ export function canAccessDocument(
         reason: 'Self-approval is prohibited: another authorized reviewer must evaluate this document.',
       };
     }
-    if (doc.status !== 'SUBMITTED' && doc.status !== 'UNDER_REVIEW') {
+    const reviewableStatuses = new Set([
+      'UPLOADED',
+      'SUBMITTED',
+      'PENDING_REVIEW',
+      'UNDER_REVIEW',
+      'UNDER_VERIFICATION',
+    ]);
+    if (!reviewableStatuses.has(doc.status)) {
       return {
         allowed: false,
         reason: `Document cannot be reviewed while in ${doc.status} status.`,
@@ -192,10 +330,15 @@ export function canAccessDocument(
     if (!isOwner) {
       return { allowed: false, reason: 'Only the document owner can submit this draft for review.' };
     }
-    if (doc.status !== 'DRAFT' && doc.status !== 'CHANGES_REQUESTED') {
+    if (
+      doc.status !== 'DRAFT' &&
+      doc.status !== 'UPLOADED' &&
+      doc.status !== 'CHANGES_REQUESTED' &&
+      doc.status !== 'REQUIRES_CORRECTION'
+    ) {
       return {
         allowed: false,
-        reason: `Only DRAFT or CHANGES_REQUESTED documents can be submitted (currently ${doc.status}).`,
+        reason: `Only DRAFT, UPLOADED, or CHANGES_REQUESTED documents can be submitted (currently ${doc.status}).`,
       };
     }
     return { allowed: true };
@@ -215,10 +358,20 @@ export function canAccessDocument(
     return { allowed: true };
   }
 
-  // 4. Read/Print/Export scope checks for PUBLIC / INTERNAL documents
+  // 5. Read/Print/Export scope checks for PUBLIC / INTERNAL documents
   if (isOwner) return { allowed: true };
   if (isRecipientAccessValid(activeRecipientGrant, action)) return { allowed: true };
   if (doc.confidentiality === 'PUBLIC' && (doc.status === 'ISSUED' || doc.status === 'APPROVED')) {
+    return { allowed: true };
+  }
+  if (!isStaffDocumentRole(user.role)) {
+    // Non-staff (e.g. students) only view PUBLIC issued/approved or their own/explicitly shared docs
+    return {
+      allowed: false,
+      reason: 'Access denied: students may only access their own records, shared files, or public issued notices.',
+    };
+  }
+  if (isConfidentialDomainAuthorized) {
     return { allowed: true };
   }
   if (hasDocumentPermission(user.permissions, DOCUMENT_PERMISSIONS.DOCUMENT_VIEW_ALL)) {

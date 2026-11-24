@@ -15,8 +15,11 @@ import {
   X,
 } from 'lucide-react';
 import ScrollView from './ScrollView';
+import StaffEventFeedPane from './StaffEventFeedPane';
+import StaffIdentityDrawer from './StaffIdentityDrawer';
 import { usePortalShellContext } from '../context/PortalShellContext';
 import { useTheme } from '../context/ThemeContext';
+import { institutionalEventBus } from '../services/institutionalEventBus';
 import { PortalRole } from '../types';
 
 export interface SidebarNavItem {
@@ -80,9 +83,22 @@ export default function UserPortalShell({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [eventFeedOpen, setEventFeedOpen] = useState(false);
+  const [identityDrawerOpen, setIdentityDrawerOpen] = useState(false);
+  const [unreadChannelCount, setUnreadChannelCount] = useState(() =>
+    institutionalEventBus.getUnreadCountForRole(config.role)
+  );
 
   const isOverview = ctx?.overviewOpenByRole[config.role] ?? true;
   const activeTab = ctx?.tabsByRole[config.role] ?? config.defaultTab;
+
+  useEffect(() => {
+    const syncUnread = () => {
+      setUnreadChannelCount(institutionalEventBus.getUnreadCountForRole(config.role));
+    };
+    syncUnread();
+    return institutionalEventBus.subscribe(syncUnread);
+  }, [config.role]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -91,6 +107,8 @@ export default function UserPortalShell({
         setMobileSearchOpen(false);
         setSearchValue('');
         setLogoutModalOpen(false);
+        setEventFeedOpen(false);
+        setIdentityDrawerOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -242,6 +260,21 @@ export default function UserPortalShell({
 
           <button
             type="button"
+            onClick={() => setEventFeedOpen(true)}
+            aria-label="Open Staff Channel Event Feed"
+            className="relative p-2 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Staff Channel Alerts &amp; Events"
+          >
+            <Bell size={17} />
+            {unreadChannelCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {unreadChannelCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             className="p-2 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -267,7 +300,13 @@ export default function UserPortalShell({
             <span>Website</span>
           </button>
 
-          <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={() => setIdentityDrawerOpen(true)}
+            aria-label="Open Staff Identity & Channel Hub"
+            className="hidden sm:flex items-center gap-2.5 pl-2 pr-1.5 py-1 rounded-lg border-l border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Inspect Staff Identity &amp; Switch Officer Persona"
+          >
             <div className="w-8 h-8 rounded-full bg-[#092c60] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
               {initials || 'HT'}
             </div>
@@ -279,7 +318,7 @@ export default function UserPortalShell({
                 {config.userRegNo}
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </header>
 
@@ -523,7 +562,14 @@ export default function UserPortalShell({
                         Select any module below or use the sidebar menu to open it directly.
                       </p>
                     </div>
-                    <Bell size={18} className="text-slate-500 dark:text-slate-300 shrink-0" aria-hidden="true" />
+                    <button
+                      type="button"
+                      onClick={() => setEventFeedOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                    >
+                      <Bell size={15} />
+                      <span>Channel Alerts{unreadChannelCount > 0 ? ` (${unreadChannelCount})` : ''}</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -670,6 +716,21 @@ export default function UserPortalShell({
           </div>
         </div>
       )}
+      <StaffEventFeedPane
+        isOpen={eventFeedOpen}
+        onClose={() => setEventFeedOpen(false)}
+        currentRole={config.role}
+        onNavigateTab={selectTab}
+        onSwitchPortal={onSwitchPortal}
+      />
+
+      <StaffIdentityDrawer
+        isOpen={identityDrawerOpen}
+        onClose={() => setIdentityDrawerOpen(false)}
+        currentRole={config.role}
+        onSwitchPortal={onSwitchPortal}
+        onLogout={onLogout}
+      />
     </div>
   );
 }

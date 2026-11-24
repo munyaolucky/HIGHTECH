@@ -18,6 +18,7 @@ import { studentPortalService } from "../../services/studentPortalService";
 import { PortalRole, TranscriptRecord } from "../../types";
 import { useSyncedPortalTab } from "../../context/PortalShellContext";
 import SemesterRegistrationTab from "./SemesterRegistrationTab";
+import ModuleDocumentRepository from "../documents/ModuleDocumentRepository";
 
 interface RegistrarPortalProps {
   onSwitchPortal?: (role: PortalRole) => void;
@@ -25,7 +26,7 @@ interface RegistrarPortalProps {
 
 export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps) {
   const [activeTab, setActiveTab] = useSyncedPortalTab<
-    "students" | "academic_reg" | "requests" | "transcripts" | "certificates" | "verification"
+    "students" | "academic_reg" | "requests" | "transcripts" | "certificates" | "verification" | "student_records"
   >("registrar", "students");
   const [transcripts, setTranscripts] = useState<TranscriptRecord[]>(
     () => collegeErpService.getState().transcripts
@@ -209,6 +210,16 @@ export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps
           }`}
         >
           <FileCheck size={16} /> Document Verification Desk
+        </button>
+        <button
+          onClick={() => setActiveTab("student_records")}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 ${
+            activeTab === "student_records"
+              ? "border-blue-600 text-blue-800"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <FileText size={16} /> Student Records DMS
         </button>
       </div>
 
@@ -531,6 +542,16 @@ export default function RegistrarPortal({ onSwitchPortal }: RegistrarPortalProps
             </div>
           )}
         </div>
+      )}
+
+      {/* STUDENT RECORDS DMS TAB */}
+      {activeTab === "student_records" && (
+        <ModuleDocumentRepository
+          moduleKey="ADMISSIONS_REGISTRAR"
+          defaultRecipient="Office of the Academic Registrar"
+          title="Student Records, Admissions & Transcripts DMS"
+          description="Unified academic records repository for student registration files, admission letters, official transcripts, certificates, and statutory forms."
+        />
       )}
     </div>
   );

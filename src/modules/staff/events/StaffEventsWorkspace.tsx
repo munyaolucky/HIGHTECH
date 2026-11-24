@@ -71,6 +71,7 @@ import {
   StaffEventsCalendarPanel,
 } from './StaffEventsExtendedDashboards';
 import { Calendar, Mic } from 'lucide-react';
+import ModuleDocumentRepository from '../../documents/ModuleDocumentRepository';
 
 export type StaffEventsSection =
   | 'overview'
@@ -2036,14 +2037,25 @@ export default function StaffEventsWorkspace({
           )}
 
           {activeTab === 'media' && (
-            <MediaPanel
-              eventId={selectedEventId}
-              eventTitle={selectedEventObj?.title || ''}
-              media={selectedMedia}
-              canManage={canManageMedia}
-              onReload={() => loadSelectedEventDetail(selectedEventId)}
-              onNotify={setBannerMsg}
-            />
+            <div className="space-y-6">
+              <MediaPanel
+                eventId={selectedEventId}
+                eventTitle={selectedEventObj?.title || ''}
+                media={selectedMedia}
+                canManage={canManageMedia}
+                onReload={() => loadSelectedEventDetail(selectedEventId)}
+                onNotify={setBannerMsg}
+              />
+              <ModuleDocumentRepository
+                moduleKey="EVENTS"
+                relatedEntityType="COLLEGE_EVENT"
+                relatedEntityId={selectedEventId}
+                courseOrClass={selectedEventObj?.eventCode}
+                defaultRecipient="Events & Communications Desk"
+                title="Event Programmes, Briefs & Press Kits (Central DMS)"
+                description="Store signed venue approvals, event programmes, sponsorship agreements, and press kits linked to this event."
+              />
+            </div>
           )}
         </div>
       )}
