@@ -21,6 +21,10 @@ export function getUserDashboardPath(user: PortalUser | null | undefined): strin
     return '/portal/change-password';
   }
 
+  if (user.emailVerificationRequired && !user.emailVerified) {
+    return '/portal/verify-email';
+  }
+
   if (user.requiresProfileCompletion) {
     return '/portal/complete-profile';
   }

@@ -46,6 +46,10 @@ interface LoginResponseData {
     fullName: string;
     primaryRole: string;
     mustChangePassword: boolean;
+    passwordChangedAt?: string | null;
+    emailVerified?: boolean;
+    emailVerifiedAt?: string | null;
+    emailVerificationRequired?: boolean;
     requiresProfileCompletion: boolean;
     mfaEnabled: boolean;
   };
@@ -123,21 +127,6 @@ export default function StudentLoginPage({
     const dest = resolvedUser
       ? getUserDashboardPath(resolvedUser)
       : data.destination || '/portal/student';
-
-    if (
-      (resolvedUser?.mustChangePassword || resolvedUser?.requiresProfileCompletion) &&
-      !dest.startsWith('/portal/change-password') &&
-      !dest.startsWith('/portal/complete-profile')
-    ) {
-      setOnboardingStep({
-        destination: data.destination || '/portal/student',
-        primaryRole: role,
-        mustChangePassword: resolvedUser.mustChangePassword,
-        requiresProfileCompletion: resolvedUser.requiresProfileCompletion,
-        fullName: resolvedUser.fullName,
-      });
-      return;
-    }
 
     onSuccessRedirect?.(dest, role);
   };

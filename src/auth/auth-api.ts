@@ -28,6 +28,10 @@ interface RawServerUser {
   primaryRole?: string;
   accountStatus?: string;
   mustChangePassword?: boolean;
+  passwordChangedAt?: string | null;
+  emailVerified?: boolean;
+  emailVerifiedAt?: string | null;
+  emailVerificationRequired?: boolean;
   requiresProfileCompletion?: boolean;
   mfaEnabled?: boolean;
   campusId?: string | null;
@@ -75,6 +79,16 @@ export function normalizeServerUser(raw: RawServerUser | null | undefined): Port
     portalType: getPortalType(primaryRole),
     accountStatus,
     mustChangePassword: Boolean(raw.mustChangePassword),
+    passwordChangedAt: raw.passwordChangedAt ?? null,
+    emailVerified:
+      raw.emailVerified !== undefined
+        ? Boolean(raw.emailVerified)
+        : Boolean(raw.emailVerifiedAt),
+    emailVerifiedAt: raw.emailVerifiedAt ?? null,
+    emailVerificationRequired:
+      raw.emailVerificationRequired !== undefined
+        ? Boolean(raw.emailVerificationRequired)
+        : false,
     requiresProfileCompletion: Boolean(raw.requiresProfileCompletion),
     mfaEnabled: Boolean(raw.mfaEnabled),
     permissions,
@@ -126,7 +140,12 @@ export async function logoutAllRequest(): Promise<void> {
 
 export async function changePasswordRequest(
   payload: ChangePasswordPayload
-): Promise<{ message: string }> {
+): Promise<{
+  message: string;
+  nextStep?: 'VERIFY_EMAIL' | 'COMPLETE_PROFILE' | 'DASHBOARD';
+  destination?: string;
+  requiresEmailVerification?: boolean;
+}> {
   const response = await fetch('/api/auth/password/change', {
     method: 'POST',
     credentials: 'include',
@@ -142,7 +161,105 @@ export async function changePasswordRequest(
     throw new Error(json?.error || 'Unable to update password.');
   }
 
-  return { message: json.data?.message || 'Password updated successfully.' };
+  return {
+    message: json.data?.message || 'Password updated successfully.',
+    nextStep: json.data?.nextStep,
+    destination: json.data?.destination,
+    requiresEmailVerification: json.data?.requiresEmailVerification,
+  };
+}
+
+export interface EmailVerificationDispatchResult {
+  alreadyVerified?: boolean;
+  email: string;
+  maskedEmail: string;
+  expiresAt?: string;
+  cooldownSeconds?: number;
+  destination?: string;
+  message: string;
+}
+
+export interface EmailVerificationVerifyResult {
+  verified: boolean;
+  emailVerifiedAt: string;
+  nextStep?: string;
+  destination: string;
+  message: string;
+}
+
+export interface AuthSecurityStatusResult {
+  uid: string;
+  email: string;
+  maskedEmail: string;
+  mustChangePassword: boolean;
+  passwordChangedAt: string | null;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
+  emailVerificationRequired: boolean;
+  requiresProfileCompletion: boolean;
+  destination: string;
+  securityRedirect: string;
+  activeSessionsCount: number;
+  cooldownRemainingSeconds: number;
+  otpExpiresAt: string | null;
+}
+
+export async function sendEmailVerificationRequest(): Promise<EmailVerificationDispatchResult> {
+  const response = await fetch('/api/auth/email/send-verification', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.error || 'Unable to send email verification code.');
+  }
+  return json.data as EmailVerificationDispatchResult;
+}
+
+export async function resendEmailVerificationRequest(): Promise<EmailVerificationDispatchResult> {
+  const response = await fetch('/api/auth/email/resend', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.error || 'Unable to resend verification code.');
+  }
+  return json.data as EmailVerificationDispatchResult;
+}
+
+export async function verifyEmailOtpRequest(
+  code: string
+): Promise<EmailVerificationVerifyResult> {
+  const response = await fetch('/api/auth/email/verify', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ code }),
+  });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.error || 'Verification code could not be confirmed.');
+  }
+  return json.data as EmailVerificationVerifyResult;
+}
+
+export async function fetchAuthSecurityStatus(): Promise<AuthSecurityStatusResult> {
+  const response = await fetch('/api/auth/security/status', {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.error || 'Unable to load account security status.');
+  }
+  return json.data as AuthSecurityStatusResult;
 }
 
 export async function completeProfileRequest(

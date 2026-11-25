@@ -93,6 +93,8 @@ import type {
   MpesaTransactionRecord,
 } from '../modules/finance/finance.types.ts';
 import { createFinanceModuleSeed } from '../modules/finance/finance.seed.ts';
+import type { CertificationModuleState } from '../modules/certification/certification.types.ts';
+import { createCertificationSeed } from '../modules/certification/certification.seed.ts';
 
 export type StaffTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
 
@@ -766,6 +768,7 @@ export interface PortalDatabase {
   financeClearances: FinanceClearanceRecord[];
   financeRefundRequests: FinanceRefundRequestRecord[];
   financeAuditLogs: FinanceAuditLogRecord[];
+  certificationState: CertificationModuleState;
 }
 
 const DATA_DIR = path.resolve(process.cwd(), '.data');
@@ -2242,6 +2245,7 @@ function createSeedDatabase(): PortalDatabase {
         eventSettings: eventsSeed.eventSettings,
         ...createSecureExamSeed(),
         ...createFinanceModuleSeed(),
+        certificationState: createCertificationSeed(),
       };
     })(),
   };
@@ -2535,6 +2539,16 @@ function hydrateDatabaseDefaults(loaded: Partial<PortalDatabase>): PortalDatabas
     documentRequests: Array.isArray(loaded.documentRequests)
       ? loaded.documentRequests
       : seed.documentRequests,
+    certificationState: loaded.certificationState
+      ? {
+          ...seed.certificationState,
+          ...loaded.certificationState,
+          sequences: {
+            ...seed.certificationState.sequences,
+            ...(loaded.certificationState.sequences ?? {}),
+          },
+        }
+      : seed.certificationState,
   };
 }
 

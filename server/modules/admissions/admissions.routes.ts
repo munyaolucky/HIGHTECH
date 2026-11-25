@@ -291,6 +291,8 @@ router.post(
               accountStatus: 'ACTIVE',
               passwordHash: hashPasswordScrypt(process.env.SEED_DEFAULT_PASSWORD || 'Hitech@2026!'),
               mustChangePassword: true,
+              emailVerifiedAt: null,
+              emailVerificationRequired: true,
               requiresProfileCompletion: true,
               campusId: 'cmp-nairobi',
               departmentId: 'dept-computing',

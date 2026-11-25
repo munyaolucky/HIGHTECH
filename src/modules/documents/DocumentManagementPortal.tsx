@@ -224,7 +224,7 @@ export default function DocumentManagementPortal({
     user.role === 'ADMIN' ||
     user.role === 'PRINCIPAL' ||
     user.role === 'QUALITY_ASSURANCE' ||
-    user.documentPermissions.includes('documents.config.manage');
+    Boolean(user.documentPermissions?.includes('documents.config.manage'));
 
   const revisionInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);

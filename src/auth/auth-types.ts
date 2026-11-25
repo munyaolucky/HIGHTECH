@@ -29,6 +29,10 @@ export interface PortalUser {
   portalType: PortalType;
   accountStatus: AccountStatus;
   mustChangePassword: boolean;
+  passwordChangedAt?: string | null;
+  emailVerified?: boolean;
+  emailVerifiedAt?: string | null;
+  emailVerificationRequired?: boolean;
   requiresProfileCompletion: boolean;
   mfaEnabled: boolean;
   permissions: string[];

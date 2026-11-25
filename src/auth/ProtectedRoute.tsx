@@ -17,6 +17,7 @@ interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
   requiredPermissions?: string[];
   allowPasswordChange?: boolean;
+  allowEmailVerification?: boolean;
   allowProfileCompletion?: boolean;
   onRedirect: (path: string) => void;
   onNavigateHome?: () => void;
@@ -29,6 +30,7 @@ export function ProtectedRoute({
   allowedRoles,
   requiredPermissions,
   allowPasswordChange = false,
+  allowEmailVerification = false,
   allowProfileCompletion = false,
   onRedirect,
   onNavigateHome,
@@ -49,7 +51,21 @@ export function ProtectedRoute({
       onRedirect('/portal/change-password');
       return;
     }
-    if (user.requiresProfileCompletion && !allowProfileCompletion) {
+    if (
+      !user.mustChangePassword &&
+      user.emailVerificationRequired &&
+      !user.emailVerified &&
+      !allowEmailVerification
+    ) {
+      onRedirect('/portal/verify-email');
+      return;
+    }
+    if (
+      !user.mustChangePassword &&
+      !(user.emailVerificationRequired && !user.emailVerified) &&
+      user.requiresProfileCompletion &&
+      !allowProfileCompletion
+    ) {
       onRedirect('/portal/complete-profile');
       return;
     }
@@ -60,6 +76,7 @@ export function ProtectedRoute({
     authed,
     user,
     allowPasswordChange,
+    allowEmailVerification,
     allowProfileCompletion,
     onRedirect,
   ]);
@@ -97,7 +114,21 @@ export function ProtectedRoute({
     return <SessionLoading message="Password update required before opening portal..." />;
   }
 
-  if (user.requiresProfileCompletion && !allowProfileCompletion) {
+  if (
+    !user.mustChangePassword &&
+    user.emailVerificationRequired &&
+    !user.emailVerified &&
+    !allowEmailVerification
+  ) {
+    return <SessionLoading message="Email verification required before opening portal..." />;
+  }
+
+  if (
+    !user.mustChangePassword &&
+    !(user.emailVerificationRequired && !user.emailVerified) &&
+    user.requiresProfileCompletion &&
+    !allowProfileCompletion
+  ) {
     return <SessionLoading message="Profile completion required before opening portal..." />;
   }
 

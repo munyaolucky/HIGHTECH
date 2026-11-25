@@ -37,6 +37,7 @@ export type StudentPortalSection =
   | 'exams-history'
   | 'exams-appeals'
   | 'exams-progress'
+  | 'certification-hub'
   | 'results'
   | 'finance'
   | 'fees-overview'
@@ -60,6 +61,7 @@ export type StudentPortalSection =
   | 'support'
   | 'notifications'
   | 'settings'
+  | 'role-capabilities'
   | 'college-information'
   | 'mobile-companion';
 
@@ -84,6 +86,7 @@ export const STUDENT_SECTION_PATHS: Record<StudentPortalSection, string> = {
   'exams-history': '/portal/student/exams/history',
   'exams-appeals': '/portal/student/exams/appeals',
   'exams-progress': '/portal/student/exams/progress',
+  'certification-hub': '/portal/student/certification',
   results: '/portal/student/exams/results',
   finance: '/portal/student/finance',
   'fees-overview': '/portal/student/fees',
@@ -107,6 +110,7 @@ export const STUDENT_SECTION_PATHS: Record<StudentPortalSection, string> = {
   support: '/portal/student/support',
   notifications: '/portal/student/notifications',
   settings: '/portal/student/settings',
+  'role-capabilities': '/portal/student/access',
   'college-information': '/portal/student/college-information',
   'mobile-companion': '/portal/student/mobile-companion',
 };
@@ -126,6 +130,7 @@ export function resolveStudentSectionFromPath(pathname: string): StudentPortalSe
   if (clean === '/portal/student/exams/history') return 'exams-history';
   if (clean === '/portal/student/exams/appeals') return 'exams-appeals';
   if (clean === '/portal/student/exams/progress') return 'exams-progress';
+  if (clean === '/portal/student/certification') return 'certification-hub';
   if (clean === '/portal/student/fees' || clean === '/portal/student/fees/overview') {
     return 'fees-overview';
   }

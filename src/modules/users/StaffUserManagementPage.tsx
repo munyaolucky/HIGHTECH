@@ -20,6 +20,13 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { usePortalShellContext, useSyncedPortalTab } from "../../context/PortalShellContext";
+import {
+  ALL_ROLE_CATALOG_ENTRIES,
+  resolveCatalogEntryForRole,
+  type InstitutionalUserRoleCode,
+  type RoleDutyCatalogEntry,
+} from "../../config/roleDutyCatalog";
+import AccountRoleWorkspace from "../../components/portal/AccountRoleWorkspace";
 import { institutionalEventBus } from "../../services/institutionalEventBus";
 import "./staff-user-management.css";
 
@@ -52,6 +59,23 @@ export interface PortalAccount {
   departmentName?: string | null;
   createdAt: string;
   lastLoginAt?: string | null;
+  emailVerified?: boolean;
+  emailVerifiedAt?: string | null;
+  emailVerificationRequired?: boolean;
+  mustChangePassword?: boolean;
+  passwordChangedAt?: string | null;
+}
+
+export interface SecurityAuditEntry {
+  id: number;
+  userId: number | null;
+  actorUid: string | null;
+  email: string;
+  eventType: string;
+  detail: string;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
 }
 
 export interface DashboardResponse {
@@ -71,7 +95,7 @@ export interface DashboardResponse {
 
 type PendingAccountAction = {
   account: PortalAccount;
-  action: "resend-invitation" | "suspend" | "reactivate";
+  action: "resend-invitation" | "resend-verification" | "suspend" | "reactivate";
 };
 
 const API_BASE = "/api";
@@ -201,11 +225,12 @@ function StatusBadge({ status }: { status: AccountStatus }) {
 
 export default function StaffUserManagementPage() {
   const ctx = usePortalShellContext();
-  const [activeTab, setActiveTab] = useSyncedPortalTab<"accounts" | "roles" | "invitations">(
-    "staff-users",
-    "accounts",
-  );
+  const [activeTab, setActiveTab] = useSyncedPortalTab<
+    "accounts" | "roles" | "invitations" | "security-audit"
+  >("staff-users", "accounts");
   const [data, setData] = useState<DashboardResponse | null>(null);
+  const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -216,6 +241,10 @@ export default function StaffUserManagementPage() {
   const [selected, setSelected] = useState<PortalAccount | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAccountAction | null>(null);
   const [busyAccountId, setBusyAccountId] = useState<string | null>(null);
+  const [roleCatalogue, setRoleCatalogue] = useState<RoleDutyCatalogEntry[]>(ALL_ROLE_CATALOG_ENTRIES);
+  const [matrixCategory, setMatrixCategory] = useState<"ALL" | "STAFF" | "STUDENT" | "STAKEHOLDER">("ALL");
+  const [matrixQuery, setMatrixQuery] = useState("");
+  const [selectedMatrixRole, setSelectedMatrixRole] = useState<InstitutionalUserRoleCode>("ADMIN");
 
   // Register Portal Account modal state
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -229,6 +258,7 @@ export default function StaffUserManagementPage() {
     role: "LECTURER",
     campusId: "cmp-nairobi",
     departmentId: "dept-computing",
+    temporaryPassword: "",
   });
 
   useEffect(() => {
@@ -238,6 +268,14 @@ export default function StaffUserManagementPage() {
     } else if (activeTab === "accounts") {
       setStatus("ALL");
       setPage(1);
+    } else if (activeTab === "roles") {
+      apiRequest<{ success: boolean; roles?: RoleDutyCatalogEntry[] }>("/users/role-catalogue")
+        .then((res) => {
+          if (res?.success && Array.isArray(res.roles) && res.roles.length > 0) {
+            setRoleCatalogue(res.roles);
+          }
+        })
+        .catch(() => {});
     }
   }, [activeTab]);
 
@@ -286,9 +324,31 @@ export default function StaffUserManagementPage() {
     }
   }, [page, search, category, status]);
 
+  const loadAuditLogs = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const res = await apiRequest<{ success: boolean; data: SecurityAuditEntry[] }>(
+        "/auth/security/audit?limit=60",
+      );
+      if (res?.success && Array.isArray(res.data)) {
+        setAuditLogs(res.data);
+      }
+    } catch {
+      // Permission-restricted actors keep empty audit view without breaking account registry
+    } finally {
+      setAuditLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadAccounts();
   }, [loadAccounts]);
+
+  useEffect(() => {
+    if (activeTab === "security-audit") {
+      void loadAuditLogs();
+    }
+  }, [activeTab, loadAuditLogs]);
 
   const permissions = data?.permissions ?? [];
 
@@ -314,6 +374,7 @@ export default function StaffUserManagementPage() {
 
       const actionTitles = {
         "resend-invitation": "Account Activation Invitation Resent",
+        "resend-verification": "Email Verification Code Resent",
         suspend: "Portal Account Suspended",
         reactivate: "Portal Account Reactivated",
       } as const;
@@ -385,9 +446,10 @@ export default function StaffUserManagementPage() {
         role: "LECTURER",
         campusId: "cmp-nairobi",
         departmentId: "dept-computing",
+        temporaryPassword: "",
       });
       setNotice(
-        `Registered ${response.account.fullName} (${response.account.registrationNumber ?? response.account.email}) and queued activation invitation.`,
+        `Registered ${response.account.fullName} (${response.account.registrationNumber ?? response.account.email}).`,
       );
       setPage(1);
       await loadAccounts();
@@ -448,6 +510,12 @@ export default function StaffUserManagementPage() {
           title: "Resend Activation Invitation",
           message: `Send a fresh portal activation invitation email to ${pendingAction.account.fullName} (${pendingAction.account.email})?`,
           confirmLabel: "Resend Invitation",
+          tone: "primary" as const,
+        },
+        "resend-verification": {
+          title: "Resend Email Verification Code",
+          message: `Dispatch a fresh 6-digit verification code to ${pendingAction.account.fullName} (${pendingAction.account.email})?`,
+          confirmLabel: "Send 6-Digit Code",
           tone: "primary" as const,
         },
         suspend: {
@@ -540,89 +608,213 @@ export default function StaffUserManagementPage() {
         >
           <UserCheck size={14} /> Activation &amp; Invitations ({data?.summary?.pendingActivation ?? 0})
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("security-audit")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === "security-audit"
+              ? "bg-[#092c60] text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <ShieldCheck size={14} /> Security Audit
+        </button>
       </div>
 
-      {activeTab === "roles" && (
-        <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 mb-6 shadow-sm">
-          <div>
-            <h2 className="text-base font-bold text-[#092c60] flex items-center gap-2">
-              <ShieldCheck size={18} className="text-blue-600" />
-              Institutional Roles &amp; Security Permissions Matrix
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Hierarchical role definitions and operational access policies across HI-TECH College platform.
-            </p>
+      {activeTab === "security-audit" && (
+        <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 mb-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-[#092c60] flex items-center gap-2">
+                <ShieldCheck size={18} className="text-blue-600" />
+                Account Security &amp; Verification Audit Log
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Tracks temporary password replacements, 6-digit email verification events, failed OTP attempts, and password resets.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="um-button um-button--secondary"
+              onClick={() => void loadAuditLogs()}
+              disabled={auditLoading}
+            >
+              <RefreshCw size={14} /> Refresh Log
+            </button>
           </div>
+          {auditLoading ? (
+            <p className="text-xs text-slate-500 py-4">Loading security audit trail…</p>
+          ) : auditLogs.length === 0 ? (
+            <p className="text-xs text-slate-500 py-4">No security events recorded yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="um-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Event</th>
+                    <th>Account Email</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td>{formatDate(log.createdAt)}</td>
+                      <td>
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-bold text-[#092c60]">
+                          {log.eventType}
+                        </span>
+                      </td>
+                      <td>{log.email}</td>
+                      <td>{log.detail}</td>
+                      <td className="font-mono text-xs">{log.ipAddress}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                role: "Super Administrator",
-                badge: "HCA/ADMIN/...",
-                scope: "Platform configuration, institutional settings, module toggles, API keys & audit logs.",
-                permissions: ["users.*", "system.config", "audit.logs", "modules.toggle", "rbac.manage"],
-                color: "border-indigo-300 bg-indigo-50/40 text-indigo-900",
-              },
-              {
-                role: "Academic Registrar",
-                badge: "HCA/STAFF/...",
-                scope: "Nominal roll, course additions/drops, deferments, official transcripts (TRX) & graduation certs.",
-                permissions: ["transcripts.issue", "students.enroll", "deferments.approve", "certs.generate"],
-                color: "border-slate-300 bg-slate-50 text-slate-900",
-              },
-              {
-                role: "Finance Officer / Bursar",
-                badge: "HCA/STAFF/...",
-                scope: "Fee structure rates, Daraja M-Pesa STK Push collections, bank clearances & receipt issuance.",
-                permissions: ["finance.billing", "mpesa.reconcile", "receipts.issue", "fee.waiver"],
-                color: "border-teal-300 bg-teal-50/40 text-teal-900",
-              },
-              {
-                role: "Examinations Officer",
-                badge: "HCA/STAFF/...",
-                scope: "63 Question types moderation, CBT blueprints, seating conflict engine & marks approval.",
-                permissions: ["exams.schedule", "questions.moderate", "cbt.blueprints", "results.publish"],
-                color: "border-purple-300 bg-purple-50/40 text-purple-900",
-              },
-              {
-                role: "Senior Lecturer / Faculty",
-                badge: "HCA/LECT/...",
-                scope: "Classroom rosters, lesson plans, schemes of work, attendance registers & assessment grading.",
-                permissions: ["classes.teach", "attendance.mark", "assessments.grade", "materials.upload"],
-                color: "border-emerald-300 bg-emerald-50/40 text-emerald-900",
-              },
-              {
-                role: "Student Candidate",
-                badge: "HCA/STU/...",
-                scope: "Course unit registration, live timetables, fees Lipa na M-Pesa, CBT tests & results portal.",
-                permissions: ["units.register", "fees.pay", "cbt.take", "transcripts.view", "idcard.print"],
-                color: "border-blue-300 bg-blue-50/40 text-blue-900",
-              },
-            ].map((r) => (
-              <div key={r.role} className={`p-4 rounded-xl border ${r.color} flex flex-col justify-between`}>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <strong className="text-xs font-bold">{r.role}</strong>
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/80 border border-slate-200">
-                      {r.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed mb-3">{r.scope}</p>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Granted Permissions
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {r.permissions.map((p) => (
-                      <span key={p} className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-700">
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+      {activeTab === "roles" && (
+        <section className="space-y-5 mb-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-[#092c60] dark:text-white flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-[#1769AA] dark:text-blue-400" />
+                  Complete Institutional Roles, Duties, Events &amp; Permissions Matrix ({roleCatalogue.length} Roles)
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                  Inspect operational duties, subscribed events, schema properties, access boundaries, and grouped permissions for all 21 Staff roles plus Student and External Stakeholder portals.
+                </p>
               </div>
-            ))}
+              <span className="font-mono tabular-nums text-xs font-semibold text-slate-600 dark:text-slate-300">
+                21 Staff · 1 Student · 5 Stakeholders
+              </span>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    { id: "ALL", label: `All Roles (${roleCatalogue.length})` },
+                    {
+                      id: "STAFF",
+                      label: `Staff (${roleCatalogue.filter((r) => r.category === "STAFF").length})`,
+                    },
+                    {
+                      id: "STUDENT",
+                      label: `Student (${roleCatalogue.filter((r) => r.category === "STUDENT").length})`,
+                    },
+                    {
+                      id: "STAKEHOLDER",
+                      label: `Stakeholders (${roleCatalogue.filter((r) => r.category === "STAKEHOLDER").length})`,
+                    },
+                  ] as const
+                ).map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setMatrixCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
+                      matrixCategory === cat.id
+                        ? "bg-[#092c60] text-white dark:bg-[#1769AA]"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full md:w-72">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
+                />
+                <input
+                  type="text"
+                  value={matrixQuery}
+                  onChange={(e) => setMatrixQuery(e.target.value)}
+                  placeholder="Search role, duty, permission..."
+                  aria-label="Search institutional role matrix"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 pl-8 pr-8 text-xs text-slate-900 dark:text-slate-100"
+                />
+                {matrixQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setMatrixQuery("")}
+                    aria-label="Clear role search"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[320px_1fr] items-start">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800 max-h-[680px] overflow-y-auto">
+                {roleCatalogue
+                  .filter((entry) => {
+                    if (matrixCategory !== "ALL" && entry.category !== matrixCategory) {
+                      return false;
+                    }
+                    const q = matrixQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      entry.role.toLowerCase().includes(q) ||
+                      entry.title.toLowerCase().includes(q) ||
+                      entry.department.toLowerCase().includes(q) ||
+                      entry.duties.some((d) => d.title.toLowerCase().includes(q)) ||
+                      entry.permissions.staffPermissions.some((p) => p.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((entry) => {
+                    const isSelected = selectedMatrixRole === entry.role;
+                    const permCount =
+                      entry.permissions.staffPermissions.length +
+                      entry.permissions.documentPermissions.length +
+                      entry.permissions.registrationPermissions.length +
+                      entry.permissions.uiNavPermissions.length;
+                    return (
+                      <button
+                        key={entry.role}
+                        type="button"
+                        onClick={() => setSelectedMatrixRole(entry.role)}
+                        className={`w-full text-left px-3.5 py-3 transition-colors space-y-1 ${
+                          isSelected
+                            ? "bg-blue-50/90 dark:bg-slate-800"
+                            : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <strong className="text-xs font-bold text-[#092c60] dark:text-white truncate">
+                            {entry.title}
+                          </strong>
+                          <span className="font-mono tabular-nums text-[11px] font-semibold text-[#1769AA] dark:text-blue-400 shrink-0">
+                            {permCount} perms
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                          {entry.role} · {entry.regNoPrefix} · {entry.duties.length} duties · {entry.events.length} events
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+
+              <div className="min-w-0">
+                <AccountRoleWorkspace
+                  roleOverride={selectedMatrixRole}
+                  onSwitchPortal={(portal) => ctx?.setCurrentRole?.(portal)}
+                />
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -751,6 +943,7 @@ export default function StaffUserManagementPage() {
                 <th>Category</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Security</th>
                 <th>Last login</th>
                 <th>Actions</th>
               </tr>
@@ -758,7 +951,7 @@ export default function StaffUserManagementPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={7} className="um-empty">
+                  <td colSpan={8} className="um-empty">
                     Loading portal accounts…
                   </td>
                 </tr>
@@ -766,7 +959,7 @@ export default function StaffUserManagementPage() {
 
               {!loading && data?.items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="um-empty">
+                  <td colSpan={8} className="um-empty">
                     No accounts match these filters.
                   </td>
                 </tr>
@@ -791,6 +984,24 @@ export default function StaffUserManagementPage() {
                     <td>{account.roleNames.join(", ") || "Not assigned"}</td>
                     <td>
                       <StatusBadge status={account.status} />
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap gap-1">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            account.emailVerified
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-amber-50 text-amber-800 border border-amber-200"
+                          }`}
+                        >
+                          {account.emailVerified ? "Email Verified" : "Email Unverified"}
+                        </span>
+                        {account.mustChangePassword && (
+                          <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                            Temp Password
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>{formatDate(account.lastLoginAt)}</td>
                     <td>
@@ -897,12 +1108,65 @@ export default function StaffUserManagementPage() {
                 label="Last login"
                 value={formatDate(selected.lastLoginAt)}
               />
+              <Detail
+                label="Email verification"
+                value={
+                  selected.emailVerified
+                    ? `Verified (${formatDate(selected.emailVerifiedAt)})`
+                    : "Pending email verification"
+                }
+              />
+              <Detail
+                label="Password security"
+                value={
+                  selected.mustChangePassword
+                    ? "Temporary password (change required)"
+                    : selected.passwordChangedAt
+                    ? `Updated ${formatDate(selected.passwordChangedAt)}`
+                    : "Active policy compliant"
+                }
+              />
             </div>
 
             <div className="um-modal__status">
               <span>Account status</span>
               <StatusBadge status={selected.status} />
             </div>
+
+            {(() => {
+              const roleEntry = resolveCatalogEntryForRole(
+                selected.roleNames[0] ?? selected.category
+              );
+              return (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-[#092c60]">
+                      Assigned Role Scope: {roleEntry.title} ({roleEntry.role})
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMatrixRole(roleEntry.role);
+                        setSelected(null);
+                        setActiveTab("roles");
+                      }}
+                      className="font-semibold text-[#1769AA] hover:underline"
+                    >
+                      Inspect Full Duties &amp; Permissions Matrix
+                    </button>
+                  </div>
+                  <p className="text-slate-600">{roleEntry.dataScopeSummary}</p>
+                  <div className="font-mono text-[11px] text-slate-600">
+                    {roleEntry.duties.length} duties · {roleEntry.events.length} role events ·{" "}
+                    {roleEntry.permissions.staffPermissions.length +
+                      roleEntry.permissions.documentPermissions.length +
+                      roleEntry.permissions.registrationPermissions.length +
+                      roleEntry.permissions.uiNavPermissions.length}{" "}
+                    permissions · Destination {roleEntry.portalDestination}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="um-modal__actions">
               {selected.status === "PENDING_ACTIVATION" &&
@@ -920,6 +1184,25 @@ export default function StaffUserManagementPage() {
                   >
                     <Mail size={16} />
                     Resend invitation
+                  </button>
+                )}
+
+              {!selected.emailVerified &&
+                selected.status === "ACTIVE" &&
+                can(permissions, "users.registration.resend_invite") && (
+                  <button
+                    type="button"
+                    className="um-button um-button--secondary"
+                    disabled={busyAccountId === selected.id}
+                    onClick={() =>
+                      setPendingAction({
+                        account: selected,
+                        action: "resend-verification",
+                      })
+                    }
+                  >
+                    <Mail size={16} />
+                    Resend verification code
                   </button>
                 )}
 
@@ -1186,6 +1469,24 @@ export default function StaffUserManagementPage() {
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="block space-y-1">
+                <span className="text-xs font-bold text-slate-700">
+                  Temporary First-Login Password (optional · min 12 chars)
+                </span>
+                <input
+                  type="password"
+                  value={registerForm.temporaryPassword}
+                  onChange={(e) =>
+                    setRegisterForm((prev) => ({ ...prev, temporaryPassword: e.target.value }))
+                  }
+                  placeholder="Leave blank to send invite link, or set temporary password"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+                <span className="block text-[11px] text-slate-500">
+                  User will be forced to replace any temporary password and verify their email on first login.
+                </span>
               </label>
 
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">

@@ -1,5 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
-import { requirePortalAuth } from '../../middleware/auth.ts';
+import { requireAuth, requirePortalAuth } from '../../middleware/auth.ts';
+import { REGISTRATION_PERMISSIONS } from '../registration/registration.permissions.ts';
+import { STAFF_PERMISSIONS } from '../staff/staff.permissions.ts';
 import { AuthHttpError, authService } from './auth.service.ts';
 
 const router = Router();
@@ -26,7 +28,11 @@ function rateLimitAuth(maxPer15Min: number) {
 
 function handleAuthError(res: Response, err: unknown) {
   if (err instanceof AuthHttpError) {
-    res.status(err.statusCode).json({ success: false, error: err.message });
+    res.status(err.statusCode).json({
+      success: false,
+      ...(err.code ? { code: err.code } : {}),
+      error: err.message,
+    });
     return;
   }
   const message = err instanceof Error ? err.message : 'Authentication request failed.';
@@ -88,6 +94,10 @@ router.get('/me', requirePortalAuth, (req, res) => {
         primaryRole: req.staffUser.role,
         accountStatus: 'ACTIVE',
         mustChangePassword: false,
+        passwordChangedAt: null,
+        emailVerified: true,
+        emailVerifiedAt: null,
+        emailVerificationRequired: false,
         requiresProfileCompletion: false,
         mfaEnabled: false,
         destination: '/portal/staff',
@@ -127,17 +137,17 @@ router.post('/logout-all', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.post('/password-recovery/request', rateLimitAuth(15), async (req, res) => {
+const handlePasswordRecoveryRequest = async (req: Request, res: Response) => {
   try {
-    const identifier = String(req.body?.identifier ?? '');
+    const identifier = String(req.body?.identifier ?? req.body?.email ?? '');
     const result = await authService.requestPasswordRecovery(req, identifier);
     res.json({ success: true, data: result });
   } catch (err) {
     handleAuthError(res, err);
   }
-});
+};
 
-router.post('/password-recovery/complete', rateLimitAuth(15), async (req, res) => {
+const handlePasswordRecoveryComplete = async (req: Request, res: Response) => {
   try {
     const token = String(req.body?.token ?? '');
     const newPassword = String(req.body?.newPassword ?? '');
@@ -146,22 +156,104 @@ router.post('/password-recovery/complete', rateLimitAuth(15), async (req, res) =
   } catch (err) {
     handleAuthError(res, err);
   }
-});
+};
+
+router.post('/password-recovery/request', rateLimitAuth(15), handlePasswordRecoveryRequest);
+router.post('/password/forgot', rateLimitAuth(15), handlePasswordRecoveryRequest);
+
+router.post('/password-recovery/complete', rateLimitAuth(15), handlePasswordRecoveryComplete);
+router.post('/password/reset', rateLimitAuth(15), handlePasswordRecoveryComplete);
 
 router.post('/password/change', requirePortalAuth, async (req, res) => {
   try {
     if (!req.portalUser?.pgUserId) {
       throw new AuthHttpError(400, 'Password changes require an active user account.');
     }
-    const currentPassword = String(req.body?.currentPassword ?? '');
+    const currentPassword = String(req.body?.currentPassword ?? req.body?.temporaryPassword ?? '');
     const newPassword = String(req.body?.newPassword ?? '');
     const result = await authService.changePassword(
       req.portalUser.pgUserId,
       req.portalUser.sessionId,
       currentPassword,
-      newPassword
+      newPassword,
+      req,
+      res
     );
     res.json({ success: true, data: result });
+  } catch (err) {
+    handleAuthError(res, err);
+  }
+});
+
+router.post('/email/send-verification', requirePortalAuth, rateLimitAuth(15), async (req, res) => {
+  try {
+    if (!req.portalUser?.pgUserId) {
+      throw new AuthHttpError(400, 'Email verification requires an active portal account.');
+    }
+    const result = await authService.sendEmailVerification(req.portalUser.pgUserId, req, {
+      isResend: false,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    handleAuthError(res, err);
+  }
+});
+
+router.post('/email/resend', requirePortalAuth, rateLimitAuth(15), async (req, res) => {
+  try {
+    if (!req.portalUser?.pgUserId) {
+      throw new AuthHttpError(400, 'Email verification requires an active portal account.');
+    }
+    const result = await authService.sendEmailVerification(req.portalUser.pgUserId, req, {
+      isResend: true,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    handleAuthError(res, err);
+  }
+});
+
+router.post('/email/verify', requirePortalAuth, rateLimitAuth(20), async (req, res) => {
+  try {
+    if (!req.portalUser?.pgUserId) {
+      throw new AuthHttpError(400, 'Email verification requires an active portal account.');
+    }
+    const code = String(req.body?.code ?? req.body?.otp ?? '');
+    const result = await authService.verifyEmailOtp(req.portalUser.pgUserId, code, req);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    handleAuthError(res, err);
+  }
+});
+
+router.get('/security/status', requirePortalAuth, async (req, res) => {
+  try {
+    if (!req.portalUser?.pgUserId) {
+      throw new AuthHttpError(400, 'Security status requires an active portal account.');
+    }
+    const status = await authService.getSecurityStatus(req.portalUser.pgUserId);
+    res.json({ success: true, data: status });
+  } catch (err) {
+    handleAuthError(res, err);
+  }
+});
+
+router.get('/security/audit', requireAuth, async (req, res) => {
+  try {
+    const actor = req.staffUser!;
+    const canViewAudit =
+      actor.permissions.includes(STAFF_PERMISSIONS.USERS_VIEW) ||
+      actor.permissions.includes(STAFF_PERMISSIONS.USERS_UPDATE) ||
+      actor.permissions.includes(STAFF_PERMISSIONS.IT_SUPPORT_MANAGE) ||
+      actor.registrationPermissions.includes(REGISTRATION_PERMISSIONS.AUDIT_VIEW) ||
+      actor.role === 'ADMIN' ||
+      actor.role === 'PRINCIPAL';
+    if (!canViewAudit) {
+      throw new AuthHttpError(403, 'Access denied: insufficient permission to view security logs.');
+    }
+    const limit = Number(req.query.limit ?? 50) || 50;
+    const logs = await authService.listSecurityAuditLogs(limit);
+    res.json({ success: true, data: logs });
   } catch (err) {
     handleAuthError(res, err);
   }

@@ -136,6 +136,7 @@ const EXAM_SECTIONS = new Set<StudentPortalSection>([
   'exams-history',
   'exams-appeals',
   'exams-progress',
+  'certification-hub',
   'results',
   'clearance',
   'appeals',
@@ -227,6 +228,7 @@ const PRIMARY_MAIN_LINKS: MainNavLink[] = [
   { label: 'Dashboard', page: 'dashboard', path: '/portal/student', icon: LayoutDashboard },
   { label: 'My Learning', page: 'elearning', path: '/portal/student/learning', icon: BookOpen },
   { label: 'Timetable', page: 'timetable', path: '/portal/student/timetable', icon: CalendarDays },
+  { label: 'Certification Hub', page: 'certification-hub', path: '/portal/student/certification', icon: GraduationCap, badgeText: 'ICDL' },
 ];
 
 const SECONDARY_MAIN_LINKS: MainNavLink[] = [
@@ -247,6 +249,7 @@ const CAMPUS_SERVICE_LINKS: MainNavLink[] = [
   { label: 'Digital Student ID', page: 'student-id', path: STUDENT_SECTION_PATHS['student-id'], icon: CreditCard },
   { label: 'My Documents', page: 'documents', path: STUDENT_SECTION_PATHS.documents, icon: Download },
   { label: 'Notifications', page: 'notifications', path: STUDENT_SECTION_PATHS.notifications, icon: Bell },
+  { label: 'My Duties & Access', page: 'role-capabilities', path: STUDENT_SECTION_PATHS['role-capabilities'], icon: ShieldCheck },
   { label: 'Settings', page: 'settings', path: STUDENT_SECTION_PATHS.settings, icon: Settings },
 ];
 
@@ -279,7 +282,9 @@ export default function StudentSidebar({
 }: StudentSidebarProps) {
   const [examOpen, setExamOpen] = useState(true);
   const [feesOpen, setFeesOpen] = useState(true);
-  const [servicesOpen, setServicesOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(() =>
+    CAMPUS_SERVICE_LINKS.some((item) => item.page === activePage)
+  );
   const [menuQuery, setMenuQuery] = useState('');
 
   useEffect(() => {

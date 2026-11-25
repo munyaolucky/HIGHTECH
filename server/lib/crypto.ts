@@ -140,9 +140,33 @@ export function generateBackupCodes(count = 10): string[] {
   return codes;
 }
 
+export function generateNumericOtp(digits = 6): string {
+  const max = 10 ** digits;
+  const num = crypto.randomInt(0, max);
+  return String(num).padStart(digits, '0');
+}
+
+export function hashEmailVerificationCode(userId: number, code: string): string {
+  return crypto
+    .createHmac('sha256', APP_CRYPTO_KEY_SOURCE)
+    .update(`email-otp:${userId}:${code.trim()}`)
+    .digest('hex');
+}
+
+export function verifyTimingSafeHex(expectedHex: string, candidateHex: string): boolean {
+  try {
+    const a = Buffer.from(expectedHex, 'hex');
+    const b = Buffer.from(candidateHex, 'hex');
+    if (a.length === 0 || a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
 export function validatePasswordStrength(password: string): string | null {
-  if (password.length < 8) {
-    return 'Password must be at least 8 characters long.';
+  if (password.length < 12) {
+    return 'Password must be at least 12 characters long.';
   }
   if (!/[A-Z]/.test(password)) {
     return 'Password must include at least one uppercase letter.';

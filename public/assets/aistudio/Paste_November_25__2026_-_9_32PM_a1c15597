@@ -1,0 +1,4939 @@
+
+do all the features of every user and duty what he/she should do , show every event,property , permission and other in each portal acoouting to user
+HI-TECH College Integrated Digital Academic & Certification Platform
+Complete User Portal, Roles, Duties, Features, Events, Properties & Permissions Specification
+The platform should have a complete role-based portal system in which every user has their own dashboard, menu, responsibilities, records, notifications, events, actions and permissions.
+
+The system must not give every user the same dashboard. Each account should display only the features and information relevant to that user's position at HI-TECH College.
+
+Core principle: Every user must know:
+
+What they can view.
+
+What they can create.
+
+What they can edit.
+
+What they can approve.
+
+What they can reject.
+
+What they can upload.
+
+What they must do daily, weekly, monthly and per term.
+
+What events and activities concern them.
+
+What records they are responsible for.
+
+Who supervises them and who receives their reports.
+
+The platform will use a centralized RBAC (Role-Based Access Control) and permission-based authorization system, with additional restrictions based on department, campus, class, course, assigned students and organizational hierarchy.
+
+1. Complete user account and role structure
+The following role structure should be supported. Roles can be assigned individually or combined where authorized.
+
+1.1 Executive and system administration
+User role
+
+Main responsibility
+
+Portal
+
+Super Administrator
+
+Platform configuration, security and system oversight
+
+System Admin
+
+Institution Administrator
+
+Overall institutional administration
+
+Admin
+
+Principal
+
+Institutional leadership and accountability
+
+Principal
+
+Deputy Principal
+
+Supports principal and supervises delegated operations
+
+Deputy Principal
+
+Academic Dean
+
+Academic standards, teaching and learning
+
+Academic
+
+Deputy Academic Dean
+
+Supports academic management
+
+Academic
+
+Registrar
+
+Student admissions, registration and academic records
+
+Registrar
+
+Deputy Registrar
+
+Supports registration and records operations
+
+Registrar
+
+1.2 Department and academic management
+User role
+
+Main responsibility
+
+Portal
+
+Head of Department (HOD)
+
+Department management and staff supervision
+
+HOD
+
+Deputy HOD
+
+Supports department operations
+
+HOD
+
+Lecturer
+
+Teaches assigned classes and units
+
+Lecturer
+
+Trainer/Instructor
+
+Conducts training and practical instruction
+
+Lecturer
+
+Practical Assessor
+
+Conducts practical assessments
+
+Assessment
+
+Quality Assurance Officer
+
+Monitors teaching and institutional standards
+
+QA
+
+Admissions Officer
+
+Processes applications and admissions
+
+Admissions
+
+Student Affairs Officer
+
+Student welfare and activities
+
+Student Affairs
+
+1.3 Examination and certification management
+User role
+
+Main responsibility
+
+Portal
+
+Examination Officer
+
+Plans and manages examinations
+
+Examination Admin
+
+Deputy Examination Officer
+
+Supports examination administration
+
+Examination Admin
+
+Invigilator
+
+Supervises examination sessions
+
+Invigilator
+
+Internal Examiner
+
+Marks and evaluates assessments
+
+Examiner
+
+Internal Moderator
+
+Reviews and moderates results
+
+Moderation
+
+External Examiner
+
+Independently reviews approved assessments
+
+External Examiner
+
+1.4 Finance and human resources
+User role
+
+Main responsibility
+
+Portal
+
+Finance Manager
+
+Financial management and oversight
+
+Finance
+
+Accountant
+
+Accounting and financial records
+
+Finance
+
+Cashier
+
+Receipts, collections and payment processing
+
+Cashier
+
+Internal Auditor
+
+Independent financial and operational audits
+
+Audit
+
+HR Manager
+
+Human resource management
+
+HR
+
+HR Officer
+
+Recruitment and employee administration
+
+HR
+
+1.5 Support and institutional services
+User role
+
+Main responsibility
+
+Portal
+
+ICT Administrator
+
+IT infrastructure and technical administration
+
+ICT
+
+ICT Support Officer
+
+Technical support and troubleshooting
+
+ICT Support
+
+Librarian
+
+Library and learning resources
+
+Library
+
+Assistant Librarian
+
+Library circulation and support
+
+Library
+
+Hostel Administrator
+
+Accommodation management
+
+Hostel
+
+Customer Care Officer
+
+Student and applicant support
+
+Support Centre
+
+Inventory/Asset Officer
+
+College equipment and asset management
+
+Inventory
+
+Alumni Officer
+
+Alumni relationships and records
+
+Alumni
+
+1.6 External and learner accounts
+User role
+
+Main responsibility
+
+Portal
+
+Student
+
+Learning, registration, assessments and fees
+
+Student
+
+Parent/Guardian
+
+Monitors linked student's progress
+
+Parent
+
+Applicant
+
+Applies for admission
+
+Applicant
+
+Alumni
+
+Accesses alumni services
+
+Alumni
+
+Guest
+
+Accesses approved public information
+
+Guest
+
+The system should support future roles without requiring a new dashboard architecture for every new job title.
+
+2. Portal structure and navigation
+Each role gets its own sidebar, dashboard widgets, action centre and notification centre.
+
+HI-TECH College Portal
+Illustrative account architecture
+
+Authentication & Account Security
+
+Login · OTP · Password · Session · Account status
+
+Role & Permission Engine
+
+RBAC + department + campus + assigned resource scope
+
+Executive Portal
+
+Academic Portal
+
+Registrar Portal
+
+Finance Portal
+
+HR Portal
+
+Lecturer Portal
+
+Examination Portal
+
+Student Portal
+
+Parent Portal
+
+Support Portals
+
+Shared Services
+
+Events · Documents · Notifications · Audit · Reports · APIs · Database
+
+2.1 Standard portal layout
+Every authenticated portal should contain:
+
+Component
+
+Purpose
+
+Dashboard
+
+Role-specific overview
+
+My Profile
+
+Personal and employment/student details
+
+My Tasks
+
+Assigned and pending responsibilities
+
+My Events
+
+Events relevant to the user
+
+Calendar
+
+Timetables, deadlines and meetings
+
+Notifications
+
+Alerts and updates
+
+Messages
+
+Internal communication
+
+Documents
+
+Uploads, shared files and approvals
+
+Reports
+
+Reports within authorized scope
+
+Help Centre
+
+Support, FAQs and ticket tracking
+
+Settings
+
+Password, sessions and preferences
+
+Logout
+
+Secure account termination
+
+The menu must be dynamically generated from permissions. Hiding a menu item is not sufficient security: the API must also reject unauthorized requests.
+
+3. Detailed portal features and user duties
+3.1 Super Administrator portal
+Platform-level authority
+End-to-End UI/UX Design System for · Built with Blink
+Purpose: Manage the technology platform rather than the daily academic and personal affairs of students.
+
+Dashboard
+
+Total registered accounts.
+
+Active and suspended accounts.
+
+Campus and department configuration.
+
+System health and API status.
+
+Database health and background jobs.
+
+Security incidents.
+
+Login activity.
+
+Failed authentication attempts.
+
+Storage consumption.
+
+Integration status.
+
+Platform-wide audit statistics.
+
+Main modules
+
+Module
+
+Features
+
+User management
+
+Create, activate, suspend and deactivate accounts
+
+Role management
+
+Create roles and assign role templates
+
+Permission management
+
+Configure module and action permissions
+
+Campus management
+
+Register and configure campuses
+
+Department configuration
+
+Manage institutional structures
+
+System configuration
+
+Global settings and feature flags
+
+Authentication
+
+JWT, OTP, sessions, MFA policies
+
+Integrations
+
+M-Pesa, email, SMS, AI and external APIs
+
+Security
+
+Security logs, access reviews and incidents
+
+Audit
+
+System-level audit records
+
+Database
+
+Health monitoring, migration status and backup monitoring
+
+Platform reports
+
+Usage, performance and security analytics
+
+Daily duties
+
+Monitor system availability.
+
+Review critical security alerts.
+
+Investigate failed integrations.
+
+Review privileged account activities.
+
+Resolve platform-level incidents.
+
+Restrictions
+
+The Super Administrator must not automatically have permission to:
+
+Change student examination marks.
+
+Approve student admissions.
+
+Receive or alter student fees.
+
+Edit HR employee appraisals.
+
+Access confidential counselling records.
+
+Change lecturer attendance records.
+
+Exceptional access must require explicit authorization, reason, expiry and an immutable audit record.
+
+3.2 Institution Administrator portal
+Volmint Technologies | University Management System (UMS) – Advanced University ERP Software
+Purpose: Manage day-to-day institutional operations.
+
+Dashboard
+
+Total students.
+
+New admissions.
+
+Active lecturers.
+
+Departments.
+
+Courses and programmes.
+
+Outstanding fees summary.
+
+Pending approvals.
+
+College events.
+
+Institutional announcements.
+
+Staff and student activity.
+
+Academic calendar.
+
+Modules and duties
+
+Manage student accounts and administrative records.
+
+Manage staff accounts and assignments.
+
+Create and manage departments.
+
+Configure programmes and courses.
+
+Manage classes and academic years.
+
+Oversee admissions operations.
+
+Manage college events and announcements.
+
+Monitor departmental performance.
+
+Review authorized finance summaries.
+
+Approve operational requests.
+
+Manage college documents.
+
+Generate institutional reports.
+
+Manage complaints and support escalations.
+
+Restrictions: The Administrator should not bypass examination moderation, finance authorization, HR confidentiality or other independent approval workflows.
+
+3.3 Principal portal
+MUNC | Business Management Suite
+Purpose: Institutional leadership, performance monitoring and authorized approvals.
+
+Dashboard widgets
+
+Student enrolment and retention.
+
+Student attendance.
+
+Lecturer attendance.
+
+Department performance.
+
+Examination performance.
+
+Fee collection summaries.
+
+Outstanding balances.
+
+Admission trends.
+
+Staff performance.
+
+Student discipline cases.
+
+College events.
+
+Pending approvals.
+
+Institutional risks.
+
+Principal's responsibilities
+
+Area
+
+Duties
+
+Academic
+
+Monitor teaching, learning and academic outcomes
+
+Staff
+
+Supervise senior staff and review performance
+
+Students
+
+Oversee discipline and welfare escalations
+
+Finance
+
+Review authorized financial reports and budgets
+
+Examinations
+
+Approve authorized examination and results workflows
+
+Admissions
+
+Review escalated admission decisions
+
+Events
+
+Approve official college activities
+
+Compliance
+
+Monitor TVETA and relevant examination-body requirements
+
+Strategy
+
+Set institutional targets and review performance
+
+Principal actions
+
+Approve or reject authorized requests.
+
+Return submissions for correction.
+
+Assign responsibilities to deputies.
+
+Schedule management meetings.
+
+Review HOD reports.
+
+Review examination statistics.
+
+Approve authorized institutional announcements.
+
+3.4 Deputy Principal portal
+Purpose: Support the Principal and manage delegated responsibilities.
+
+Features:
+
+Executive dashboard.
+
+Department performance.
+
+Staff supervision.
+
+Student discipline.
+
+Attendance monitoring.
+
+Event management.
+
+Operational reports.
+
+Assigned approvals.
+
+Principal's delegated tasks.
+
+Duty: prepare management reports, follow up on departmental issues and escalate unresolved cases.
+
+The Deputy Principal receives only explicitly delegated approval powers, with a defined scope and expiry.
+
+3.5 Academic Dean portal
+Purpose: Ensure academic quality and delivery.
+
+Features:
+
+Academic calendar.
+
+Course and programme monitoring.
+
+Unit allocation.
+
+Lecturer workload.
+
+Teaching coverage.
+
+Scheme-of-work monitoring.
+
+Lesson-plan monitoring.
+
+Academic progress.
+
+Student performance.
+
+Academic meetings.
+
+Curriculum review.
+
+Assessment schedules.
+
+Academic reports.
+
+Duties:
+
+Monitor completion of the syllabus.
+
+Review departmental teaching plans.
+
+Supervise academic standards.
+
+Investigate poor academic performance.
+
+Review HOD reports.
+
+Coordinate academic meetings.
+
+Recommend curriculum changes.
+
+3.6 Registrar portal
+Student Admissions System For Enrollment Planning/Application | Workday US
+Purpose: Maintain accurate student admissions, registration and academic records.
+
+Modules
+
+Applicant management.
+
+Application verification.
+
+Admission letters.
+
+Student registration.
+
+Student biodata.
+
+Course and unit registration.
+
+Student transfers.
+
+Deferment and resumption.
+
+Academic history.
+
+Examination eligibility records.
+
+Transcripts.
+
+Graduation eligibility.
+
+Certificates.
+
+Student status.
+
+Student document verification.
+
+Registrar workflow
+
+Application received
+Documents verified
+Admission reviewed
+Admission approved
+Student account activated
+Course registration completed
+Units assigned
+Academic records maintained
+Graduation eligibility verified
+Certificate or transcript processed
+Duties:
+
+Verify student records.
+
+Maintain registration accuracy.
+
+Prevent duplicate student registration numbers.
+
+Track missing student documents.
+
+Maintain academic progression.
+
+Issue authorized transcripts and letters.
+
+Coordinate graduation records.
+
+3.7 Head of Department portal
+Smart Education ERP Software For Colleges | CampusEdgePro
+Purpose: Manage the academic and administrative operations of an assigned department.
+
+Dashboard
+
+Department enrolment.
+
+Assigned lecturers.
+
+Department courses.
+
+Classes and units.
+
+Student attendance.
+
+Lecturer attendance.
+
+Missing lesson plans.
+
+Missing schemes of work.
+
+Records of work submitted.
+
+Outstanding assessments.
+
+Examination results.
+
+Department events.
+
+Student absence alerts.
+
+Pending departmental approvals.
+
+Features and duties
+
+Feature
+
+What the HOD does
+
+Staff allocation
+
+Assign lecturers to classes and units
+
+Workload
+
+Review teaching workload
+
+Lesson plans
+
+Review and approve submitted plans
+
+Schemes of work
+
+Monitor syllabus coverage
+
+Records of work
+
+Verify actual teaching progress
+
+Attendance
+
+Monitor lecturer and student attendance
+
+Student absence
+
+Investigate repeated or unexplained absence
+
+Assessments
+
+Monitor assessment completion
+
+Results
+
+Review departmental results
+
+Documents
+
+Approve departmental submissions
+
+Meetings
+
+Conduct departmental meetings
+
+Reports
+
+Submit periodic reports to Academic Dean
+
+Important absence workflow
+
+Lecturer marks attendance.
+
+System identifies an absent student.
+
+Student receives an absence notification.
+
+Student submits a reason or supporting document.
+
+Lecturer reviews the explanation.
+
+HOD receives unresolved or repeated absence alerts.
+
+Principal receives serious escalations according to policy.
+
+Resolution is recorded in the student's attendance history.
+
+3.8 Lecturer / Trainer portal
+Teachers Dashboard (LMS) by karthikeyan on Dribbble
+Purpose: Manage teaching, learning, assessment and assigned students.
+
+Main navigation
+
+Dashboard.
+
+My Classes.
+
+My Units.
+
+Timetable.
+
+Attendance.
+
+Lesson Plans.
+
+Schemes of Work.
+
+Records of Work.
+
+Teaching Notes.
+
+Learning Materials.
+
+Assignments.
+
+Practical Lessons.
+
+Assessments.
+
+Examinations.
+
+Results.
+
+Student Progress.
+
+Absence Management.
+
+Events.
+
+Messages.
+
+Documents.
+
+Reports.
+
+Daily responsibilities
+
+Activity
+
+Required action
+
+Before class
+
+Check timetable and prepare lesson
+
+Lesson preparation
+
+Upload lesson plan and learning materials
+
+Class attendance
+
+Record attendance
+
+Teaching
+
+Record topic and content taught
+
+Practical lessons
+
+Record software, equipment and activities used
+
+Student progress
+
+Track learner participation
+
+Absence
+
+Send absence alerts and review explanations
+
+Assignments
+
+Create, publish and mark assignments
+
+Assessments
+
+Prepare and mark assigned assessments
+
+End of lesson
+
+Update record of work
+
+End of week
+
+Review syllabus coverage
+
+End of term
+
+Submit academic performance report
+
+Mandatory teaching record properties
+
+Each teaching session must capture:
+
+Lecturer ID.
+
+Campus ID.
+
+Department ID.
+
+Programme ID.
+
+Class ID.
+
+Unit ID.
+
+Lesson date.
+
+Start and end time.
+
+Lesson topic.
+
+Subtopic.
+
+Learning objectives.
+
+Teaching methodology.
+
+Resources used.
+
+Practical activities.
+
+Students expected.
+
+Students present.
+
+Students absent.
+
+Students late.
+
+Homework assigned.
+
+Lesson status.
+
+Supporting documents.
+
+Lecturer comments.
+
+HOD review status.
+
+Document uploads
+
+Lesson plans.
+
+Schemes of work.
+
+Records of work.
+
+Lecture notes.
+
+PowerPoint presentations.
+
+Assignments.
+
+Practical instructions.
+
+Examination papers.
+
+Marking schemes.
+
+Supporting academic documents.
+
+A lecturer must only access assigned classes, units and students unless additional authority has been granted.
+
+3.9 Examination Officer portal
+AI Proctoring Software | CORE
+Purpose: Manage examination planning, execution, results and certification workflows.
+
+Features
+
+Examination calendar.
+
+Examination bodies.
+
+Examination centres.
+
+Examination sessions.
+
+Examination papers.
+
+Question bank.
+
+Exam templates.
+
+Candidate registration.
+
+Candidate eligibility.
+
+Hall tickets.
+
+Invigilator allocation.
+
+Examination rooms.
+
+Practical examination setup.
+
+Online examination monitoring.
+
+Examination incidents.
+
+Submission tracking.
+
+Marking allocation.
+
+Moderation.
+
+Results processing.
+
+Result approval.
+
+Certification eligibility.
+
+Certificates and transcripts.
+
+Examination analytics.
+
+Duties
+
+Prepare examination schedules.
+
+Verify candidate eligibility.
+
+Assign invigilators.
+
+Ensure examination papers are available.
+
+Monitor examination sessions.
+
+Investigate incidents.
+
+Coordinate marking.
+
+Track moderation.
+
+Prepare examination reports.
+
+Submit results for authorized approval.
+
+Exam result workflow
+
+Examination created
+Candidate eligibility confirmed
+Exam scheduled and published
+Candidate sits examination
+Answers submitted and saved
+Marking completed
+Internal moderation
+External moderation where required
+Authorized result approval
+Student result released
+Credit and progression updated
+Certification eligibility evaluated
+AI may assist in generating questions and marking eligible responses, but must not independently approve final results. Human approval and an auditable marking history are mandatory.
+
+3.10 Invigilator portal
+Purpose: Supervise assigned examination sessions.
+
+Features:
+
+Today's examination schedule.
+
+Assigned rooms.
+
+Assigned candidates.
+
+Candidate identity verification.
+
+QR examination attendance.
+
+Candidate check-in.
+
+Examination start monitoring.
+
+Live candidate status.
+
+Late arrivals.
+
+Disconnection reports.
+
+Incident reporting.
+
+Candidate warnings.
+
+Submission confirmation.
+
+Session termination requests.
+
+Examination handover report.
+
+Restrictions: Invigilators must not change examination questions, edit marks, approve results or view unrelated examination sessions.
+
+3.11 Examination Supervisor portal
+Features:
+
+Live examination sessions.
+
+Candidate status: registered, started, active, disconnected, submitted, expired.
+
+Candidate-specific session inspection.
+
+Security incident monitoring.
+
+Supervisor intervention.
+
+Authorized session termination with reasons.
+
+Manual submission and recovery.
+
+Exam attendance reports.
+
+Submission reports.
+
+Audit history.
+
+3.12 Finance Manager portal
+Fee Management for Colleges - College Fee Software | edumerge
+Purpose: Financial control and reporting.
+
+Features:
+
+Financial dashboard.
+
+Student fee structures.
+
+Fee invoices.
+
+Payment tracking.
+
+M-Pesa Daraja integration.
+
+Bank payments.
+
+Cash receipts.
+
+Credit notes.
+
+Refund requests.
+
+Student balances.
+
+Debtors.
+
+Fee statements.
+
+Reconciliation.
+
+Budget management.
+
+Expenditure.
+
+Supplier payments.
+
+Financial reports.
+
+Financial approvals.
+
+Audit records.
+
+Duties:
+
+Review financial performance.
+
+Monitor collections.
+
+Approve authorized transactions.
+
+Review reconciliations.
+
+Monitor outstanding balances.
+
+Prepare financial statements.
+
+Supervise cashiers and accountants.
+
+Submit management reports.
+
+3.13 Accountant portal
+Features:
+
+Chart of accounts.
+
+General ledger.
+
+Journals.
+
+Income and expenditure.
+
+Receivables.
+
+Payables.
+
+Bank reconciliation.
+
+Student fee statements.
+
+Financial adjustments.
+
+Budget reports.
+
+Financial period closing.
+
+Duty: maintain accurate accounting entries and supporting documents.
+
+3.14 Cashier portal
+Features:
+
+Student payment search.
+
+Invoice verification.
+
+M-Pesa transaction verification.
+
+Cash payment recording.
+
+Receipt generation.
+
+Receipt reprinting with audit trail.
+
+Daily cashbook.
+
+Shift opening and closing.
+
+Cash reconciliation.
+
+Payment confirmation.
+
+Restrictions:
+
+Cannot delete confirmed payments.
+
+Cannot approve their own refunds.
+
+Cannot change fee structures.
+
+Cannot alter ledger balances without authorized adjustment.
+
+3.15 HR Manager / HR Officer portal
+School LMS & ERP Software UAE | ENIT Solutions
+Features
+
+Employee records.
+
+Staff recruitment.
+
+Job applications.
+
+Interviews.
+
+Staff onboarding.
+
+Employment contracts.
+
+Staff identification.
+
+Departments and positions.
+
+Staff attendance.
+
+Leave applications.
+
+Leave approval.
+
+Staff appraisals.
+
+Training and development.
+
+Payroll records.
+
+Disciplinary cases.
+
+Employee documents.
+
+Exit management.
+
+HR reports.
+
+Duties
+
+Maintain staff records.
+
+Manage recruitment.
+
+Verify employment documentation.
+
+Track leave.
+
+Monitor staff attendance.
+
+Coordinate appraisals.
+
+Maintain confidential HR documents.
+
+Prepare HR reports.
+
+HR Officers receive assigned operational permissions; HR Managers receive broader HR approval powers.
+
+3.16 ICT Administrator / ICT Support portal
+Features:
+
+IT asset register.
+
+Computers and laptops.
+
+Printers.
+
+Network devices.
+
+Software licences.
+
+User technical support.
+
+Helpdesk tickets.
+
+Computer laboratory management.
+
+Internet monitoring.
+
+Device allocation.
+
+Repairs and maintenance.
+
+Software installations.
+
+Cybersecurity incidents.
+
+Backup monitoring.
+
+IT inventory.
+
+Maintenance schedules.
+
+Duties:
+
+Maintain college IT infrastructure.
+
+Troubleshoot technical issues.
+
+Maintain laboratory devices.
+
+Track equipment.
+
+Resolve support tickets.
+
+Escalate security incidents.
+
+Document repairs.
+
+Report infrastructure failures.
+
+3.17 Librarian / Assistant Librarian portal
+Features:
+
+Library catalogue.
+
+Book registration.
+
+Digital resources.
+
+Borrowing.
+
+Returns.
+
+Renewals.
+
+Reservations.
+
+Overdue books.
+
+Fines.
+
+Student borrowing history.
+
+Library membership.
+
+Resource uploads.
+
+Library events.
+
+Usage reports.
+
+Duties: maintain the collection, manage circulation, help students access resources and report missing or damaged materials.
+
+3.18 Student Affairs / Welfare portal
+Features:
+
+Student complaints.
+
+Counselling referrals.
+
+Discipline records.
+
+Student welfare cases.
+
+Clubs and societies.
+
+Student leadership.
+
+Elections.
+
+Student activities.
+
+Emergency reports.
+
+Accommodation referrals.
+
+Student support requests.
+
+Confidential counselling records must be separated from general disciplinary and academic records.
+
+3.19 Hostel Administrator portal
+Features:
+
+Hostel buildings.
+
+Rooms and beds.
+
+Room allocation.
+
+Hostel applications.
+
+Occupancy.
+
+Check-in and check-out.
+
+Hostel payments.
+
+Maintenance requests.
+
+Hostel complaints.
+
+Visitor records.
+
+Hostel events.
+
+Accommodation reports.
+
+3.20 Quality Assurance Officer portal
+Features:
+
+Academic audits.
+
+Lecturer evaluations.
+
+Lesson observation.
+
+Curriculum compliance.
+
+Assessment quality.
+
+Student feedback.
+
+Department reviews.
+
+Institutional inspections.
+
+Corrective action plans.
+
+Compliance reports.
+
+Duty: identify gaps, document evidence, assign corrective actions and monitor closure.
+
+3.21 Admissions Officer portal
+Features:
+
+Applications.
+
+Applicant documents.
+
+Admission requirements.
+
+Application verification.
+
+Interview schedules.
+
+Admission decisions.
+
+Offer letters.
+
+Applicant communication.
+
+Admission statistics.
+
+The Admissions Officer processes applications but cannot bypass authorized admission approvals.
+
+3.22 Parent / Guardian portal
+Home
+Features
+
+Linked student profile.
+
+Student attendance.
+
+Academic performance.
+
+Examination results.
+
+Fee balances.
+
+Payment receipts.
+
+Timetable.
+
+Assignments.
+
+Announcements.
+
+College events.
+
+Absence explanations.
+
+Messages to authorized staff.
+
+Support requests.
+
+Student progress reports.
+
+Duties
+
+Monitor the student's academic progress.
+
+Review attendance.
+
+Pay fees or review payment records.
+
+Respond to college notifications.
+
+Submit authorized absence explanations.
+
+Attend parent meetings.
+
+A parent must only see students who have formally linked and authorized their account. Parents cannot change marks, attendance, or official student records.
+
+3.23 Student portal
+Student Portal -Dashboard by Hadassah Ekanem on Dribbble
+Main sidebar
+
+Dashboard.
+
+My Profile.
+
+My Registration.
+
+My Courses.
+
+My Units.
+
+Timetable.
+
+Attendance.
+
+Learning Management System.
+
+Digital Library.
+
+Assignments.
+
+Practical Activities.
+
+Examination and Assessment.
+
+Results.
+
+Academic Progress.
+
+Fee Statement.
+
+Payments.
+
+Receipts.
+
+Documents.
+
+Absence Explanation.
+
+Events and Activities.
+
+Messages.
+
+Announcements.
+
+Student Welfare.
+
+Hostel, where applicable.
+
+Support Centre.
+
+Settings.
+
+Student duties
+
+Frequency
+
+Responsibility
+
+Daily
+
+Attend scheduled classes
+
+Daily
+
+Check timetable and announcements
+
+Daily
+
+Access learning materials
+
+Daily
+
+Submit assigned work
+
+When absent
+
+Submit an explanation
+
+Weekly
+
+Review academic progress
+
+Weekly
+
+Check assignments and deadlines
+
+Monthly
+
+Review fee statement
+
+Per term
+
+Complete academic registration
+
+Per term
+
+Complete required assessments
+
+Per examination
+
+Observe examination regulations
+
+Per term
+
+Review results and academic progression
+
+Student restrictions
+
+Cannot edit official marks.
+
+Cannot edit attendance records.
+
+Cannot access another student's private profile.
+
+Cannot view restricted examination questions before authorized release.
+
+Cannot generate official certificates without meeting eligibility requirements.
+
+3.24 Applicant and Guest portals
+Applicant portal
+
+Create account.
+
+Verify email.
+
+Complete admission application.
+
+Upload documents.
+
+Track application status.
+
+Receive admission decision.
+
+Download approved offer letter.
+
+Complete admission requirements.
+
+Guest portal
+
+View public courses.
+
+View departments.
+
+View college events.
+
+Register for public events.
+
+View admissions information.
+
+Contact the college.
+
+Access public downloads.
+
+Guests must not access authenticated student or staff records.
+
+4. Complete events and activities management
+Events must be visible according to the user's role, department, campus, programme and participation.
+
+The system should have a centralized Events Management module shared by all portals.
+
+SETTU V | Data Science Portfolio
+4.1 Types of events
+Event category
+
+Examples
+
+Main responsible user
+
+Academic
+
+Academic calendar, semester opening
+
+Academic Dean
+
+Classes
+
+Lectures, practical lessons
+
+Lecturer
+
+Examinations
+
+CATs, final exams, practical exams
+
+Examination Officer
+
+Staff
+
+Staff meetings, training
+
+HR / Principal
+
+Management
+
+Board and management meetings
+
+Principal
+
+Departmental
+
+Department meetings
+
+HOD
+
+Student
+
+Orientation, student activities
+
+Student Affairs
+
+College
+
+Graduation, open day, annual celebrations
+
+Administrator
+
+Admissions
+
+Interviews, applicant orientation
+
+Admissions Officer
+
+Finance
+
+Fee deadlines, financial meetings
+
+Finance Manager
+
+Library
+
+Reading weeks, library training
+
+Librarian
+
+ICT
+
+ICT training, system maintenance
+
+ICT Administrator
+
+Hostel
+
+Hostel meetings and activities
+
+Hostel Administrator
+
+External
+
+TVETA inspections, examination-body activities
+
+Authorized management
+
+Public
+
+Career fairs, workshops, seminars
+
+Events Administrator
+
+4.2 Event properties (database fields)
+Every event must have the following properties.
+
+Property
+
+Description
+
+event_id
+
+Unique event identifier
+
+event_code
+
+Human-readable event reference
+
+title
+
+Event title
+
+slug
+
+Unique event URL identifier
+
+description
+
+Full event description
+
+category
+
+Academic, social, staff, examination, etc.
+
+event_type
+
+Meeting, training, examination, workshop, etc.
+
+organizer_id
+
+User organizing the event
+
+responsible_department_id
+
+Responsible department
+
+campus_id
+
+Event campus
+
+venue_id
+
+Physical venue
+
+online_meeting_url
+
+Virtual meeting link
+
+start_datetime
+
+Starting date and time
+
+end_datetime
+
+Ending date and time
+
+timezone
+
+Event timezone
+
+registration_start
+
+Registration opening
+
+registration_deadline
+
+Registration closing
+
+capacity
+
+Maximum participants
+
+target_audience
+
+Intended participants
+
+visibility
+
+Public, college, department or restricted
+
+invitation_mode
+
+Open, invited or approval required
+
+registration_required
+
+Whether registration is required
+
+approval_required
+
+Whether approval is required
+
+approval_status
+
+Pending, approved, rejected
+
+status
+
+Draft, published, cancelled, completed
+
+poster_url
+
+Event poster
+
+attachment_ids
+
+Supporting documents
+
+registration_fields
+
+Additional registration information
+
+attendance_required
+
+Whether attendance is recorded
+
+attendance_method
+
+QR, manual or approved alternative
+
+reminder_settings
+
+Reminder schedule
+
+created_by
+
+Creator
+
+created_at
+
+Creation date
+
+updated_at
+
+Last modification
+
+published_at
+
+Publication date
+
+cancelled_reason
+
+Reason for cancellation
+
+audit_log_id
+
+Related audit record
+
+4.3 Event permissions by role
+Role
+
+Create
+
+Edit
+
+Approve
+
+Register
+
+View
+
+Super Admin
+
+Platform events
+
+Platform scope
+
+Configurable
+
+Yes
+
+Platform scope
+
+Administrator
+
+College events
+
+College scope
+
+Authorized events
+
+Yes
+
+College
+
+Principal
+
+Management events
+
+Own/delegated
+
+Authorized
+
+Yes
+
+College
+
+Academic Dean
+
+Academic events
+
+Academic
+
+Academic scope
+
+Yes
+
+Academic
+
+Registrar
+
+Registration events
+
+Own scope
+
+Authorized
+
+Yes
+
+Academic
+
+HOD
+
+Department events
+
+Department
+
+Delegated
+
+Yes
+
+Department
+
+Lecturer
+
+Class activities
+
+Own activities
+
+No general authority
+
+Yes
+
+Assigned classes
+
+Examination Officer
+
+Exam events
+
+Exam scope
+
+Authorized exam events
+
+Yes
+
+Examination scope
+
+Invigilator
+
+Incident/activity reports
+
+Own reports
+
+No
+
+Assigned sessions
+
+Assigned sessions
+
+Finance Manager
+
+Finance meetings
+
+Finance
+
+Delegated
+
+Yes
+
+Finance
+
+HR Manager
+
+Staff events
+
+HR
+
+Delegated
+
+Yes
+
+Staff scope
+
+Student
+
+No official event creation by default
+
+Own registration
+
+No
+
+Yes
+
+Relevant events
+
+Parent
+
+No
+
+Own registration
+
+No
+
+Yes
+
+Linked student events
+
+Guest
+
+No
+
+No
+
+No
+
+Public events
+
+Public events
+
+4.4 Event lifecycle
+Organizer creates event
+System validates venue, dates and permissions
+Event submitted for approval if required
+Authorized approver approves or rejects
+Event published to relevant portals
+Participants register
+Organizer reviews registrations
+Attendance recorded
+Event completed
+Attendance, feedback and reports generated
+4.5 Event registration features
+Each event should support:
+
+Individual registration.
+
+Group registration.
+
+Staff registration.
+
+Student registration.
+
+Guest registration.
+
+Registration approval.
+
+Registration cancellation.
+
+Waiting list.
+
+Registration confirmation.
+
+QR attendance.
+
+Participant list.
+
+Attendance report.
+
+Event feedback.
+
+Certificate of participation, where applicable.
+
+Important: A published event should have two separate views:
+
+Public event details: anyone with authorized visibility can see the description, date, venue and requirements.
+
+Organizer view: authorized users can see participants, registrations, attendance, supporting documents and event reports.
+
+5. Complete permission system
+The system should use granular permissions rather than relying on role names alone.
+
+5.1 Standard permission actions
+Every module should support these actions where applicable.
+
+Permission
+
+Meaning
+
+view
+
+View records
+
+view_own
+
+View own records
+
+view_assigned
+
+View assigned records
+
+view_department
+
+View department records
+
+view_campus
+
+View campus records
+
+view_all
+
+View all records within explicitly authorized scope
+
+create
+
+Create new records
+
+edit
+
+Edit records
+
+delete
+
+Delete eligible records
+
+archive
+
+Archive records
+
+restore
+
+Restore archived records
+
+submit
+
+Submit for review
+
+approve
+
+Approve submitted records
+
+reject
+
+Reject submitted records
+
+return
+
+Return for correction
+
+assign
+
+Assign responsibility
+
+publish
+
+Publish information
+
+export
+
+Export records
+
+download
+
+Download files
+
+upload
+
+Upload documents
+
+verify
+
+Verify records
+
+manage
+
+Manage module configuration
+
+override
+
+Perform exceptional authorized action
+
+audit
+
+View audit history
+
+Not every role should receive every action.
+
+5.2 Permission naming convention
+Use a consistent format:
+
+module.resource.action
+Examples:
+
+students.profile.view
+students.profile.view_own
+students.profile.create
+students.profile.edit
+students.profile.approve
+
+students.registration.view
+students.registration.submit
+students.registration.approve
+
+academic.attendance.view
+academic.attendance.mark
+academic.attendance.edit
+academic.attendance.verify
+
+academic.lesson_plan.create
+academic.lesson_plan.upload
+academic.lesson_plan.submit
+academic.lesson_plan.review
+academic.lesson_plan.approve
+
+examination.session.create
+examination.session.start
+examination.session.monitor
+examination.session.intervene
+examination.session.terminate
+
+examination.results.view
+examination.results.mark
+examination.results.moderate
+examination.results.approve
+examination.results.publish
+
+finance.invoice.view
+finance.payment.record
+finance.payment.verify
+finance.refund.request
+finance.refund.approve
+
+events.create
+events.edit
+events.approve
+events.publish
+events.register
+events.attendance.record
+
+documents.upload
+documents.view_own
+documents.view_assigned
+documents.approve
+documents.archive
+
+reports.view
+reports.export
+
+users.create
+users.suspend
+roles.manage
+permissions.assign
+audit_logs.view
+5.3 Authorization rules
+A user must pass all relevant checks before accessing a resource:
+
+Authorization decision
+
+Is the account active and authenticated?
+Does the user possess the required permission?
+Is the user assigned to the correct campus?
+Is the record within the user's department or organizational scope?
+Is the record assigned to the user, or is broader access explicitly granted?
+Does the workflow allow this action at its current status?
+Are any additional approval or separation-of-duty rules satisfied?
+All checks passed = Allow
+Any mandatory check failed = Deny
+5.4 Role hierarchy and authority
+The hierarchy below defines organizational supervision, not automatic access to every record.
+
+Institution governance
+
+Principal / authorized management
+
+Academic leadership
+
+Academic Dean
+
+Administration
+
+Administrator / Registrar
+
+Finance / HR
+
+Functional managers
+
+Examination
+
+Examination Officer
+
+Departmental leadership
+
+HOD / Deputy HOD
+
+Operational staff
+
+Lecturers · Trainers · Support officers
+
+Learners and external stakeholders
+
+Students · Parents · Applicants · Guests
+
+The Super Administrator operates a separate technical governance layer, not a superior academic approval position.
+
+6. Document Management System – all portals
+Every user must have a document centre, with a centralized institutional document repository.
+
+How to Upload Documents
+6.1 Document categories
+Document
+
+Owner / responsible role
+
+Admission documents
+
+Applicant / Admissions
+
+Student identification
+
+Student / Registrar
+
+Academic registration forms
+
+Student / Registrar
+
+Fee payment evidence
+
+Student / Finance
+
+Receipts and invoices
+
+Finance
+
+Lesson plans
+
+Lecturer
+
+Schemes of work
+
+Lecturer / HOD
+
+Records of work
+
+Lecturer / HOD
+
+Teaching notes
+
+Lecturer
+
+Assignment submissions
+
+Student
+
+Practical submissions
+
+Student
+
+Absence explanations
+
+Student / Lecturer
+
+Examination papers
+
+Examination Officer
+
+Marking schemes
+
+Examination Officer
+
+Examination scripts
+
+Candidate / Examiner
+
+Moderation reports
+
+Moderator
+
+Certificates
+
+Registrar / Examination Officer
+
+Employment contracts
+
+HR
+
+Leave applications
+
+Staff
+
+Staff appraisals
+
+HR / Supervisor
+
+Library resources
+
+Librarian
+
+Asset records
+
+ICT / Inventory
+
+Event documents
+
+Event organizer
+
+Audit reports
+
+Internal Auditor
+
+6.2 Document properties
+Each uploaded document must have:
+
+document_id
+document_code
+title
+description
+file_name
+file_extension
+mime_type
+file_size
+storage_key
+document_category
+document_type
+owner_user_id
+student_id
+staff_id
+department_id
+campus_id
+programme_id
+class_id
+unit_id
+related_event_id
+related_application_id
+related_payment_id
+related_exam_id
+visibility
+access_scope
+version_number
+approval_status
+uploaded_by
+uploaded_at
+reviewed_by
+reviewed_at
+approved_by
+approved_at
+expiry_date
+retention_policy_id
+checksum
+malware_scan_status
+archive_status
+The links to related records are optional and only populated when relevant.
+
+6.3 Document workflows
+Draft.
+
+Uploaded.
+
+Submitted.
+
+Under review.
+
+Returned for correction.
+
+Resubmitted.
+
+Approved.
+
+Rejected.
+
+Archived.
+
+Expired.
+
+Additional requirements:
+
+Version history.
+
+File integrity checks.
+
+Malware scanning.
+
+Access logs.
+
+Download restrictions.
+
+Expiry reminders.
+
+Retention policies.
+
+Secure sharing.
+
+Approval history.
+
+Important: A lecturer must not access HR contracts. A student must not access another student's admission documents. A parent must not access a student's confidential documents without the appropriate authorization.
+
+7. Other shared modules available across the portals
+Module
+
+Main users
+
+Core functionality
+
+Academic Management
+
+Dean, Registrar, HOD, Lecturer, Student
+
+Programmes, classes, units, progression
+
+Admissions
+
+Admissions, Registrar, Applicant
+
+Application and enrolment
+
+Student Information System
+
+Registrar, Student, Admin
+
+Student profiles and records
+
+LMS
+
+Lecturer, Student
+
+Materials, lessons, assignments
+
+Attendance
+
+Lecturer, Student, HOD
+
+Daily attendance and absence
+
+Examination
+
+Examination staff, Student
+
+CATs, exams and practical assessments
+
+Certification
+
+Registrar, Exam Officer
+
+Credits, certificates and verification
+
+Finance
+
+Finance, Student, Parent
+
+Fees, payments, receipts
+
+HR
+
+HR, Staff, Management
+
+Employee management
+
+Library
+
+Librarian, Student, Lecturer
+
+Physical and digital resources
+
+Hostel
+
+Hostel Admin, Student
+
+Accommodation
+
+Inventory
+
+ICT, Inventory Officer
+
+Assets and equipment
+
+Student Welfare
+
+Student Affairs, Student
+
+Welfare and support
+
+Communication
+
+All authorized users
+
+Messages and announcements
+
+Events
+
+All authorized users
+
+Calendar and registration
+
+Helpdesk
+
+ICT, Customer Care, All users
+
+Tickets and issue tracking
+
+Reports
+
+Authorized staff
+
+Statistics and exports
+
+AI Assistant
+
+Authorized users
+
+Context-aware learning and support
+
+Audit
+
+Auditor, authorized administrators
+
+Activity and compliance records
+
+Mobile Services
+
+Staff, Students, Parents
+
+Mobile portal access
+
+8. User account properties and profile management
+Each account should have a common user identity and a role-specific profile.
+
+8.1 Common account properties
+Property
+
+Description
+
+user_id
+
+Unique account identifier
+
+username
+
+Login username
+
+email
+
+Registered email
+
+phone_number
+
+Registered telephone
+
+password_hash
+
+Secure password hash
+
+account_status
+
+Pending, active, suspended, locked
+
+email_verified
+
+Email verification status
+
+phone_verified
+
+Phone verification status
+
+mfa_enabled
+
+Multi-factor authentication status
+
+last_login_at
+
+Last successful login
+
+last_activity_at
+
+Last recorded activity
+
+failed_login_attempts
+
+Failed login counter
+
+password_changed_at
+
+Last password change
+
+campus_id
+
+Default campus
+
+department_id
+
+Assigned department
+
+primary_role_id
+
+Primary role
+
+profile_photo
+
+Profile image
+
+created_at
+
+Account creation
+
+updated_at
+
+Last update
+
+created_by
+
+Account creator
+
+invited_by
+
+Inviting officer
+
+account_expiry
+
+Optional expiry
+
+deactivated_at
+
+Deactivation timestamp
+
+Passwords must never be stored in plain text.
+
+8.2 Student-specific properties
+student_id
+admission_number
+registration_number
+first_name
+middle_name
+last_name
+date_of_birth
+gender
+nationality
+email
+phone
+address
+emergency_contact
+guardian_id
+campus_id
+department_id
+programme_id
+class_id
+academic_year
+intake
+study_mode
+enrollment_date
+student_status
+academic_level
+registered_units
+completed_units
+earned_credits
+outstanding_credits
+academic_progression_status
+fee_account_id
+library_account_id
+hostel_account_id
+graduation_status
+Sensitive personal information should be separately protected and only exposed to roles with a legitimate purpose.
+
+8.3 Staff-specific properties
+staff_id
+employee_number
+first_name
+middle_name
+last_name
+email
+phone
+employment_type
+job_title
+role_id
+department_id
+campus_id
+supervisor_id
+employment_start_date
+contract_end_date
+employment_status
+assigned_courses
+assigned_units
+assigned_classes
+workload_hours
+qualification_records
+professional_certifications
+leave_balance
+attendance_status
+performance_status
+8.4 Parent-specific properties
+parent_id
+full_name
+email
+phone
+relationship
+linked_student_ids
+verified_identity_status
+communication_preferences
+notification_preferences
+portal_status
+A parent-child relationship must have an explicit verification and authorization workflow.
+
+9. Notifications and automated event triggers
+The platform must automatically generate notifications when an important activity occurs.
+
+9.1 Notification channels
+In-app notifications.
+
+Email.
+
+SMS.
+
+Push notifications.
+
+WhatsApp or Telegram integrations where configured.
+
+Mobile notification centre.
+
+9.2 Notification events by user
+Trigger/event
+
+Recipient
+
+New application submitted
+
+Admissions Officer
+
+Application requires correction
+
+Applicant
+
+Application approved
+
+Applicant, Registrar
+
+Student account activated
+
+Student
+
+Registration submitted
+
+Registrar
+
+Registration approved
+
+Student
+
+Unit assigned
+
+Student, Lecturer
+
+Timetable published
+
+Student, Lecturer
+
+Class approaching
+
+Assigned Student, Lecturer
+
+Lecturer absent
+
+HOD
+
+Student absent
+
+Student, Lecturer
+
+Repeated student absence
+
+HOD
+
+Serious unresolved absence
+
+Principal
+
+Absence explanation submitted
+
+Lecturer
+
+Lesson plan submitted
+
+HOD
+
+Lesson plan overdue
+
+Lecturer, HOD
+
+Scheme of work overdue
+
+Lecturer, HOD
+
+Record of work submitted
+
+HOD
+
+Assignment published
+
+Student
+
+Assignment deadline approaching
+
+Student
+
+Assignment marked
+
+Student
+
+Examination scheduled
+
+Candidate
+
+Exam eligibility issue
+
+Candidate, Registrar
+
+Exam session started
+
+Invigilator / Supervisor
+
+Candidate disconnected
+
+Examination Supervisor
+
+Examination incident reported
+
+Examination Officer
+
+Exam submitted
+
+Candidate, authorized examination staff
+
+Results moderated
+
+Examination Officer
+
+Results approved
+
+Candidate, Registrar
+
+Certificate available
+
+Student
+
+Invoice generated
+
+Student, Finance
+
+Payment received
+
+Student, Finance
+
+Payment failed
+
+Student, Finance
+
+Fee deadline approaching
+
+Student, authorized Parent
+
+Refund requested
+
+Finance Manager
+
+Leave application submitted
+
+HR / Supervisor
+
+Leave approved
+
+Employee
+
+Staff contract expiring
+
+HR
+
+Event published
+
+Relevant audience
+
+Event registration confirmed
+
+Participant
+
+Event changed or cancelled
+
+Registered participants
+
+Document returned for correction
+
+Document owner
+
+Support ticket assigned
+
+Support Officer
+
+Support ticket resolved
+
+Requester
+
+Account security alert
+
+Account owner / ICT Security
+
+9.3 Notification properties
+Every notification should have:
+
+notification_id
+recipient_user_id
+sender_user_id
+notification_type
+event_code
+title
+message
+related_module
+related_record_id
+priority
+channel
+delivery_status
+read_status
+created_at
+scheduled_at
+sent_at
+read_at
+action_url
+expiry_at
+Users should be able to configure non-critical notification preferences. Security alerts and essential institutional notices must follow mandatory delivery policies.
+
+9.4 Automated task engine
+Notifications should also create tasks where action is required.
+
+Examples:
+
+HOD must review a lecturer's lesson plan.
+
+Registrar must verify an admission document.
+
+Finance Manager must approve a refund.
+
+Student must submit an absence explanation.
+
+Lecturer must mark an assignment.
+
+Examination Officer must assign invigilators.
+
+HR must renew an expiring contract.
+
+Every task should have:
+
+Task reference.
+
+Title and description.
+
+Responsible user.
+
+Assigned department.
+
+Priority.
+
+Due date.
+
+Related record.
+
+Status.
+
+Escalation rule.
+
+Completion evidence.
+
+Approval status.
+
+10. Approval workflows and separation of duties
+No critical operation should rely on one person performing every step.
+
+Process
+
+Initiator
+
+Reviewer
+
+Final authority
+
+Student admission
+
+Admissions Officer
+
+Registrar
+
+Authorized admission approver
+
+Academic registration
+
+Student
+
+Registrar
+
+Registrar/delegate
+
+Lesson plan
+
+Lecturer
+
+HOD
+
+HOD
+
+Scheme of work
+
+Lecturer
+
+HOD
+
+HOD
+
+Department report
+
+HOD
+
+Academic Dean
+
+Academic Dean
+
+Examination schedule
+
+Examination Officer
+
+Academic leadership
+
+Authorized examination approver
+
+Examination marks
+
+Examiner
+
+Moderator
+
+Authorized result approver
+
+Fee refund
+
+Student / Finance
+
+Accountant
+
+Finance Manager / designated approver
+
+Staff leave
+
+Staff
+
+Supervisor / HR
+
+Authorized leave approver
+
+Recruitment
+
+HR
+
+Interview panel
+
+Authorized management
+
+Event publication
+
+Organizer
+
+Relevant approver
+
+Authorized event approver
+
+Document approval
+
+Document owner
+
+Assigned reviewer
+
+Designated approver
+
+Asset disposal
+
+Asset Officer
+
+Finance / Auditor
+
+Authorized management
+
+The system should support configurable approval limits, two-person approval, delegated authority and conflict-of-interest restrictions.
+
+10.1 Workflow properties
+Every approval request must store:
+
+workflow_id
+workflow_type
+reference_id
+initiated_by
+assigned_reviewer_id
+approval_level
+status
+submitted_at
+reviewed_at
+decision
+decision_reason
+comments
+delegated_by
+delegation_expiry
+previous_status
+new_status
+approved_by
+rejected_by
+audit_reference
+No user should approve their own restricted transaction or request where segregation of duties is required.
+
+11. Role-specific reports and performance accountability
+Each user must have reports that measure the responsibilities assigned to that role.
+
+Role
+
+Reports
+
+Super Administrator
+
+Security, system availability, integrations, user activity
+
+Administrator
+
+Enrolment, staff, institutional operations
+
+Principal
+
+Institutional performance, academic and financial KPIs
+
+Deputy Principal
+
+Operational performance and escalations
+
+Academic Dean
+
+Syllabus coverage, teaching and academic outcomes
+
+Registrar
+
+Admissions, registration, records and progression
+
+HOD
+
+Department, staff, attendance and student performance
+
+Lecturer
+
+Classes taught, attendance, assessments and syllabus coverage
+
+Examination Officer
+
+Exam sessions, incidents, marking and results
+
+Invigilator
+
+Examination attendance and incident reports
+
+Finance Manager
+
+Collections, expenditure, debtors and budgets
+
+Accountant
+
+Ledger, journals, reconciliation and financial statements
+
+Cashier
+
+Daily receipts, cashbook and shift reconciliation
+
+HR Manager
+
+Staffing, recruitment, leave and appraisals
+
+ICT Administrator
+
+IT assets, infrastructure and incidents
+
+Librarian
+
+Circulation, overdue resources and library usage
+
+Student Affairs
+
+Welfare, complaints and student engagement
+
+Student
+
+Attendance, academic performance and fee statements
+
+Parent
+
+Linked student's attendance, results and fees
+
+Quality Assurance
+
+Audits, inspections and corrective actions
+
+Reports must respect the user's access scope. Exporting a report must not bypass data access restrictions.
+
+12. Complete role-based portal visibility matrix
+This matrix defines the default scope of the main modules. ✓ means normal access within the role's authorized scope, △ means restricted or workflow-dependent access, and — means no default access.
+
+Module
+
+Admin
+
+Principal
+
+Registrar
+
+HOD
+
+Lecturer
+
+Finance
+
+HR
+
+Student
+
+Parent
+
+User administration
+
+✓
+
+△
+
+△
+
+△
+
+—
+
+—
+
+△
+
+—
+
+—
+
+Student records
+
+✓
+
+△
+
+✓
+
+△
+
+△
+
+△
+
+—
+
+△
+
+△
+
+Admissions
+
+✓
+
+△
+
+✓
+
+△
+
+—
+
+△
+
+—
+
+—
+
+—
+
+Academic registration
+
+✓
+
+△
+
+✓
+
+△
+
+△
+
+△
+
+—
+
+✓
+
+△
+
+Timetable
+
+✓
+
+✓
+
+△
+
+✓
+
+✓
+
+—
+
+—
+
+✓
+
+△
+
+Lesson plans
+
+✓
+
+△
+
+—
+
+✓
+
+✓
+
+—
+
+—
+
+△
+
+—
+
+Attendance
+
+✓
+
+✓
+
+△
+
+✓
+
+✓
+
+—
+
+△
+
+✓
+
+△
+
+LMS
+
+✓
+
+△
+
+—
+
+✓
+
+✓
+
+—
+
+—
+
+✓
+
+△
+
+Examinations
+
+△
+
+△
+
+△
+
+△
+
+△
+
+△
+
+—
+
+✓
+
+△
+
+Results
+
+△
+
+△
+
+✓
+
+△
+
+△
+
+—
+
+—
+
+✓
+
+△
+
+Finance
+
+△
+
+△
+
+△
+
+—
+
+—
+
+✓
+
+△
+
+△
+
+△
+
+HR
+
+△
+
+△
+
+—
+
+△
+
+—
+
+—
+
+✓
+
+—
+
+—
+
+Library
+
+✓
+
+△
+
+—
+
+△
+
+✓
+
+—
+
+—
+
+✓
+
+—
+
+Events
+
+✓
+
+✓
+
+△
+
+✓
+
+△
+
+△
+
+✓
+
+✓
+
+△
+
+Documents
+
+✓
+
+△
+
+✓
+
+△
+
+✓
+
+✓
+
+✓
+
+✓
+
+△
+
+Reports
+
+✓
+
+✓
+
+✓
+
+✓
+
+△
+
+✓
+
+✓
+
+△
+
+△
+
+System security
+
+△
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+—
+
+Audit records
+
+△
+
+△
+
+△
+
+△
+
+—
+
+△
+
+△
+
+—
+
+—
+
+The Super Administrator has separate platform security and configuration access. This matrix is a starting policy, not a replacement for the individual action permissions defined earlier.
+
+13. Account creation, activation and lifecycle
+The platform should have a controlled account lifecycle.
+
+Account created by authorized officer or invitation
+Role and organizational scope assigned
+Email or phone verification
+Account activation
+First login
+Mandatory password change
+Profile completion
+Portal access according to permissions
+Periodic access review
+Suspension, transfer or deactivation when necessary
+Account status values
+Status
+
+Meaning
+
+INVITED
+
+Invitation sent
+
+PENDING_VERIFICATION
+
+Waiting for verification
+
+PENDING_ACTIVATION
+
+Waiting for activation
+
+ACTIVE
+
+Account operational
+
+PASSWORD_RESET_REQUIRED
+
+Password reset required
+
+SUSPENDED
+
+Temporarily blocked
+
+LOCKED
+
+Security lock
+
+DEACTIVATED
+
+Account disabled
+
+EXPIRED
+
+Account validity expired
+
+When a staff member transfers departments, their old permissions should be reviewed and updated. When employment ends, their account must be disabled according to the offboarding policy.
+
+14. Multiple roles and delegated access
+The same user may have more than one role.
+
+Examples:
+
+A lecturer may also be a HOD.
+
+An ICT Administrator may also be an Institution Administrator.
+
+An Examination Officer may also be an authorized Examiner.
+
+A Principal may hold an authorized institutional approval role.
+
+The system should support:
+
+Primary role.
+
+Secondary roles.
+
+Temporary roles.
+
+Acting appointments.
+
+Delegated permissions.
+
+Role expiry.
+
+Department restrictions.
+
+Campus restrictions.
+
+Programme restrictions.
+
+Class and unit restrictions.
+
+Users must not gain unrestricted privileges simply because they hold multiple roles.
+
+For sensitive operations, permissions should be calculated from the exact resource and action, and conflicts between roles must be resolved using explicit policies.
+
+15. User portal interface requirements
+All portals must work on desktop, tablet and mobile.
+
+Adminator — The vanilla-JS admin dashboard for 2026
+Desktop portal
+
+Full sidebar, data tables, analytics, task management and advanced administration.
+
+MyEdu Ethiopia | School Management System, Student Information System & Online School Payments
+Mobile portal
+
+Compact navigation, cards, quick actions, notifications and mobile document uploads.
+
+Shared design standards
+Institutional colors: blue, red and cream.
+
+Clear, simple navigation.
+
+Responsive sidebar.
+
+Role-specific dashboard.
+
+Search and filters.
+
+Pagination.
+
+Status indicators.
+
+Confirmation dialogs.
+
+Loading and empty states.
+
+Success and error messages.
+
+Accessible forms.
+
+Document previews.
+
+Dark/light appearance support.
+
+Persistent user preferences.
+
+Notification counter.
+
+Breadcrumb navigation.
+
+Every portal should have five important dashboard areas
+Overview: What is happening?
+
+My responsibilities: What must I do?
+
+Pending approvals: What requires my decision?
+
+Upcoming events: What is scheduled?
+
+Recent activity: What has happened?
+
+The dashboard should prioritize urgent and overdue tasks rather than showing the same statistics to everyone.
+
+16. Technical implementation architecture
+The existing HI-TECH College architecture should be retained:
+
+apps/api – Express, TypeScript and Prisma.
+
+apps/web – React, Vite and TypeScript.
+
+apps/mobile – Expo and React Native.
+
+PostgreSQL – shared institutional database.
+
+JWT access tokens and rotating refresh sessions.
+
+Server-side RBAC and resource-level authorization.
+
+Centralized audit logging.
+
+16.1 Main database entities
+Entity
+
+Purpose
+
+User
+
+Common account
+
+Role
+
+User roles
+
+Permission
+
+Individual actions
+
+UserRole
+
+Multiple role assignment
+
+RolePermission
+
+Role permission mapping
+
+UserPermission
+
+Explicit user overrides
+
+Campus
+
+Campus structure
+
+Department
+
+Department structure
+
+UserScope
+
+Organizational access boundaries
+
+Student
+
+Student profile
+
+Staff
+
+Employee profile
+
+ParentGuardian
+
+Parent information
+
+ParentStudentLink
+
+Verified relationships
+
+Event
+
+College events
+
+EventRegistration
+
+Event participants
+
+EventAttendance
+
+Event attendance
+
+Notification
+
+User notifications
+
+Task
+
+User responsibilities
+
+Document
+
+Uploaded files
+
+DocumentVersion
+
+File version history
+
+ApprovalWorkflow
+
+Approval processes
+
+ApprovalStep
+
+Individual approval stages
+
+AuditLog
+
+Activity history
+
+LoginSession
+
+Authentication sessions
+
+Delegation
+
+Temporary authority
+
+Timetable
+
+Teaching schedule
+
+Attendance
+
+Academic attendance
+
+LessonPlan
+
+Lecturer lesson plans
+
+RecordOfWork
+
+Teaching records
+
+SchemeOfWork
+
+Syllabus plans
+
+ExaminationSession
+
+Examination sessions
+
+ExaminationResult
+
+Assessment results
+
+FinancialTransaction
+
+Financial records
+
+SupportTicket
+
+Helpdesk records
+
+These are logical entity requirements; they should be reconciled against the existing Prisma models before adding or modifying tables.
+
+16.2 API architecture
+Suggested API contracts:
+
+/api/auth/*
+/api/users/*
+/api/roles/*
+/api/permissions/*
+/api/access-scopes/*
+/api/campuses/*
+/api/departments/*
+
+/api/super-admin/*
+/api/admin/*
+/api/principal/*
+/api/registrar/*
+/api/academic/*
+/api/hod/*
+/api/lecturer/*
+/api/examinations/*
+/api/invigilator/*
+/api/finance/*
+/api/hr/*
+/api/ict/*
+/api/library/*
+/api/student/*
+/api/parent/*
+/api/admissions/*
+/api/events/*
+/api/documents/*
+/api/notifications/*
+/api/tasks/*
+/api/workflows/*
+/api/reports/*
+/api/audit/*
+Each API endpoint must enforce permission checks independently of the frontend.
+
+16.3 Frontend architecture
+Suggested web structure:
+
+apps/web/src/
+├── app/
+│   ├── routing/
+│   ├── providers/
+│   └── authorization/
+├── components/
+│   ├── layout/
+│   ├── navigation/
+│   ├── tables/
+│   ├── forms/
+│   ├── documents/
+│   ├── calendar/
+│   └── notifications/
+├── portals/
+│   ├── super-admin/
+│   ├── administrator/
+│   ├── principal/
+│   ├── deputy-principal/
+│   ├── academic/
+│   ├── registrar/
+│   ├── hod/
+│   ├── lecturer/
+│   ├── examination/
+│   ├── invigilator/
+│   ├── finance/
+│   ├── hr/
+│   ├── ict/
+│   ├── library/
+│   ├── student-affairs/
+│   ├── admissions/
+│   ├── student/
+│   ├── parent/
+│   └── guest/
+├── services/
+├── hooks/
+├── permissions/
+├── types/
+└── utils/
+A shared component library should power all dashboards, but the features and navigation must remain role-specific.
+
+17. Implementation checklist
+The following checklist should be used to verify that the platform is complete.
+
+Platform completion tracker
+
+0%
+0 of 95 checklist items marked complete
+
+1. Account and security
+
+0/8
+
+
+All roles configured
+
+Multiple roles supported
+
+Email and phone verification
+
+First-login password change
+
+MFA and session management
+
+Account suspension and expiry
+
+Department and campus scopes
+
+Delegated and temporary permissions
+2. Individual portals
+
+0/19
+
+
+Super Administrator
+
+Institution Administrator
+
+Principal and Deputy Principal
+
+Academic Dean and Deputy
+
+Registrar and Deputy
+
+HOD and Deputy HOD
+
+Lecturer and Trainer
+
+Examination Officer and Deputy
+
+Invigilator and Examination Supervisor
+
+Finance Manager, Accountant and Cashier
+
+HR Manager and HR Officer
+
+ICT Administrator and Support
+
+Librarian and Assistant Librarian
+
+Student Affairs and Hostel Administrator
+
+Admissions and Quality Assurance
+
+Internal Auditor and External Examiner
+
+Student
+
+Parent and Guardian
+
+Applicant, Alumni and Guest
+3. Academic operations
+
+0/12
+
+
+Admissions and student registration
+
+Programmes, courses and units
+
+Class and lecturer allocation
+
+Timetable management
+
+Lesson plans and schemes of work
+
+Records of work
+
+Daily teaching records
+
+Student attendance
+
+Absence explanations and escalations
+
+LMS and digital learning materials
+
+Assignments and practical work
+
+Academic progression and credits
+4. Examinations and certification
+
+0/11
+
+
+Question bank and exam generation
+
+Examination scheduling
+
+Candidate eligibility
+
+Invigilator allocation
+
+Live examination monitoring
+
+Auto-save and submission recovery
+
+Incident management
+
+Automatic and manual marking
+
+Moderation and approval
+
+Result publication
+
+Certificates and transcripts
+5. Finance and HR
+
+0/10
+
+
+Fee structures and invoicing
+
+M-Pesa and bank payments
+
+Receipts and reconciliation
+
+Refund approvals
+
+Accounting and budgets
+
+Employee recruitment
+
+Staff contracts
+
+Leave and attendance
+
+Payroll records
+
+Staff appraisal
+6. Events and documents
+
+0/11
+
+
+College-wide event calendar
+
+Departmental events
+
+Event registration
+
+Event approvals
+
+QR attendance
+
+Event feedback and reports
+
+Central document repository
+
+Document upload and versioning
+
+Document approvals
+
+Secure document sharing
+
+Retention and archive management
+7. Shared services
+
+0/12
+
+
+Notifications and reminders
+
+Task and escalation engine
+
+Internal messaging
+
+Support tickets
+
+Library management
+
+Hostel management
+
+Inventory and assets
+
+Reports and analytics
+
+Audit logs
+
+Mobile portal
+
+Responsive desktop portal
+
+AI assistant and integrations
+8. Testing and deployment
+
+0/12
+
+
+Permission tests for every role
+
+Cross-campus access tests
+
+Cross-department access tests
+
+API security tests
+
+Approval workflow tests
+
+File access and upload tests
+
+Mobile responsiveness tests
+
+Database migrations
+
+API TypeScript checks
+
+Web TypeScript checks
+
+Mobile TypeScript checks
+
+Backup and recovery tests
+Checklist selections are interactive in this conversation.
+
+18. Recommended implementation phases
+I recommend implementing the specification in controlled slices rather than creating every portal independently.
+
+Phase
+
+Implementation
+
+Deliverable
+
+1
+
+Role and permission engine
+
+Complete authorization foundation
+
+2
+
+User accounts and profiles
+
+All account types
+
+3
+
+Shared portal layout
+
+Responsive navigation and dashboards
+
+4
+
+Super Admin and Administrator
+
+Platform and institution administration
+
+5
+
+Principal, Deputy and Academic Dean
+
+Executive and academic management
+
+6
+
+Registrar and Admissions
+
+Admissions and student records
+
+7
+
+HOD and Lecturer
+
+Teaching and departmental operations
+
+8
+
+Student and Parent
+
+Learner and guardian portals
+
+9
+
+Examination and Invigilator
+
+Examination lifecycle
+
+10
+
+Finance
+
+Fees, accounting and M-Pesa
+
+11
+
+HR
+
+Staff management
+
+12
+
+ICT, Library and Inventory
+
+Institutional support
+
+13
+
+Student Affairs and Hostel
+
+Student services
+
+14
+
+Events and Communication
+
+Events, registration and notifications
+
+15
+
+Document Management
+
+Central file repository and approvals
+
+16
+
+Reports and Audit
+
+Analytics and accountability
+
+17
+
+Mobile applications
+
+Staff, student and parent experiences
+
+18
+
+Security and acceptance testing
+
+Production-readiness verification
+
+19. Final system requirements
+The following rules should be mandatory across the entire HI-TECH College platform:
+
+Every account has a defined role and permissions.
+
+Every role has its own dashboard and relevant navigation.
+
+Every user has clearly defined duties and assigned tasks.
+
+Every event has an organizer, audience, date, status and access policy.
+
+Every important action generates an audit record.
+
+Every document has an owner and access policy.
+
+Every approval has an authorized decision-maker.
+
+Every student and staff record belongs to the correct campus and department.
+
+Every user sees only records within their authorized scope.
+
+Every notification is delivered to the relevant users.
+
+Every critical workflow has status tracking.
+
+Every sensitive operation has appropriate authorization and audit history.
+
+Every portal works on desktop and mobile.
+
+No user can bypass backend permissions by changing a URL or frontend state.
+
+Existing database models and implemented features must be inspected before introducing duplicate functionality.
+
+The final outcome: One integrated college platform, with individual portals for every user, shared institutional services, clearly defined duties, granular permissions, automated events, approval workflows and complete accountability.
+
+Next implementation deliverable
+The next step should be to turn this specification into the actual implementation for hitech-college-website/apps, beginning with the Role & Permission Engine.
+
+That implementation should include:
+
+Complete role and permission seed data.
+
+Prisma model reconciliation.
+
+Backend authorization middleware.
+
+User-role and scope assignment.
+
+Permission-aware sidebar generation.
+
+Role-specific dashboard routing.
+
+API protection tests.
+
+Sample accounts for testing every portal.
+
+The implementation must inspect the existing source first, preserve the existing 135-model Prisma architecture where applicable, avoid duplicate modules, and run migrations and TypeScript checks after each implementation slice.
+
+next
+Phase 1 – Role & Permission Engine
+Implementation slice 1 of 18 Backend foundation
+
+We will now build the foundation that controls access across every HI-TECH College portal.
+
+Objective: One user account can have multiple roles, each role has specific permissions, and access is restricted by campus, department, class and assigned responsibilities.
+
+1. Features to implement
+Component
+
+Function
+
+Role management
+
+Create, edit and assign roles
+
+Permission management
+
+Manage individual permissions
+
+User-role assignment
+
+Assign multiple roles to one user
+
+Permission inheritance
+
+Resolve permissions from assigned roles
+
+User overrides
+
+Grant or revoke specific permissions
+
+Department scope
+
+Restrict access to assigned departments
+
+Campus scope
+
+Restrict access to assigned campuses
+
+Resource scope
+
+Restrict access to assigned students, classes and units
+
+Temporary access
+
+Support acting appointments and expiry
+
+Delegation
+
+Assign temporary authority
+
+Audit logging
+
+Record permission and role changes
+
+2. Permission engine architecture
+User Login
+Authentication
+Load User Roles
+Load Permissions
+Resolve User Overrides
+Resolve Campus andDepartment Scope
+Check Resource Ownership
+Authorized?
+Allow Request
+403 Forbidden
+Record Audit Event
+Yes
+No
+3. Default role codes
+export const SYSTEM_ROLES = [
+  "SUPER_ADMIN",
+  "INSTITUTION_ADMIN",
+  "PRINCIPAL",
+  "DEPUTY_PRINCIPAL",
+  "ACADEMIC_DEAN",
+  "DEPUTY_ACADEMIC_DEAN",
+  "REGISTRAR",
+  "DEPUTY_REGISTRAR",
+  "HOD",
+  "DEPUTY_HOD",
+  "LECTURER",
+  "TRAINER",
+  "EXAMINATION_OFFICER",
+  "DEPUTY_EXAMINATION_OFFICER",
+  "INVIGILATOR",
+  "EXAMINER",
+  "MODERATOR",
+  "FINANCE_MANAGER",
+  "ACCOUNTANT",
+  "CASHIER",
+  "HR_MANAGER",
+  "HR_OFFICER",
+  "ICT_ADMIN",
+  "ICT_SUPPORT",
+  "LIBRARIAN",
+  "ASSISTANT_LIBRARIAN",
+  "STUDENT_AFFAIRS",
+  "HOSTEL_ADMIN",
+  "ADMISSIONS_OFFICER",
+  "QUALITY_ASSURANCE",
+  "INTERNAL_AUDITOR",
+  "EXTERNAL_EXAMINER",
+  "STUDENT",
+  "PARENT",
+  "APPLICANT",
+  "ALUMNI",
+  "GUEST"
+] as const;
+
+4. Permission definitions
+export const PERMISSION_ACTIONS = [
+  "view",
+  "view_own",
+  "view_assigned",
+  "view_department",
+  "view_campus",
+  "view_all",
+  "create",
+  "edit",
+  "delete",
+  "archive",
+  "restore",
+  "submit",
+  "approve",
+  "reject",
+  "return",
+  "assign",
+  "publish",
+  "export",
+  "download",
+  "upload",
+  "verify",
+  "manage",
+  "override",
+  "audit"
+] as const;
+
+export const PERMISSION_MODULES = [
+  "users",
+  "roles",
+  "permissions",
+  "students",
+  "staff",
+  "admissions",
+  "registration",
+  "academic",
+  "attendance",
+  "timetable",
+  "lesson_plans",
+  "schemes_of_work",
+  "records_of_work",
+  "assignments",
+  "examinations",
+  "results",
+  "certification",
+  "finance",
+  "payments",
+  "refunds",
+  "hr",
+  "library",
+  "hostel",
+  "inventory",
+  "events",
+  "documents",
+  "notifications",
+  "reports",
+  "audit_logs",
+  "settings"
+] as const;
+
+5. Important authorization rules
+A lecturer can only access assigned classes and units.
+
+An HOD can access their department's records.
+
+A Registrar can manage authorized student records.
+
+A cashier can record payments but cannot approve their own refunds.
+
+A student can only access their own academic records.
+
+A parent can only access verified linked students.
+
+An invigilator can only access assigned examination sessions.
+
+A Principal can access authorized institutional reports.
+
+A Super Administrator manages technical configuration, not unrestricted academic or financial operations.
+
+6. Source files required before implementation
+I need to inspect the existing project before writing Prisma migrations and authorization middleware. This prevents duplicating your existing 135-model database architecture or breaking existing authentication.
+
+Upload the current project source or these specific files:
+
+apps/api/prisma/schema.prisma
+
+apps/api/prisma/seed.ts (if present)
+
+Existing authentication middleware.
+
+Existing user and role routes.
+
+Existing authorization middleware.
+
+apps/api/package.json
+
+Relevant user and role frontend files from apps/web.
+
+You can upload the project ZIP instead of individual files. I will inspect the existing implementation first.
+
+Next deliverable: Complete working Role & Permission Engine, including Prisma changes, seed data for all roles, API endpoints, authorization middleware, role assignment UI and automated permission tests.
+
+As this conversation gets longer, ChatGPT may lose track of details from earlier in the chat. Upgrade for more context in every conversation.
+
+
+
+

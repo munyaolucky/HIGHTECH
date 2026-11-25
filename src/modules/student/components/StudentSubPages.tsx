@@ -59,10 +59,12 @@ import ExamClearancePage from '../pages/exams/ExamClearancePage';
 import AssessmentHistoryPage from '../pages/exams/AssessmentHistoryPage';
 import AppealsPage from '../pages/exams/AppealsPage';
 import AcademicProgressPage from '../pages/exams/AcademicProgressPage';
+import CandidateCertificationPortal from '../pages/exams/CandidateCertificationPortal';
 import { isStudentFeesSection, StudentFeesRouteView } from '../fees/feesRoutes';
 import type { ExamSession } from '../exams/secure/examTypes';
 import StudentDmsWorkspace from './StudentDmsWorkspace';
 import UniversalDocumentUploader from '../../documents/UniversalDocumentUploader';
+import AccountRoleWorkspace from '../../../components/portal/AccountRoleWorkspace';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
@@ -151,6 +153,10 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
   'exams-progress': {
     title: 'Certificates & Academic Progress',
     subtitle: 'Cumulative GPA, semester credits earned, and verified institutional certificates',
+  },
+  'certification-hub': {
+    title: 'Certification Hub & Exam Credits',
+    subtitle: 'ICDL & TVET assigned modules, pre-flight exam readiness, credit wallet, and QR digital certificates',
   },
   results: {
     title: 'Results & Grades',
@@ -243,6 +249,10 @@ const SECTION_META: Record<Exclude<StudentPortalSection, 'dashboard'>, { title: 
   settings: {
     title: 'Account Security & Guardian Linking',
     subtitle: 'Manage MFA, password rotation, revocable parent consent links, and security history',
+  },
+  'role-capabilities': {
+    title: 'My Duties, Events, Properties & Permissions',
+    subtitle: 'Complete overview of your student duties, live portal events, identity properties, and authorized scopes',
   },
   'college-information': {
     title: 'HI-TECH College Campus Directory',
@@ -478,6 +488,17 @@ export default function StudentSubPages({
   }
   if (activeSection === 'exams-progress' || activeSection === 'academic-progress') {
     return <AcademicProgressPage {...examWorkspaceProps} />;
+  }
+  if (activeSection === 'certification-hub') {
+    return (
+      <div className="space-y-5">
+        {SectionShellHeader()}
+        <CandidateCertificationPortal
+          onNotify={onNotify}
+          onLaunchSecureExam={onLaunchSecureExam}
+        />
+      </div>
+    );
   }
 
   if (activeSection === 'mobile-companion') {
@@ -2550,6 +2571,19 @@ export default function StudentSubPages({
             onRefresh();
           }}
           onCancel={() => setRevokeGuardianTarget(null)}
+        />
+      </div>
+    );
+  }
+
+  if (activeSection === 'role-capabilities') {
+    return (
+      <div className="space-y-5">
+        {SectionShellHeader()}
+        <AccountRoleWorkspace
+          roleOverride="STUDENT"
+          onNavigateStudentSection={(section) => onNavigate(section as StudentPortalSection)}
+          onSwitchPortal={(portal) => onSwitchPortal?.(portal)}
         />
       </div>
     );

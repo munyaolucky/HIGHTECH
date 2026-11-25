@@ -73,21 +73,30 @@ export default function AccountSecurityPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [emailSecurity, setEmailSecurity] = useState<{
+    emailVerified: boolean;
+    emailVerifiedAt: string | null;
+    passwordChangedAt: string | null;
+  } | null>(null);
+
   const loadSecurityData = useCallback(async () => {
     try {
       setLoading(true);
-      const [mfaRes, sesRes, histRes] = await Promise.all([
+      const [mfaRes, sesRes, histRes, secRes] = await Promise.all([
         fetch('/api/mfa/status', { credentials: 'include' }),
         fetch('/api/account/sessions', { credentials: 'include' }),
         fetch('/api/account/login-history', { credentials: 'include' }),
+        fetch('/api/auth/security/status', { credentials: 'include' }),
       ]);
       const mfaJson = await mfaRes.json().catch(() => null);
       const sesJson = await sesRes.json().catch(() => null);
       const histJson = await histRes.json().catch(() => null);
+      const secJson = await secRes.json().catch(() => null);
 
       if (mfaJson?.success) setMfaStatus(mfaJson.data);
       if (sesJson?.success) setSessions(sesJson.data);
       if (histJson?.success) setLoginHistory(histJson.data);
+      if (secJson?.success) setEmailSecurity(secJson.data);
     } finally {
       setLoading(false);
     }
@@ -364,14 +373,21 @@ export default function AccountSecurityPage() {
 
         {/* Change Password */}
         <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
-              <KeyRound size={18} className="text-[#1769AA]" />
-              Update Account Password
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Strong password policy required (min 8 chars, upper &amp; lowercase, digit, symbol). Changing your password automatically signs out other sessions.
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <h2 className="text-base font-bold text-[#102D50] dark:text-white flex items-center gap-2">
+                <KeyRound size={18} className="text-[#1769AA]" />
+                Update Account Password
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Strong password policy required (min 12 chars, upper &amp; lowercase, digit, symbol). Changing your password automatically signs out other sessions.
+              </p>
+            </div>
+            {emailSecurity && (
+              <StaffStatusTag
+                status={emailSecurity.emailVerified ? 'VERIFIED' : 'PENDING'}
+              />
+            )}
           </div>
           <form onSubmit={handleChangePassword} className="space-y-3">
             <input
@@ -386,9 +402,9 @@ export default function AccountSecurityPage() {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New strong password"
+              placeholder="New strong password (min 12 chars)"
               required
-              minLength={8}
+              minLength={12}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs"
             />
             <input
@@ -397,6 +413,7 @@ export default function AccountSecurityPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
               required
+              minLength={12}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs"
             />
             <StaffButton type="submit">

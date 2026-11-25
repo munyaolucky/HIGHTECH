@@ -145,7 +145,7 @@ function buildStaffActor(role: string): DocumentActor {
   };
 }
 
-function buildStudentActor(): DocumentActor {
+function buildStudentActor(): DocumentActor & { registrationNumber: string } {
   return {
     id: 'stu-test-001',
     employeeNumber: 'HCA/2026/CS/0101',
@@ -182,6 +182,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'Double Ext Slip',
         category: 'FEE_STATEMENT',
+        recipientLabel: 'Finance Office',
         fileName: 'slip.pdf.exe',
         mimeType: 'application/pdf',
         sizeBytes: 120,
@@ -196,6 +197,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'Spoofed EXE as PDF',
         category: 'FEE_STATEMENT',
+        recipientLabel: 'Finance Office',
         fileName: 'receipt.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 64,
@@ -210,6 +212,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'Plain Text Disguised as PDF',
         category: 'FEE_STATEMENT',
+        recipientLabel: 'Finance Office',
         fileName: 'fake.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 40,
@@ -225,6 +228,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'EICAR Test File',
         category: 'ASSIGNMENT_SUBMISSION',
+        recipientLabel: 'Course Lecturer',
         fileName: 'notes.txt',
         mimeType: 'text/plain',
         sizeBytes: eicar.length,
@@ -239,6 +243,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'XSS Payload File',
         category: 'ASSIGNMENT_SUBMISSION',
+        recipientLabel: 'Course Lecturer',
         fileName: 'xss.txt',
         mimeType: 'text/plain',
         sizeBytes: 42,
@@ -262,6 +267,7 @@ test('DMS security quarantine blocks double extensions, spoofed magic bytes, EIC
       documentsService.uploadDocument(student, {
         title: 'Oversized Fee Slip',
         category: 'FEE_STATEMENT',
+        recipientLabel: 'Finance Office',
         fileName: 'oversized.pdf',
         mimeType: 'application/pdf',
         sizeBytes: oversized.byteLength,
@@ -285,6 +291,7 @@ test('DMS enforces private storage outside public/, blocks path traversal, and v
     title: 'OOP Lecture Handout',
     category: 'LEARNING_MATERIAL',
     confidentiality: 'INTERNAL',
+    recipientLabel: 'Software Engineering Students',
     moduleKey: 'LECTURER',
     fileName: 'oop-week1.pdf',
     mimeType: 'application/pdf',
@@ -343,6 +350,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
   const assignment = documentsService.uploadDocument(student, {
     title: 'Database Systems Assignment 1',
     category: 'ASSIGNMENT_SUBMISSION',
+    recipientLabel: 'Database Systems Lecturer',
     moduleKey: 'STUDENT',
     fileName: 'db-assign1.pdf',
     mimeType: 'application/pdf',
@@ -357,6 +365,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
       documentsService.uploadDocument(student, {
         title: 'Unauthorized Exam Paper Upload',
         category: 'EXAM_SCHEDULE',
+        recipientLabel: 'Examinations Office',
         fileName: 'exam.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 90,
@@ -369,6 +378,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
       documentsService.uploadDocument(student, {
         title: 'Unauthorized HR Upload',
         category: 'EMPLOYMENT_CONTRACT',
+        recipientLabel: 'HR Office',
         fileName: 'contract.pdf',
         mimeType: 'application/pdf',
         sizeBytes: 90,
@@ -382,6 +392,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
     title: 'CS302 Final Examination Paper (Draft)',
     category: 'EXAM_SCHEDULE',
     confidentiality: 'RESTRICTED',
+    recipientLabel: 'Examinations Board',
     moduleKey: 'EXAMINATION',
     fileName: 'cs302-final.pdf',
     mimeType: 'application/pdf',
@@ -409,6 +420,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
     title: 'Confidential Counselling Referral',
     category: 'STUDENT_WELFARE_CONFIDENTIAL',
     confidentiality: 'RESTRICTED',
+    recipientLabel: 'Student Affairs & Welfare',
     moduleKey: 'STUDENT',
     fileName: 'welfare-note.pdf',
     mimeType: 'application/pdf',
@@ -421,6 +433,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
     title: 'Clinical Medical Sick-Off Note',
     category: 'ABSENCE_EXPLANATION',
     confidentiality: 'RESTRICTED',
+    recipientLabel: 'Academic Registrar',
     moduleKey: 'STUDENT',
     fileName: 'medical-note.pdf',
     mimeType: 'application/pdf',
@@ -433,6 +446,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
     title: 'Confidential Lecturer Employment Contract',
     category: 'EMPLOYMENT_CONTRACT',
     confidentiality: 'RESTRICTED',
+    recipientLabel: 'Human Resources Registry',
     moduleKey: 'HR',
     fileName: 'lecturer-contract.pdf',
     mimeType: 'application/pdf',
@@ -477,6 +491,7 @@ test('DMS enforces RBAC, unpublished exam isolation, Super Admin confidentiality
   const lessonPlan = documentsService.uploadDocument(lecturer, {
     title: 'Week 4 Lesson Plan',
     category: 'LESSON_PLAN',
+    recipientLabel: 'Head of Department',
     moduleKey: 'LECTURER',
     fileName: 'week4-plan.pdf',
     mimeType: 'application/pdf',
@@ -500,23 +515,26 @@ test('Absence workflow bridge updates studentAbsenceCases to DOCUMENT_SUBMITTED 
 
   db.studentAbsenceCases.unshift({
     id: caseId,
-    studentRegNo: student.registrationNumber!,
+    attendanceSessionId: 'attses-dms-test',
+    attendanceRecordId: 'attrec-dms-test',
+    lessonDeliveryId: null,
+    studentRegNo: student.registrationNumber,
     studentName: student.fullName,
-    courseCode: 'CS-301',
-    courseTitle: 'Distributed Systems',
     departmentId: 'dept-computing',
-    missedLessonsCount: 3,
-    absencePercentage: 18,
+    departmentName: 'School of Computing & ICT',
+    courseName: 'Diploma in ICT',
+    unitCode: 'CS-301',
+    unitTitle: 'Distributed Systems',
+    classGroupId: 'cg-dict-2026',
+    lecturerId: 'stf-lect-001',
+    lecturerName: 'Eng. Peter Kamau',
+    absenceDate: now.slice(0, 10),
+    consecutiveAbsenceCount: 3,
+    unitAbsenceCount: 3,
+    termAbsenceCount: 4,
     status: 'AWAITING_EXPLANATION',
-    explanationText: null,
-    explanationCategory: null,
-    submittedAt: null,
-    hodDecisionBy: null,
-    hodDecisionNote: null,
-    hodDecidedAt: null,
-    principalDecisionBy: null,
-    principalDecisionNote: null,
-    principalDecidedAt: null,
+    escalationLevel: 'NONE',
+    assignedReviewerRole: 'HOD',
     createdAt: now,
     updatedAt: now,
   });
@@ -526,6 +544,7 @@ test('Absence workflow bridge updates studentAbsenceCases to DOCUMENT_SUBMITTED 
     title: 'Hospital Outpatient Medical Note',
     category: 'ABSENCE_EXPLANATION',
     confidentiality: 'RESTRICTED',
+    recipientLabel: 'Academic Registrar',
     moduleKey: 'STUDENT',
     relatedEntityType: 'ABSENCE_CASE',
     relatedEntityId: caseId,
@@ -605,9 +624,9 @@ test('SSR and static source hygiene for unified DMS components', () => {
   const adminUser = buildStaffActor('ADMIN');
   const hubHtml = renderToStaticMarkup(
     React.createElement(PortalShellProvider, {
-      currentRole: 'admin',
+      currentRole: 'staff',
       children: React.createElement(DocumentManagementPortal, {
-        user: adminUser as Parameters<typeof DocumentManagementPortal>[0]['user'],
+        user: adminUser as unknown as Parameters<typeof DocumentManagementPortal>[0]['user'],
         initialTab: 'config',
       }),
     })

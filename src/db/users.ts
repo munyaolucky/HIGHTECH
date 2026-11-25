@@ -12,6 +12,8 @@ export async function getOrCreateUser(
     accountStatus?: string;
     passwordHash?: string | null;
     mustChangePassword?: boolean;
+    emailVerifiedAt?: Date | null;
+    emailVerificationRequired?: boolean;
     requiresProfileCompletion?: boolean;
     campusId?: string | null;
     departmentId?: string | null;
@@ -34,6 +36,14 @@ export async function getOrCreateUser(
           primaryRole: defaults?.primaryRole ?? existingByEmail[0].primaryRole,
           registrationNumber:
             defaults?.registrationNumber ?? existingByEmail[0].registrationNumber,
+          emailVerifiedAt:
+            defaults?.emailVerifiedAt !== undefined
+              ? existingByEmail[0].emailVerifiedAt ?? defaults.emailVerifiedAt
+              : existingByEmail[0].emailVerifiedAt,
+          emailVerificationRequired:
+            defaults?.emailVerifiedAt
+              ? false
+              : existingByEmail[0].emailVerificationRequired,
           updatedAt: new Date(),
         })
         .where(eq(users.id, existingByEmail[0].id))
@@ -52,6 +62,8 @@ export async function getOrCreateUser(
         accountStatus: defaults?.accountStatus ?? 'ACTIVE',
         passwordHash: defaults?.passwordHash ?? null,
         mustChangePassword: defaults?.mustChangePassword ?? false,
+        emailVerifiedAt: defaults?.emailVerifiedAt ?? null,
+        emailVerificationRequired: defaults?.emailVerificationRequired ?? true,
         requiresProfileCompletion: defaults?.requiresProfileCompletion ?? false,
         campusId: defaults?.campusId ?? null,
         departmentId: defaults?.departmentId ?? null,

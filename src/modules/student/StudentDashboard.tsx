@@ -150,6 +150,7 @@ const SEARCH_DIRECTORY: { label: string; keywords: string; section: StudentPorta
   { label: 'Assessment History Archive', keywords: 'assessment history past exams supplementary mock', section: 'exams-history' },
   { label: 'Appeals & Remarking Requests', keywords: 'appeal remarking grade correction attendance missed exam fee waiver', section: 'exams-appeals' },
   { label: 'Certificates & Academic Progress', keywords: 'certificates progress credits gpa standing cdacc knec', section: 'exams-progress' },
+  { label: 'Certification Hub, Exam Credits & QR Certificates', keywords: 'certification hub icdl modules exam credits wallet ledger qr certificates', section: 'certification-hub' },
   { label: 'Fees & Payments Overview', keywords: 'fees overview balance progress instalment', section: 'fees-overview' },
   { label: 'Fee Statement & Ledger Export', keywords: 'fee statement charges credits balance csv', section: 'fees-statement' },
   { label: 'Pay Fees (M-Pesa STK & Bank Deposit)', keywords: 'pay fees mpesa stk push paybill bank deposit', section: 'fees-pay' },
@@ -167,6 +168,7 @@ const SEARCH_DIRECTORY: { label: string; keywords: string; section: StudentPorta
   { label: 'Official Documents & Uploaded Verification', keywords: 'documents admission letter handbook statement upload kcse', section: 'documents' },
   { label: 'Helpdesk, Lecturers, Hostels & Welfare', keywords: 'support ticket lecturer message hostel counselling', section: 'support' },
   { label: 'Security, MFA, Dark Mode & Guardian Consent', keywords: 'settings password mfa guardian parent audit theme dark light', section: 'settings' },
+  { label: 'My Duties, Events, Properties & Permissions', keywords: 'duties events properties permissions capabilities access scope', section: 'role-capabilities' },
   { label: 'Mobile Student Companion Hub', keywords: 'mobile companion app phone schedule assignments library documents cbt mpesa', section: 'mobile-companion' },
 ];
 
@@ -1297,9 +1299,18 @@ export default function StudentDashboard({
 
                     {/* STUDENT SERVICES SHORTCUTS (FLAT HAIRLINE GRID) */}
                     <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden">
-                      <div className="px-5 py-4 border-b border-slate-200/75 dark:border-slate-800 flex items-center gap-2 text-[#102D50] dark:text-white">
-                        <Wallet size={18} className="text-[#1769AA] dark:text-blue-400" />
-                        <h3 className="text-sm font-semibold">Student Services</h3>
+                      <div className="px-5 py-4 border-b border-slate-200/75 dark:border-slate-800 flex items-center justify-between gap-2 text-[#102D50] dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <Wallet size={18} className="text-[#1769AA] dark:text-blue-400" />
+                          <h3 className="text-sm font-semibold">Student Services</h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate('role-capabilities')}
+                          className="text-xs font-semibold text-[#1769AA] dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <ShieldCheck size={14} /> My Duties &amp; Access
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-slate-200/70 dark:divide-slate-800">

@@ -24,16 +24,14 @@ export function ChangePasswordPage({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const checks = {
-    length: newPassword.length >= 8,
-    upper: /[A-Z]/.test(newPassword),
-    lower: /[a-z]/.test(newPassword),
+    length: newPassword.length >= 12,
+    upperAndLower: /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword),
     digit: /\d/.test(newPassword),
     symbol: /[^A-Za-z0-9]/.test(newPassword),
     matches: newPassword.length > 0 && newPassword === confirmPassword,
@@ -45,17 +43,21 @@ export function ChangePasswordPage({
     setSuccessMessage('');
 
     if (!currentPassword.trim()) {
-      setError('Enter your current temporary or existing password.');
+      setError('Enter your temporary or current password.');
       return;
     }
-    if (!checks.length || !checks.upper || !checks.lower || !checks.digit || !checks.symbol) {
+    if (!checks.length || !checks.upperAndLower || !checks.digit || !checks.symbol) {
       setError(
-        'Your new password must be at least 8 characters and include uppercase, lowercase, number, and symbol.'
+        'Your new password must be at least 12 characters and include uppercase and lowercase letters, at least one number, and at least one special character.'
       );
       return;
     }
+    if (newPassword === currentPassword) {
+      setError('Your new password must differ from your temporary password.');
+      return;
+    }
     if (!checks.matches) {
-      setError('New passwords do not match.');
+      setError('New password and confirmation password do not match.');
       return;
     }
 
@@ -64,7 +66,11 @@ export function ChangePasswordPage({
       const res = await changePasswordRequest({ currentPassword, newPassword });
       setSuccessMessage(res.message);
       const updatedUser = await refreshSession();
-      onNavigate(getUserDashboardPath(updatedUser));
+      const target =
+        res.destination && res.destination.startsWith('/portal/')
+          ? res.destination
+          : getUserDashboardPath(updatedUser);
+      onNavigate(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update password.');
     } finally {
@@ -106,10 +112,10 @@ export function ChangePasswordPage({
               </div>
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#F5EBDD]">
-                  HI-TECH College Security
+                  HI-TECH COLLEGE · Account security
                 </p>
                 <h1 id="change-password-heading" className="text-lg font-extrabold tracking-tight">
-                  Update Portal Password
+                  Create your new password
                 </h1>
               </div>
             </div>
@@ -118,8 +124,8 @@ export function ChangePasswordPage({
           <div className="p-6 space-y-5">
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               {user?.mustChangePassword
-                ? `Welcome, ${user.fullName}. For security, please replace your temporary password before opening your ${user.portalType} workspace.`
-                : 'Choose a strong password that you do not reuse on external services.'}
+                ? `Welcome, ${user.fullName}. For security, you must change your temporary password before continuing.`
+                : 'For security, you must change your temporary password before continuing or update your account credentials.'}
             </p>
 
             {error && (
@@ -146,26 +152,27 @@ export function ChangePasswordPage({
                   htmlFor="cp-current-password"
                   className="block text-xs font-semibold text-[#102D50] dark:text-slate-200"
                 >
-                  Current Password
+                  Temporary password
                 </label>
                 <div className="relative">
                   <input
                     id="cp-current-password"
-                    type={showCurrent ? 'text' : 'password'}
+                    type={showPasswords ? 'text' : 'password'}
                     autoComplete="current-password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     disabled={submitting}
                     required
+                    placeholder="Enter temporary or current password"
                     className="min-h-[44px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-3.5 pr-11 py-2.5 text-sm text-slate-900 dark:text-white focus:border-[#1769AA] focus:bg-white dark:focus:bg-slate-900"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowCurrent((v) => !v)}
-                    aria-label={showCurrent ? 'Hide current password' : 'Show current password'}
+                    onClick={() => setShowPasswords((v) => !v)}
+                    aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
                     className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-500 hover:text-[#102D50] dark:text-slate-300"
                   >
-                    {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -175,29 +182,20 @@ export function ChangePasswordPage({
                   htmlFor="cp-new-password"
                   className="block text-xs font-semibold text-[#102D50] dark:text-slate-200"
                 >
-                  New Strong Password
+                  New password
                 </label>
-                <div className="relative">
-                  <input
-                    id="cp-new-password"
-                    type={showNew ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={submitting}
-                    required
-                    placeholder="8+ chars, upper, lower, number, symbol"
-                    className="min-h-[44px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-3.5 pr-11 py-2.5 text-sm text-slate-900 dark:text-white focus:border-[#1769AA] focus:bg-white dark:focus:bg-slate-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew((v) => !v)}
-                    aria-label={showNew ? 'Hide new password' : 'Show new password'}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-500 hover:text-[#102D50] dark:text-slate-300"
-                  >
-                    {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
+                <input
+                  id="cp-new-password"
+                  type={showPasswords ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={submitting}
+                  required
+                  minLength={12}
+                  placeholder="At least 12 characters"
+                  className="min-h-[44px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:border-[#1769AA] focus:bg-white dark:focus:bg-slate-900"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -205,45 +203,61 @@ export function ChangePasswordPage({
                   htmlFor="cp-confirm-password"
                   className="block text-xs font-semibold text-[#102D50] dark:text-slate-200"
                 >
-                  Confirm New Password
+                  Confirm new password
                 </label>
                 <input
                   id="cp-confirm-password"
-                  type="password"
+                  type={showPasswords ? 'text' : 'password'}
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={submitting}
                   required
+                  minLength={12}
+                  placeholder="Re-enter your new password"
                   className="min-h-[44px] w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:border-[#1769AA] focus:bg-white dark:focus:bg-slate-900"
                 />
               </div>
 
-              <ul
-                aria-label="Password strength requirements"
-                className="grid grid-cols-2 gap-1.5 rounded-xl bg-[#F4F7FB] dark:bg-slate-800/70 p-3 text-[11px]"
-              >
-                {[
-                  { label: '8+ characters', met: checks.length },
-                  { label: 'Uppercase letter', met: checks.upper },
-                  { label: 'Lowercase letter', met: checks.lower },
-                  { label: 'Number (0-9)', met: checks.digit },
-                  { label: 'Symbol (!@#$)', met: checks.symbol },
-                  { label: 'Passwords match', met: checks.matches },
-                ].map((rule) => (
-                  <li
-                    key={rule.label}
-                    className={`flex items-center gap-1.5 font-medium ${
-                      rule.met
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : 'text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <CheckCircle2 size={12} aria-hidden="true" />
-                    <span>{rule.label}</span>
-                  </li>
-                ))}
-              </ul>
+              <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showPasswords}
+                  onChange={(e) => setShowPasswords(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 accent-[#102D50]"
+                />
+                <span>Show passwords</span>
+              </label>
+
+              <div className="rounded-xl bg-[#F4F7FB] dark:bg-slate-800/70 p-3.5 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#102D50] dark:text-slate-200">
+                  Password requirements
+                </p>
+                <ul
+                  aria-label="Password requirements"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]"
+                >
+                  {[
+                    { label: 'At least 12 characters', met: checks.length },
+                    { label: 'An uppercase and lowercase letter', met: checks.upperAndLower },
+                    { label: 'At least one number', met: checks.digit },
+                    { label: 'At least one special character', met: checks.symbol },
+                    { label: 'Passwords match', met: checks.matches },
+                  ].map((rule) => (
+                    <li
+                      key={rule.label}
+                      className={`flex items-center gap-1.5 font-medium ${
+                        rule.met
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <CheckCircle2 size={12} aria-hidden="true" className="shrink-0" />
+                      <span>{rule.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <button
                 type="submit"
@@ -251,7 +265,7 @@ export function ChangePasswordPage({
                 className="min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#102D50] hover:bg-[#1769AA] px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60"
               >
                 <ShieldCheck size={16} aria-hidden="true" />
-                <span>{submitting ? 'Updating Password...' : 'Save Password & Continue'}</span>
+                <span>{submitting ? 'Updating password...' : 'Change password'}</span>
               </button>
             </form>
           </div>

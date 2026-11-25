@@ -45,6 +45,7 @@ import QuestionRunnerWidget from './components/QuestionRunnerWidget';
 import { useSyncedPortalTab } from '../../context/PortalShellContext';
 import SecureExamSupervisorPanel from './SecureExamSupervisorPanel';
 import ExaminationSupervisorDashboard from './ExaminationSupervisorDashboard';
+import InvigilatorPortalWorkspace from './InvigilatorPortalWorkspace';
 import ModuleDocumentRepository from '../documents/ModuleDocumentRepository';
 
 type ExamTab =
@@ -54,6 +55,7 @@ type ExamTab =
   | 'runner'
   | 'marking'
   | 'incidents'
+  | 'invigilator'
   | 'supervisor-dashboard'
   | 'supervisor'
   | 'exam_files';
@@ -321,6 +323,7 @@ export default function ExaminationPortal() {
     { id: 'marking', label: 'Anonymous Marking & Analysis', icon: ClipboardCheck },
     { id: 'incidents', label: 'Incidents & Supplementary', icon: ShieldAlert },
     { id: 'exam_files', label: 'Examination Files & Papers', icon: FileCheck2 },
+    { id: 'invigilator', label: 'Invigilator Operations', icon: UserCheck },
     { id: 'supervisor-dashboard', label: 'Supervisor Dashboard', icon: Activity },
     { id: 'supervisor', label: 'Secure Exam Supervisor & Config', icon: Lock },
   ];
@@ -2084,6 +2087,8 @@ export default function ExaminationPortal() {
           </div>
         </div>
       )}
+
+      {activeTab === 'invigilator' && <InvigilatorPortalWorkspace />}
 
       {activeTab === 'supervisor-dashboard' && (
         <ExaminationSupervisorDashboard onNotify={notify} />

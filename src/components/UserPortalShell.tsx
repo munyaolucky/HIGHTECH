@@ -17,6 +17,8 @@ import {
 import ScrollView from './ScrollView';
 import StaffEventFeedPane from './StaffEventFeedPane';
 import StaffIdentityDrawer from './StaffIdentityDrawer';
+import AccountRoleWorkspace from './portal/AccountRoleWorkspace';
+import { resolveCatalogRoleForPortalShell } from '../config/roleDutyCatalog';
 import { usePortalShellContext } from '../context/PortalShellContext';
 import { useTheme } from '../context/ThemeContext';
 import { institutionalEventBus } from '../services/institutionalEventBus';
@@ -85,6 +87,7 @@ export default function UserPortalShell({
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [eventFeedOpen, setEventFeedOpen] = useState(false);
   const [identityDrawerOpen, setIdentityDrawerOpen] = useState(false);
+  const [roleCapabilitiesOpen, setRoleCapabilitiesOpen] = useState(false);
   const [unreadChannelCount, setUnreadChannelCount] = useState(() =>
     institutionalEventBus.getUnreadCountForRole(config.role)
   );
@@ -109,6 +112,7 @@ export default function UserPortalShell({
         setLogoutModalOpen(false);
         setEventFeedOpen(false);
         setIdentityDrawerOpen(false);
+        setRoleCapabilitiesOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -280,6 +284,16 @@ export default function UserPortalShell({
             className="p-2 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRoleCapabilitiesOpen(true)}
+            aria-label="Inspect Role Duties, Events & Permissions"
+            className="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap"
+          >
+            <ShieldCheck size={14} className="text-[#1769AA] dark:text-blue-400" />
+            <span>Duties &amp; Permissions</span>
           </button>
 
           <button
@@ -731,6 +745,51 @@ export default function UserPortalShell({
         onSwitchPortal={onSwitchPortal}
         onLogout={onLogout}
       />
+
+      {roleCapabilitiesOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/60 flex justify-end"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRoleCapabilitiesOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Portal Role Duties, Events & Permissions"
+            className="w-full max-w-4xl h-full bg-[#f5f8fd] dark:bg-[#0b1424] border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl overflow-hidden"
+          >
+            <div className="px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-[#092c60] dark:text-white truncate">
+                  {config.portalTitle} — User Duties, Events, Properties &amp; Permissions
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
+                  {config.userName} ({config.userRegNo}) · {config.userTitle}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRoleCapabilitiesOpen(false)}
+                aria-label="Close duties and permissions drawer"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <AccountRoleWorkspace
+                roleOverride={resolveCatalogRoleForPortalShell(config.role)}
+                compact
+                onSwitchPortal={(portal) => {
+                  setRoleCapabilitiesOpen(false);
+                  onSwitchPortal(portal);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

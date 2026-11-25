@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from 'express';
+import { ALL_ROLE_CATALOG_ENTRIES } from '../../../src/config/roleDutyCatalog.ts';
 import { requireAuth } from '../../middleware/auth.ts';
+import { STAFF_PERMISSIONS } from '../staff/staff.permissions.ts';
 import type { RegistrationCategory } from '../registration/registration.permissions.ts';
 import { UsersHttpError, usersService } from './users.service.ts';
 
@@ -25,6 +27,25 @@ function handleUsersError(res: Response, err: unknown, fallbackMessage: string):
 }
 
 router.use(requireAuth);
+
+router.get('/role-catalogue', (req: Request, res: Response) => {
+  const actor = req.staffUser!;
+  if (
+    !actor.permissions.includes(STAFF_PERMISSIONS.USERS_VIEW) &&
+    !actor.permissions.includes(STAFF_PERMISSIONS.DASHBOARD_VIEW)
+  ) {
+    res.status(403).json({
+      success: false,
+      error: 'Access denied: staff portal authorization required to inspect role catalogue.',
+    });
+    return;
+  }
+  res.json({
+    success: true,
+    totalRoles: ALL_ROLE_CATALOG_ENTRIES.length,
+    roles: ALL_ROLE_CATALOG_ENTRIES,
+  });
+});
 
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -55,6 +76,8 @@ router.post('/', async (req: Request, res: Response) => {
       role: typeof req.body?.role === 'string' ? req.body.role : undefined,
       campusId: typeof req.body?.campusId === 'string' ? req.body.campusId : undefined,
       departmentId: typeof req.body?.departmentId === 'string' ? req.body.departmentId : undefined,
+      temporaryPassword:
+        typeof req.body?.temporaryPassword === 'string' ? req.body.temporaryPassword : undefined,
     });
     res.status(201).json({ success: true, account: created });
   } catch (err) {
@@ -68,6 +91,15 @@ router.post('/:id/resend-invitation', async (req: Request, res: Response) => {
     res.json({ ok: true, success: true, message: out.message });
   } catch (err) {
     handleUsersError(res, err, 'Unable to resend activation invitation.');
+  }
+});
+
+router.post('/:id/resend-verification', async (req: Request, res: Response) => {
+  try {
+    const out = await usersService.resendEmailVerification(req.staffUser!, String(req.params.id));
+    res.json({ ok: true, success: true, message: out.message });
+  } catch (err) {
+    handleUsersError(res, err, 'Unable to dispatch email verification code.');
   }
 });
 

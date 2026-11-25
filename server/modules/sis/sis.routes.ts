@@ -246,6 +246,8 @@ router.post('/students', async (req, res) => {
         accountStatus: 'ACTIVE',
         passwordHash: defaultPass,
         mustChangePassword: true,
+        emailVerifiedAt: null,
+        emailVerificationRequired: true,
         requiresProfileCompletion: true,
         campusId: campus?.id ?? campusId,
         departmentId: department?.id ?? 'dept-computing',

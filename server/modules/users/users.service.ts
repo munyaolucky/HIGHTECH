@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { desc, eq } from 'drizzle-orm';
 import { db, isPostgresConfigured } from '../../../src/db/index.ts';
 import {
+  authSecurityAuditLogs,
   campuses,
   departments,
   studentProfiles,
@@ -13,7 +14,9 @@ import {
   saveDb,
   type UserRegistrationRecord,
 } from '../../data/store.ts';
+import { hashPasswordScrypt, validatePasswordStrength } from '../../lib/crypto.ts';
 import type { AuthenticatedSessionUser } from '../../middleware/auth.ts';
+import { authService } from '../auth/auth.service.ts';
 import { STAFF_PERMISSIONS, type StaffRoleCode } from '../staff/staff.permissions.ts';
 import {
   REGISTRATION_NUMBER_PREFIX,
@@ -50,6 +53,11 @@ export interface PortalAccountDto {
   departmentName: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
+  emailVerificationRequired: boolean;
+  mustChangePassword: boolean;
+  passwordChangedAt: string | null;
 }
 
 export interface UsersDashboardResult {
@@ -275,10 +283,16 @@ export const usersService = {
             (row.departmentId ? deptMap.get(row.departmentId) ?? row.departmentId : null),
           createdAt: row.createdAt.toISOString(),
           lastLoginAt: row.lastLoginAt ? row.lastLoginAt.toISOString() : null,
+          emailVerified: Boolean(row.emailVerifiedAt),
+          emailVerifiedAt: row.emailVerifiedAt ? row.emailVerifiedAt.toISOString() : null,
+          emailVerificationRequired: row.emailVerificationRequired,
+          mustChangePassword: row.mustChangePassword,
+          passwordChangedAt: row.passwordChangedAt ? row.passwordChangedAt.toISOString() : null,
         });
       }
     } else {
       for (const staff of store.staffAccounts) {
+        const isActive = mapRawStatusToAccountStatus(staff.status) === 'ACTIVE';
         byEmail.set(staff.email.toLowerCase(), {
           id: staff.id,
           registrationNumber: staff.employeeNumber,
@@ -292,11 +306,17 @@ export const usersService = {
           departmentName: staff.department,
           createdAt: staff.updatedAt,
           lastLoginAt: null,
+          emailVerified: isActive,
+          emailVerifiedAt: isActive ? staff.updatedAt : null,
+          emailVerificationRequired: !isActive,
+          mustChangePassword: !isActive,
+          passwordChangedAt: isActive ? staff.updatedAt : null,
         });
       }
       for (const stu of store.studentAccounts) {
         const emailLower = stu.email.toLowerCase();
         if (!byEmail.has(emailLower)) {
+          const isActive = mapRawStatusToAccountStatus(stu.status) === 'ACTIVE';
           byEmail.set(emailLower, {
             id: stu.id,
             registrationNumber: stu.admissionNumber,
@@ -310,6 +330,11 @@ export const usersService = {
             departmentName: stu.programme,
             createdAt: stu.createdAt,
             lastLoginAt: null,
+            emailVerified: isActive,
+            emailVerifiedAt: isActive ? stu.createdAt : null,
+            emailVerificationRequired: !isActive,
+            mustChangePassword: !isActive,
+            passwordChangedAt: isActive ? stu.createdAt : null,
           });
         }
       }
@@ -346,6 +371,11 @@ export const usersService = {
         departmentName: reg.departmentName ?? null,
         createdAt: reg.createdAt,
         lastLoginAt: reg.activatedAt ?? null,
+        emailVerified: false,
+        emailVerifiedAt: null,
+        emailVerificationRequired: true,
+        mustChangePassword: Boolean(reg.mustChangePasswordOnFirstLogin),
+        passwordChangedAt: null,
       });
     }
 
@@ -405,6 +435,7 @@ export const usersService = {
       role?: string;
       campusId?: string;
       departmentId?: string;
+      temporaryPassword?: string;
     }
   ): Promise<PortalAccountDto> {
     if (!canCreateUserAccount(actor)) {
@@ -414,11 +445,18 @@ export const usersService = {
     const fullName = input.fullName.trim();
     const email = input.email.trim().toLowerCase();
     const phone = (input.phone ?? '').trim();
+    const tempPassword = input.temporaryPassword?.trim() || '';
     if (!fullName || fullName.length < 3) {
       throw new UsersHttpError(400, 'Full name (at least 3 characters) is required.');
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new UsersHttpError(400, 'A valid email address is required.');
+    }
+    if (tempPassword) {
+      const strengthError = validatePasswordStrength(tempPassword);
+      if (strengthError) {
+        throw new UsersHttpError(400, `Temporary password policy error: ${strengthError}`);
+      }
     }
 
     const store = getDb();
@@ -457,6 +495,8 @@ export const usersService = {
     const regNo = `${prefix}/2026/${String(store.sequences.staffSeq).padStart(3, '0')}`;
     const uid = `usr-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
     const now = new Date().toISOString();
+    const passwordHash = tempPassword ? hashPasswordScrypt(tempPassword) : null;
+    const hasTempPassword = Boolean(passwordHash);
 
     const actorRoleCode: StaffRoleCode =
       actor.role === 'UNCONFIGURED' ? 'ADMIN' : actor.role;
@@ -466,7 +506,7 @@ export const usersService = {
       registrationNumber: regNo,
       category,
       subType: roleUpper,
-      status: 'INVITED',
+      status: hasTempPassword ? 'ACTIVATED' : 'INVITED',
       fullName,
       email,
       phone: phone || '+254700000000',
@@ -485,10 +525,11 @@ export const usersService = {
       accountCreatedAt: now,
       collegeRecordId: null,
       collegeRecordStatus: 'PENDING_VERIFICATION',
-      portalAccessStatus: 'INVITED',
+      portalAccessStatus: hasTempPassword ? 'ACTIVATED' : 'INVITED',
       proposedRole: roleUpper,
       assignedRole: roleUpper,
       assignedPermissions: [],
+      passwordHash: passwordHash ?? undefined,
       mustChangePasswordOnFirstLogin: true,
       mustCompleteProfileOnFirstLogin: true,
       documents: [],
@@ -507,7 +548,7 @@ export const usersService = {
       approvedById: actor.id,
       approvedByName: actor.fullName,
       approvedAt: now,
-      activatedAt: null,
+      activatedAt: hasTempPassword ? now : null,
       createdAt: now,
       updatedAt: now,
     };
@@ -516,26 +557,45 @@ export const usersService = {
     saveDb(store);
 
     if (isPostgresConfigured()) {
-      await db.insert(users).values({
-        uid,
-        email,
-        registrationNumber: regNo,
-        fullName,
-        primaryRole: roleUpper,
-        accountStatus: 'PENDING_ACTIVATION',
-        passwordHash: null,
-        mustChangePassword: true,
-        requiresProfileCompletion: true,
-        mfaEnabled: false,
-        campusId: regRecord.campusId,
-        departmentId: regRecord.departmentId,
-      });
+      const [insertedUser] = await db
+        .insert(users)
+        .values({
+          uid,
+          email,
+          registrationNumber: regNo,
+          fullName,
+          primaryRole: roleUpper,
+          accountStatus: hasTempPassword ? 'ACTIVE' : 'PENDING_ACTIVATION',
+          passwordHash,
+          mustChangePassword: true,
+          emailVerifiedAt: null,
+          emailVerificationRequired: true,
+          requiresProfileCompletion: true,
+          mfaEnabled: false,
+          campusId: regRecord.campusId,
+          departmentId: regRecord.departmentId,
+        })
+        .returning();
+
+      if (hasTempPassword && insertedUser) {
+        await db.insert(authSecurityAuditLogs).values({
+          userId: insertedUser.id,
+          actorUid: actor.id,
+          email,
+          eventType: 'TEMP_CREDENTIALS_ISSUED',
+          detail: `Administrator ${actor.fullName} provisioned temporary first-login password (mustChangePassword=true, emailVerificationRequired=true).`,
+          ipAddress: '127.0.0.1',
+          userAgent: 'Admin Provisioning',
+        });
+      }
     }
 
     appendUserAudit(
       actor,
       'USER_ACCOUNT_REGISTERED',
-      `Registered ${fullName} (${regNo} · ${roleUpper}) and queued activation invitation.`
+      hasTempPassword
+        ? `Provisioned ${fullName} (${regNo} · ${roleUpper}) with temporary first-login password and mandatory email verification.`
+        : `Registered ${fullName} (${regNo} · ${roleUpper}) and queued activation invitation.`
     );
 
     return {
@@ -545,12 +605,17 @@ export const usersService = {
       email,
       phone: phone || null,
       category,
-      status: 'PENDING_ACTIVATION',
+      status: hasTempPassword ? 'ACTIVE' : 'PENDING_ACTIVATION',
       roleNames: [formatRoleLabel(roleUpper)],
       campusName: regRecord.campusName,
       departmentName: regRecord.departmentName,
       createdAt: now,
       lastLoginAt: null,
+      emailVerified: false,
+      emailVerifiedAt: null,
+      emailVerificationRequired: true,
+      mustChangePassword: true,
+      passwordChangedAt: null,
     };
   },
 
@@ -607,6 +672,57 @@ export const usersService = {
     );
 
     return { message: `Activation invitation resent to ${foundEmail}.` };
+  },
+
+  async resendEmailVerification(
+    actor: AuthenticatedSessionUser,
+    targetId: string
+  ): Promise<{ message: string }> {
+    if (!canManageUsersAction(actor, REGISTRATION_PERMISSIONS.INVITATION_SEND)) {
+      throw new UsersHttpError(
+        403,
+        'Access denied: insufficient permission to dispatch email verification codes.'
+      );
+    }
+    if (!isPostgresConfigured()) {
+      throw new UsersHttpError(400, 'Email verification requires Cloud SQL PostgreSQL persistence.');
+    }
+
+    const [pgUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.uid, targetId))
+      .limit(1);
+
+    if (!pgUser) {
+      throw new UsersHttpError(404, 'Portal account not found in Cloud SQL.');
+    }
+
+    if (pgUser.emailVerifiedAt && !pgUser.emailVerificationRequired) {
+      return { message: `Email address for ${pgUser.fullName} (${pgUser.email}) is already verified.` };
+    }
+
+    const result = await authService.sendEmailVerification(pgUser.id, undefined, {
+      isResend: true,
+    });
+
+    await db.insert(authSecurityAuditLogs).values({
+      userId: pgUser.id,
+      actorUid: actor.id,
+      email: pgUser.email,
+      eventType: 'ADMIN_RESEND_EMAIL_VERIFICATION',
+      detail: `Administrator ${actor.fullName} dispatched a fresh 6-digit email verification code.`,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Admin User Management',
+    });
+
+    appendUserAudit(
+      actor,
+      'RESEND_EMAIL_VERIFICATION',
+      `Dispatched 6-digit email verification code to ${pgUser.fullName} (${pgUser.email}).`
+    );
+
+    return { message: result.message };
   },
 
   async suspendAccount(actor: AuthenticatedSessionUser, targetId: string): Promise<{ message: string }> {

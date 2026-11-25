@@ -30,6 +30,7 @@ import {
   type StaffTaskStatus,
 } from '../../services/staffPortalService';
 import type { SupportAssistantRole, SupportTicketCategory } from '../../types/aiSupportCentre';
+import AccountRoleWorkspace from '../../components/portal/AccountRoleWorkspace';
 import {
   StaffButton,
   StaffPageHeader,
@@ -205,6 +206,8 @@ export function StaffProfilePage({ user }: { user: StaffUserAccount }) {
         dataScopeSummary={user.dataScopeSummary}
         restrictedFrom={user.restrictedFrom}
       />
+
+      <AccountRoleWorkspace roleOverride={user.role} compact />
     </div>
   );
 }

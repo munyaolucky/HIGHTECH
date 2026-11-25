@@ -24,6 +24,9 @@ export const users = pgTable('users', {
   accountStatus: text('account_status').notNull().default('ACTIVE'), // ACTIVE | INVITED | SUSPENDED | DISABLED
   passwordHash: text('password_hash'),
   mustChangePassword: boolean('must_change_password').notNull().default(false),
+  passwordChangedAt: timestamp('password_changed_at'),
+  emailVerifiedAt: timestamp('email_verified_at'),
+  emailVerificationRequired: boolean('email_verification_required').notNull().default(true),
   requiresProfileCompletion: boolean('requires_profile_completion').notNull().default(false),
   mfaEnabled: boolean('mfa_enabled').notNull().default(false),
   campusId: text('campus_id'),
@@ -58,6 +61,33 @@ export const passwordRecoveryTokens = pgTable('password_recovery_tokens', {
   expiresAt: timestamp('expires_at').notNull(),
   usedAt: timestamp('used_at'),
   requestedIp: text('requested_ip').notNull().default('127.0.0.1'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  email: text('email').notNull(),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  attempts: integer('attempts').notNull().default(0),
+  resendCount: integer('resend_count').notNull().default(0),
+  requestedIp: text('requested_ip').notNull().default('127.0.0.1'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const authSecurityAuditLogs = pgTable('auth_security_audit_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  actorUid: text('actor_uid'),
+  email: text('email').notNull(),
+  eventType: text('event_type').notNull(),
+  detail: text('detail').notNull(),
+  ipAddress: text('ip_address').notNull().default('127.0.0.1'),
+  userAgent: text('user_agent').notNull().default(''),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -1825,6 +1855,94 @@ export const documentTemplates = pgTable('document_templates', {
   createdAt: text('created_at').notNull(),
 });
 
+// ============================================================================
+// 11. THREE-INTERFACE DIGITAL CERTIFICATION, CREDIT LEDGER & QUESTION BANK
+// ============================================================================
 
+export const examinationWallets = pgTable('examination_wallets', {
+  id: text('id').primaryKey(),
+  studentRegNo: text('student_reg_no').notNull().unique(),
+  studentName: text('student_name').notNull(),
+  programmeName: text('programme_name').notNull(),
+  availableCredits: integer('available_credits').notNull().default(0),
+  reservedCredits: integer('reserved_credits').notNull().default(0),
+  consumedCredits: integer('consumed_credits').notNull().default(0),
+  refundedCredits: integer('refunded_credits').notNull().default(0),
+  lowCreditThreshold: integer('low_credit_threshold').notNull().default(5),
+  status: text('status').notNull().default('ACTIVE'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
+export const creditTransactions = pgTable('credit_transactions', {
+  id: text('id').primaryKey(),
+  txRef: text('tx_ref').notNull().unique(),
+  walletId: text('wallet_id')
+    .references(() => examinationWallets.id, { onDelete: 'restrict' })
+    .notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  type: text('type').notNull(), // ALLOCATION | RESERVATION | COMMIT | REFUND | ADJUSTMENT
+  creditsDelta: integer('credits_delta').notNull(),
+  balanceBefore: integer('balance_before').notNull(),
+  balanceAfter: integer('balance_after').notNull(),
+  referenceSessionId: text('reference_session_id'),
+  reason: text('reason').notNull(),
+  actorId: text('actor_id').notNull(),
+  actorName: text('actor_name').notNull(),
+  approvalStatus: text('approval_status').notNull().default('COMPLETED'),
+  approvedByName: text('approved_by_name'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
+export const creditReservations = pgTable('credit_reservations', {
+  id: text('id').primaryKey(),
+  walletId: text('wallet_id')
+    .references(() => examinationWallets.id, { onDelete: 'restrict' })
+    .notNull(),
+  studentRegNo: text('student_reg_no').notNull(),
+  examId: text('exam_id').notNull(),
+  examSessionId: text('exam_session_id').notNull(),
+  idempotencyKey: text('idempotency_key').notNull().unique(),
+  creditsReserved: integer('credits_reserved').notNull(),
+  status: text('status').notNull().default('RESERVED'), // RESERVED | COMMITTED | REFUNDED | RELEASED
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const centralQuestionBank = pgTable('central_question_bank', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  examBody: text('exam_body').notNull(),
+  programmeId: text('programme_id').notNull(),
+  moduleCode: text('module_code').notNull(),
+  topic: text('topic').notNull(),
+  questionType: text('question_type').notNull(),
+  difficulty: text('difficulty').notNull(),
+  marks: integer('marks').notNull(),
+  prompt: text('prompt').notNull(),
+  optionsJson: jsonb('options_json').$type<string[]>(),
+  correctAnswerKey: text('correct_answer_key').notNull(),
+  status: text('status').notNull().default('DRAFT'),
+  version: integer('version').notNull().default(1),
+  aiAssistedDraft: boolean('ai_assisted_draft').notNull().default(false),
+  authorId: text('author_id').notNull(),
+  authorName: text('author_name').notNull(),
+  approvedByName: text('approved_by_name'),
+  versionsJson: jsonb('versions_json').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const digitalCertificates = pgTable('digital_certificates', {
+  id: text('id').primaryKey(),
+  serialNumber: text('serial_number').notNull().unique(),
+  verificationCode: text('verification_code').notNull().unique(),
+  studentRegNo: text('student_reg_no').notNull(),
+  studentName: text('student_name').notNull(),
+  programmeId: text('programme_id').notNull(),
+  programmeName: text('programme_name').notNull(),
+  examBody: text('exam_body').notNull(),
+  qualificationTitle: text('qualification_title').notNull(),
+  issuedByName: text('issued_by_name').notNull(),
+  status: text('status').notNull().default('ISSUED'),
+  qrPayload: text('qr_payload').notNull(),
+  issuedAt: timestamp('issued_at').defaultNow().notNull(),
+});

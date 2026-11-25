@@ -44,6 +44,10 @@ export interface PortalSessionContext {
   primaryRole: string;
   accountStatus: string;
   mustChangePassword: boolean;
+  passwordChangedAt: string | null;
+  emailVerified: boolean;
+  emailVerifiedAt: string | null;
+  emailVerificationRequired: boolean;
   requiresProfileCompletion: boolean;
   mfaEnabled: boolean;
   campusId: string | null;
@@ -230,6 +234,10 @@ export async function resolveSessionContextFromCookieHeader(
           primaryRole: user.primaryRole,
           accountStatus: user.accountStatus,
           mustChangePassword: user.mustChangePassword,
+          passwordChangedAt: user.passwordChangedAt ? user.passwordChangedAt.toISOString() : null,
+          emailVerified: Boolean(user.emailVerifiedAt),
+          emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
+          emailVerificationRequired: user.emailVerificationRequired,
           requiresProfileCompletion: user.requiresProfileCompletion,
           mfaEnabled: user.mfaEnabled,
           campusId: user.campusId,
@@ -306,6 +314,10 @@ export async function resolveSessionContextFromCookieHeader(
           primaryRole: pgUser.primaryRole,
           accountStatus: pgUser.accountStatus,
           mustChangePassword: pgUser.mustChangePassword,
+          passwordChangedAt: pgUser.passwordChangedAt ? pgUser.passwordChangedAt.toISOString() : null,
+          emailVerified: Boolean(pgUser.emailVerifiedAt),
+          emailVerifiedAt: pgUser.emailVerifiedAt ? pgUser.emailVerifiedAt.toISOString() : null,
+          emailVerificationRequired: pgUser.emailVerificationRequired,
           requiresProfileCompletion: pgUser.requiresProfileCompletion,
           mfaEnabled: pgUser.mfaEnabled,
           campusId: pgUser.campusId,
@@ -322,6 +334,67 @@ export async function resolveSessionContextFromCookieHeader(
   return { staffUser, portalUser };
 }
 
+const SECURITY_GATE_ALLOWED_PREFIXES = [
+  '/health',
+  '/public',
+  '/auth',
+  '/mfa',
+  '/registrations/activation',
+  '/payments/mpesa',
+];
+
+export function isPathExemptFromSecurityGate(apiRelativePath: string): boolean {
+  return SECURITY_GATE_ALLOWED_PREFIXES.some(
+    (prefix) => apiRelativePath === prefix || apiRelativePath.startsWith(`${prefix}/`)
+  );
+}
+
+export function getPortalSecurityBlock(
+  portalUser: PortalSessionContext | undefined
+): { code: 'PASSWORD_CHANGE_REQUIRED' | 'EMAIL_VERIFICATION_REQUIRED'; error: string } | null {
+  if (!portalUser) return null;
+  if (portalUser.mustChangePassword) {
+    return {
+      code: 'PASSWORD_CHANGE_REQUIRED',
+      error: 'You must change your temporary password before accessing portal services.',
+    };
+  }
+  if (portalUser.emailVerificationRequired && !portalUser.emailVerified) {
+    return {
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      error: 'You must verify your registered email address before accessing portal services.',
+    };
+  }
+  return null;
+}
+
+export async function enforceAccountSecurityGate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  if (isPathExemptFromSecurityGate(req.path)) {
+    next();
+    return;
+  }
+
+  const { portalUser, staffUser } = await resolveSessionContextFromCookieHeader(req.headers.cookie);
+  if (portalUser) req.portalUser = portalUser;
+  if (staffUser) req.staffUser = staffUser;
+
+  const block = getPortalSecurityBlock(portalUser);
+  if (block) {
+    res.status(403).json({
+      success: false,
+      code: block.code,
+      error: block.error,
+    });
+    return;
+  }
+
+  next();
+}
+
 /**
  * Derives authenticated staff identity strictly from signed HttpOnly session cookie
  * or unified PostgreSQL session cookie.
@@ -329,6 +402,17 @@ export async function resolveSessionContextFromCookieHeader(
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const { staffUser, portalUser } = await resolveSessionContextFromCookieHeader(req.headers.cookie);
   if (portalUser) req.portalUser = portalUser;
+
+  const block = getPortalSecurityBlock(portalUser);
+  const apiRelPath = req.baseUrl ? `${req.baseUrl.replace(/^\/api/, '')}${req.path}` : req.path;
+  if (block && !isPathExemptFromSecurityGate(apiRelPath)) {
+    res.status(403).json({
+      success: false,
+      code: block.code,
+      error: block.error,
+    });
+    return;
+  }
 
   if (!staffUser) {
     res.status(401).json({
@@ -359,6 +443,16 @@ export async function requirePortalAuth(
     res.status(401).json({
       success: false,
       error: 'Authentication required. Please sign in to the HI-TECH College Portal.',
+    });
+    return;
+  }
+
+  const block = getPortalSecurityBlock(portalUser);
+  if (block && !isPathExemptFromSecurityGate(req.baseUrl ? `${req.baseUrl.replace(/^\/api/, '')}${req.path}` : req.path)) {
+    res.status(403).json({
+      success: false,
+      code: block.code,
+      error: block.error,
     });
     return;
   }

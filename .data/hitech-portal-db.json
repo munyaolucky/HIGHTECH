@@ -14,8 +14,8 @@
       "PARTNER": 0,
       "GUEST": 1
     },
-    "eventRegSeq": 12,
-    "eventCodeSeq": 9,
+    "eventRegSeq": 11,
+    "eventCodeSeq": 8,
     "eventCertSeq": 2
   },
   "campuses": [
@@ -3105,7 +3105,7 @@
       "odpcBasis": "Kenya Data Protection Act (2019) — Academic Admissions & Statutory Enrolment Record",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-transcript_certificate",
@@ -3116,7 +3116,7 @@
       "odpcBasis": "TVETA / KNEC / CUE Permanent Academic Credential Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-fee_statement",
@@ -3127,7 +3127,7 @@
       "odpcBasis": "Public Finance & Tax Audit Retention Mandate (7 Years)",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-exam_schedule",
@@ -3138,7 +3138,7 @@
       "odpcBasis": "Examination Integrity & KNEC/TVET CDACC Assessment Custody",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-employment_contract",
@@ -3149,7 +3149,7 @@
       "odpcBasis": "Kenya Employment Act & ODPC Confidential Personnel Record",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-institutional_policy",
@@ -3160,7 +3160,7 @@
       "odpcBasis": "Institutional Governance & Regulatory Compliance",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-official_memo",
@@ -3171,7 +3171,7 @@
       "odpcBasis": "Institutional Administrative Governance Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-student_welfare_confidential",
@@ -3182,7 +3182,7 @@
       "odpcBasis": "ODPC Sensitive Personal Health & Welfare Data Safeguard",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-student_registration_record",
@@ -3193,7 +3193,7 @@
       "odpcBasis": "Academic Registry Student Lifecycle Record",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-absence_explanation",
@@ -3204,7 +3204,7 @@
       "odpcBasis": "Attendance Accountability & ODPC Sensitive Medical Safeguard",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-assignment_submission",
@@ -3215,7 +3215,7 @@
       "odpcBasis": "Academic Assessment & Internal Verification Evidence",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-practical_project_file",
@@ -3226,7 +3226,7 @@
       "odpcBasis": "TVET CDACC Practical Portfolio of Evidence (POE)",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-industrial_attachment_doc",
@@ -3237,7 +3237,7 @@
       "odpcBasis": "TVETA Mandatory Industrial Attachment Assessment Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-scholarship_bursary_doc",
@@ -3248,7 +3248,7 @@
       "odpcBasis": "Student Financial Aid & Audit Trail Compliance",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-lesson_plan",
@@ -3259,7 +3259,7 @@
       "odpcBasis": "TVET Academic Quality & Teaching Delivery Compliance",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-scheme_of_work",
@@ -3270,7 +3270,7 @@
       "odpcBasis": "Curriculum Planning & HOD Verification Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-record_of_work",
@@ -3281,7 +3281,7 @@
       "odpcBasis": "Lecturer Accountability & Contact Hour Audit",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-learning_material",
@@ -3292,7 +3292,7 @@
       "odpcBasis": "Instructional Content Repository",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-attendance_register_doc",
@@ -3303,7 +3303,7 @@
       "odpcBasis": "75% Examination Eligibility Audit Evidence",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-academic_class_resource",
@@ -3314,7 +3314,7 @@
       "odpcBasis": "Continuous Assessment & Moderation Record",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-department_report",
@@ -3325,7 +3325,7 @@
       "odpcBasis": "Departmental & Academic Board Governance",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-meeting_minutes",
@@ -3336,7 +3336,7 @@
       "odpcBasis": "Official Institutional Decision Record",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-institutional_report",
@@ -3347,7 +3347,7 @@
       "odpcBasis": "Regulatory Accreditation & Statutory Inspection Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-library_digital_resource",
@@ -3358,7 +3358,7 @@
       "odpcBasis": "Copyright-Compliant Institutional Digital Repository",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-event_media_programme",
@@ -3369,7 +3369,7 @@
       "odpcBasis": "Campus Events & Stakeholder Communications Archive",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "ret-website_media_asset",
@@ -3380,7 +3380,7 @@
       "odpcBasis": "Public Institutional Communications Registry",
       "active": true,
       "updatedById": "usr-admin-001",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     }
   ],
   "documentRequests": [
@@ -3401,8 +3401,8 @@
       "dueDate": "2026-12-05",
       "status": "OPEN",
       "fulfilledDocumentId": null,
-      "createdAt": "2026-11-24T09:54:49.138Z",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "createdAt": "2026-11-25T18:20:47.237Z",
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     },
     {
       "id": "dreq-seed-002",
@@ -3421,8 +3421,8 @@
       "dueDate": "2026-12-01",
       "status": "OPEN",
       "fulfilledDocumentId": null,
-      "createdAt": "2026-11-24T09:54:49.138Z",
-      "updatedAt": "2026-11-24T09:54:49.138Z"
+      "createdAt": "2026-11-25T18:20:47.237Z",
+      "updatedAt": "2026-11-25T18:20:47.237Z"
     }
   ],
   "registrations": [
@@ -7242,85 +7242,6 @@
   ],
   "collegeEvents": [
     {
-      "id": "evt-a9b6b527",
-      "eventCode": "HTE-2026-009",
-      "slug": "csv-safety-audit-event",
-      "title": "CSV Safety Audit Event",
-      "category": "Seminar",
-      "shortDescription": "CSV check",
-      "fullDescription": "CSV check",
-      "eventDate": "2026-12-19",
-      "endDate": "2026-12-19",
-      "startTime": "09:00 AM",
-      "endTime": "11:00 AM",
-      "timezone": "Africa/Nairobi",
-      "isMultiDay": false,
-      "recurrencePattern": "NONE",
-      "campus": "Nairobi Main Campus",
-      "venueId": null,
-      "venue": "Hall B",
-      "building": "",
-      "room": "",
-      "mapsLink": "",
-      "onlinePlatform": "",
-      "accessibilityInfo": "",
-      "parkingInfo": "",
-      "mode": "PHYSICAL",
-      "meetingUrl": "",
-      "organisingDepartmentId": null,
-      "organisingDepartmentName": "Corporate Communications & Marketing",
-      "organizerName": "N. Muthoni",
-      "contactEmail": "events@hitech.ac.ke",
-      "contactPhone": "+254 700 100 201",
-      "showContactPhonePublicly": true,
-      "targetAudience": "Students, Staff & General Public",
-      "requirements": "",
-      "language": "English",
-      "tags": [],
-      "visibility": "PUBLIC",
-      "audienceRestriction": "PUBLIC",
-      "capacity": 20,
-      "waitlistCapacity": 25,
-      "registeredCount": 1,
-      "waitlistCount": 0,
-      "checkedInCount": 0,
-      "checkedOutCount": 0,
-      "registrationOpenDate": "2026-11-24T09:01:53.698Z",
-      "registrationDeadline": "2026-12-18T09:01:53.697Z",
-      "isPaid": false,
-      "feeAmount": 0,
-      "studentFeeAmount": 0,
-      "feeCurrency": "KES",
-      "requiresApproval": false,
-      "allowWaitlist": true,
-      "allowSelfCancel": true,
-      "reminderHours": [
-        48,
-        24,
-        2
-      ],
-      "confirmationMessage": "",
-      "certificateEnabled": false,
-      "certificateType": "Certificate of Participation",
-      "certificateMinAttendance": true,
-      "feedbackEnabled": true,
-      "bannerImageUrl": "",
-      "featured": false,
-      "status": "PUBLISHED",
-      "isPublished": true,
-      "createdById": "usr-comms-001",
-      "createdByName": "N. Muthoni",
-      "approvedById": "usr-principal-001",
-      "approvedByName": "Dr. Samuel Karanja",
-      "approvedAt": "2026-11-24T09:01:53.701Z",
-      "publishedById": "usr-comms-001",
-      "publishedByName": "N. Muthoni",
-      "publishedAt": "2026-11-24T09:01:53.705Z",
-      "cancelledReason": null,
-      "createdAt": "2026-11-24T09:01:53.698Z",
-      "updatedAt": "2026-11-24T09:01:53.708Z"
-    },
-    {
       "id": "evt-ai-symposium-2026",
       "mode": "HYBRID",
       "room": "",
@@ -7409,7 +7330,7 @@
       "campus": "Nairobi Main Campus",
       "isPaid": false,
       "status": "ONGOING",
-      "endDate": "2026-11-24",
+      "endDate": "2026-11-19",
       "endTime": "03:00 PM",
       "venueId": null,
       "building": "",
@@ -7421,7 +7342,7 @@
       "timezone": "Africa/Nairobi",
       "createdAt": "2026-02-19T14:00:00.000Z",
       "eventCode": "HTE-2026-002",
-      "eventDate": "2026-11-24",
+      "eventDate": "2026-11-19",
       "feeAmount": 0,
       "startTime": "10:00 AM",
       "updatedAt": "2026-02-20T09:00:00.000Z",
@@ -7469,7 +7390,7 @@
       "certificateEnabled": false,
       "audienceRestriction": "PUBLIC",
       "confirmationMessage": "",
-      "registrationDeadline": "2026-11-24T23:59:00.000Z",
+      "registrationDeadline": "2026-11-19T23:59:00.000Z",
       "registrationOpenDate": "2026-02-19T14:00:00.000Z",
       "organisingDepartmentId": "dept-ict",
       "certificateMinAttendance": true,
@@ -8460,39 +8381,6 @@
       "specialRequirements": "",
       "studentOrStaffNumber": "HCA/STU/2026/001",
       "organizationOrInstitution": "HI-TECH College"
-    },
-    {
-      "id": "ereg-44d68b12-c",
-      "eventId": "evt-a9b6b527",
-      "registrationNumber": "HTE-EVT-2026-0012",
-      "lookupTokenHash": "50f7eba0eda4264205d85026ad2130d2238b5e275bf8d0ddcfa7a72f71931573",
-      "qrToken": "HTE-QR-003E5E0FDB40CDFB",
-      "fullName": "=cmd|\"/C calc\"!A0",
-      "email": "formula.safe@example.com",
-      "phone": "+254712999888",
-      "participantCategory": "General Public",
-      "organizationOrInstitution": "",
-      "studentOrStaffNumber": "",
-      "attendanceMode": "PHYSICAL",
-      "ticketType": "General Admission",
-      "paymentStatus": "PAID",
-      "amountDue": 0,
-      "amountPaid": 0,
-      "specialRequirements": "",
-      "consentAccepted": true,
-      "status": "CONFIRMED",
-      "checkedIn": false,
-      "checkedInAt": null,
-      "checkedInById": null,
-      "checkedInByName": null,
-      "checkedOut": false,
-      "checkedOutAt": null,
-      "reviewedByName": null,
-      "reviewNote": null,
-      "organiserNotes": "",
-      "certificateCode": null,
-      "registeredAt": "2026-11-24T09:01:53.708Z",
-      "updatedAt": "2026-11-24T09:01:53.708Z"
     }
   ],
   "collegeEventVenues": [
@@ -8764,30 +8652,6 @@
   ],
   "collegeEventNotifications": [
     {
-      "id": "enot-8037cbfe",
-      "eventId": "evt-a9b6b527",
-      "registrationId": "ereg-44d68b12-c",
-      "channel": "SMS",
-      "recipientName": "=cmd|\"/C calc\"!A0",
-      "recipientTarget": "+254712999888",
-      "subject": "Event Registration SMS Receipt",
-      "message": "HI-TECH College: Reg HTE-EVT-2026-0012 (CONFIRMED) for CSV Safety Audit Event on 2026-12-19.",
-      "status": "DISPATCHED",
-      "createdAt": "2026-11-24T09:01:53.708Z"
-    },
-    {
-      "id": "enot-111f0f2f",
-      "eventId": "evt-a9b6b527",
-      "registrationId": "ereg-44d68b12-c",
-      "channel": "EMAIL",
-      "recipientName": "=cmd|\"/C calc\"!A0",
-      "recipientTarget": "formula.safe@example.com",
-      "subject": "Event Registration Confirmed: CSV Safety Audit Event",
-      "message": "Hello =cmd|\"/C calc\"!A0, your registration number is HTE-EVT-2026-0012. Status: Confirmed. Date: 2026-12-19 (09:00 AM). Venue: Hall B.",
-      "status": "DISPATCHED",
-      "createdAt": "2026-11-24T09:01:53.708Z"
-    },
-    {
       "id": "enot-e0d372f5",
       "status": "DISPATCHED",
       "channel": "SMS",
@@ -8849,36 +8713,6 @@
     }
   ],
   "collegeEventAuditLogs": [
-    {
-      "id": "eaud-da306ca6",
-      "eventId": "evt-a9b6b527",
-      "actorId": "usr-comms-001",
-      "actorName": "N. Muthoni",
-      "actorRole": "COMMUNICATIONS_OFFICER",
-      "action": "EVENT_PUBLISHED",
-      "detail": "Published \"CSV Safety Audit Event\" to the public website.",
-      "createdAt": "2026-11-24T09:01:53.705Z"
-    },
-    {
-      "id": "eaud-c8186d2a",
-      "eventId": "evt-a9b6b527",
-      "actorId": "usr-principal-001",
-      "actorName": "Dr. Samuel Karanja",
-      "actorRole": "PRINCIPAL",
-      "action": "EVENT_APPROVED",
-      "detail": "Approved \"CSV Safety Audit Event\" for publication.",
-      "createdAt": "2026-11-24T09:01:53.701Z"
-    },
-    {
-      "id": "eaud-f52edf2f",
-      "eventId": "evt-a9b6b527",
-      "actorId": "usr-comms-001",
-      "actorName": "N. Muthoni",
-      "actorRole": "COMMUNICATIONS_OFFICER",
-      "action": "EVENT_CREATED",
-      "detail": "Created event HTE-2026-009 \"CSV Safety Audit Event\" scheduled for 2026-12-19 (DRAFT).",
-      "createdAt": "2026-11-24T09:01:53.698Z"
-    },
     {
       "id": "eaud-1",
       "action": "EVENT_APPROVED",

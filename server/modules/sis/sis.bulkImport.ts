@@ -543,6 +543,8 @@ export async function commitBulkStudentsToPostgres(
           accountStatus: 'ACTIVE',
           passwordHash: defaultPass,
           mustChangePassword: true,
+          emailVerifiedAt: null,
+          emailVerificationRequired: true,
           requiresProfileCompletion: true,
           campusId: row.data.campusId,
           departmentId: row.data.departmentId,

@@ -75,6 +75,8 @@ import StaffEventsWorkspace, { type StaffEventsSection } from './events/StaffEve
 import HODAttendanceMonitor from './teaching/HODAttendanceMonitor';
 import PrincipalAttendanceOversight from './teaching/PrincipalAttendanceOversight';
 import AdminAttendancePolicyView from './teaching/AdminAttendancePolicyView';
+import AdminCertificationWorkspace, { type AdminCertTab } from '../certification/AdminCertificationWorkspace';
+import InvigilatorPortalWorkspace from '../examination/InvigilatorPortalWorkspace';
 import {
   DashboardEmpty,
   DashboardError,
@@ -95,6 +97,7 @@ import {
   StaffExecutiveApprovalsView,
   StaffOperationalModuleView,
 } from './StaffOperationalViews';
+import AccountRoleWorkspace from '../../components/portal/AccountRoleWorkspace';
 import {
   StaffMessagesPage,
   StaffProfilePage,
@@ -321,6 +324,27 @@ export default function StaffDashboardRouter({
 
   // Shared staff pages
   if (activePath === '/staff/profile') return <StaffProfilePage user={user} />;
+  if (activePath === '/staff/duties') {
+    return (
+      <div className="space-y-6">
+        <StaffPageHeader
+          title="My Duties, Events, Properties & Permissions"
+          description={`Complete operational duties, live event feeds, account properties, and categorized RBAC grants for ${user.roleTitle}.`}
+          breadcrumb="My Duties & Permissions"
+          actions={
+            <StaffButton variant="secondary" onClick={() => onNavigate('/staff/dashboard')}>
+              Back to Role Dashboard
+            </StaffButton>
+          }
+        />
+        <AccountRoleWorkspace
+          roleOverride={user.role}
+          onNavigatePath={onNavigate}
+          onSwitchPortal={handleInternalPortalSwitch}
+        />
+      </div>
+    );
+  }
   if (activePath === '/staff/tasks') return <StaffTasksPage user={user} />;
   if (activePath === '/staff/messages') return <StaffMessagesPage user={user} />;
   if (activePath === '/staff/notifications') {
@@ -529,6 +553,52 @@ export default function StaffDashboardRouter({
         ? 'audit'
         : 'users';
     return <StaffAdminDashboard user={user} initialTab={adminTab} onChanged={refetch} />;
+  }
+  if (
+    activePath === '/staff/admin/candidates' ||
+    activePath === '/staff/admin/classes' ||
+    activePath === '/staff/admin/modules' ||
+    activePath === '/staff/admin/credits' ||
+    activePath === '/staff/admin/progression' ||
+    activePath === '/staff/admin/question-bank' ||
+    activePath === '/staff/admin/results-certificates'
+  ) {
+    if (!hasStaffPermission(user.permissions, 'admin.certification.manage')) {
+      return (
+        <StaffAccessDeniedView
+          message="Certification, Credit Ledger, and Question Bank management requires authorized Administration or Examinations privileges."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    const certTabMap: Record<string, AdminCertTab> = {
+      '/staff/admin/candidates': 'candidates',
+      '/staff/admin/classes': 'academic',
+      '/staff/admin/modules': 'academic',
+      '/staff/admin/credits': 'credits',
+      '/staff/admin/progression': 'progression',
+      '/staff/admin/question-bank': 'question-bank',
+      '/staff/admin/results-certificates': 'results-certificates',
+    };
+    return (
+      <AdminCertificationWorkspace
+        initialTab={certTabMap[activePath] || 'overview'}
+        userRole={user.role}
+        userName={user.fullName}
+        onBack={() => onNavigate('/staff/dashboard')}
+      />
+    );
+  }
+  if (activePath === '/staff/invigilator') {
+    if (!hasStaffPermission(user.permissions, 'exams.invigilate.sessions')) {
+      return (
+        <StaffAccessDeniedView
+          message="Invigilator Examination Operations require explicit exams.invigilate.sessions permission."
+          onBack={() => onNavigate('/staff/dashboard')}
+        />
+      );
+    }
+    return <InvigilatorPortalWorkspace onBack={() => onNavigate('/staff/dashboard')} />;
   }
   if (activePath === '/staff/admin/baseline') {
     if (!hasStaffPermission(user.permissions, 'platform.baseline.read')) {
@@ -876,11 +946,19 @@ export default function StaffDashboardRouter({
         </section>
       )}
 
-      <StaffPermissionNotice
-        roleTitle={user.roleTitle}
-        dataScopeSummary={user.dataScopeSummary}
-        restrictedFrom={user.restrictedFrom}
-      />
+      <div className="space-y-3">
+        <StaffPermissionNotice
+          roleTitle={user.roleTitle}
+          dataScopeSummary={user.dataScopeSummary}
+          restrictedFrom={user.restrictedFrom}
+        />
+        <div className="flex justify-end">
+          <StaffButton variant="secondary" onClick={() => onNavigate('/staff/duties')}>
+            <span>Inspect All Duties, Events, Properties &amp; Permissions</span>
+            <ArrowRight size={14} />
+          </StaffButton>
+        </div>
+      </div>
     </div>
   );
 }

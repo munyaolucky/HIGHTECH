@@ -29,6 +29,7 @@ import StudentLoginPage from "./modules/auth/StudentLoginPage";
 import ForgotPasswordPage from "./modules/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./modules/auth/ResetPasswordPage";
 import ChangePasswordPage from "./modules/auth/ChangePasswordPage";
+import VerifyEmailPage from "./modules/auth/VerifyEmailPage";
 import CompleteProfilePage from "./modules/auth/CompleteProfilePage";
 import AccountSecurityPage from "./modules/security/AccountSecurityPage";
 import StudentProfileDetailPage from "./modules/sis/StudentProfileDetailPage";
@@ -120,6 +121,7 @@ interface RouteState {
     | "forgot-password"
     | "reset-password"
     | "change-password"
+    | "verify-email"
     | "complete-profile"
     | "portal-redirect"
     | "security"
@@ -206,6 +208,16 @@ function parseLocationToRoute(): RouteState {
   if (pathname === "/portal/change-password") {
     return {
       mode: "change-password",
+      role: "website",
+      websitePage: "home",
+      staffInitialPath: "/staff/dashboard",
+      openLoginModal: false,
+    };
+  }
+
+  if (pathname === "/portal/verify-email") {
+    return {
+      mode: "verify-email",
       role: "website",
       websitePage: "home",
       staffInitialPath: "/staff/dashboard",
@@ -585,6 +597,16 @@ export default function App() {
         });
         return;
       }
+      if (target === "/portal/verify-email") {
+        pushUrl("/portal/verify-email", {
+          mode: "verify-email",
+          role: "website",
+          websitePage: "home",
+          staffInitialPath: "/staff/dashboard",
+          openLoginModal: false,
+        });
+        return;
+      }
       if (target === "/portal/complete-profile") {
         pushUrl("/portal/complete-profile", {
           mode: "complete-profile",
@@ -775,6 +797,18 @@ export default function App() {
                   onNavigateHome={() => navigateToWebsite("home", false)}
                 >
                   <ChangePasswordPage
+                    onNavigate={(dest) => navigateToPortal(dest)}
+                    onNavigateHome={() => navigateToWebsite("home", false)}
+                  />
+                </ProtectedRoute>
+              ) : route.mode === "verify-email" ? (
+                <ProtectedRoute
+                  allowEmailVerification
+                  allowProfileCompletion
+                  onRedirect={(dest) => navigateToPortal(dest)}
+                  onNavigateHome={() => navigateToWebsite("home", false)}
+                >
+                  <VerifyEmailPage
                     onNavigate={(dest) => navigateToPortal(dest)}
                     onNavigateHome={() => navigateToWebsite("home", false)}
                   />

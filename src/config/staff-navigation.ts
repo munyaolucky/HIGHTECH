@@ -47,6 +47,7 @@ export interface StaffUserAccount {
   campus: string;
   allowedCampuses: string[];
   permissions: string[];
+  documentPermissions?: string[];
   restrictedFrom: string[];
   dataScopeSummary: string;
 }
@@ -102,6 +103,8 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
       'erp.generator.access',
       'platform.baseline.read',
       'teaching.policy.configure',
+      'admin.certification.manage',
+      'exams.invigilate.sessions',
       'website.content.view',
       'website.staff.view',
       'website.staff.create',
@@ -183,6 +186,7 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
       'teaching.view',
       'teaching.absence.review',
       'teaching.reports.view',
+      'admin.certification.manage',
       'erp.generator.access',
       'comms.broadcast.manage',
       'sis.students.read',
@@ -281,6 +285,7 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
       'sis.students.read',
       'staff.documents.read',
       'staff.support.access',
+      'exams.invigilate.sessions',
       ...roleEventPerms('LECTURER'),
     ],
     restrictedFrom: ['Student Fee Statements', 'Other Staff Salaries & Contracts', 'Institutional Admissions Decisions'],
@@ -362,6 +367,7 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
       'staff.documents.read',
       'staff.registration.view',
       'staff.support.access',
+      'exams.invigilate.sessions',
       'website.content.view',
       'website.staff.view',
       'website.department.view',
@@ -411,6 +417,8 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
       'exams.cbt.manage',
       'exams.moderation.manage',
       'exams.cards.issue',
+      'exams.invigilate.sessions',
+      'admin.certification.manage',
       'sis.students.read',
       'staff.documents.read',
       'staff.support.access',
@@ -661,6 +669,7 @@ export const STAFF_ACCOUNTS: Record<StaffRole, StaffUserAccount> = {
 export const SHARED_STAFF_NAV: StaffNavItem[] = [
   { label: 'Dashboard', path: '/staff/dashboard', icon: 'LayoutDashboard' },
   { label: 'My Profile', path: '/staff/profile', icon: 'User' },
+  { label: 'My Duties & Permissions', path: '/staff/duties', icon: 'ShieldCheck' },
   { label: 'My Tasks', path: '/staff/tasks', icon: 'ClipboardList' },
   { label: 'Messages', path: '/staff/messages', icon: 'MessageSquare' },
   { label: 'Notifications', path: '/staff/notifications', icon: 'Bell' },
@@ -680,6 +689,14 @@ export const SHARED_STAFF_NAV: StaffNavItem[] = [
 export const ROLE_STAFF_NAV: Record<StaffRole, StaffNavItem[]> = {
   ADMIN: [
     { label: 'Users & Role Access', path: '/staff/admin/users', icon: 'ShieldCheck', permission: 'admin.users.manage' },
+    { label: 'Certification Candidates', path: '/staff/admin/candidates', icon: 'Users', permission: 'admin.certification.manage' },
+    { label: 'Classes & Programmes', path: '/staff/admin/classes', icon: 'Layers', permission: 'admin.certification.manage' },
+    { label: 'Modules & Assignments', path: '/staff/admin/modules', icon: 'BookOpen', permission: 'admin.certification.manage' },
+    { label: 'Exam Credit Ledger', path: '/staff/admin/credits', icon: 'Wallet', permission: 'admin.certification.manage' },
+    { label: 'Student Progression', path: '/staff/admin/progression', icon: 'GraduationCap', permission: 'admin.certification.manage' },
+    { label: 'Central Question Bank', path: '/staff/admin/question-bank', icon: 'ClipboardCheck', permission: 'admin.certification.manage' },
+    { label: 'Results & QR Certificates', path: '/staff/admin/results-certificates', icon: 'Award', permission: 'admin.certification.manage' },
+    { label: 'Invigilator Operations', path: '/staff/invigilator', icon: 'MonitorCheck', permission: 'exams.invigilate.sessions' },
     { label: 'Campuses & Departments', path: '/staff/admin/campuses', icon: 'Building2', permission: 'admin.campuses.read' },
     { label: 'Document System Config', path: '/staff/admin/document-config', icon: 'FolderCheck', permission: 'teaching.policy.configure' },
     { label: 'Attendance Escalation Policy', path: '/staff/admin/attendance-policy', icon: 'Gauge', permission: 'teaching.policy.configure' },
@@ -742,7 +759,10 @@ export const ROLE_STAFF_NAV: Record<StaffRole, StaffNavItem[]> = {
     { label: 'Enquiries CRM & Verification', path: '/staff/module/campus-services', icon: 'ClipboardCheck', permission: 'admissions.crm.manage' },
   ],
   EXAMINATIONS_OFFICER: [
+    { label: 'Invigilator Operations', path: '/staff/invigilator', icon: 'MonitorCheck', permission: 'exams.invigilate.sessions' },
     { label: 'CBT & Exam Scheduling', path: '/staff/module/examination', icon: 'GraduationCap', permission: 'exams.cbt.manage' },
+    { label: 'Central Question Bank', path: '/staff/admin/question-bank', icon: 'BookOpen', permission: 'admin.certification.manage' },
+    { label: 'Results & QR Certificates', path: '/staff/admin/results-certificates', icon: 'Award', permission: 'admin.certification.manage' },
     { label: 'Transcripts & Results Release', path: '/staff/module/registrar', icon: 'Award', permission: 'exams.moderation.manage' },
   ],
   QUALITY_ASSURANCE: [

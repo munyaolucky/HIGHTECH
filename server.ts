@@ -36,8 +36,19 @@ import {
   staffFinanceRoutes,
   studentFeesRoutes,
 } from './server/modules/finance/finance.routes.ts';
+import portalCapabilitiesRoutes from './server/modules/portal/capabilities.routes.ts';
+import {
+  academicCertificationRoutes,
+  adminCertificationRoutes,
+  candidateCertificationRoutes,
+  examAdminRoutes,
+  examCreditRoutes,
+  invigilatorRoutes,
+  publicCertVerifyRoutes,
+} from './server/modules/certification/certification.routes.ts';
 import { isPostgresConfigured } from './src/db/index.ts';
 import { ensurePostgresSeeded } from './server/lib/pg-sync.ts';
+import { enforceAccountSecurityGate } from './server/middleware/auth.ts';
 
 async function startServer() {
   const app = express();
@@ -64,6 +75,9 @@ async function startServer() {
     next();
   });
 
+  // Enforce mandatory first-login password change & email verification on all protected APIs
+  app.use('/api', enforceAccountSecurityGate);
+
   // Backend API Modules
   app.use('/api/public/events', publicEventsRoutes);
   app.use('/api/public', publicWebsiteRoutes);
@@ -76,6 +90,7 @@ async function startServer() {
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/staff', staffRoutes);
   app.use('/api/users', usersRoutes);
+  app.use('/api/portal', portalCapabilitiesRoutes);
   app.use('/api/documents', documentsRoutes);
   app.use('/api/signatures', signaturesRoutes);
   app.use('/api/registrations', registrationRoutes);
@@ -86,6 +101,14 @@ async function startServer() {
   app.use('/api/management', managementRoutes);
   app.use('/api/student/exam-sessions', studentSecureExamRoutes);
   app.use('/api/exams/supervisor', supervisorSecureExamRoutes);
+  app.use('/api/exam-supervisor', supervisorSecureExamRoutes);
+  app.use('/api/public/verify-certificate', publicCertVerifyRoutes);
+  app.use('/api/admin', adminCertificationRoutes);
+  app.use('/api/academic', academicCertificationRoutes);
+  app.use('/api/exam-credits', examCreditRoutes);
+  app.use('/api/exam-admin', examAdminRoutes);
+  app.use('/api/invigilator', invigilatorRoutes);
+  app.use('/api/candidate', candidateCertificationRoutes);
   app.use('/api/student/fees', studentFeesRoutes);
   app.use('/api/payments', mpesaWebhookRoutes);
   app.use('/api/finance', staffFinanceRoutes);
