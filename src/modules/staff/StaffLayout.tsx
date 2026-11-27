@@ -8,7 +8,6 @@ import {
   type StaffUserAccount,
 } from '../../config/staff-navigation';
 import type { PortalRole } from '../../types';
-import { syncStaffServerSession } from './hooks/useStaffDashboard';
 import StaffDashboardRouter from './StaffDashboardRouter';
 import StaffHeader from './StaffHeader';
 import StaffSidebar from './StaffSidebar';
@@ -23,7 +22,6 @@ export interface StaffUser {
 interface Props {
   role: StaffRole | 'UNCONFIGURED';
   initialPath?: string;
-  onSwitchRole: (role: StaffRole | 'UNCONFIGURED') => void;
   onSwitchPortal?: (portal: PortalRole) => void;
   onOpenActivationPage?: (token?: string) => void;
   onOpenPublicPreview?: (publicPath: string) => void;
@@ -33,7 +31,6 @@ interface Props {
 export default function StaffLayout({
   role,
   initialPath = '/staff/dashboard',
-  onSwitchRole,
   onSwitchPortal,
   onOpenActivationPage,
   onOpenPublicPreview,
@@ -49,31 +46,36 @@ export default function StaffLayout({
     setActivePath(initialPath);
   }, [initialPath]);
 
+  const resolvedStaffRole: StaffRole | null =
+    role !== 'UNCONFIGURED' ? role : null;
+  const accountTemplate: StaffUserAccount | null =
+    resolvedStaffRole ? STAFF_ACCOUNTS[resolvedStaffRole] ?? null : null;
+
   const account: StaffUserAccount | null =
-    role !== 'UNCONFIGURED' ? STAFF_ACCOUNTS[role] ?? null : null;
+    accountTemplate && resolvedStaffRole
+      ? {
+          ...accountTemplate,
+          id: authCtx?.user?.uid ?? '',
+          fullName: authCtx?.user?.fullName ?? '',
+          email: authCtx?.user?.email ?? '',
+          employeeNumber:
+            authCtx?.user?.registrationNumber ?? accountTemplate.employeeNumber,
+          role: resolvedStaffRole,
+          roleTitle: authCtx?.user?.roleTitle ?? accountTemplate.roleTitle,
+          department: authCtx?.user?.department ?? accountTemplate.department,
+          campus: authCtx?.user?.campus ?? accountTemplate.campus,
+          permissions: authCtx?.user?.permissions ?? [],
+        }
+      : null;
 
   const [selectedCampus, setSelectedCampus] = useState<string>(
     account?.campus ?? 'Nairobi Main Campus'
   );
 
-  useEffect(() => {
-    syncStaffServerSession(role).catch(() => {});
-  }, [role]);
-
   const activeCampus =
     account && account.allowedCampuses.includes(selectedCampus)
       ? selectedCampus
       : account?.campus ?? 'Nairobi Main Campus';
-
-  const handleRoleSwitch = (nextRole: StaffRole | 'UNCONFIGURED') => {
-    syncStaffServerSession(nextRole, true).catch(() => {});
-    onSwitchRole(nextRole);
-    setActivePath('/staff/dashboard');
-    setMobileOpen(false);
-    if (nextRole !== 'UNCONFIGURED' && STAFF_ACCOUNTS[nextRole]) {
-      setSelectedCampus(STAFF_ACCOUNTS[nextRole].campus);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#0b1424] text-slate-900 dark:text-slate-100 flex">
@@ -81,7 +83,6 @@ export default function StaffLayout({
         role={role}
         activePath={activePath}
         onNavigate={setActivePath}
-        onSwitchRole={handleRoleSwitch}
         permissions={account?.permissions ?? []}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}

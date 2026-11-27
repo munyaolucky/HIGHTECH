@@ -27,6 +27,7 @@ import { requireAuth, requirePortalAuth } from '../../middleware/auth.ts';
 import { getDb } from '../../data/store.ts';
 
 const router = Router();
+export const studentAcademicRoutes = Router();
 
 const GOVERNANCE_ROLES = new Set([
   'ADMIN',
@@ -577,16 +578,156 @@ function normalizeUnitsInput(rawUnits: unknown): { ok: true; units: AcademicUnit
   return { ok: true, units, totalCredits };
 }
 
+studentAcademicRoutes.get(
+  '/units',
+  requirePortalAuth,
+  async (req: Request, res: Response) => {
+    try {
+      await ensurePostgresSeeded();
+
+      if (!isPostgresConfigured()) {
+        res.status(503).json({
+          success: false,
+          error: 'Academic records are unavailable because PostgreSQL is not configured.',
+        });
+        return;
+      }
+
+      const portal = req.portalUser;
+
+      if (!portal || portal.primaryRole.toUpperCase() !== 'STUDENT' || req.staffUser) {
+        res.status(403).json({
+          success: false,
+          error: 'Only authenticated student accounts can access their registered units.',
+        });
+        return;
+      }
+
+      let student: typeof studentProfiles.$inferSelect | undefined;
+
+      if (portal.pgUserId) {
+        const [byUserId] = await db
+          .select()
+          .from(studentProfiles)
+          .where(eq(studentProfiles.userId, portal.pgUserId))
+          .limit(1);
+
+        student = byUserId;
+      }
+
+      if (!student && portal.registrationNumber) {
+        const [byRegistration] = await db
+          .select()
+          .from(studentProfiles)
+          .where(
+            eq(
+              studentProfiles.registrationNumber,
+              portal.registrationNumber.trim()
+            )
+          )
+          .limit(1);
+
+        student = byRegistration;
+      }
+
+      if (!student) {
+        res.status(404).json({
+          success: false,
+          error: 'No institutional student profile is linked to your account.',
+        });
+        return;
+      }
+
+      const rows = await db
+        .select({
+          registration: academicRegistrations,
+          academicYear: academicPeriods.academicYear,
+          semesterName: academicPeriods.semesterName,
+          intakeCode: academicPeriods.intakeCode,
+          startDate: academicPeriods.startDate,
+          endDate: academicPeriods.endDate,
+          registrationOpen: academicPeriods.registrationOpen,
+          periodStatus: academicPeriods.status,
+          isCurrent: academicPeriods.isCurrent,
+        })
+        .from(academicRegistrations)
+        .innerJoin(
+          academicPeriods,
+          eq(academicRegistrations.academicPeriodId, academicPeriods.id)
+        )
+        .where(eq(academicRegistrations.studentProfileId, student.id))
+        .orderBy(desc(academicPeriods.startDate));
+
+      res.json({
+        success: true,
+        data: {
+          student: {
+            registrationNumber: student.registrationNumber,
+            fullName: student.fullName,
+            programmeName: student.programmeName,
+            campusName: student.campusName,
+            studentStatus: student.status,
+            feeBalanceKes: student.feeBalanceKes,
+          },
+          registrations: rows.map((row) => ({
+            id: row.registration.id,
+            academicPeriodId: row.registration.academicPeriodId,
+            academicYear: row.academicYear,
+            semesterName: row.semesterName,
+            intakeCode: row.intakeCode,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            periodStatus: row.periodStatus,
+            isCurrent: row.isCurrent,
+            registrationOpen: row.registrationOpen,
+            approvalStatus: row.registration.approvalStatus,
+            totalCredits: row.registration.totalCredits,
+            feeThresholdCleared: row.registration.feeThresholdCleared,
+            registeredAt: row.registration.createdAt,
+            units: row.registration.unitsJson,
+          })),
+        },
+      });
+    } catch (err) {
+      console.error('Student registered units retrieval failed:', err);
+
+      res.status(500).json({
+        success: false,
+        error: 'Unable to retrieve your registered academic units.',
+      });
+    }
+  }
+);
+
 router.get('/academic-registrations', requirePortalAuth, async (req: Request, res: Response) => {
   try {
-    await ensurePostgresSeeded();
-    if (!isPostgresConfigured()) {
-      res.json({ success: true, data: [] });
+    const isStudent =
+      req.portalUser?.primaryRole?.toUpperCase() === 'STUDENT' &&
+      !req.staffUser;
+
+    const isAuthorizedStaff = Boolean(
+      req.staffUser &&
+      ACADEMIC_REG_STAFF_SUBMIT_ROLES.has(
+        req.staffUser.role.toUpperCase()
+      )
+    );
+
+    if (!isStudent && !isAuthorizedStaff) {
+      res.status(403).json({
+        success: false,
+        error: 'You are not authorized to view academic registrations.',
+      });
       return;
     }
 
-    const isStudent =
-      req.portalUser?.primaryRole === 'STUDENT' && !req.staffUser;
+    await ensurePostgresSeeded();
+    if (!isPostgresConfigured()) {
+      res.status(503).json({
+        success: false,
+        error: 'Academic registration records are currently unavailable.',
+      });
+      return;
+    }
 
     const statusFilter = String(req.query.status ?? 'ALL').trim().toUpperCase();
     const periodFilter = String(req.query.periodId ?? 'ALL').trim();
@@ -615,9 +756,11 @@ router.get('/academic-registrations', requirePortalAuth, async (req: Request, re
     const scoped = isStudent && req.portalUser
       ? rows.filter(
           (r) =>
-            r.studentUserId === req.portalUser?.pgUserId ||
+            (req.portalUser?.pgUserId &&
+              r.studentUserId === req.portalUser.pgUserId) ||
             (req.portalUser?.registrationNumber &&
-              r.registrationNumber.toUpperCase() === req.portalUser.registrationNumber.toUpperCase())
+              r.registrationNumber.trim().toUpperCase() ===
+                req.portalUser.registrationNumber.trim().toUpperCase())
         )
       : rows;
 

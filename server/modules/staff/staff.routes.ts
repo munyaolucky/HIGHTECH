@@ -1,127 +1,148 @@
 import { Router } from 'express';
-import { requireAuth, requirePermission } from '../../middleware/auth.ts';
+
+import {
+  requireStaffPortalAuth,
+  requirePermission,
+} from '../../middleware/auth.ts';
+
 import { staffController } from './staff.controller.ts';
 import { STAFF_PERMISSIONS } from './staff.permissions.ts';
 
 const router = Router();
 
-// Session synchronization (binds authenticated HttpOnly cookie)
-router.post('/session', staffController.switchSession);
-router.post('/logout', staffController.logout);
-router.get('/session', requireAuth, staffController.getSession);
+// Session management
+router.get(
+  '/session',
+  requireStaffPortalAuth,
+  staffController.getSession
+);
 
-// Core Staff Portal API Contract
+router.post(
+  '/logout',
+  staffController.logout
+);
+
+// Staff profile
 router.get(
   '/me',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.PROFILE_VIEW),
   staffController.getMe
 );
 
 router.patch(
   '/me',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.PROFILE_UPDATE),
   staffController.patchMe
 );
 
+// Dashboard
 router.get(
   '/dashboard/summary',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.DASHBOARD_VIEW),
   staffController.getDashboardSummary
 );
 
+// Tasks
 router.get(
   '/tasks',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.TASK_VIEW),
   staffController.getTasks
 );
 
 router.post(
   '/tasks',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
   staffController.createTask
 );
 
 router.patch(
   '/tasks/:id',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
   staffController.updateTask
 );
 
 router.delete(
   '/tasks/:id',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
   staffController.deleteTask
 );
 
+// Activity
 router.get(
   '/activity',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.ACTIVITY_VIEW),
   staffController.getActivity
 );
 
-router.get('/permissions', requireAuth, staffController.getPermissions);
+// Permissions
+router.get(
+  '/permissions',
+  requireStaffPortalAuth,
+  staffController.getPermissions
+);
 
+// Staff directory
 router.get(
   '/directory',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.PROFILE_VIEW),
   staffController.getDirectory
 );
 
-// Administrator Governance Endpoints (strict RBAC gated)
+// Administration
 router.get(
   '/admin/overview',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_VIEW),
   staffController.getAdminOverview
 );
 
 router.post(
   '/admin/invitations',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_CREATE),
   staffController.createStaffInvitation
 );
 
 router.post(
   '/admin/students',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_CREATE),
   staffController.createStudentAccount
 );
 
 router.patch(
   '/admin/staff/:id/access',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
   staffController.updateStaffAccess
 );
 
 router.post(
   '/admin/campuses',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
   staffController.createCampus
 );
 
 router.post(
   '/admin/departments',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
   staffController.createDepartment
 );
 
 router.post(
   '/admin/workflows/:id/decide',
-  requireAuth,
+  requireStaffPortalAuth,
   requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
   staffController.decideWorkflow
 );

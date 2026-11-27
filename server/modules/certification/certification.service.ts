@@ -13,6 +13,7 @@ import type {
   CertProgramme,
   CertificationAuditLog,
   CertificationBodyCode,
+  CertificationEligibilityResult,
   CertificationModuleState,
   CreditPackage,
   CreditReservation,
@@ -20,12 +21,15 @@ import type {
   DigitalCertificateRecord,
   ExamMarkingSubmission,
   ExamPaperBlueprint,
+  ExamPaperQuestionSelection,
+  ExamPaperTemplate,
   ExaminationCreditWallet,
   InvigilatorSessionRecord,
   ModuleRequirementKind,
   ProgressionStage,
   QuestionBankEntry,
   QuestionBankType,
+  QuestionCategoryTopic,
   QuestionReviewStatus,
 } from './certification.types.ts';
 
@@ -52,8 +56,43 @@ function nextId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function ensureExamAdminCollections(state: CertificationModuleState): void {
+  if (!Array.isArray(state.questionTopics)) state.questionTopics = [];
+  if (!Array.isArray(state.examTemplates)) state.examTemplates = [];
+  if (!Array.isArray(state.questionBank)) state.questionBank = [];
+  if (!Array.isArray(state.examPapers)) state.examPapers = [];
+
+  for (const q of state.questionBank) {
+    if (!q.title) q.title = (q.prompt || q.code).slice(0, 72);
+    if (!q.departmentId) {
+      const prog = state.programmes.find((p) => p.id === q.programmeId);
+      q.departmentId = prog?.departmentId || state.departments[0]?.id || 'cdept-ict';
+      q.departmentName = prog?.departmentName || state.departments[0]?.name || 'School of Computing & Informatics';
+    }
+    if (!q.departmentName) {
+      const dept = state.departments.find((d) => d.id === q.departmentId);
+      q.departmentName = dept?.name || 'School of Computing & Informatics';
+    }
+    if (!Array.isArray(q.reviewerComments)) q.reviewerComments = [];
+    if (!Array.isArray(q.approvalHistory)) q.approvalHistory = [];
+    if (!Array.isArray(q.examPaperIds)) q.examPaperIds = [];
+    if (!Array.isArray(q.versions)) q.versions = [];
+  }
+
+  for (const p of state.programmes) {
+    if (typeof p.minimumPassMark !== 'number') {
+      p.minimumPassMark = p.examBody === 'ICDL' ? 75 : p.examBody === 'NITA' ? 60 : 50;
+    }
+    if (typeof p.requiredCredits !== 'number') {
+      p.requiredCredits = p.requiredModulesCount || 4;
+    }
+  }
+}
+
 function getState(): CertificationModuleState {
-  return getDb().certificationState;
+  const state = getDb().certificationState;
+  ensureExamAdminCollections(state);
+  return state;
 }
 
 function commitState(
@@ -88,20 +127,70 @@ function stripQuestionAnswerKey(q: QuestionBankEntry) {
   return {
     id: q.id,
     code: q.code,
+    title: q.title,
     examBody: q.examBody,
+    departmentId: q.departmentId,
+    departmentName: q.departmentName,
     programmeId: q.programmeId,
     programmeName: q.programmeName,
     moduleCode: q.moduleCode,
     moduleTitle: q.moduleTitle,
+    topicId: q.topicId,
     topic: q.topic,
     questionType: q.questionType,
     difficulty: q.difficulty,
     marks: q.marks,
     prompt: q.prompt,
     options: q.options ? [...q.options] : undefined,
+    programmingLanguage: q.programmingLanguage,
+    starterCode: q.starterCode,
+    audioReferencePhrase: q.audioReferencePhrase,
     status: q.status,
     version: q.version,
   };
+}
+
+function csvSafeCell(value: unknown): string {
+  const raw = String(value ?? '');
+  const neutralized = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  const escaped = neutralized.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
+
+function computeTextSimilarity(a: string, b: string): number {
+  const tokenize = (text: string) =>
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length >= 3)
+    );
+  const setA = tokenize(a);
+  const setB = tokenize(b);
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let intersection = 0;
+  for (const w of setA) {
+    if (setB.has(w)) intersection += 1;
+  }
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 0 : Math.round((intersection / union) * 100);
+}
+
+function seededShuffle<T>(items: T[], seedText: string): T[] {
+  const arr = [...items];
+  let seed = 0;
+  for (let i = 0; i < seedText.length; i += 1) {
+    seed = (seed * 31 + seedText.charCodeAt(i)) >>> 0;
+  }
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const j = seed % (i + 1);
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
 }
 
 function ensureWallet(
@@ -448,9 +537,11 @@ export const certificationService = {
       departmentId: string;
       qualificationLevel?: CertProgramme['qualificationLevel'];
       durationLabel?: string;
-      examBody: CertificationBodyCode;
+      examBody?: CertificationBodyCode;
       certificationTitle?: string;
       requiredModulesCount?: number;
+      minimumPassMark?: number;
+      requiredCredits?: number;
     },
     actor: CertificationActor
   ): CertProgramme {
@@ -464,6 +555,7 @@ export const certificationService = {
     if (state.programmes.some((p) => p.code.toUpperCase() === code)) {
       throw new CertificationHttpError(409, `Programme code ${code} already exists.`);
     }
+    const reqMods = Math.max(1, Number(input.requiredModulesCount || 4));
     const prog: CertProgramme = {
       id: nextId('prog'),
       code,
@@ -474,7 +566,9 @@ export const certificationService = {
       durationLabel: input.durationLabel || '6 Months',
       examBody: input.examBody || 'ICDL',
       certificationTitle: input.certificationTitle || `${name} Certificate`,
-      requiredModulesCount: Math.max(1, Number(input.requiredModulesCount || 4)),
+      requiredModulesCount: reqMods,
+      minimumPassMark: Math.min(100, Math.max(1, Number(input.minimumPassMark ?? 50))),
+      requiredCredits: Math.max(1, Number(input.requiredCredits ?? reqMods)),
       status: 'ACTIVE',
     };
     state.programmes.push(prog);
@@ -1293,21 +1387,85 @@ export const certificationService = {
   // ============================================================================
   // 5. CENTRAL QUESTION BANK, VERSIONING, AI DRAFT & EXAM PAPER BUILDER
   // ============================================================================
+  getExamAdminDashboard() {
+    const state = getState();
+    const totalQuestions = state.questionBank.length;
+    const approvedQuestions = state.questionBank.filter((q) => q.status === 'APPROVED').length;
+    const awaitingReviewQuestions = state.questionBank.filter((q) => q.status === 'UNDER_REVIEW').length;
+    const draftQuestions = state.questionBank.filter((q) => q.status === 'DRAFT').length;
+    const archivedQuestions = state.questionBank.filter((q) => q.status === 'ARCHIVED').length;
+
+    const byExamBody = (
+      ['ICDL', 'KASNEB', 'TVET_CDACC', 'NITA', 'KNEC', 'HI_TECH_INTERNAL'] as CertificationBodyCode[]
+    ).map((body) => {
+      const subset = state.questionBank.filter((q) => q.examBody === body);
+      return {
+        examBody: body,
+        total: subset.length,
+        approved: subset.filter((q) => q.status === 'APPROVED').length,
+        underReview: subset.filter((q) => q.status === 'UNDER_REVIEW').length,
+        draft: subset.filter((q) => q.status === 'DRAFT').length,
+      };
+    });
+
+    const byDifficulty = (['EASY', 'MEDIUM', 'HARD'] as const).map((difficulty) => ({
+      difficulty,
+      count: state.questionBank.filter((q) => q.difficulty === difficulty).length,
+    }));
+
+    return {
+      kpis: {
+        totalQuestions,
+        approvedQuestions,
+        awaitingReviewQuestions,
+        draftQuestions,
+        archivedQuestions,
+        totalPapers: state.examPapers.length,
+        publishedPapers: state.examPapers.filter((p) => p.status === 'PUBLISHED').length,
+        topicsCount: state.questionTopics.length,
+        templatesCount: state.examTemplates.length,
+      },
+      byExamBody,
+      byDifficulty,
+      recentActivity: state.auditLogs.filter((l) => l.domain === 'QUESTION_BANK').slice(0, 15),
+    };
+  },
+
   listQuestions(
     filters: {
       examBody?: string;
+      departmentId?: string;
       programmeId?: string;
       moduleCode?: string;
+      topic?: string;
+      topicId?: string;
+      questionType?: string;
+      difficulty?: string;
       status?: string;
+      authorId?: string;
+      search?: string;
       stripAnswerKey?: boolean;
     } = {}
   ) {
     const state = getState();
+    const searchTerm = filters.search?.trim().toLowerCase() || '';
+    const topicTerm = filters.topic?.trim().toLowerCase() || '';
+
     const items = state.questionBank.filter((q) => {
       if (filters.examBody && q.examBody !== filters.examBody) return false;
+      if (filters.departmentId && q.departmentId !== filters.departmentId) return false;
       if (filters.programmeId && q.programmeId !== filters.programmeId) return false;
       if (filters.moduleCode && q.moduleCode !== filters.moduleCode) return false;
+      if (filters.topicId && q.topicId !== filters.topicId) return false;
+      if (topicTerm && !q.topic.toLowerCase().includes(topicTerm)) return false;
+      if (filters.questionType && q.questionType !== filters.questionType) return false;
+      if (filters.difficulty && q.difficulty !== filters.difficulty) return false;
       if (filters.status && q.status !== filters.status) return false;
+      if (filters.authorId && q.authorId !== filters.authorId) return false;
+      if (searchTerm) {
+        const hay = `${q.code} ${q.title} ${q.prompt} ${q.topic} ${q.moduleCode} ${q.moduleTitle} ${q.authorName}`.toLowerCase();
+        if (!hay.includes(searchTerm)) return false;
+      }
       return true;
     });
 
@@ -1317,12 +1475,61 @@ export const certificationService = {
     return items;
   },
 
+  getQuestionById(questionId: string, opts: { stripAnswerKey?: boolean } = {}) {
+    const state = getState();
+    const q = state.questionBank.find((item) => item.id === questionId);
+    if (!q) {
+      throw new CertificationHttpError(404, 'Question bank item not found.');
+    }
+    if (opts.stripAnswerKey) {
+      return stripQuestionAnswerKey(q);
+    }
+    const papersUsing = state.examPapers
+      .filter((p) => p.questionIds.includes(q.id) || q.examPaperIds.includes(p.id))
+      .map((p) => ({
+        id: p.id,
+        code: p.code,
+        title: p.title,
+        status: p.status,
+      }));
+    return {
+      ...q,
+      papersUsing,
+    };
+  },
+
+  getQuestionVersions(questionId: string) {
+    const state = getState();
+    const q = state.questionBank.find((item) => item.id === questionId);
+    if (!q) {
+      throw new CertificationHttpError(404, 'Question bank item not found.');
+    }
+    return {
+      questionId: q.id,
+      code: q.code,
+      title: q.title,
+      currentVersion: q.version,
+      status: q.status,
+      authorId: q.authorId,
+      authorName: q.authorName,
+      createdAt: q.createdAt,
+      updatedAt: q.updatedAt,
+      versions: q.versions,
+      reviewerComments: q.reviewerComments,
+      approvalHistory: q.approvalHistory,
+      examPaperIds: q.examPaperIds,
+    };
+  },
+
   createQuestion(
     input: {
       code?: string;
+      title?: string;
       examBody: CertificationBodyCode;
+      departmentId?: string;
       programmeId: string;
       moduleCode: string;
+      topicId?: string;
       topic: string;
       questionType: QuestionBankType;
       difficulty: 'EASY' | 'MEDIUM' | 'HARD';
@@ -1330,7 +1537,17 @@ export const certificationService = {
       prompt: string;
       options?: string[];
       correctAnswerKey: string;
+      correctAnswers?: string[];
+      matchingPairs?: Array<{ left: string; right: string }>;
+      orderingItems?: string[];
+      numericalTolerance?: number;
+      practicalChecklist?: string[];
+      programmingLanguage?: string;
+      starterCode?: string;
+      audioReferencePhrase?: string;
+      acceptedSpellings?: string[];
       rubricSummary?: string;
+      explanationForLecturer?: string;
       aiAssistedDraft?: boolean;
     },
     actor: CertificationActor
@@ -1338,46 +1555,136 @@ export const certificationService = {
     const state = getState();
     const prog = state.programmes.find((p) => p.id === input.programmeId) || state.programmes[0];
     const mod = state.modules.find((m) => m.code === input.moduleCode);
-    if (!input.prompt?.trim() || !input.correctAnswerKey?.trim()) {
+    const dept =
+      state.departments.find((d) => d.id === (input.departmentId || prog.departmentId)) ||
+      state.departments[0];
+    const qType = (input.questionType || 'SINGLE_CHOICE_MCQ') as QuestionBankType;
+
+    if (!input.prompt?.trim()) {
+      throw new CertificationHttpError(400, 'Question prompt is required.');
+    }
+
+    const answerKey = String(input.correctAnswerKey || '').trim();
+    if (
+      !answerKey &&
+      !(Array.isArray(input.correctAnswers) && input.correctAnswers.length > 0) &&
+      !(Array.isArray(input.matchingPairs) && input.matchingPairs.length > 0) &&
+      !(Array.isArray(input.orderingItems) && input.orderingItems.length > 0) &&
+      !(Array.isArray(input.practicalChecklist) && input.practicalChecklist.length > 0)
+    ) {
       throw new CertificationHttpError(400, 'Question prompt and answer key are required.');
     }
+
+    let normalizedOptions = Array.isArray(input.options)
+      ? input.options.map((o) => String(o).trim()).filter(Boolean)
+      : undefined;
+
+    if (qType === 'TRUE_FALSE' && (!normalizedOptions || normalizedOptions.length === 0)) {
+      normalizedOptions = ['True', 'False'];
+    }
+    if (
+      (qType === 'SINGLE_CHOICE_MCQ' || qType === 'MULTIPLE_RESPONSE_MCQ') &&
+      normalizedOptions &&
+      normalizedOptions.length < 2
+    ) {
+      throw new CertificationHttpError(400, `${qType} questions require at least 2 answer options.`);
+    }
+    if (qType === 'NUMERICAL' && answerKey) {
+      const numericVal = Number(answerKey.replace(/[^0-9.-]/g, ''));
+      if (Number.isNaN(numericVal)) {
+        throw new CertificationHttpError(400, 'NUMERICAL questions require a valid numeric answer key.');
+      }
+    }
+    if (qType === 'MATCHING' && Array.isArray(input.matchingPairs) && input.matchingPairs.length < 2) {
+      throw new CertificationHttpError(400, 'MATCHING questions require at least 2 left-right pairs.');
+    }
+    if (qType === 'ORDERING' && Array.isArray(input.orderingItems) && input.orderingItems.length < 2) {
+      throw new CertificationHttpError(400, 'ORDERING questions require at least 2 sequence steps.');
+    }
+
     state.sequences.qSeq += 1;
     const code =
       input.code?.trim().toUpperCase() ||
-      `${input.moduleCode.replace(/\s+/g, '')}-Q${String(state.sequences.qSeq).padStart(2, '0')}`;
+      `${(input.moduleCode || 'GEN').replace(/\s+/g, '')}-Q${String(state.sequences.qSeq).padStart(2, '0')}`;
     const marks = Math.max(1, Math.min(100, Math.floor(Number(input.marks || 5))));
     const timestamp = nowIso();
+    const title = String(input.title || input.prompt.trim().slice(0, 68)).trim();
+    const resolvedAnswerKey =
+      answerKey ||
+      input.correctAnswers?.join(' | ') ||
+      input.orderingItems?.join(' -> ') ||
+      input.matchingPairs?.map((p) => `${p.left} = ${p.right}`).join('; ') ||
+      input.practicalChecklist?.join('; ') ||
+      'See rubric';
+    const rubric =
+      input.rubricSummary?.trim() || `Standard ${marks}-mark ${qType.toLowerCase()} marking rubric.`;
+    const explanation =
+      input.explanationForLecturer?.trim() ||
+      `Validates candidate mastery of ${String(input.topic || 'Core Topic').trim()}.`;
 
     const q: QuestionBankEntry = {
       id: nextId('qb'),
       code,
+      title,
       examBody: input.examBody || prog.examBody,
+      departmentId: dept?.id || 'cdept-ict',
+      departmentName: dept?.name || 'School of Computing & Informatics',
       programmeId: prog.id,
       programmeName: prog.name,
-      moduleCode: input.moduleCode,
+      moduleCode: input.moduleCode || mod?.code || 'ICDL-M04',
       moduleTitle: mod?.title || input.moduleCode,
+      topicId: input.topicId,
       topic: String(input.topic || 'Core Topic').trim(),
-      questionType: input.questionType || 'SINGLE_CHOICE_MCQ',
+      questionType: qType,
       difficulty: input.difficulty || 'MEDIUM',
       marks,
       prompt: input.prompt.trim(),
-      options: Array.isArray(input.options) ? input.options : undefined,
-      correctAnswerKey: input.correctAnswerKey.trim(),
-      rubricSummary: input.rubricSummary?.trim() || `Standard ${marks}-mark rubric.`,
+      options: normalizedOptions,
+      correctAnswerKey: resolvedAnswerKey,
+      correctAnswers: input.correctAnswers,
+      matchingPairs: input.matchingPairs,
+      orderingItems: input.orderingItems,
+      numericalTolerance:
+        input.numericalTolerance !== undefined ? Math.max(0, Number(input.numericalTolerance)) : undefined,
+      practicalChecklist: input.practicalChecklist,
+      programmingLanguage: input.programmingLanguage?.trim() || undefined,
+      starterCode: input.starterCode || undefined,
+      audioReferencePhrase: input.audioReferencePhrase?.trim() || undefined,
+      acceptedSpellings: input.acceptedSpellings,
+      rubricSummary: rubric,
+      explanationForLecturer: explanation,
       status: 'DRAFT', // Strictly starts as DRAFT even when AI-assisted
       version: 1,
       aiAssistedDraft: Boolean(input.aiAssistedDraft),
       authorId: actor.id,
       authorName: actor.name,
+      reviewerComments: [],
+      approvalHistory: [
+        {
+          action: input.aiAssistedDraft ? 'AI_DRAFT_CREATED' : 'DRAFT_CREATED',
+          actorName: actor.name,
+          actorRole: actor.role,
+          comment: input.aiAssistedDraft
+            ? 'Generated AI-assisted draft awaiting human moderation.'
+            : 'Authored initial question draft.',
+          version: 1,
+          timestamp,
+        },
+      ],
+      examPaperIds: [],
       versions: [
         {
           version: 1,
+          title,
           prompt: input.prompt.trim(),
           marks,
-          options: Array.isArray(input.options) ? input.options : undefined,
-          correctAnswerSummary: input.correctAnswerKey.trim(),
+          options: normalizedOptions,
+          correctAnswerSummary: resolvedAnswerKey,
+          rubricSummary: rubric,
+          explanationForLecturer: explanation,
           editedByName: actor.name,
           changeNote: input.aiAssistedDraft ? 'AI-assisted draft creation' : 'Initial draft created',
+          paperIdsUsingVersion: [],
           editedAt: timestamp,
         },
       ],
@@ -1393,11 +1700,24 @@ export const certificationService = {
   editQuestion(
     questionId: string,
     updates: {
+      title?: string;
+      topic?: string;
+      difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
       prompt?: string;
       marks?: number;
       options?: string[];
       correctAnswerKey?: string;
+      correctAnswers?: string[];
+      matchingPairs?: Array<{ left: string; right: string }>;
+      orderingItems?: string[];
+      numericalTolerance?: number;
+      practicalChecklist?: string[];
+      programmingLanguage?: string;
+      starterCode?: string;
+      audioReferencePhrase?: string;
+      acceptedSpellings?: string[];
       rubricSummary?: string;
+      explanationForLecturer?: string;
       changeNote?: string;
     },
     actor: CertificationActor
@@ -1409,10 +1729,21 @@ export const certificationService = {
     }
 
     const wasApproved = q.status === 'APPROVED';
+    if (!wasApproved && actor.role === 'LECTURER' && q.authorId !== actor.id) {
+      throw new CertificationHttpError(
+        403,
+        'Lecturers can only edit their own draft questions.'
+      );
+    }
+
+    const nextTitle = updates.title?.trim() || q.title;
     const nextPrompt = updates.prompt?.trim() || q.prompt;
     const nextMarks = updates.marks ? Math.max(1, Math.floor(Number(updates.marks))) : q.marks;
     const nextOptions = updates.options ?? q.options;
     const nextKey = updates.correctAnswerKey?.trim() || q.correctAnswerKey;
+    const nextRubric = updates.rubricSummary?.trim() || q.rubricSummary;
+    const nextExplanation = updates.explanationForLecturer?.trim() || q.explanationForLecturer;
+    const timestamp = nowIso();
 
     if (wasApproved) {
       // Immutable version snapshot: editing an approved question preserves history & increments version back to DRAFT
@@ -1422,31 +1753,59 @@ export const certificationService = {
       q.approvedAt = undefined;
       q.versions.push({
         version: q.version,
+        title: nextTitle,
         prompt: nextPrompt,
         marks: nextMarks,
         options: nextOptions,
         correctAnswerSummary: nextKey,
+        rubricSummary: nextRubric,
+        explanationForLecturer: nextExplanation,
         editedByName: actor.name,
         changeNote: updates.changeNote?.trim() || `Created v${q.version} revision from approved item`,
-        editedAt: nowIso(),
+        paperIdsUsingVersion: [],
+        editedAt: timestamp,
+      });
+      q.approvalHistory.push({
+        action: 'NEW_VERSION_DRAFT',
+        actorName: actor.name,
+        actorRole: actor.role,
+        comment: updates.changeNote?.trim() || `Created v${q.version} revision from approved item`,
+        version: q.version,
+        timestamp,
       });
     } else {
       const latest = q.versions[q.versions.length - 1];
       if (latest) {
+        latest.title = nextTitle;
         latest.prompt = nextPrompt;
         latest.marks = nextMarks;
         latest.options = nextOptions;
         latest.correctAnswerSummary = nextKey;
-        latest.editedAt = nowIso();
+        latest.rubricSummary = nextRubric;
+        latest.explanationForLecturer = nextExplanation;
+        latest.editedAt = timestamp;
       }
     }
 
+    q.title = nextTitle;
+    if (updates.topic?.trim()) q.topic = updates.topic.trim();
+    if (updates.difficulty) q.difficulty = updates.difficulty;
     q.prompt = nextPrompt;
     q.marks = nextMarks;
     q.options = nextOptions;
     q.correctAnswerKey = nextKey;
-    if (updates.rubricSummary) q.rubricSummary = updates.rubricSummary.trim();
-    q.updatedAt = nowIso();
+    if (updates.correctAnswers !== undefined) q.correctAnswers = updates.correctAnswers;
+    if (updates.matchingPairs !== undefined) q.matchingPairs = updates.matchingPairs;
+    if (updates.orderingItems !== undefined) q.orderingItems = updates.orderingItems;
+    if (updates.numericalTolerance !== undefined) q.numericalTolerance = updates.numericalTolerance;
+    if (updates.practicalChecklist !== undefined) q.practicalChecklist = updates.practicalChecklist;
+    if (updates.programmingLanguage !== undefined) q.programmingLanguage = updates.programmingLanguage;
+    if (updates.starterCode !== undefined) q.starterCode = updates.starterCode;
+    if (updates.audioReferencePhrase !== undefined) q.audioReferencePhrase = updates.audioReferencePhrase;
+    if (updates.acceptedSpellings !== undefined) q.acceptedSpellings = updates.acceptedSpellings;
+    q.rubricSummary = nextRubric;
+    q.explanationForLecturer = nextExplanation;
+    q.updatedAt = timestamp;
 
     commitState(
       'QUESTION_BANK',
@@ -1460,14 +1819,25 @@ export const certificationService = {
   reviewQuestion(
     questionId: string,
     targetStatus: QuestionReviewStatus,
-    actor: CertificationActor
+    actor: CertificationActor,
+    comment?: string
   ): QuestionBankEntry {
     const state = getState();
     const q = state.questionBank.find((item) => item.id === questionId);
     if (!q) {
       throw new CertificationHttpError(404, 'Question bank item not found.');
     }
+
+    const timestamp = nowIso();
+    const cleanComment = comment?.trim() || '';
+
     if (targetStatus === 'APPROVED') {
+      if (actor.role === 'LECTURER') {
+        throw new CertificationHttpError(
+          403,
+          'Lecturers cannot approve examination questions; HOD, Examinations Officer, Registrar, Principal, or Admin approval is required.'
+        );
+      }
       if (q.authorId === actor.id && actor.role !== 'ADMIN' && actor.role !== 'EXAMINATIONS_OFFICER') {
         throw new CertificationHttpError(
           403,
@@ -1475,19 +1845,220 @@ export const certificationService = {
         );
       }
       q.approvedByName = actor.name;
-      q.approvedAt = nowIso();
+      q.approvedAt = timestamp;
+      const latest = q.versions[q.versions.length - 1];
+      if (latest) {
+        latest.approvedByName = actor.name;
+        latest.approvedAt = timestamp;
+        if (cleanComment) latest.reviewerComment = cleanComment;
+      }
     } else if (targetStatus === 'UNDER_REVIEW') {
       q.reviewerName = actor.name;
     }
+
     q.status = targetStatus;
-    q.updatedAt = nowIso();
+    q.updatedAt = timestamp;
+
+    if (cleanComment) {
+      q.reviewerComments.unshift({
+        actorName: actor.name,
+        actorRole: actor.role,
+        status: targetStatus,
+        comment: cleanComment,
+        createdAt: timestamp,
+      });
+    }
+    q.approvalHistory.push({
+      action: `TRANSITION_${targetStatus}`,
+      actorName: actor.name,
+      actorRole: actor.role,
+      comment: cleanComment || `Status transitioned to ${targetStatus}`,
+      version: q.version,
+      timestamp,
+    });
+
     commitState(
       'QUESTION_BANK',
       actor,
       `QUESTION_${targetStatus}`,
-      `Transitioned ${q.code} v${q.version} to ${targetStatus}`
+      `Transitioned ${q.code} v${q.version} to ${targetStatus}${cleanComment ? ` (${cleanComment})` : ''}`
     );
     return q;
+  },
+
+  listCategoriesAndTopics(filters: { examBody?: string; departmentId?: string; programmeId?: string } = {}) {
+    const state = getState();
+    const topics = state.questionTopics
+      .filter((t) => {
+        if (filters.examBody && t.examBody !== filters.examBody) return false;
+        if (filters.departmentId && t.departmentId !== filters.departmentId) return false;
+        if (filters.programmeId && t.programmeId !== filters.programmeId) return false;
+        return true;
+      })
+      .map((t) => {
+        const matchingQs = state.questionBank.filter(
+          (q) =>
+            q.moduleCode === t.moduleCode &&
+            (q.topicId === t.id || q.topic.toLowerCase() === t.name.toLowerCase())
+        );
+        return {
+          ...t,
+          questionCount: matchingQs.length,
+          approvedCount: matchingQs.filter((q) => q.status === 'APPROVED').length,
+        };
+      });
+
+    const bodies = ['ICDL', 'KASNEB', 'TVET_CDACC', 'NITA', 'KNEC', 'HI_TECH_INTERNAL'].map(
+      (body) => {
+        const bodyProgs = state.programmes.filter((p) => p.examBody === body);
+        return {
+          examBody: body,
+          programmes: bodyProgs.map((prog) => ({
+            ...prog,
+            modules: state.modules
+              .filter((m) => m.programmeId === prog.id)
+              .map((mod) => ({
+                ...mod,
+                topics: topics.filter((t) => t.moduleCode === mod.code),
+              })),
+          })),
+        };
+      }
+    );
+
+    return {
+      topics,
+      hierarchy: bodies,
+    };
+  },
+
+  createTopic(
+    input: {
+      code?: string;
+      name: string;
+      examBody?: CertificationBodyCode;
+      departmentId?: string;
+      programmeId?: string;
+      moduleCode: string;
+      learningOutcome?: string;
+    },
+    actor: CertificationActor
+  ): QuestionCategoryTopic {
+    const state = getState();
+    const name = String(input.name || '').trim();
+    const moduleCode = String(input.moduleCode || '').trim();
+    if (!name || !moduleCode) {
+      throw new CertificationHttpError(400, 'Topic name and moduleCode are required.');
+    }
+    const mod = state.modules.find((m) => m.code === moduleCode);
+    const prog =
+      state.programmes.find((p) => p.id === (input.programmeId || mod?.programmeId)) ||
+      state.programmes[0];
+    const dept =
+      state.departments.find((d) => d.id === (input.departmentId || prog.departmentId)) ||
+      state.departments[0];
+
+    const duplicate = state.questionTopics.find(
+      (t) => t.moduleCode === moduleCode && t.name.toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      throw new CertificationHttpError(409, `Topic "${name}" already exists under ${moduleCode}.`);
+    }
+
+    const topic: QuestionCategoryTopic = {
+      id: nextId('topic'),
+      code:
+        input.code?.trim().toUpperCase() ||
+        `TOP-${moduleCode.replace(/[^A-Z0-9]/gi, '').slice(0, 6)}-${state.questionTopics.length + 1}`,
+      name,
+      examBody: input.examBody || mod?.examBody || prog.examBody,
+      departmentId: dept?.id || 'cdept-ict',
+      departmentName: dept?.name || 'School of Computing & Informatics',
+      programmeId: prog.id,
+      programmeName: prog.name,
+      moduleCode,
+      moduleTitle: mod?.title || moduleCode,
+      learningOutcome:
+        input.learningOutcome?.trim() || `Assess applied competency in ${name} for ${moduleCode}.`,
+      createdByName: actor.name,
+      createdAt: nowIso(),
+    };
+
+    state.questionTopics.push(topic);
+    commitState('QUESTION_BANK', actor, 'TOPIC_CREATED', `Added topic ${topic.code} — ${topic.name}`);
+    return topic;
+  },
+
+  listExamTemplates(): ExamPaperTemplate[] {
+    return getState().examTemplates;
+  },
+
+  createExamTemplate(
+    input: {
+      code?: string;
+      name: string;
+      examBody: CertificationBodyCode;
+      programmeId: string;
+      moduleCode: string;
+      durationMinutes?: number;
+      totalMarks: number;
+      passMark: number;
+      targetQuestionCount?: number;
+      creditCost?: number;
+      randomizeQuestions?: boolean;
+      randomizeOptions?: boolean;
+      negativeMarking?: boolean;
+      negativeMarkingPenalty?: number;
+      maxAttempts?: number;
+      difficultyDistribution?: { EASY: number; MEDIUM: number; HARD: number };
+    },
+    actor: CertificationActor
+  ): ExamPaperTemplate {
+    const state = getState();
+    const name = String(input.name || '').trim();
+    const totalMarks = Number(input.totalMarks || 0);
+    const passMark = Number(input.passMark || 0);
+    if (!name || totalMarks <= 0 || passMark <= 0 || passMark > totalMarks) {
+      throw new CertificationHttpError(
+        400,
+        'Template requires a name, positive totalMarks, and passMark between 1 and totalMarks.'
+      );
+    }
+
+    const template: ExamPaperTemplate = {
+      id: nextId('tpl'),
+      code:
+        input.code?.trim().toUpperCase() ||
+        `TPL-${(input.moduleCode || 'EXM').replace(/\s+/g, '')}-${state.examTemplates.length + 1}`,
+      name,
+      examBody: input.examBody || 'ICDL',
+      programmeId: input.programmeId || state.programmes[0]?.id || 'prog-icdl-001',
+      moduleCode: input.moduleCode || 'ICDL-M04',
+      durationMinutes: Math.max(10, Number(input.durationMinutes || 60)),
+      totalMarks,
+      passMark,
+      targetQuestionCount: Math.max(1, Number(input.targetQuestionCount || 5)),
+      creditCost: Math.max(1, Number(input.creditCost || 1)),
+      randomizeQuestions: input.randomizeQuestions ?? true,
+      randomizeOptions: input.randomizeOptions ?? true,
+      negativeMarking: Boolean(input.negativeMarking),
+      negativeMarkingPenalty: input.negativeMarking
+        ? Math.max(0.25, Number(input.negativeMarkingPenalty || 0.25))
+        : 0,
+      maxAttempts: Math.max(1, Number(input.maxAttempts || 1)),
+      difficultyDistribution: input.difficultyDistribution || { EASY: 30, MEDIUM: 50, HARD: 20 },
+      createdByName: actor.name,
+      createdAt: nowIso(),
+    };
+
+    state.examTemplates.unshift(template);
+    commitState(
+      'QUESTION_BANK',
+      actor,
+      'TEMPLATE_CREATED',
+      `Created exam template ${template.code} — ${template.name}`
+    );
+    return template;
   },
 
   async generateAiDraftQuestions(
@@ -1497,6 +2068,8 @@ export const certificationService = {
       topic: string;
       count?: number;
       difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+      questionType?: QuestionBankType;
+      examBody?: CertificationBodyCode;
     },
     actor: CertificationActor
   ) {
@@ -1504,22 +2077,29 @@ export const certificationService = {
     const prog = state.programmes.find((p) => p.id === input.programmeId) || state.programmes[0];
     const count = Math.min(5, Math.max(1, Number(input.count || 2)));
     const difficulty = input.difficulty || 'MEDIUM';
+    const requestedType: QuestionBankType = input.questionType || 'SINGLE_CHOICE_MCQ';
 
     let generatedItems: Array<{
+      title?: string;
       prompt: string;
       questionType: QuestionBankType;
       options?: string[];
       correctAnswerKey: string;
+      rubricSummary?: string;
+      explanationForLecturer?: string;
       marks: number;
     }> = [];
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       try {
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+        });
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Generate ${count} ${difficulty} certification exam draft question(s) for module ${input.moduleCode} (${prog.name}) on topic "${input.topic}". Return JSON array of {prompt, questionType: "SINGLE_CHOICE_MCQ", options: [4 strings], correctAnswerKey, marks: 5}.`,
+          model: 'gemini-4-hydrogen',
+          contents: `Generate ${count} ${difficulty} certification exam draft question(s) of type ${requestedType} for module ${input.moduleCode} (${prog.name}) on topic "${input.topic}". Return JSON array of {title, prompt, questionType, options, correctAnswerKey, rubricSummary, explanationForLecturer, marks: 5}.`,
           config: { responseMimeType: 'application/json' },
         });
         const parsed = JSON.parse(response.text || '[]');
@@ -1533,44 +2113,208 @@ export const certificationService = {
 
     if (generatedItems.length === 0) {
       for (let idx = 0; idx < count; idx += 1) {
-        generatedItems.push({
-          prompt: `[AI Draft] In ${input.moduleCode} (${input.topic}), which institutional control best satisfies verification requirement #${idx + 1}?`,
-          questionType: 'SINGLE_CHOICE_MCQ',
-          options: [
-            `Apply validated ${input.topic} audit procedure`,
-            'Bypass server verification and trust browser state',
-            'Skip documentation and archive logs',
-            'Allow unauthenticated access during maintenance',
-          ],
-          correctAnswerKey: `Apply validated ${input.topic} audit procedure`,
-          marks: 5,
-        });
+        if (requestedType === 'PRACTICAL_TASK') {
+          generatedItems.push({
+            title: `${input.topic} Lab Task #${idx + 1}`,
+            prompt: `[AI Draft] Perform a practical ${input.moduleCode} assessment on ${input.topic}: validate source inputs, apply required controls, and export an auditable summary (#${idx + 1}).`,
+            questionType: 'PRACTICAL_TASK',
+            correctAnswerKey: `Completed ${input.topic} lab workbook matching institutional accuracy checklist.`,
+            rubricSummary: '2m input validation, 3m formula/rule logic, 3m audit summary, 2m formatting.',
+            explanationForLecturer: `Assesses applied ${input.topic} lab skills prior to ICDL/TVET moderation.`,
+            marks: 10,
+          });
+        } else if (requestedType === 'TRUE_FALSE') {
+          generatedItems.push({
+            title: `${input.topic} True/False Check #${idx + 1}`,
+            prompt: `[AI Draft] Statement #${idx + 1}: In ${input.moduleCode} (${input.topic}), server-side validation and version snapshots must never rely solely on browser state.`,
+            questionType: 'TRUE_FALSE',
+            options: ['True', 'False'],
+            correctAnswerKey: 'True',
+            rubricSummary: '1 mark for correct verification rule.',
+            explanationForLecturer: 'Tests core integrity principle for certification compliance.',
+            marks: 2,
+          });
+        } else {
+          generatedItems.push({
+            title: `${input.topic} Control Question #${idx + 1}`,
+            prompt: `[AI Draft] In ${input.moduleCode} (${input.topic}), which institutional control best satisfies verification requirement #${idx + 1}?`,
+            questionType: requestedType,
+            options: [
+              `Apply validated ${input.topic} audit procedure`,
+              'Bypass server verification and trust browser state',
+              'Skip documentation and archive logs',
+              'Allow unauthenticated access during maintenance',
+            ],
+            correctAnswerKey: `Apply validated ${input.topic} audit procedure`,
+            rubricSummary: '5 marks for accurate control selection; plausible distractors included.',
+            explanationForLecturer: `Generated distractors contrast compliant ${input.topic} procedure against common operational errors.`,
+            marks: 5,
+          });
+        }
       }
     }
 
-    const created: QuestionBankEntry[] = generatedItems.map((item) =>
-      this.createQuestion(
+    const similarityWarnings: Array<{
+      draftCode: string;
+      existingQuestionId: string;
+      existingCode: string;
+      similarityPercent: number;
+    }> = [];
+
+    const existingPool = state.questionBank.filter(
+      (q) => q.moduleCode === input.moduleCode || q.topic.toLowerCase() === input.topic.toLowerCase()
+    );
+
+    const created: QuestionBankEntry[] = generatedItems.map((item) => {
+      const createdEntry = this.createQuestion(
         {
-          examBody: prog.examBody,
+          title: item.title,
+          examBody: input.examBody || prog.examBody,
           programmeId: prog.id,
           moduleCode: input.moduleCode,
           topic: input.topic,
-          questionType: item.questionType || 'SINGLE_CHOICE_MCQ',
+          questionType: item.questionType || requestedType,
           difficulty,
           marks: item.marks || 5,
           prompt: item.prompt,
           options: item.options,
           correctAnswerKey: item.correctAnswerKey,
-          rubricSummary: 'AI-assisted draft — mandatory human moderator review before approval.',
+          rubricSummary:
+            item.rubricSummary || 'AI-assisted draft — mandatory human moderator review before approval.',
+          explanationForLecturer: item.explanationForLecturer,
           aiAssistedDraft: true,
         },
         actor
-      )
-    );
+      );
+
+      for (const existing of existingPool) {
+        if (existing.id === createdEntry.id) continue;
+        const sim = computeTextSimilarity(createdEntry.prompt, existing.prompt);
+        if (sim >= 45) {
+          similarityWarnings.push({
+            draftCode: createdEntry.code,
+            existingQuestionId: existing.id,
+            existingCode: existing.code,
+            similarityPercent: sim,
+          });
+        }
+      }
+      return createdEntry;
+    });
 
     return {
       createdCount: created.length,
       requiresHumanReview: true,
+      similarityWarnings,
+      questions: created,
+    };
+  },
+
+  exportQuestionsCsv(filters: Parameters<typeof this.listQuestions>[0] = {}) {
+    const items = this.listQuestions(filters) as QuestionBankEntry[];
+    const headers = [
+      'Code',
+      'Title',
+      'Exam Body',
+      'Department',
+      'Programme',
+      'Module Code',
+      'Topic',
+      'Type',
+      'Difficulty',
+      'Marks',
+      'Status',
+      'Version',
+      'Prompt',
+      'Answer Key',
+      'Author',
+    ];
+    const rows = items.map((q) =>
+      [
+        q.code,
+        q.title,
+        q.examBody,
+        q.departmentName,
+        q.programmeName,
+        q.moduleCode,
+        q.topic,
+        q.questionType,
+        q.difficulty,
+        q.marks,
+        q.status,
+        `v${q.version}`,
+        q.prompt,
+        q.correctAnswerKey,
+        q.authorName,
+      ]
+        .map(csvSafeCell)
+        .join(',')
+    );
+    return {
+      filename: `hitech-question-bank-${new Date().toISOString().slice(0, 10)}.csv`,
+      count: items.length,
+      csv: [headers.map(csvSafeCell).join(','), ...rows].join('\n'),
+    };
+  },
+
+  importQuestionsBatch(
+    payload: {
+      questions: Array<{
+        code?: string;
+        title?: string;
+        examBody?: CertificationBodyCode;
+        programmeId?: string;
+        moduleCode?: string;
+        topic?: string;
+        questionType?: QuestionBankType;
+        difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+        marks?: number;
+        prompt: string;
+        options?: string[];
+        correctAnswerKey: string;
+        rubricSummary?: string;
+        explanationForLecturer?: string;
+        status?: string; // Explicitly ignored — always imported as DRAFT
+      }>;
+    },
+    actor: CertificationActor
+  ) {
+    const items = Array.isArray(payload.questions) ? payload.questions : [];
+    if (items.length === 0) {
+      throw new CertificationHttpError(400, 'Provide at least one question record to import.');
+    }
+    const created: QuestionBankEntry[] = [];
+    for (const item of items) {
+      const q = this.createQuestion(
+        {
+          code: item.code,
+          title: item.title,
+          examBody: item.examBody || 'ICDL',
+          programmeId: item.programmeId || 'prog-icdl-001',
+          moduleCode: item.moduleCode || 'ICDL-M04',
+          topic: item.topic || 'Imported Topic',
+          questionType: item.questionType || 'SINGLE_CHOICE_MCQ',
+          difficulty: item.difficulty || 'MEDIUM',
+          marks: item.marks || 5,
+          prompt: item.prompt,
+          options: item.options,
+          correctAnswerKey: item.correctAnswerKey,
+          rubricSummary: item.rubricSummary,
+          explanationForLecturer: item.explanationForLecturer,
+          aiAssistedDraft: false,
+        },
+        actor
+      );
+      created.push(q);
+    }
+    commitState(
+      'QUESTION_BANK',
+      actor,
+      'QUESTIONS_BATCH_IMPORTED',
+      `Batch imported ${created.length} question(s) strictly as DRAFT.`
+    );
+    return {
+      importedCount: created.length,
       questions: created,
     };
   },
@@ -1586,6 +2330,7 @@ export const certificationService = {
       examBody: CertificationBodyCode;
       programmeId: string;
       moduleCode: string;
+      templateId?: string;
       durationMinutes: number;
       totalMarks: number;
       passMark: number;
@@ -1593,15 +2338,56 @@ export const certificationService = {
       randomizeQuestions?: boolean;
       randomizeOptions?: boolean;
       negativeMarking?: boolean;
+      negativeMarkingPenalty?: number;
       maxAttempts?: number;
-      questionIds: string[];
+      difficultyDistribution?: { EASY: number; MEDIUM: number; HARD: number };
+      questionIds?: string[];
+      autoSelectTopic?: string;
     },
     actor: CertificationActor
   ): ExamPaperBlueprint {
     const state = getState();
-    const questionIds = Array.isArray(input.questionIds) ? input.questionIds : [];
+    let questionIds = Array.isArray(input.questionIds) ? input.questionIds : [];
+    const totalMarks = Number(input.totalMarks);
+
+    if (questionIds.length === 0 && input.difficultyDistribution) {
+      // Auto-select approved questions matching moduleCode/examBody/topic up to totalMarks
+      const pool = state.questionBank.filter(
+        (q) =>
+          q.status === 'APPROVED' &&
+          (!input.moduleCode || q.moduleCode === input.moduleCode) &&
+          (!input.autoSelectTopic ||
+            q.topic.toLowerCase().includes(input.autoSelectTopic.toLowerCase()))
+      );
+      let running = 0;
+      const picked: string[] = [];
+      for (const diff of ['EASY', 'MEDIUM', 'HARD'] as const) {
+        const subset = pool.filter((q) => q.difficulty === diff && !picked.includes(q.id));
+        for (const candidate of subset) {
+          if (running + candidate.marks <= totalMarks) {
+            picked.push(candidate.id);
+            running += candidate.marks;
+          }
+          if (running === totalMarks) break;
+        }
+        if (running === totalMarks) break;
+      }
+      if (running < totalMarks) {
+        for (const candidate of pool) {
+          if (!picked.includes(candidate.id) && running + candidate.marks <= totalMarks) {
+            picked.push(candidate.id);
+            running += candidate.marks;
+          }
+        }
+      }
+      questionIds = picked;
+    }
+
     if (questionIds.length === 0) {
-      throw new CertificationHttpError(400, 'An exam paper must contain at least one approved question.');
+      throw new CertificationHttpError(
+        400,
+        'An exam paper must contain at least one approved question.'
+      );
     }
 
     const selectedQuestions = questionIds.map((id) => {
@@ -1619,7 +2405,6 @@ export const certificationService = {
     });
 
     const computedMarks = selectedQuestions.reduce((sum, q) => sum + q.marks, 0);
-    const totalMarks = Number(input.totalMarks);
     if (computedMarks !== totalMarks) {
       throw new CertificationHttpError(
         400,
@@ -1631,6 +2416,16 @@ export const certificationService = {
     }
 
     state.sequences.paperSeq += 1;
+    const selections: ExamPaperQuestionSelection[] = selectedQuestions.map((q) => ({
+      questionId: q.id,
+      code: q.code,
+      title: q.title,
+      version: q.version,
+      topic: q.topic,
+      difficulty: q.difficulty,
+      marks: q.marks,
+    }));
+
     const paper: ExamPaperBlueprint = {
       id: nextId('paper'),
       code:
@@ -1640,6 +2435,7 @@ export const certificationService = {
       examBody: input.examBody,
       programmeId: input.programmeId,
       moduleCode: input.moduleCode,
+      templateId: input.templateId,
       durationMinutes: Math.max(10, Number(input.durationMinutes || 60)),
       totalMarks,
       passMark: Number(input.passMark),
@@ -1647,12 +2443,30 @@ export const certificationService = {
       randomizeQuestions: input.randomizeQuestions ?? true,
       randomizeOptions: input.randomizeOptions ?? true,
       negativeMarking: Boolean(input.negativeMarking),
+      negativeMarkingPenalty: input.negativeMarking
+        ? Math.max(0.25, Number(input.negativeMarkingPenalty || 0.25))
+        : 0,
       maxAttempts: Math.max(1, Number(input.maxAttempts || 1)),
+      difficultyDistribution: input.difficultyDistribution,
       questionIds,
+      questionSelections: selections,
       status: 'DRAFT',
       createdByName: actor.name,
       createdAt: nowIso(),
     };
+
+    for (const q of selectedQuestions) {
+      if (!q.examPaperIds.includes(paper.id)) {
+        q.examPaperIds.push(paper.id);
+      }
+      const verSnap = q.versions.find((v) => v.version === q.version);
+      if (verSnap) {
+        if (!Array.isArray(verSnap.paperIdsUsingVersion)) verSnap.paperIdsUsingVersion = [];
+        if (!verSnap.paperIdsUsingVersion.includes(paper.id)) {
+          verSnap.paperIdsUsingVersion.push(paper.id);
+        }
+      }
+    }
 
     state.examPapers.unshift(paper);
     commitState(
@@ -1662,6 +2476,171 @@ export const certificationService = {
       `Built exam paper ${paper.code} (${selectedQuestions.length} questions, ${totalMarks} marks)`
     );
     return paper;
+  },
+
+  updatePaperQuestions(
+    paperId: string,
+    input: {
+      questionIds: string[];
+      totalMarks?: number;
+      passMark?: number;
+      randomizeQuestions?: boolean;
+      randomizeOptions?: boolean;
+      negativeMarking?: boolean;
+      negativeMarkingPenalty?: number;
+    },
+    actor: CertificationActor
+  ): ExamPaperBlueprint {
+    const state = getState();
+    const paper = state.examPapers.find((p) => p.id === paperId);
+    if (!paper) {
+      throw new CertificationHttpError(404, 'Exam paper not found.');
+    }
+    if (paper.status === 'PUBLISHED') {
+      throw new CertificationHttpError(409, 'Published exam papers cannot have their question set altered.');
+    }
+
+    const questionIds = Array.isArray(input.questionIds) ? input.questionIds : [];
+    if (questionIds.length === 0) {
+      throw new CertificationHttpError(400, 'An exam paper must contain at least one approved question.');
+    }
+
+    const selectedQuestions = questionIds.map((id) => {
+      const q = state.questionBank.find((item) => item.id === id);
+      if (!q) throw new CertificationHttpError(404, `Question ${id} not found.`);
+      if (q.status !== 'APPROVED') {
+        throw new CertificationHttpError(
+          400,
+          `Question ${q.code} is ${q.status}; only APPROVED questions can be assigned.`
+        );
+      }
+      return q;
+    });
+
+    const targetTotal = input.totalMarks !== undefined ? Number(input.totalMarks) : paper.totalMarks;
+    const computedMarks = selectedQuestions.reduce((sum, q) => sum + q.marks, 0);
+    if (computedMarks !== targetTotal) {
+      throw new CertificationHttpError(
+        400,
+        `Question marks total (${computedMarks}) must match paper totalMarks (${targetTotal}).`
+      );
+    }
+
+    const targetPass = input.passMark !== undefined ? Number(input.passMark) : paper.passMark;
+    if (targetPass <= 0 || targetPass > targetTotal) {
+      throw new CertificationHttpError(400, 'Pass mark must be between 1 and totalMarks.');
+    }
+
+    paper.questionIds = questionIds;
+    paper.totalMarks = targetTotal;
+    paper.passMark = targetPass;
+    if (input.randomizeQuestions !== undefined) paper.randomizeQuestions = input.randomizeQuestions;
+    if (input.randomizeOptions !== undefined) paper.randomizeOptions = input.randomizeOptions;
+    if (input.negativeMarking !== undefined) paper.negativeMarking = input.negativeMarking;
+    if (input.negativeMarkingPenalty !== undefined) {
+      paper.negativeMarkingPenalty = input.negativeMarkingPenalty;
+    }
+    paper.questionSelections = selectedQuestions.map((q) => ({
+      questionId: q.id,
+      code: q.code,
+      title: q.title,
+      version: q.version,
+      topic: q.topic,
+      difficulty: q.difficulty,
+      marks: q.marks,
+    }));
+
+    for (const q of selectedQuestions) {
+      if (!q.examPaperIds.includes(paper.id)) q.examPaperIds.push(paper.id);
+    }
+
+    commitState(
+      'QUESTION_BANK',
+      actor,
+      'PAPER_QUESTIONS_UPDATED',
+      `Updated question set on ${paper.code} (${selectedQuestions.length} items, ${targetTotal}m)`
+    );
+    return paper;
+  },
+
+  submitPaperForApproval(
+    paperId: string,
+    comment: string | undefined,
+    actor: CertificationActor
+  ): ExamPaperBlueprint {
+    const state = getState();
+    const paper = state.examPapers.find((p) => p.id === paperId);
+    if (!paper) {
+      throw new CertificationHttpError(404, 'Exam paper not found.');
+    }
+    const questions = paper.questionIds
+      .map((id) => state.questionBank.find((q) => q.id === id))
+      .filter(Boolean) as QuestionBankEntry[];
+    if (questions.length === 0 || questions.some((q) => q.status !== 'APPROVED')) {
+      throw new CertificationHttpError(
+        400,
+        'All questions attached to the paper must be APPROVED before submitting for approval.'
+      );
+    }
+    const marksSum = questions.reduce((s, q) => s + q.marks, 0);
+    if (marksSum !== paper.totalMarks) {
+      throw new CertificationHttpError(
+        400,
+        `Question marks (${marksSum}) do not match totalMarks (${paper.totalMarks}).`
+      );
+    }
+    paper.status = 'UNDER_REVIEW';
+    paper.submittedByName = actor.name;
+    paper.submittedAt = nowIso();
+    if (comment?.trim()) paper.reviewComment = comment.trim();
+    commitState(
+      'QUESTION_BANK',
+      actor,
+      'PAPER_SUBMITTED_FOR_APPROVAL',
+      `Submitted paper ${paper.code} for examination officer approval`
+    );
+    return paper;
+  },
+
+  previewExamPaper(
+    paperId: string,
+    opts: { seed?: string; includeAnswerKey?: boolean } = {}
+  ) {
+    const state = getState();
+    const paper = state.examPapers.find((p) => p.id === paperId);
+    if (!paper) {
+      throw new CertificationHttpError(404, 'Exam paper not found.');
+    }
+    const seed = opts.seed || paper.code;
+    const rawQuestions = paper.questionIds
+      .map((id) => state.questionBank.find((q) => q.id === id))
+      .filter(Boolean) as QuestionBankEntry[];
+
+    const ordered = paper.randomizeQuestions ? seededShuffle(rawQuestions, seed) : rawQuestions;
+    const renderedQuestions = ordered.map((q, index) => {
+      const base = opts.includeAnswerKey ? { ...q } : stripQuestionAnswerKey(q);
+      const options =
+        base.options && paper.randomizeOptions
+          ? seededShuffle(base.options, `${seed}:${q.id}`)
+          : base.options;
+      return {
+        position: index + 1,
+        ...base,
+        options,
+      };
+    });
+
+    return {
+      paper,
+      questionCount: renderedQuestions.length,
+      computedMarks: rawQuestions.reduce((s, q) => s + q.marks, 0),
+      difficultyBreakdown: {
+        EASY: rawQuestions.filter((q) => q.difficulty === 'EASY').length,
+        MEDIUM: rawQuestions.filter((q) => q.difficulty === 'MEDIUM').length,
+        HARD: rawQuestions.filter((q) => q.difficulty === 'HARD').length,
+      },
+      questions: renderedQuestions,
+    };
   },
 
   publishExamPaper(
@@ -1674,13 +2653,78 @@ export const certificationService = {
     if (!paper) {
       throw new CertificationHttpError(404, 'Exam paper not found.');
     }
+    if (actor.role === 'LECTURER') {
+      throw new CertificationHttpError(403, 'Lecturers cannot approve or publish examination papers.');
+    }
+    const attached = paper.questionIds
+      .map((id) => state.questionBank.find((q) => q.id === id))
+      .filter(Boolean) as QuestionBankEntry[];
+    if (attached.some((q) => q.status !== 'APPROVED')) {
+      throw new CertificationHttpError(
+        400,
+        'Cannot approve or publish paper while unapproved questions remain attached.'
+      );
+    }
+
     paper.status = targetStatus;
     paper.approvedByName = actor.name;
     if (targetStatus === 'PUBLISHED') {
-      paper.publishedAt = nowIso();
+      const ts = nowIso();
+      paper.publishedAt = ts;
+      for (const q of attached) {
+        const verSnap = q.versions.find((v) => v.version === q.version);
+        if (verSnap && !verSnap.publishedAt) verSnap.publishedAt = ts;
+      }
     }
     commitState('QUESTION_BANK', actor, `PAPER_${targetStatus}`, `Paper ${paper.code} -> ${targetStatus}`);
     return paper;
+  },
+
+  getExamAdminReports() {
+    const state = getState();
+    const byBody = (
+      ['ICDL', 'KASNEB', 'TVET_CDACC', 'NITA', 'KNEC', 'HI_TECH_INTERNAL'] as CertificationBodyCode[]
+    ).map((body) => {
+      const qs = state.questionBank.filter((q) => q.examBody === body);
+      const papers = state.examPapers.filter((p) => p.examBody === body);
+      return {
+        examBody: body,
+        questionCount: qs.length,
+        approvedCount: qs.filter((q) => q.status === 'APPROVED').length,
+        paperCount: papers.length,
+        publishedPaperCount: papers.filter((p) => p.status === 'PUBLISHED').length,
+      };
+    });
+
+    const typeMap = new Map<string, number>();
+    for (const q of state.questionBank) {
+      typeMap.set(q.questionType, (typeMap.get(q.questionType) || 0) + 1);
+    }
+
+    const byModule = state.modules.map((m) => {
+      const qs = state.questionBank.filter((q) => q.moduleCode === m.code);
+      return {
+        moduleCode: m.code,
+        moduleTitle: m.title,
+        examBody: m.examBody,
+        totalQuestions: qs.length,
+        approvedQuestions: qs.filter((q) => q.status === 'APPROVED').length,
+        totalMarksAvailable: qs.filter((q) => q.status === 'APPROVED').reduce((s, q) => s + q.marks, 0),
+      };
+    });
+
+    return {
+      summary: this.getExamAdminDashboard().kpis,
+      aiAssistedDraftCount: state.questionBank.filter((q) => q.aiAssistedDraft).length,
+      manualAuthorCount: state.questionBank.filter((q) => !q.aiAssistedDraft).length,
+      byBody,
+      byQuestionType: Array.from(typeMap.entries()).map(([questionType, count]) => ({
+        questionType,
+        count,
+      })),
+      byModule,
+      auditLogs: state.auditLogs.filter((l) => l.domain === 'QUESTION_BANK').slice(0, 30),
+    };
   },
 
   // ============================================================================
@@ -1975,6 +3019,182 @@ export const certificationService = {
     return state.certificates;
   },
 
+  checkCertificationEligibility(
+    studentRegNo: string,
+    programmeId?: string
+  ): CertificationEligibilityResult {
+    const db = getDb();
+    const state = getState();
+    const regNo = String(studentRegNo || '').trim().toUpperCase();
+    if (!regNo) {
+      throw new CertificationHttpError(400, 'Valid studentRegNo is required.');
+    }
+
+    const progression = state.progressions.find(
+      (p) => p.studentRegNo.toUpperCase() === regNo
+    );
+    const sisMatch = db.registrations.find(
+      (r) => (r.registrationNumber || '').toUpperCase() === regNo
+    );
+    const wallet = state.wallets.find((w) => w.studentRegNo.toUpperCase() === regNo);
+    const firstAssignment = state.moduleAssignments.find(
+      (a) => a.studentRegNo.toUpperCase() === regNo
+    );
+
+    if (!progression && !sisMatch && !wallet && !firstAssignment) {
+      throw new CertificationHttpError(404, `Candidate ${regNo} was not found.`);
+    }
+
+    const targetProgId =
+      programmeId || progression?.programmeId || firstAssignment?.programmeId;
+    const prog =
+      state.programmes.find((p) => p.id === targetProgId) || state.programmes[0];
+    if (!prog) {
+      throw new CertificationHttpError(404, 'Assigned certification programme not found.');
+    }
+
+    const studentName =
+      progression?.studentName ||
+      wallet?.studentName ||
+      sisMatch?.fullName ||
+      firstAssignment?.studentName ||
+      regNo;
+
+    const minimumPassMark = Number(prog.minimumPassMark ?? 50);
+    const requiredCredits = Math.max(
+      1,
+      Number(prog.requiredCredits ?? prog.requiredModulesCount ?? 1)
+    );
+
+    const assignments = state.moduleAssignments.filter(
+      (a) => a.studentRegNo.toUpperCase() === regNo && a.programmeId === prog.id
+    );
+    const mandatoryModules = state.modules.filter(
+      (m) => m.programmeId === prog.id && m.requirementKind === 'MANDATORY'
+    );
+    const requiredUnits = mandatoryModules.map((m) => m.code.toUpperCase());
+    const effectiveRequiredCount = Math.max(
+      prog.requiredModulesCount,
+      requiredUnits.length || 1
+    );
+
+    const submissionsForStudent = state.markingSubmissions.filter(
+      (m) => m.studentRegNo.toUpperCase() === regNo
+    );
+
+    const issues: string[] = [];
+    const completedUnits: string[] = [];
+
+    if (assignments.length === 0) {
+      issues.push(`No modules assigned under ${prog.name} (${prog.code}).`);
+    }
+
+    for (const assignment of assignments) {
+      const unitCode = assignment.moduleCode.toUpperCase();
+      const unitSubs = submissionsForStudent.filter(
+        (m) => m.moduleCode.toUpperCase() === unitCode
+      );
+      if (unitSubs.length > 0) {
+        const released = unitSubs.filter((m) => m.moderationStatus === 'RELEASED');
+        if (released.length === 0) {
+          issues.push(
+            `Assessment result for ${unitCode} is pending moderation or release.`
+          );
+          continue;
+        }
+        const bestPct = Math.max(
+          ...released.map((m) => {
+            const total = Math.max(1, Number(m.totalMarks || 100));
+            return Math.round(((m.objectiveScore + m.manualScore) / total) * 1000) / 10;
+          })
+        );
+        if (bestPct < minimumPassMark) {
+          issues.push(
+            `Unit ${unitCode} score (${bestPct}%) is below programme minimum pass mark (${minimumPassMark}%).`
+          );
+          continue;
+        }
+        if (assignment.status === 'COMPLETED' || bestPct >= minimumPassMark) {
+          completedUnits.push(unitCode);
+        }
+      } else if (assignment.status === 'COMPLETED' && assignment.progressPercent >= 100) {
+        completedUnits.push(unitCode);
+      } else {
+        issues.push(
+          `Unit ${unitCode} is ${assignment.status.toLowerCase().replace(/_/g, ' ')} (${assignment.progressPercent}%).`
+        );
+      }
+    }
+
+    for (const reqCode of requiredUnits) {
+      if (!completedUnits.includes(reqCode) && !assignments.some((a) => a.moduleCode.toUpperCase() === reqCode)) {
+        issues.push(`Required programme unit ${reqCode} is not yet completed.`);
+      }
+    }
+
+    // Check any released/pending exam submissions under this programme not linked to an assignment
+    const progModuleCodes = new Set(
+      state.modules.filter((m) => m.programmeId === prog.id).map((m) => m.code.toUpperCase())
+    );
+    for (const sub of submissionsForStudent) {
+      const code = sub.moduleCode.toUpperCase();
+      if (!progModuleCodes.has(code) && sub.examBody !== prog.examBody) continue;
+      if (assignments.some((a) => a.moduleCode.toUpperCase() === code)) continue;
+      if (sub.moderationStatus !== 'RELEASED') {
+        issues.push(`Assessment submission ${sub.attemptRef} (${code}) is not yet released.`);
+      } else {
+        const pct = Math.round(
+          ((sub.objectiveScore + sub.manualScore) / Math.max(1, sub.totalMarks)) * 1000
+        ) / 10;
+        if (pct < minimumPassMark) {
+          issues.push(`Unit ${code} score (${pct}%) is below programme pass mark (${minimumPassMark}%).`);
+        } else if (!completedUnits.includes(code)) {
+          completedUnits.push(code);
+        }
+      }
+    }
+
+    const creditsAchieved = completedUnits.length;
+    if (completedUnits.length < effectiveRequiredCount) {
+      issues.push(
+        `Completed ${completedUnits.length} of ${effectiveRequiredCount} required programme units.`
+      );
+    }
+    if (creditsAchieved < requiredCredits) {
+      issues.push(
+        `Insufficient academic credits: ${creditsAchieved} of ${requiredCredits} credits earned.`
+      );
+    }
+
+    const uniqueIssues = Array.from(new Set(issues));
+
+    return {
+      eligible: uniqueIssues.length === 0,
+      student: {
+        studentRegNo: regNo,
+        studentName,
+      },
+      programme: {
+        id: prog.id,
+        code: prog.code,
+        name: prog.name,
+        examBody: prog.examBody,
+        certificationTitle: prog.certificationTitle,
+        minimumPassMark,
+        requiredCredits,
+        requiredModulesCount: prog.requiredModulesCount,
+      },
+      credits: {
+        required: requiredCredits,
+        achieved: creditsAchieved,
+      },
+      requiredUnits,
+      completedUnits: Array.from(new Set(completedUnits)),
+      issues: uniqueIssues,
+      checkedAt: nowIso(),
+    };
+  },
+
   issueCertificate(
     input: { studentRegNo: string; programmeId: string },
     actor: CertificationActor
@@ -1984,6 +3204,15 @@ export const certificationService = {
     const prog = state.programmes.find((p) => p.id === input.programmeId);
     if (!regNo || !prog) {
       throw new CertificationHttpError(400, 'Valid studentRegNo and programmeId are required.');
+    }
+
+    const eligibility = this.checkCertificationEligibility(regNo, prog.id);
+    if (!eligibility.eligible) {
+      throw new CertificationHttpError(
+        400,
+        eligibility.issues.join(' ') ||
+          'Candidate is not eligible for certification until all required modules pass.'
+      );
     }
 
     const progression = this.recomputeProgressionInternal(state, regNo, undefined, prog);

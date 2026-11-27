@@ -189,7 +189,8 @@ function buildStaffSessionFromAccount(accountId: string): AuthenticatedSessionUs
 }
 
 export async function resolveSessionContextFromCookieHeader(
-  cookieHeader: string | undefined
+  cookieHeader: string | undefined,
+  requirePortalSession = false
 ): Promise<{
   portalUser?: PortalSessionContext;
   staffUser?: AuthenticatedSessionUser;
@@ -262,6 +263,11 @@ export async function resolveSessionContextFromCookieHeader(
     } catch (err) {
       console.error('Portal session validation error:', err);
     }
+  }
+
+  // Strict callers must never fall back to legacy staff cookies.
+  if (requirePortalSession) {
+    return {};
   }
 
   // 2. Fallback to signed staff session cookie (for role-switcher / existing staff APIs)
@@ -460,17 +466,96 @@ export async function requirePortalAuth(
   next();
 }
 
-export function requirePermission(permission: StaffPermission) {
+/**
+ * Strict authentication for institutional staff portals.
+ *
+ * Requirements:
+ * 1. A valid PostgreSQL portal session must exist.
+ * 2. The portal account must be active.
+ * 3. The account must map to an actual staff record.
+ * 4. The portal role must match the staff record role.
+ * 5. Legacy staff cookies alone must never authorize this middleware.
+ */
+export async function requireStaffPortalAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { portalUser, staffUser } = await resolveSessionContextFromCookieHeader(
+      req.headers.cookie,
+      true
+    );
+
+    // Do not accept a legacy staff cookie as proof of portal authentication.
+    if (!portalUser || !staffUser) {
+      res.status(401).json({
+        success: false,
+        code: 'STAFF_PORTAL_AUTH_REQUIRED',
+        error: 'Please sign in using your institutional portal account.',
+      });
+      return;
+    }
+
+    if (portalUser.accountStatus !== 'ACTIVE') {
+      res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_NOT_ACTIVE',
+        error: 'Your institutional account is not active.',
+      });
+      return;
+    }
+
+    const portalRole = portalUser.primaryRole.trim().toUpperCase();
+    const staffRole = staffUser.role.trim().toUpperCase();
+
+    // Prevent a portal account from borrowing another staff role.
+    if (portalRole !== staffRole) {
+      res.status(403).json({
+        success: false,
+        code: 'STAFF_ROLE_MISMATCH',
+        error: 'Your portal role does not match your staff account.',
+      });
+      return;
+    }
+
+    const securityBlock = getPortalSecurityBlock(portalUser);
+
+    if (securityBlock) {
+      res.status(403).json({
+        success: false,
+        code: securityBlock.code,
+        error: securityBlock.error,
+      });
+      return;
+    }
+
+    req.portalUser = portalUser;
+    req.staffUser = staffUser;
+
+    next();
+  } catch (error) {
+    console.error('Staff portal authentication failed:', error);
+
+    res.status(500).json({
+      success: false,
+      code: 'STAFF_AUTHENTICATION_ERROR',
+      error: 'Unable to verify your staff portal session.',
+    });
+  }
+}
+
+export function requirePermission(...permissions: StaffPermission[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const user = req.staffUser;
     if (!user) {
       res.status(401).json({ success: false, error: 'Authentication required.' });
       return;
     }
-    if (!user.permissions.includes(permission)) {
+    if (!permissions.some((permission) => user.permissions.includes(permission))) {
       res.status(403).json({
         success: false,
-        error: `Access denied: requires ${permission} permission.`,
+        error: `Access denied: requires ${permissions.join(' or ')} permission.`,
       });
       return;
     }

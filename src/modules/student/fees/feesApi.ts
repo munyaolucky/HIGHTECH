@@ -461,14 +461,30 @@ export function downloadCsv(filename: string, headers: string[], rows: (string |
   downloadStudentDocument(filename, lines.join('\r\n'));
 }
 
+function isExplicitPreviewMode(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  return new URLSearchParams(window.location.search).get('preview') === '1';
+}
+
 async function fetchJsonOrFallback<T>(
   url: string,
   options: RequestInit | undefined,
   fallback: () => T
 ): Promise<{ data: T; source: 'server' | 'preview' }> {
+  const previewAllowed = isExplicitPreviewMode();
+
   if (typeof fetch !== 'function') {
-    return { data: fallback(), source: 'preview' };
+    if (previewAllowed) {
+      return {
+        data: fallback(),
+        source: 'preview',
+      };
+    }
+
+    throw new Error('The financial service is unavailable.');
   }
+
   try {
     const res = await fetch(url, {
       credentials: 'include',
@@ -478,23 +494,47 @@ async function fetchJsonOrFallback<T>(
         ...(options?.headers ?? {}),
       },
     });
+
     const payload = (await res.json().catch(() => ({}))) as {
       success?: boolean;
       data?: T;
       error?: string;
     };
+
     if (res.status === 401 || res.status === 403) {
-      return { data: fallback(), source: 'preview' };
+      if (previewAllowed) {
+        return {
+          data: fallback(),
+          source: 'preview',
+        };
+      }
+
+      throw new Error(
+        res.status === 401
+          ? 'Please sign in to access your financial records.'
+          : 'You are not authorized to access these financial records.'
+      );
     }
+
     if (!res.ok || !payload.success || payload.data === undefined) {
-      throw new Error(payload.error || `Request failed with HTTP ${res.status}`);
+      throw new Error(
+        payload.error || `Financial request failed with HTTP ${res.status}.`
+      );
     }
-    return { data: payload.data, source: 'server' };
-  } catch (err) {
-    if (err instanceof TypeError) {
-      return { data: fallback(), source: 'preview' };
+
+    return {
+      data: payload.data,
+      source: 'server',
+    };
+  } catch (error) {
+    if (error instanceof TypeError && previewAllowed) {
+      return {
+        data: fallback(),
+        source: 'preview',
+      };
     }
-    throw err;
+
+    throw error;
   }
 }
 

@@ -1,0 +1,1909 @@
+My recommendation is to stop adding new features temporarily and first make your existing HI-TECH College system secure, stable and fully functional.
+You have already developed a substantial foundation. You do not need to throw it away or start again.
+Here is exactly what I recommend you do.
+1. What you should do first
+Priority 1
+Fix security and financial integrity
+Remove the simulated M-Pesa PIN-entry interface.
+Implement real Safaricom Daraja STK Push.
+Verify payment callbacks.
+Remove default passwords.
+Fix authentication session expiration.
+Remove hardcoded security secrets.
+Protect student and staff personal information.\
+Priority 2
+Fix the database
+Make PostgreSQL the central source of truth.
+Implement database migrations.
+Replace operational localStorage persistence.
+Ensure all users see shared records.
+Implement database backup and recovery.\
+Priority 3
+Complete the institutional workflows
+Student admission and registration.
+Staff and lecturer management.
+Attendance and absence reporting.
+Lesson plans and schemes of work.
+Examination and assessment.
+Fee payment and receipts.
+Document management.
+Results and certification.\
+Priority 4
+Test and prepare for deployment
+Fix TypeScript errors.
+Run all automated tests.
+Test all roles and permissions.
+Test mobile and desktop interfaces.
+Conduct security testing.
+Deploy to a staging environment.
+2. How I recommend we work
+Use your existing GitHub repository:
+HIGHTECH – GitHub
+We should work in small development phases.
+For every phase:
+Inspect the existing files.
+Identify the actual problem.
+Explain the correction.
+Provide complete replacement code.
+Run the relevant tests.
+Check for regressions.
+Commit the completed work.
+Move to the next phase.
+Do not delete working modules just to make the architecture look cleaner.
+3. Choose where we start
+What should I work on first?
+A. Security and M-Pesa
+Fix passwords, authentication, encryption and payment security.
+B. Database and backend
+Fix PostgreSQL, migrations, APIs and shared data.
+C. Complete all user portals
+Student, lecturer, staff, HOD, principal, registrar and finance.
+D. Complete technical audit
+Identify every remaining feature, bug, incomplete file and integration.
+E. Complete project architecture
+Organize the existing system into API, web and mobile applications.
+How should we implement it?
+Preserve existing code and improve it incrementally (recommended).
+Restructure the project while preserving existing features.
+Start development
+My choice would be A → B → C → D → E, with existing code preserved wherever possible.
+The ultimate goal is a reliable, integrated college management platform that HI-TECH College can actually use for daily academic, administrative and financial operations.# Phase 1 – Portal access and permission integrity
+Existing source inspected
+I am starting with the shared authentication and role-permission layer because it affects every portal.
+The first confirmed issue is in:
+src/auth/auth-utils.ts
+src/auth/auth-api.ts
+tests/authRbacAndPortalUi.test.ts
+Problem: normalizeServerUser() merges permissions returned by the server with locally defined default role permissions.
+This can reintroduce a permission that an administrator deliberately removed from a user's account. Even if the backend rejects the operation, the frontend can incorrectly display restricted controls.
+The correction is to make the server's permission list authoritative. Local role defaults should only be used when the server has not supplied a permission list at all.
+2. A more serious portal vulnerability found
+I inspected the staff session endpoint and discovered that it accepts a requested staff role without requiring authentication.
+Affected files:
+server/modules/staff/staff.routes.ts
+server/modules/staff/staff.controller.ts
+src/modules/staff/StaffSidebar.tsx
+src/modules/staff/StaffLayout.tsx
+src/modules/staff/StaffPortal.tsx
+The current role switcher allows a user to select another staff role, and the backend endpoint creates a session for the selected role.
+This is not an acceptable production RBAC design.
+The correction must:
+Require an authenticated portal session.
+Derive staff identity from the authenticated account.
+Reject requests to switch to a role the account does not hold.
+Remove the ability to impersonate another staff member through the ordinary sidebar.
+Protect every portal route, not just the login and password pages.
+A lecturer must not be able to become a finance officer or principal by selecting a different role in the interface.
+Phase 1 implementation package
+Source changes prepared
+Tests awaiting execution
+I have modified the working copy of your uploaded project and prepared a patch containing 15 source/test files plus installation instructions.
+1. Changes made
+Component	Change
+Student portal	Authentication and role protection
+Staff portal	Actual authenticated staff identity
+Lecturer portal	Lecturer-only access
+Other staff portals	Role-based access
+Student records	SIS permission protection
+Staff user management	Admin permission protection
+Staff sessions	Prevent role impersonation
+Staff navigation	Removed role-switch dropdown
+Permission resolver	Server permissions authoritative
+Portal destinations	Correct role-specific redirects
+2. Get the updated code
+HI-TECH Portals Phase 1 Patch
+ZIP · 16 files · 63 KB
+Ready
+Download Phase 1 source code
+Extract the ZIP into your existing HIGHTECH-main project root, preserving the folder structure.
+3. Run these commands
+From your project directory:
+Code
+npm ci
+Then:
+Code
+npm run lint
+npm test
+npm run build
+I could not execute these successfully in my environment because dependency installation timed out and tsx was unavailable. The ZIP itself passed its integrity check. I also found no TypeScript parser/syntax diagnostics in the modified files, but this is not a substitute for a complete compilation.
+No Git commit has been made: the uploaded ZIP does not contain Git repository metadata.
+4. What comes next
+I recommend continuing with:
+Phase 2 – Complete Student and Staff Portal Workflows
+Student dashboard connected to real student records.
+Lecturer dashboard connected to assigned classes and units.
+Attendance recording and HOD/principal alerts.
+Lesson plans, schemes of work and records of work.
+Student absence explanations and document uploads.
+Registrar and admissions workflows.
+Finance dashboard and student fee statements.
+Examination and assessment workflows.
+Role-specific dashboards for all remaining staff.
+Mobile and desktop verification.
+Next milestone: Make every portal display the correct authenticated user's information and retrieve its operational data from the central database, rather than relying on demonstration records.
+We should preserve the existing modules and implement this one portal workflow at a time.# HI-TECH College – Portal Development Core
+I will write the code directly here, using the structure in your uploaded HIGHTECH-main.zip.
+We will preserve React, TypeScript, Express and Drizzle ORM. We will not replace the existing application.
+One important correction before implementation: the earlier patch should not be applied blindly. Its session middleware still accepts the legacy staff cookie through requirePortalAuth. That does not completely close the role-impersonation vulnerability.
+The code below uses the authenticated PostgreSQL portal session as the authority for staff identity.
+1. Backend authentication and RBAC
+File 1: server/middleware/auth.ts
+Keep the existing middleware and add this new middleware after requirePortalAuth.
+Code
+/**
+ * Strict authentication for institutional staff portals.
+ *
+ * Requirements:
+ * 1. A valid PostgreSQL portal session must exist.
+ * 2. The portal account must be active.
+ * 3. The account must map to an actual staff record.
+ * 4. The portal role must match the staff record role.
+ * 5. Legacy staff cookies alone must never authorize this middleware.
+ */
+export async function requireStaffPortalAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { portalUser, staffUser } =
+      await resolveSessionContextFromCookieHeader(req.headers.cookie);
+
+    // Do not accept a legacy staff cookie as proof of portal authentication.
+    if (!portalUser || !staffUser) {
+      res.status(401).json({
+        success: false,
+        code: 'STAFF_PORTAL_AUTH_REQUIRED',
+        error: 'Please sign in using your institutional portal account.',
+      });
+      return;
+    }
+
+    if (portalUser.accountStatus !== 'ACTIVE') {
+      res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_NOT_ACTIVE',
+        error: 'Your institutional account is not active.',
+      });
+      return;
+    }
+
+    const portalRole = portalUser.primaryRole.trim().toUpperCase();
+    const staffRole = staffUser.role.trim().toUpperCase();
+
+    // Prevent a portal account from borrowing another staff role.
+    if (portalRole !== staffRole) {
+      res.status(403).json({
+        success: false,
+        code: 'STAFF_ROLE_MISMATCH',
+        error: 'Your portal role does not match your staff account.',
+      });
+      return;
+    }
+
+    const securityBlock = getPortalSecurityBlock(portalUser);
+
+    if (securityBlock) {
+      res.status(403).json({
+        success: false,
+        code: securityBlock.code,
+        error: securityBlock.error,
+      });
+      return;
+    }
+
+    req.portalUser = portalUser;
+    req.staffUser = staffUser;
+
+    next();
+  } catch (error) {
+    console.error('Staff portal authentication failed:', error);
+
+    res.status(500).json({
+      success: false,
+      code: 'STAFF_AUTHENTICATION_ERROR',
+      error: 'Unable to verify your staff portal session.',
+    });
+  }
+}
+This middleware fails closed when PostgreSQL-backed portal authentication is unavailable. It does not accept the legacy staff session cookie on its own.
+File 2: server/modules/staff/staff.routes.ts
+Replace the existing route file with this version. It preserves the existing controller endpoints but removes the insecure role-switching session creation endpoint.
+Code
+import { Router } from 'express';
+
+import {
+  requireStaffPortalAuth,
+  requirePermission,
+} from '../../middleware/auth.ts';
+
+import { staffController } from './staff.controller.ts';
+import { STAFF_PERMISSIONS } from './staff.permissions.ts';
+
+const router = Router();
+
+// Session management
+router.get(
+  '/session',
+  requireStaffPortalAuth,
+  staffController.getSession
+);
+
+router.post(
+  '/logout',
+  staffController.logout
+);
+
+// Staff profile
+router.get(
+  '/me',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.PROFILE_VIEW),
+  staffController.getMe
+);
+
+router.patch(
+  '/me',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.PROFILE_UPDATE),
+  staffController.patchMe
+);
+
+// Dashboard
+router.get(
+  '/dashboard/summary',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.DASHBOARD_VIEW),
+  staffController.getDashboardSummary
+);
+
+// Tasks
+router.get(
+  '/tasks',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.TASK_VIEW),
+  staffController.getTasks
+);
+
+router.post(
+  '/tasks',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
+  staffController.createTask
+);
+
+router.patch(
+  '/tasks/:id',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
+  staffController.updateTask
+);
+
+router.delete(
+  '/tasks/:id',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.TASK_UPDATE),
+  staffController.deleteTask
+);
+
+// Activity
+router.get(
+  '/activity',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.ACTIVITY_VIEW),
+  staffController.getActivity
+);
+
+// Permissions
+router.get(
+  '/permissions',
+  requireStaffPortalAuth,
+  staffController.getPermissions
+);
+
+// Staff directory
+router.get(
+  '/directory',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.PROFILE_VIEW),
+  staffController.getDirectory
+);
+
+// Administration
+router.get(
+  '/admin/overview',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_VIEW),
+  staffController.getAdminOverview
+);
+
+router.post(
+  '/admin/invitations',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_CREATE),
+  staffController.createStaffInvitation
+);
+
+router.post(
+  '/admin/students',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_CREATE),
+  staffController.createStudentAccount
+);
+
+router.patch(
+  '/admin/staff/:id/access',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
+  staffController.updateStaffAccess
+);
+
+router.post(
+  '/admin/campuses',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
+  staffController.createCampus
+);
+
+router.post(
+  '/admin/departments',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
+  staffController.createDepartment
+);
+
+router.post(
+  '/admin/workflows/:id/decide',
+  requireStaffPortalAuth,
+  requirePermission(STAFF_PERMISSIONS.USERS_UPDATE),
+  staffController.decideWorkflow
+);
+
+export default router;
+Important: Every route above is protected at the server. Hiding a menu item in React is not a replacement for backend authorization.
+File 3: server/modules/staff/staff.controller.ts
+Remove the insecure switchSession controller method. Also remove its unused imports:
+Code
+import { getDb } from '../../data/store.ts';
+import {
+  PORTAL_SESSION_COOKIE_NAME,
+  setSessionCookie,
+} from '../../middleware/auth.ts';
+import { ROLE_REGISTRATION_PERMISSIONS } from '../registration/registration.permissions.ts';
+import { validateSessionSwitch } from './staff.schemas.ts';
+Replace them with:
+Code
+import type { Request, Response } from 'express';
+import { clearSessionCookie } from '../../middleware/auth.ts';
+Keep your existing validation and service imports.
+Use these session handlers inside the existing staffController object:
+Code
+getSession(req: Request, res: Response): void {
+  const staff = req.staffUser;
+
+  if (!staff) {
+    res.status(401).json({
+      success: false,
+      error: 'Staff authentication required.',
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    data: staffService.getProfile(staff),
+    permissions: staff.permissions,
+    documentPermissions: staff.documentPermissions,
+    registrationPermissions: staff.registrationPermissions,
+  });
+},
+
+logout(_req: Request, res: Response): void {
+  clearSessionCookie(res);
+
+  res.json({
+    success: true,
+    message: 'Portal session cookies cleared.',
+  });
+},
+Do not delete the remaining controller methods such as getMe, patchMe, getDashboardSummary, getTasks or the administration handlers.
+2. Frontend permission authority
+File 4: src/auth/auth-utils.ts
+Replace the existing resolveStaffPermissionsForRole function.
+The previous implementation merges role defaults into server permissions. That can accidentally restore revoked permissions.
+Code
+export function resolveStaffPermissionsForRole(
+  _role: string,
+  serverPermissions?: string[]
+): string[] {
+  // The server is the authoritative source of access permissions.
+  // Never restore revoked permissions from frontend role defaults.
+
+  if (!Array.isArray(serverPermissions)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      serverPermissions
+        .filter(
+          (permission): permission is string =>
+            typeof permission === 'string'
+        )
+        .map((permission) => permission.trim())
+        .filter((permission) => permission.length > 0)
+    ),
+  ];
+}
+Keep the existing permission helper functions in this file.
+File 5: src/modules/staff/hooks/useStaffDashboard.ts
+The staff dashboard must no longer create a session by submitting a selected role.
+Replace the existing file with:
+Code
+import { useCallback, useEffect, useState } from 'react';
+import type { StaffRole } from '../../../config/staff-navigation';
+
+export interface DashboardData {
+  staff: {
+    id: string;
+    employeeNumber: string;
+    fullName: string;
+    role: string;
+    department?: string;
+    campus?: string;
+  };
+
+  statistics: {
+    key: string;
+    label: string;
+    value: number | string;
+    description?: string;
+  }[];
+
+  tasks: {
+    id: string;
+    title: string;
+    description: string;
+    dueAt?: string;
+    status:
+      | 'PENDING'
+      | 'IN_PROGRESS'
+      | 'COMPLETED'
+      | 'URGENT';
+  }[];
+
+  activities: {
+    id: string;
+    action: string;
+    description: string;
+    createdAt: string;
+  }[];
+}
+
+interface ApiResponse {
+  success: boolean;
+  data?: DashboardData;
+  error?: string;
+}
+
+export function useStaffDashboard(
+  role: StaffRole | 'UNCONFIGURED'
+) {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const refetch = useCallback(() => {
+    setReloadNonce((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadDashboard() {
+      if (role === 'UNCONFIGURED') {
+        setData(null);
+        setError('Your staff account has not been configured.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(
+          '/api/staff/dashboard/summary',
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
+
+        const result =
+          (await response.json()) as ApiResponse;
+
+        if (!response.ok || !result.success || !result.data) {
+          throw new Error(
+            result.error ??
+              `Unable to load dashboard (${response.status}).`
+          );
+        }
+
+        // The authenticated server response is authoritative.
+        setData(result.data);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.name === 'AbortError'
+        ) {
+          return;
+        }
+
+        setData(null);
+        setError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to load staff dashboard.'
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => controller.abort();
+  }, [role, reloadNonce]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch,
+  };
+}
+This keeps the dashboard API contract while removing the insecure role synchronization request.
+3. Connect the staff interface to the authenticated account
+File 6: src/modules/staff/StaffPortal.tsx
+Replace the existing role-selection implementation with this:
+Code
+import { useAuth } from '../../auth/useAuth';
+import { STAFF_ACCOUNTS, type StaffRole } from '../../config/staff-navigation';
+import type { PortalRole } from '../../types';
+import StaffLayout from './StaffLayout';
+
+export default function StaffPortal({
+  initialPath = '/staff/dashboard',
+  onSwitchPortal,
+  onOpenActivationPage,
+  onOpenPublicPreview,
+  onLogout,
+}: {
+  initialRole?: StaffRole;
+  initialPath?: string;
+  onSwitchPortal?: (portal: PortalRole) => void;
+  onOpenActivationPage?: (token?: string) => void;
+  onOpenPublicPreview?: (publicPath: string) => void;
+  onLogout: () => void;
+}) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <p>Verifying your staff account...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <p>Your staff session has expired. Please sign in again.</p>
+      </div>
+    );
+  }
+
+  const assignedRole = user.primaryRole as StaffRole;
+
+  const role: StaffRole | 'UNCONFIGURED' =
+    STAFF_ACCOUNTS[assignedRole] ? assignedRole : 'UNCONFIGURED';
+
+  return (
+    <StaffLayout
+      role={role}
+      initialPath={initialPath}
+      onSwitchPortal={onSwitchPortal}
+      onOpenActivationPage={onOpenActivationPage}
+      onOpenPublicPreview={onOpenPublicPreview}
+      onLogout={onLogout}
+    />
+  );
+}
+The initialRole property remains optional for compatibility with the existing App call, but it is deliberately not used to authorize the user.
+File 7: src/modules/staff/StaffLayout.tsx
+Make these changes to your existing layout rather than replacing the entire large file.
+A. Remove this import:
+Code
+import { syncStaffServerSession } from './hooks/useStaffDashboard';
+B. Remove this prop:
+Code
+onSwitchRole: (role: StaffRole | 'UNCONFIGURED') => void;
+Remove onSwitchRole from the component's destructured arguments.
+C. Replace the account construction with authenticated data:
+Code
+const accountTemplate =
+  role !== 'UNCONFIGURED'
+    ? STAFF_ACCOUNTS[role] ?? null
+    : null;
+
+const account: StaffUserAccount | null = accountTemplate
+  ? {
+      ...accountTemplate,
+      id: authCtx?.user?.uid ?? '',
+      fullName: authCtx?.user?.fullName ?? '',
+      email: authCtx?.user?.email ?? '',
+      employeeNumber:
+        authCtx?.user?.registrationNumber ??
+        accountTemplate.employeeNumber,
+      role,
+      roleTitle:
+        authCtx?.user?.roleTitle ??
+        accountTemplate.roleTitle,
+      department:
+        authCtx?.user?.department ??
+        accountTemplate.department,
+      campus:
+        authCtx?.user?.campus ??
+        accountTemplate.campus,
+      permissions:
+        authCtx?.user?.permissions ?? [],
+    }
+  : null;
+D. Remove both session synchronization effects and the handleRoleSwitch function.
+E. Remove this property from the StaffSidebar component:
+Code
+onSwitchRole={handleRoleSwitch}
+The sidebar should display the authenticated user's assigned role, not offer an ordinary role impersonation selector.
+File 8: src/modules/staff/StaffSidebar.tsx
+The existing component should no longer accept onSwitchRole.
+Keep the signed-in role display:
+Code
+<div className="rounded-xl bg-white/10 p-3">
+  <div className="text-[11px] text-blue-200">
+    Signed-in staff role
+  </div>
+
+  <div className="mt-0.5 text-sm font-bold text-white">
+    {role.replaceAll('_', ' ')}
+  </div>
+</div>
+Remove the old role perspective selector and its associated onSwitchRole property.
+This retains the existing navigation and visual design while preventing role selection from changing server identity.
+4. Important: prevent legacy-cookie fallback
+There is one additional change required in server/middleware/auth.ts.
+Your existing resolveSessionContextFromCookieHeader() falls back to the old signed staff cookie if the PostgreSQL portal session is invalid.
+We must prevent that fallback when authenticating institutional staff routes.
+Change its function signature from:
+Code
+export async function resolveSessionContextFromCookieHeader(
+  cookieHeader: string | undefined
+): Promise<{
+To:
+Code
+export async function resolveSessionContextFromCookieHeader(
+  cookieHeader: string | undefined,
+  requirePortalSession = false
+): Promise<{
+Then, immediately before the existing section:
+Code
+// 2. Fallback to signed staff session cookie
+Insert:
+Code
+// Strict callers must never fall back to legacy staff cookies.
+if (requirePortalSession) {
+  return {};
+}
+Finally, change the new middleware's resolver call to:
+Code
+const { portalUser, staffUser } =
+  await resolveSessionContextFromCookieHeader(
+    req.headers.cookie,
+    true
+  );
+This is important: the staff API now requires a valid PostgreSQL-backed portal session rather than merely the presence of a signed legacy cookie.
+5. Automated tests
+File 9: tests/staffPortalRbac.test.ts
+Create this new file:
+Code
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import type { Request, Response, NextFunction } from 'express';
+
+import {
+  requirePermission,
+} from '../server/middleware/auth.ts';
+
+import {
+  STAFF_PERMISSIONS,
+} from '../server/modules/staff/staff.permissions.ts';
+
+import {
+  resolveStaffPermissionsForRole,
+} from '../src/auth/auth-utils.ts';
+
+import staffRoutes from '../server/modules/staff/staff.routes.ts';
+
+test('server permissions do not inherit revoked role defaults', () => {
+  const permissions = resolveStaffPermissionsForRole(
+    'ADMIN',
+    ['staff.dashboard.view']
+  );
+
+  assert.deepEqual(
+    permissions,
+    ['staff.dashboard.view']
+  );
+
+  assert.equal(
+    permissions.includes(STAFF_PERMISSIONS.USERS_CREATE),
+    false
+  );
+});
+
+test('empty server permissions grant no permissions', () => {
+  assert.deepEqual(
+    resolveStaffPermissionsForRole('ADMIN', []),
+    []
+  );
+});
+
+test('missing server permissions fail closed', () => {
+  assert.deepEqual(
+    resolveStaffPermissionsForRole('ADMIN'),
+    []
+  );
+});
+
+test('duplicate permissions are removed', () => {
+  assert.deepEqual(
+    resolveStaffPermissionsForRole('LECTURER', [
+      'staff.dashboard.view',
+      'staff.dashboard.view',
+      'staff.profile.view',
+    ]),
+    [
+      'staff.dashboard.view',
+      'staff.profile.view',
+    ]
+  );
+});
+
+test('staff dashboard permission rejects unauthorized users', () => {
+  let statusCode = 200;
+  let responseBody: unknown;
+  let nextCalled = false;
+
+  const req = {
+    staffUser: {
+      permissions: [],
+    },
+  } as unknown as Request;
+
+  const res = {
+    status(code: number) {
+      statusCode = code;
+      return this;
+    },
+    json(body: unknown) {
+      responseBody = body;
+      return this;
+    },
+  } as unknown as Response;
+
+  const next: NextFunction = () => {
+    nextCalled = true;
+  };
+
+  requirePermission(
+    STAFF_PERMISSIONS.DASHBOARD_VIEW
+  )(req, res, next);
+
+  assert.equal(statusCode, 403);
+  assert.equal(nextCalled, false);
+  assert.ok(responseBody);
+});
+
+test('staff dashboard permission accepts assigned permissions', () => {
+  let nextCalled = false;
+
+  const req = {
+    staffUser: {
+      permissions: [
+        STAFF_PERMISSIONS.DASHBOARD_VIEW,
+      ],
+    },
+  } as unknown as Request;
+
+  const res = {
+    status() {
+      return this;
+    },
+    json() {
+      return this;
+    },
+  } as unknown as Response;
+
+  const next: NextFunction = () => {
+    nextCalled = true;
+  };
+
+  requirePermission(
+    STAFF_PERMISSIONS.DASHBOARD_VIEW
+  )(req, res, next);
+
+  assert.equal(nextCalled, true);
+});
+
+test('staff session creation endpoint is removed', () => {
+  const layers = (
+    staffRoutes as unknown as {
+      stack: Array<{
+        route?: {
+          path?: string;
+          methods?: {
+            post?: boolean;
+          };
+        };
+      }>;
+    }
+  ).stack;
+
+  const sessionCreationRoute = layers.find(
+    (layer) =>
+      layer.route?.path === '/session' &&
+      layer.route.methods?.post
+  );
+
+  assert.equal(sessionCreationRoute, undefined);
+});
+
+test('staff session inspection endpoint remains available as GET', () => {
+  const layers = (
+    staffRoutes as unknown as {
+      stack: Array<{
+        route?: {
+          path?: string;
+          methods?: {
+            get?: boolean;
+          };
+        };
+      }>;
+    }
+  ).stack;
+
+  const sessionRoute = layers.find(
+    (layer) =>
+      layer.route?.path === '/session' &&
+      layer.route.methods?.get
+  );
+
+  assert.ok(sessionRoute);
+});
+These are proposed tests; they have not yet been executed against your project.
+Run:
+Code
+npm test -- tests/staffPortalRbac.test.ts
+Then:
+Code
+npm run lint
+And:
+Code
+npm run build
+6. Expected portal access structure
+After these changes, the access model should look like this:
+HI-TECH College Login
+Verified institutional account
+PostgreSQL Portal Session
+Account status · Identity · Assigned role · Permissions
+Student
+/portal/student
+Lecturer
+/portal/lecturer
+Finance
+/portal/finance
+Registrar
+/portal/registrar
+HR
+/portal/hr
+Principal
+/portal/principal
+Administrator
+/portal/staff
+Other assigned roles
+/portal/staff
+Backend permission verification
+Every API checks the authenticated identity and required permission.
+7. Completion checklist
+Implementation tracking
+0/10
+Add strict PostgreSQL session validation
+Protect staff API routes
+Remove insecure staff session creation
+Make server permissions authoritative
+Remove frontend role impersonation
+Connect staff dashboard to authenticated API
+Add RBAC automated tests
+Protect student and other institutional API routes
+Run TypeScript compilation
+Run automated tests and production build
+This is a manual tracking checklist, not a report of changes already applied to your repository.
+Important: We have written the core staff authentication and authorization changes here. They are not yet installed in your ZIP or verified by compilation. The student, finance, examination, HR and registrar APIs still need their own route-by-route permission audit.
+Next development slice: Student Portal – connect student identity, academic registration, attendance, fees, examination results, assignments and documents to the authenticated student's database records.# Phase 2 – Student Portal: Live Database Integration
+Existing implementation inspected
+The next development slice is the Student Portal.
+I inspected the actual uploaded source, especially:
+src/modules/student/StudentDashboard.tsx
+src/services/studentPortalService.ts
+src/modules/student/components/StudentAbsenceSection.tsx
+src/modules/student/components/CloudSqlAcademicRegistrationCard.tsx
+server/modules/sis/sis.routes.ts
+server/modules/finance/finance.routes.ts
+tests/studentPortal.test.ts
+1. Problems identified in the existing student portal
+Existing implementation	Required correction
+Dashboard loads profile from localStorage	Load authenticated student profile from PostgreSQL
+Mock student data is seeded automatically	Do not present demonstration data as real student data
+Academic registration uses a separate API	Connect it to the authenticated student identity
+Fee API has a sample-student fallback for staff	Remove sample identity from real student financial operations
+Student profile has local and server versions	Make the server record authoritative
+Student portal tests primarily test localStorage	Add API identity and access-control tests
+There is already an SIS endpoint at /api/sis/students that scopes student results to their own account. We can build on it rather than create another student database.
+Important additional finding: the SIS route calculates isOwnProfile using pgUserId alone when sanitizing records, even though its initial filtering also supports email matching. This can incorrectly hide financial fields for a legitimate student whose session has an email match but no pgUserId.
+We will correct that inconsistency.
+2. Create the PostgreSQL student profile adapter
+New file: src/modules/student/studentProfileAdapter.ts
+This converts the existing SIS database record into the student profile format already used by the dashboard.
+Code
+import type { StudentProfile } from '../../types';
+
+export interface StudentMasterRecord {
+  id: string;
+  registrationNumber: string;
+  admissionId?: string | null;
+  fullName: string;
+  email: string;
+  phoneNumber?: string | null;
+  campusId?: string | null;
+  campusName?: string | null;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  programmeId?: string | null;
+  programmeName?: string | null;
+  intakeName?: string | null;
+  feeBalanceKes?: number | null;
+  attendanceRatePct?: number | null;
+  admissionDate?: string | null;
+  status: string;
+}
+
+function normalizeStatus(
+  value: string
+): StudentProfile['status'] {
+  const status = value.toUpperCase();
+
+  if (status === 'DEFERRED') return 'DEFERRED';
+  if (status === 'SUSPENDED') return 'SUSPENDED';
+  if (status === 'GRADUATED') return 'GRADUATED';
+
+  return 'ACTIVE';
+}
+
+export function mapStudentMasterRecord(
+  record: StudentMasterRecord
+): StudentProfile {
+  if (
+    !record.id ||
+    !record.registrationNumber ||
+    !record.fullName ||
+    !record.email
+  ) {
+    throw new Error(
+      'The institutional student record is incomplete.'
+    );
+  }
+
+  return {
+    id: record.id,
+    registrationNumber: record.registrationNumber,
+    admissionNumber:
+      record.admissionId || record.registrationNumber,
+
+    fullName: record.fullName,
+    email: record.email,
+    phoneNumber: record.phoneNumber ?? '',
+
+    // The database stores a national ID hash, not the
+    // original ID. Never substitute or fabricate the ID.
+    nationalId: '',
+
+    programme: record.programmeName ?? 'Not assigned',
+    department: record.departmentName ?? 'Not assigned',
+    campus: record.campusName ?? 'Not assigned',
+
+    // These are not supplied by the current SIS list endpoint.
+    // They must be populated by their respective academic APIs.
+    academicYear: 'Not synchronized',
+    semester: record.intakeName ?? 'Not assigned',
+    registeredCourses: 0,
+    gpa: 0,
+    libraryFines: 0,
+
+    attendanceRate: Math.min(
+      100,
+      Math.max(0, Number(record.attendanceRatePct ?? 0))
+    ),
+
+    feeBalance: Math.max(
+      0,
+      Number(record.feeBalanceKes ?? 0)
+    ),
+
+    admissionDate: record.admissionDate ?? '',
+    status: normalizeStatus(record.status),
+  };
+}
+3. Create the authenticated student profile hook
+New file: src/modules/student/hooks/useStudentMasterProfile.ts
+This hook:
+Uses the authenticated account.
+Retrieves the student's own SIS record.
+Rejects missing or mismatched identities.
+Does not fall back to the sample student.
+Handles loading, session expiry and API errors.
+Code
+import { useEffect, useState } from 'react';
+
+import type { PortalUser } from '../../../auth/auth-types';
+import type { StudentProfile } from '../../../types';
+
+import {
+  mapStudentMasterRecord,
+  type StudentMasterRecord,
+} from '../studentProfileAdapter';
+
+interface StudentListResponse {
+  success: boolean;
+  data?: {
+    items?: StudentMasterRecord[];
+  };
+  error?: string;
+}
+
+interface StudentMasterProfileState {
+  profile: StudentProfile | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useStudentMasterProfile(
+  user: PortalUser | null,
+  isAuthenticated: boolean
+): StudentMasterProfileState {
+  const [state, setState] =
+    useState<StudentMasterProfileState>({
+      profile: null,
+      loading: true,
+      error: null,
+    });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadProfile() {
+      if (!isAuthenticated || !user) {
+        setState({
+          profile: null,
+          loading: false,
+          error: 'Please sign in to access your student portal.',
+        });
+        return;
+      }
+
+      if (user.primaryRole !== 'STUDENT') {
+        setState({
+          profile: null,
+          loading: false,
+          error: 'This account is not assigned to the student portal.',
+        });
+        return;
+      }
+
+      try {
+        setState({
+          profile: null,
+          loading: true,
+          error: null,
+        });
+
+        const response = await fetch('/api/sis/students', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Sign in again.');
+        }
+
+        if (response.status === 403) {
+          throw new Error('You are not authorized to access this student record.');
+        }
+
+        const result =
+          (await response.json()) as StudentListResponse;
+
+        if (!response.ok || !result.success) {
+          throw new Error(
+            result.error || 'Unable to retrieve your student record.'
+          );
+        }
+
+        const records = result.data?.items ?? [];
+
+        const email = user.email.trim().toLowerCase();
+        const regNo = user.registrationNumber?.trim();
+
+        const ownRecords = records.filter((record) => {
+          const matchesEmail =
+            record.email.trim().toLowerCase() === email;
+
+          const matchesRegistration =
+            Boolean(regNo) &&
+            record.registrationNumber === regNo;
+
+          return matchesEmail || matchesRegistration;
+        });
+
+        if (ownRecords.length !== 1) {
+          throw new Error(
+            ownRecords.length === 0
+              ? 'No student record is linked to this account. Contact the Registrar.'
+              : 'Multiple student records match this account. Contact the Registrar.'
+          );
+        }
+
+        const profile = mapStudentMasterRecord(ownRecords[0]);
+
+        if (controller.signal.aborted) return;
+
+        setState({
+          profile,
+          loading: false,
+          error: null,
+        });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+
+        setState({
+          profile: null,
+          loading: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Unable to load your student profile.',
+        });
+      }
+    }
+
+    void loadProfile();
+
+    return () => controller.abort();
+  }, [
+    user?.uid,
+    user?.email,
+    user?.registrationNumber,
+    user?.primaryRole,
+    isAuthenticated,
+  ]);
+
+  return state;
+}
+4. Correct the SIS student record permissions
+Existing file: server/modules/sis/sis.routes.ts
+Find this existing code in the /students GET handler:
+Code
+items: filtered.map((r) =>
+  sanitizeStudentRow(
+    r,
+    role,
+    Boolean(portal?.pgUserId && r.userId === portal.pgUserId)
+  )
+),
+Replace it with:
+Code
+items: filtered.map((record) => {
+  const isOwnProfile = Boolean(
+    (
+      portal?.pgUserId &&
+      record.userId === portal.pgUserId
+    ) ||
+    (
+      portal?.email &&
+      record.email.trim().toLowerCase() ===
+        portal.email.trim().toLowerCase()
+    )
+  );
+
+  return sanitizeStudentRow(
+    record,
+    role,
+    isOwnProfile
+  );
+}),
+This fixes the inconsistency between student record filtering and personal-record permission calculation.
+5. Connect the existing Student Dashboard
+Existing file: src/modules/student/StudentDashboard.tsx
+A. Add the import
+Code
+import { useStudentMasterProfile } from './hooks/useStudentMasterProfile';
+B. Add the hook
+Immediately after:
+Code
+const authCtx = useContext(AuthContext);
+Add:
+Code
+const {
+  profile: liveStudentProfile,
+  loading: studentProfileLoading,
+  error: studentProfileError,
+} = useStudentMasterProfile(
+  authCtx?.user ?? null,
+  authCtx?.isAuthenticated ?? false
+);
+C. Replace the existing local profile assignment
+Find:
+Code
+const state = studentPortalService.getState();
+const profile = state.profile;
+Replace it with:
+Code
+const state = studentPortalService.getState();
+Then insert this before the dashboard's main JSX return and before any use of profile:
+Code
+if (studentProfileLoading) {
+  return (
+    <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1322] flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center space-y-3">
+        <GraduationCap
+          size={34}
+          className="mx-auto text-[#1769AA]"
+        />
+
+        <h2 className="text-lg font-bold text-[#102D50] dark:text-white">
+          Loading Student Portal
+        </h2>
+
+        <p className="text-sm text-slate-500">
+          Verifying your institutional student record...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+if (!liveStudentProfile || studentProfileError) {
+  return (
+    <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1322] flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900 rounded-2xl p-6 space-y-4">
+        <ShieldCheck
+          size={34}
+          className="text-red-600"
+        />
+
+        <h2 className="text-lg font-bold text-[#102D50] dark:text-white">
+          Student Record Verification Required
+        </h2>
+
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          {studentProfileError ??
+            'Your student record could not be verified.'}
+        </p>
+
+        <p className="text-xs text-slate-500">
+          Your student dashboard will remain unavailable until your institutional account is correctly linked.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => void authCtx?.refreshSession()}
+          className="w-full rounded-xl bg-[#102D50] text-white p-3 font-bold"
+        >
+          Verify Session Again
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void handleLogoutConfirm()}
+          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-3 font-bold text-slate-700 dark:text-slate-200"
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const profile = liveStudentProfile;
+Keep the remaining dashboard JSX and existing navigation.
+Result: The dashboard cannot silently display the default Amina Wanjiku demonstration profile when the authenticated student's database record is unavailable.
+6. Protect student financial identity
+There is another issue in the existing backend that must be fixed before exposing financial records.
+File: server/modules/finance/finance.routes.ts
+The current resolveStudentIdentity() returns a sample student when a staff user accesses the student finance interface.
+Replace the complete function with:
+Code
+function resolveStudentIdentity(
+  req: Request
+): FinanceStudentIdentity {
+  const portal = req.portalUser;
+
+  if (!portal || portal.primaryRole !== 'STUDENT') {
+    throw new FinanceHttpError(
+      403,
+      'Only the authenticated student account can access student financial records.'
+    );
+  }
+
+  if (!portal.uid || !portal.registrationNumber) {
+    throw new FinanceHttpError(
+      403,
+      'Your account is not linked to a valid student registration number.'
+    );
+  }
+
+  return {
+    studentId: portal.uid,
+    studentRegNo: portal.registrationNumber,
+    studentName: portal.fullName,
+  };
+}
+This removes the hardcoded Amina Wanjiku fallback and prevents staff from accidentally accessing sample student financial records through the student finance API.
+Correct the preview fallback in src/modules/student/fees/feesApi.ts
+The current fetchJsonOrFallback() silently returns preview data on HTTP 401, HTTP 403 and network errors.
+Replace its implementation with:
+Code
+function isExplicitPreviewMode(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  return (
+    new URLSearchParams(window.location.search)
+      .get('preview') === '1'
+  );
+}
+
+async function fetchJsonOrFallback<T>(
+  url: string,
+  options: RequestInit | undefined,
+  fallback: () => T
+): Promise<{ data: T; source: 'server' | 'preview' }> {
+  const previewAllowed = isExplicitPreviewMode();
+
+  if (typeof fetch !== 'function') {
+    if (previewAllowed) {
+      return {
+        data: fallback(),
+        source: 'preview',
+      };
+    }
+
+    throw new Error('The financial service is unavailable.');
+  }
+
+  try {
+    const res = await fetch(url, {
+      credentials: 'include',
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers ?? {}),
+      },
+    });
+
+    const payload = (await res.json().catch(() => ({}))) as {
+      success?: boolean;
+      data?: T;
+      error?: string;
+    };
+
+    if (res.status === 401 || res.status === 403) {
+      if (previewAllowed) {
+        return {
+          data: fallback(),
+          source: 'preview',
+        };
+      }
+
+      throw new Error(
+        res.status === 401
+          ? 'Please sign in to access your financial records.'
+          : 'You are not authorized to access these financial records.'
+      );
+    }
+
+    if (!res.ok || !payload.success || payload.data === undefined) {
+      throw new Error(
+        payload.error ||
+          `Financial request failed with HTTP ${res.status}.`
+      );
+    }
+
+    return {
+      data: payload.data,
+      source: 'server',
+    };
+  } catch (error) {
+    if (error instanceof TypeError && previewAllowed) {
+      return {
+        data: fallback(),
+        source: 'preview',
+      };
+    }
+
+    throw error;
+  }
+}
+Preview mode must be visibly labelled and must never be used for actual payment submission or reconciliation.
+7. Correct the Student Dashboard loading and logout behavior
+Update the hook call to account for initial authentication loading:
+Code
+const {
+  profile: liveStudentProfile,
+  loading: studentProfileLoading,
+  error: studentProfileError,
+} = useStudentMasterProfile(
+  authCtx?.user ?? null,
+  authCtx?.isAuthenticated ?? false,
+  authCtx?.isLoading ?? true
+);
+Update the hook signature:
+Code
+export function useStudentMasterProfile(
+  user: PortalUser | null,
+  isAuthenticated: boolean,
+  authLoading: boolean
+): StudentMasterProfileState {
+At the beginning of loadProfile(), add:
+Code
+if (authLoading) {
+  setState({
+    profile: null,
+    loading: true,
+    error: null,
+  });
+  return;
+}
+Add authLoading to the effect dependencies.
+In the error screen, use this logout button instead of referencing handleLogoutConfirm before its declaration:
+Code
+<button
+  type="button"
+  onClick={async () => {
+    await authCtx?.signOut();
+    onLogout?.();
+  }}
+  className="w-full rounded-xl border border-slate-300 p-3 font-bold"
+>
+  Sign Out
+</button>
+8. Student profile tests
+New file: tests/studentMasterProfile.test.ts
+Code
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  mapStudentMasterRecord,
+} from '../src/modules/student/studentProfileAdapter.ts';
+
+const validRecord = {
+  id: 'student-db-001',
+  registrationNumber: 'HCA/STU/2026/001',
+  admissionId: 'ADM-2026-001',
+  fullName: 'Test Student',
+  email: 'student@example.com',
+  phoneNumber: '+254700000000',
+  campusId: 'campus-kitengela',
+  campusName: 'Kitengela Campus',
+  departmentId: 'department-ict',
+  departmentName: 'Information Technology',
+  programmeId: 'programme-ict',
+  programmeName: 'Diploma in ICT',
+  intakeName: 'September 2026',
+  feeBalanceKes: 18000,
+  attendanceRatePct: 88,
+  admissionDate: '2026-09-01T00:00:00.000Z',
+  status: 'ACTIVE',
+};
+
+test('maps the authenticated database student record', () => {
+  const profile = mapStudentMasterRecord(validRecord);
+
+  assert.equal(profile.id, 'student-db-001');
+  assert.equal(
+    profile.registrationNumber,
+    'HCA/STU/2026/001'
+  );
+  assert.equal(profile.fullName, 'Test Student');
+  assert.equal(profile.campus, 'Kitengela Campus');
+  assert.equal(profile.feeBalance, 18000);
+  assert.equal(profile.attendanceRate, 88);
+});
+
+test('does not fabricate a national identification number', () => {
+  const profile = mapStudentMasterRecord(validRecord);
+
+  assert.equal(profile.nationalId, '');
+});
+
+test('normalizes attendance percentage safely', () => {
+  const low = mapStudentMasterRecord({
+    ...validRecord,
+    attendanceRatePct: -10,
+  });
+
+  const high = mapStudentMasterRecord({
+    ...validRecord,
+    attendanceRatePct: 150,
+  });
+
+  assert.equal(low.attendanceRate, 0);
+  assert.equal(high.attendanceRate, 100);
+});
+
+test('rejects incomplete student identity', () => {
+  assert.throws(
+    () =>
+      mapStudentMasterRecord({
+        ...validRecord,
+        registrationNumber: '',
+      }),
+    /institutional student record is incomplete/i
+  );
+});
+
+test('does not convert missing fee balance into a negative value', () => {
+  const profile = mapStudentMasterRecord({
+    ...validRecord,
+    feeBalanceKes: null,
+  });
+
+  assert.equal(profile.feeBalance, 0);
+});
+
+test('maps student status correctly', () => {
+  assert.equal(
+    mapStudentMasterRecord({
+      ...validRecord,
+      status: 'SUSPENDED',
+    }).status,
+    'SUSPENDED'
+  );
+
+  assert.equal(
+    mapStudentMasterRecord({
+      ...validRecord,
+      status: 'GRADUATED',
+    }).status,
+    'GRADUATED'
+  );
+});
+9. Run project verification
+Your uploaded package.json defines these commands:
+Code
+npm ci
+Code
+npm test
+Code
+npm run lint
+Code
+npm run build
+The focused test can also be run with:
+Code
+npx tsx --test tests/studentMasterProfile.test.ts
+I have not executed these changes against your installed project. They are source changes prepared here, not verified commits.
+10. Student Portal implementation checklist
+Phase 2 progress tracker
+0/10
+Create studentProfileAdapter.ts
+Create useStudentMasterProfile.ts
+Correct SIS own-profile permission calculation
+Remove sample-student finance identity fallback
+Disable automatic preview fallback for unauthorized requests
+Connect StudentDashboard to authenticated SIS profile
+Add student profile tests
+Run TypeScript checks
+Run all automated tests
+Verify student and staff isolation
+Manual tracking only. No source changes or tests are marked completed automatically.
+Important integration limitation: The student identity will come from PostgreSQL after these changes, but the rest of the existing dashboard still contains localStorage demonstration records. The finance service also still uses the existing JSON-backed store. Those modules must be migrated before their figures can be treated as authoritative institutional records.
+11. Next student portal development slice
+After identity verification, I recommend implementing the following:
+Student Academic Workspace
+My registered academic units.
+Academic timetable.
+Attendance history.
+Examination timetable.
+Assessment results.
+Assignment submissions.
+Lecturer notes and learning materials.
+Academic progress and transcripts.
+Student academic registration status.
+Registrar approval notifications.
+Student Financial Workspace
+Official fee statement.
+Verified payment history.
+M-Pesa transactions.
+Official receipts.
+Fee clearance.
+Payment plans.
+Refund requests.
+The next implementation should be the Student Academic Workspace, connecting registered units, timetable, attendance and results to the actual database.
+We will continue using your existing source files and preserve the current student portal interface.# Phase 2.1 – Student Examination Security and Candidate Identity
+I inspected the actual examination backend and found another issue that affects the Student Portal.
+File: server/modules/exams/secure/secureExam.routes.ts
+The student examination routes currently allow an authenticated staff user to enter the student examination workflow using their staff ID as a candidate ID.
+This is unsafe. Staff may supervise examinations, but they must not automatically become student candidates.
+We will correct this without rebuilding the examination engine.
+1. Enforce student-only examination access
+In server/modules/exams/secure/secureExam.routes.ts, add NextFunction to the Express import:
+Code
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from 'express';
+Replace the existing resolveStudentIdentity() function with:
+Code
+function resolveStudentIdentity(req: Request): {
+  studentId: string;
+  studentRegNo: string;
+  studentName: string;
+} {
+  const portal = req.portalUser;
+
+  if (!portal) {
+    throw new SecureExamHttpError(
+      401,
+      'Student portal authentication required.'
+    );
+  }
+
+  if (portal.primaryRole.toUpperCase() !== 'STUDENT') {
+    throw new SecureExamHttpError(
+      403,
+      'Only registered student accounts can access candidate examination sessions.'
+    );
+  }
+
+  if (!portal.registrationNumber?.trim()) {
+    throw new SecureExamHttpError(
+      403,
+      'Your student account is not linked to an official registration number.'
+    );
+  }
+
+  if (!portal.uid?.trim()) {
+    throw new SecureExamHttpError(
+      403,
+      'Your student account has no valid institutional identity.'
+    );
+  }
+
+  return {
+    studentId: portal.uid,
+    studentRegNo: portal.registrationNumber.trim(),
+    studentName: portal.fullName,
+  };
+}
+Remove the old req.staffUser fallback completely.
+2. Add a candidate-role middleware
+Immediately after the identity function, add:
+Code
+function requireStudentCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    resolveStudentIdentity(req);
+    next();
+  } catch (error) {
+    if (error instanceof SecureExamHttpError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Unable to verify examination candidate identity.',
+    });
+  }
+}
+Replace:
+Code
+studentSecureExamRoutes.use(requirePortalAuth);
+With:
+Code
+studentSecureExamRoutes.use(
+  requirePortalAuth,
+  requireStudentCandidate
+);
+All existing student examination endpoints will now require an authenticated student identity.
+The supervisor routes remain separate.
+File: server/modules/exams/secure/secureExam.routes.ts
+Export the identity resolver so it can be tested directly:
+Code
+export function resolveStudentIdentity(req: Request): {
+Also distinguish staff-only authentication from an unauthenticated request:
+Code
+if (!portal) {
+  if (req.staffUser) {
+    throw new SecureExamHttpError(
+      403,
+      'Staff accounts cannot access student candidate sessions.'
+    );
+  }
+
+  throw new SecureExamHttpError(
+    401,
+    'Student portal authentication required.'
+  );
+}
+3. Add examination identity tests
+Existing file: tests/secureExam.test.ts
+Add this import alongside the existing dynamic imports:
+Code
+const {
+  resolveStudentIdentity,
+} = await import(
+  '../server/modules/exams/secure/secureExam.routes.ts'
+);
+Add the following tests:
+Code
+test('student examination identity accepts a registered student', () => {
+  const identity = resolveStudentIdentity({
+    portalUser: {
+      uid: 'student-001',
+      registrationNumber: 'HCA/STU/2026/001',
+      fullName: 'Test Student',
+      primaryRole: 'STUDENT',
+    },
+  } as never);
+
+  assert.deepEqual(identity, {
+    studentId: 'student-001',
+    studentRegNo: 'HCA/STU/2026/001',
+    studentName: 'Test Student',
+  });
+});
+
+test('staff cannot access student examination candidate identity', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        staffUser: {
+          id: 'staff-001',
+          employeeNumber: 'HCA/STAFF/2026/001',
+          fullName: 'Test Lecturer',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError &&
+      error.statusCode === 403
+  );
+});
+
+test('non-student portal roles cannot become examination candidates', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        portalUser: {
+          uid: 'staff-001',
+          registrationNumber: 'HCA/STAFF/2026/001',
+          fullName: 'Test Lecturer',
+          primaryRole: 'LECTURER',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError &&
+      error.statusCode === 403
+  );
+});
+
+test('student without registration number cannot start examination', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        portalUser: {
+          uid: 'student-001',
+          registrationNumber: null,
+          fullName: 'Test Student',
+          primaryRole: 'STUDENT',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError &&
+      error.statusCode === 403
+  );
+});
+Run:
+Code
+npx tsx --test tests/secureExam.test.ts
+This is a proposed test addition; execution is still pending.
+4. Important remaining academic integration issue
+I also confirmed that the existing student academic pages are not yet fully connected to institutional database records.
+Existing page	Current source
+Examination timetable	examAssessmentService and local resources
+Examination results	Local examination assessment state
+Assignments	studentPortalService
+Academic progress	studentPortalService
+Attendance	StudentAcademicExtras and existing teaching service
+The secure examination engine also currently uses the JSON-backed application store rather than PostgreSQL.
+We should not display these records as verified official academic results until the database integration is completed.
+5. Next development milestone: Student Academic API
+Phase 2.2 – Central Student Academic Services
+API endpoint	Purpose
+GET /api/student/academic/units	Registered units
+GET /api/student/academic/timetable	Weekly timetable
+GET /api/student/academic/attendance	Personal attendance
+GET /api/student/academic/assessments	CATs and assignments
+GET /api/student/academic/results	Released results
+GET /api/student/academic/progress	GPA and academic progression
+GET /api/student/academic/exam-timetable	Confirmed examination schedule
+Security requirements
+Student identity comes from the authenticated account.
+Students cannot submit another student's ID to retrieve records.
+Unreleased marks remain inaccessible.
+Only approved results are published.
+Attendance records are read-only to students.
+All academic changes have an audit trail.
+Results and GPA are calculated from approved records.
+My next implementation target is GET /api/student/academic/units and GET /api/student/academic/attendance, followed by the remaining academic endpoints.
+We will first inspect the existing Drizzle schema and teaching service to reuse existing records, rather than introduce duplicate academic tables.

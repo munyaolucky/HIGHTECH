@@ -165,7 +165,9 @@ class ExamMessagingHub {
       const requestedRole = parsed.searchParams.get('role');
       const initialSessionId = parsed.searchParams.get('sessionId') || undefined;
       const isSupervisorCapable = Boolean(
-        staffUser && staffUser.permissions.includes(STAFF_PERMISSIONS.ACADEMICS_VIEW)
+        staffUser &&
+          (staffUser.permissions.includes(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE) ||
+            staffUser.permissions.includes(STAFF_PERMISSIONS.ACADEMICS_VIEW))
       );
 
       let role: 'STUDENT' | 'SUPERVISOR' = 'STUDENT';

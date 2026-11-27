@@ -4,6 +4,7 @@ import {
   BookOpen,
   CheckCircle2,
   Database,
+  Download,
   Lock,
   RefreshCw,
   ShieldCheck,
@@ -14,6 +15,7 @@ import {
   type AcademicRegistrationApiRecord,
 } from '../../../data/academicUnitsCatalog';
 import { SkeletonCardList } from '../../../components/ui/StudentSkeletons';
+import { downloadOfficialRegistrationPdf } from '../services/registrationPdf';
 
 interface CloudSqlAcademicRegistrationCardProps {
   onNotify: (type: 'ok' | 'err', message: string) => void;
@@ -28,6 +30,7 @@ export default function CloudSqlAcademicRegistrationCard({
   const [periods, setPeriods] = useState<AcademicPeriodApiRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [authRequired, setAuthRequired] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const [selectedUnitCodes, setSelectedUnitCodes] = useState<string[]>([
@@ -42,13 +45,14 @@ export default function CloudSqlAcademicRegistrationCard({
     try {
       setLoading(true);
       setAuthRequired(false);
+      setLoadError(null);
 
       const [structRes, regRes] = await Promise.all([
         fetch('/api/platform/academic-structure', { credentials: 'include' }),
         fetch('/api/platform/academic-registrations', { credentials: 'include' }),
       ]);
 
-      const structJson = await structRes.json();
+      const structJson = await structRes.json().catch(() => null);
       if (structJson?.success && Array.isArray(structJson.data?.periods)) {
         const pList = structJson.data.periods as AcademicPeriodApiRecord[];
         setPeriods(pList);
@@ -62,12 +66,19 @@ export default function CloudSqlAcademicRegistrationCard({
         return;
       }
 
-      const regJson = await regRes.json();
-      if (regJson?.success && Array.isArray(regJson.data)) {
+      const regJson = await regRes.json().catch(() => null);
+      if (!regRes.ok || !regJson?.success) {
+        setLoadError(
+          regJson?.error || 'Academic registration records are currently unavailable.'
+        );
+        return;
+      }
+
+      if (Array.isArray(regJson.data)) {
         setRegistrations(regJson.data);
       }
     } catch {
-      // Leave calm error fallback without breaking student dashboard
+      setLoadError('Unable to reach the academic registration service.');
     } finally {
       setLoading(false);
     }
@@ -153,6 +164,64 @@ export default function CloudSqlAcademicRegistrationCard({
 
   const latestFeeBalance = registrations[0]?.feeBalanceKes;
 
+  const approvedRegistrations = registrations.filter(
+    (registration) => registration.approvalStatus === 'APPROVED'
+  );
+
+  const pendingRegistrations = registrations.filter(
+    (registration) => registration.approvalStatus === 'PENDING'
+  );
+
+  const rejectedRegistrations = registrations.filter(
+    (registration) => registration.approvalStatus === 'REJECTED'
+  );
+
+  const approvedCredits = approvedRegistrations.reduce(
+    (total, registration) => total + registration.totalCredits,
+    0
+  );
+
+  const handleDownloadApprovedPdf = () => {
+    const primary = approvedRegistrations[0];
+    if (!primary) {
+      onNotify(
+        'err',
+        'Only registrations with APPROVED status can be exported as an official PDF.'
+      );
+      return;
+    }
+
+    try {
+      const filename = downloadOfficialRegistrationPdf({
+        student: {
+          registrationNumber: primary.registrationNumber,
+          fullName: primary.studentName,
+          programmeName: primary.programmeName,
+          campusName: primary.campusName,
+          studentStatus: primary.studentStatus,
+        },
+        registrations: registrations.map((reg) => ({
+          id: reg.id,
+          academicYear: reg.academicYear,
+          semesterName: reg.semesterName,
+          intakeCode: reg.intakeCode,
+          approvalStatus: reg.approvalStatus,
+          totalCredits: reg.totalCredits,
+          feeThresholdCleared: reg.feeThresholdCleared,
+          registeredAt: reg.createdAt,
+          approvedByName: reg.approvedByName,
+          units: reg.unitsJson,
+        })),
+      });
+      onNotify('ok', `Downloaded official registration confirmation (${filename}).`);
+    } catch (err) {
+      onNotify(
+        'err',
+        err instanceof Error ? err.message : 'Unable to generate official registration PDF.'
+      );
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-5 text-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -169,14 +238,66 @@ export default function CloudSqlAcademicRegistrationCard({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void loadData()}
-          disabled={loading}
-          className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5 shrink-0"
-        >
-          <RefreshCw size={13} /> Sync Registry
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleDownloadApprovedPdf}
+            disabled={loading || approvedRegistrations.length === 0}
+            title={
+              approvedRegistrations.length === 0
+                ? 'Requires at least one APPROVED registration'
+                : 'Download official PDF of APPROVED registrations'
+            }
+            className="px-3 py-1.5 bg-[#092c60] hover:bg-[#061f46] text-white rounded-lg font-semibold inline-flex items-center gap-1.5 disabled:opacity-45 disabled:cursor-not-allowed"
+          >
+            <Download size={13} /> Official PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            disabled={loading}
+            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5 shrink-0"
+          >
+            <RefreshCw size={13} /> Sync Registry
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          {
+            label: 'Approved registrations',
+            value: approvedRegistrations.length,
+            color: 'text-emerald-700 dark:text-emerald-400',
+          },
+          {
+            label: 'Pending review',
+            value: pendingRegistrations.length,
+            color: 'text-amber-700 dark:text-amber-400',
+          },
+          {
+            label: 'Rejected',
+            value: rejectedRegistrations.length,
+            color: 'text-red-700 dark:text-red-400',
+          },
+          {
+            label: 'Approved credits',
+            value: approvedCredits,
+            color: 'text-blue-700 dark:text-blue-400',
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-xl border border-slate-200 dark:border-slate-700 p-3"
+          >
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+              {item.label}
+            </p>
+            <p className={`text-xl font-bold mt-1 font-mono tabular-nums ${item.color}`}>
+              {item.value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {authRequired ? (
@@ -227,6 +348,10 @@ export default function CloudSqlAcademicRegistrationCard({
                 showAction={false}
                 label="Loading live PostgreSQL academic registrations..."
               />
+            ) : loadError ? (
+              <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-[#B83232] dark:text-red-300 font-medium">
+                {loadError}
+              </div>
             ) : registrations.length === 0 ? (
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-600">
                 No Cloud SQL trimester registrations submitted yet. Use the form to register for an open intake.

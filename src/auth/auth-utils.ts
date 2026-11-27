@@ -1,4 +1,3 @@
-import { STAFF_ACCOUNTS, type StaffRole } from '../config/staff-navigation';
 import type { PortalType, PortalUser, UserRole } from './auth-types';
 
 export function isStudentRole(role: string | null | undefined): boolean {
@@ -84,13 +83,25 @@ export function hasAnyUserRole(
 }
 
 export function resolveStaffPermissionsForRole(
-  role: string,
+  _role: string,
   serverPermissions?: string[]
 ): string[] {
-  const upper = role.toUpperCase() as StaffRole;
-  const roleDefaults = STAFF_ACCOUNTS[upper]?.permissions ?? [];
-  if (!Array.isArray(serverPermissions) || serverPermissions.length === 0) {
-    return roleDefaults;
+  // The server is the authoritative source of access permissions.
+  // Never restore revoked permissions from frontend role defaults.
+
+  if (!Array.isArray(serverPermissions)) {
+    return [];
   }
-  return Array.from(new Set([...serverPermissions, ...roleDefaults]));
+
+  return [
+    ...new Set(
+      serverPermissions
+        .filter(
+          (permission): permission is string =>
+            typeof permission === 'string'
+        )
+        .map((permission) => permission.trim())
+        .filter((permission) => permission.length > 0)
+    ),
+  ];
 }

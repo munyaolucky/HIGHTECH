@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import {
   requireAuth,
   requirePermission,
@@ -401,20 +401,135 @@ examCreditRoutes.post(
   }
 );
 
+function requireExamBankAccess(req: Request, res: Response, next: NextFunction): void {
+  if (req.portalUser?.primaryRole?.toUpperCase() === 'STUDENT') {
+    res.status(403).json({
+      success: false,
+      error: 'Candidates cannot access the confidential question bank or examination administration.',
+    });
+    return;
+  }
+  const user = req.staffUser;
+  if (!user) {
+    res.status(401).json({ success: false, error: 'Authentication required.' });
+    return;
+  }
+  const perms = user.permissions || [];
+  const hasExamBankPerm =
+    perms.includes(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE) ||
+    perms.includes(STAFF_PERMISSIONS.RESULTS_MANAGE) ||
+    perms.includes(STAFF_PERMISSIONS.RESULTS_APPROVE);
+  const isInvigilatorOnly =
+    String(user.role).toUpperCase() === 'INVIGILATOR' ||
+    (perms.includes(STAFF_PERMISSIONS.INVIGILATE_SESSIONS) && !hasExamBankPerm);
+  if (isInvigilatorOnly || !hasExamBankPerm) {
+    res.status(403).json({
+      success: false,
+      error: 'Access denied: Examination Administration requires academic/exam management privileges.',
+    });
+    return;
+  }
+  next();
+}
+
+function buildQuestionFilters(req: Request) {
+  return {
+    examBody: typeof req.query.examBody === 'string' && req.query.examBody !== 'ALL' ? req.query.examBody : undefined,
+    departmentId: typeof req.query.departmentId === 'string' && req.query.departmentId !== 'ALL' ? req.query.departmentId : undefined,
+    programmeId: typeof req.query.programmeId === 'string' && req.query.programmeId !== 'ALL' ? req.query.programmeId : undefined,
+    moduleCode: typeof req.query.moduleCode === 'string' && req.query.moduleCode !== 'ALL' ? req.query.moduleCode : undefined,
+    topic: typeof req.query.topic === 'string' && req.query.topic !== 'ALL' ? req.query.topic : undefined,
+    topicId: typeof req.query.topicId === 'string' && req.query.topicId !== 'ALL' ? req.query.topicId : undefined,
+    questionType: typeof req.query.questionType === 'string' && req.query.questionType !== 'ALL' ? req.query.questionType : undefined,
+    difficulty: typeof req.query.difficulty === 'string' && req.query.difficulty !== 'ALL' ? req.query.difficulty : undefined,
+    status: typeof req.query.status === 'string' && req.query.status !== 'ALL' ? req.query.status : undefined,
+    authorId: typeof req.query.authorId === 'string' && req.query.authorId !== 'ALL' ? req.query.authorId : undefined,
+    search: typeof req.query.search === 'string' ? req.query.search : undefined,
+  };
+}
+
 // ============================================================================
 // 4. QUESTION BANK, EXAM PAPERS, MARKING & CERTIFICATES (/api/exam-admin)
 // ============================================================================
 export const examAdminRoutes = Router();
 examAdminRoutes.use(requireAuth);
 
-examAdminRoutes.get('/questions', (req, res) => {
+examAdminRoutes.get('/dashboard', requireExamBankAccess, (_req, res) => {
   try {
-    const data = certificationService.listQuestions({
-      examBody: typeof req.query.examBody === 'string' ? req.query.examBody : undefined,
-      programmeId: typeof req.query.programmeId === 'string' ? req.query.programmeId : undefined,
-      moduleCode: typeof req.query.moduleCode === 'string' ? req.query.moduleCode : undefined,
-      status: typeof req.query.status === 'string' ? req.query.status : undefined,
-    });
+    res.json({ success: true, data: certificationService.getExamAdminDashboard() });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.get('/question-bank', requireExamBankAccess, (req, res) => {
+  try {
+    res.json({ success: true, data: certificationService.listQuestions(buildQuestionFilters(req)) });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.get('/questions', requireExamBankAccess, (req, res) => {
+  try {
+    res.json({ success: true, data: certificationService.listQuestions(buildQuestionFilters(req)) });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.get('/questions/export', requireExamBankAccess, (req, res) => {
+  try {
+    const exported = certificationService.exportQuestionsCsv(buildQuestionFilters(req));
+    res.json({ success: true, data: exported });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.post(
+  '/questions/import',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  (req, res) => {
+    try {
+      const data = certificationService.importQuestionsBatch(req.body || {}, getStaffActor(req));
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.post(
+  '/questions/ai-draft',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  async (req, res) => {
+    try {
+      const data = await certificationService.generateAiDraftQuestions(
+        req.body || {},
+        getStaffActor(req)
+      );
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/questions/:questionId', requireExamBankAccess, (req, res) => {
+  try {
+    const data = certificationService.getQuestionById(String(req.params.questionId));
+    res.json({ success: true, data });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.get('/questions/:questionId/versions', requireExamBankAccess, (req, res) => {
+  try {
+    const data = certificationService.getQuestionVersions(String(req.params.questionId));
     res.json({ success: true, data });
   } catch (err) {
     handleError(res, err);
@@ -423,6 +538,7 @@ examAdminRoutes.get('/questions', (req, res) => {
 
 examAdminRoutes.post(
   '/questions',
+  requireExamBankAccess,
   requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
   (req, res) => {
     try {
@@ -436,6 +552,7 @@ examAdminRoutes.post(
 
 examAdminRoutes.patch(
   '/questions/:questionId',
+  requireExamBankAccess,
   requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
   (req, res) => {
     try {
@@ -453,17 +570,31 @@ examAdminRoutes.patch(
 
 examAdminRoutes.post(
   '/questions/:questionId/review',
-  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_APPROVE),
+  requireExamBankAccess,
+  requirePermission(
+    STAFF_PERMISSIONS.EXAMINATIONS_MANAGE,
+    STAFF_PERMISSIONS.RESULTS_APPROVE,
+    STAFF_PERMISSIONS.RESULTS_MANAGE
+  ),
   (req, res) => {
     try {
       const status = String(req.body?.status || 'UNDER_REVIEW').toUpperCase();
       if (!['DRAFT', 'UNDER_REVIEW', 'APPROVED', 'ARCHIVED'].includes(status)) {
         throw new CertificationHttpError(400, 'Invalid question status transition.');
       }
+      const actor = getStaffActor(req);
+      if (
+        status === 'APPROVED' &&
+        !req.staffUser?.permissions.includes(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE) &&
+        !req.staffUser?.permissions.includes(STAFF_PERMISSIONS.RESULTS_APPROVE)
+      ) {
+        throw new CertificationHttpError(403, 'Approval permission required to approve questions.');
+      }
       const data = certificationService.reviewQuestion(
         String(req.params.questionId),
         status as 'DRAFT' | 'UNDER_REVIEW' | 'APPROVED' | 'ARCHIVED',
-        getStaffActor(req)
+        actor,
+        typeof req.body?.comment === 'string' ? req.body.comment : undefined
       );
       res.json({ success: true, data });
     } catch (err) {
@@ -473,14 +604,44 @@ examAdminRoutes.post(
 );
 
 examAdminRoutes.post(
-  '/questions/ai-draft',
-  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
-  async (req, res) => {
+  '/questions/:questionId/approve',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_APPROVE),
+  (req, res) => {
     try {
-      const data = await certificationService.generateAiDraftQuestions(
-        req.body || {},
-        getStaffActor(req)
+      const data = certificationService.reviewQuestion(
+        String(req.params.questionId),
+        'APPROVED',
+        getStaffActor(req),
+        typeof req.body?.comment === 'string' ? req.body.comment : undefined
       );
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/categories', requireExamBankAccess, (req, res) => {
+  try {
+    const data = certificationService.listCategoriesAndTopics({
+      examBody: typeof req.query.examBody === 'string' ? req.query.examBody : undefined,
+      departmentId: typeof req.query.departmentId === 'string' ? req.query.departmentId : undefined,
+      programmeId: typeof req.query.programmeId === 'string' ? req.query.programmeId : undefined,
+    });
+    res.json({ success: true, data });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.post(
+  '/categories',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  (req, res) => {
+    try {
+      const data = certificationService.createTopic(req.body || {}, getStaffActor(req));
       res.status(201).json({ success: true, data });
     } catch (err) {
       handleError(res, err);
@@ -488,7 +649,56 @@ examAdminRoutes.post(
   }
 );
 
-examAdminRoutes.get('/papers', (_req, res) => {
+examAdminRoutes.get('/topics', requireExamBankAccess, (req, res) => {
+  try {
+    const data = certificationService.listCategoriesAndTopics({
+      examBody: typeof req.query.examBody === 'string' ? req.query.examBody : undefined,
+      departmentId: typeof req.query.departmentId === 'string' ? req.query.departmentId : undefined,
+      programmeId: typeof req.query.programmeId === 'string' ? req.query.programmeId : undefined,
+    });
+    res.json({ success: true, data: data.topics });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.post(
+  '/topics',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  (req, res) => {
+    try {
+      const data = certificationService.createTopic(req.body || {}, getStaffActor(req));
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/templates', requireExamBankAccess, (_req, res) => {
+  try {
+    res.json({ success: true, data: certificationService.listExamTemplates() });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.post(
+  '/templates',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_APPROVE),
+  (req, res) => {
+    try {
+      const data = certificationService.createExamTemplate(req.body || {}, getStaffActor(req));
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/papers', requireExamBankAccess, (_req, res) => {
   try {
     res.json({ success: true, data: certificationService.listExamPapers() });
   } catch (err) {
@@ -498,6 +708,7 @@ examAdminRoutes.get('/papers', (_req, res) => {
 
 examAdminRoutes.post(
   '/papers',
+  requireExamBankAccess,
   requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE),
   (req, res) => {
     try {
@@ -510,8 +721,59 @@ examAdminRoutes.post(
 );
 
 examAdminRoutes.post(
-  '/papers/:paperId/publish',
+  '/papers/:paperId/questions',
+  requireExamBankAccess,
   requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE),
+  (req, res) => {
+    try {
+      const data = certificationService.updatePaperQuestions(
+        String(req.params.paperId),
+        req.body || {},
+        getStaffActor(req)
+      );
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/papers/:paperId/preview', requireExamBankAccess, (req, res) => {
+  try {
+    const includeAnswerKey = req.query.includeAnswerKey !== 'false';
+    const seed = typeof req.query.seed === 'string' ? req.query.seed : undefined;
+    const data = certificationService.previewExamPaper(String(req.params.paperId), {
+      seed,
+      includeAnswerKey,
+    });
+    res.json({ success: true, data });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+examAdminRoutes.post(
+  '/papers/:paperId/submit-approval',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  (req, res) => {
+    try {
+      const data = certificationService.submitPaperForApproval(
+        String(req.params.paperId),
+        typeof req.body?.comment === 'string' ? req.body.comment : undefined,
+        getStaffActor(req)
+      );
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.post(
+  '/papers/:paperId/publish',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_APPROVE),
   (req, res) => {
     try {
       const target = req.body?.status === 'APPROVED' ? 'APPROVED' : 'PUBLISHED';
@@ -526,6 +788,31 @@ examAdminRoutes.post(
     }
   }
 );
+
+examAdminRoutes.post(
+  '/ai/generate',
+  requireExamBankAccess,
+  requirePermission(STAFF_PERMISSIONS.EXAMINATIONS_MANAGE, STAFF_PERMISSIONS.RESULTS_MANAGE),
+  async (req, res) => {
+    try {
+      const data = await certificationService.generateAiDraftQuestions(
+        req.body || {},
+        getStaffActor(req)
+      );
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
+
+examAdminRoutes.get('/reports', requireExamBankAccess, (_req, res) => {
+  try {
+    res.json({ success: true, data: certificationService.getExamAdminReports() });
+  } catch (err) {
+    handleError(res, err);
+  }
+});
 
 examAdminRoutes.get('/marking', (_req, res) => {
   try {
@@ -592,6 +879,31 @@ examAdminRoutes.get('/certificates', (_req, res) => {
     handleError(res, err);
   }
 });
+
+examAdminRoutes.get(
+  '/certificates/eligibility/:studentRegNo',
+  requirePermission(
+    STAFF_PERMISSIONS.CERTIFICATES_ISSUE,
+    STAFF_PERMISSIONS.EXAMINATIONS_MANAGE,
+    STAFF_PERMISSIONS.RESULTS_MANAGE,
+    STAFF_PERMISSIONS.RESULTS_APPROVE
+  ),
+  (req, res) => {
+    try {
+      const programmeId =
+        typeof req.query.programmeId === 'string' && req.query.programmeId.trim()
+          ? req.query.programmeId.trim()
+          : undefined;
+      const data = certificationService.checkCertificationEligibility(
+        String(req.params.studentRegNo),
+        programmeId
+      );
+      res.json({ success: true, data });
+    } catch (err) {
+      handleError(res, err);
+    }
+  }
+);
 
 examAdminRoutes.post(
   '/certificates/issue',

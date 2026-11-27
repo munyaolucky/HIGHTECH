@@ -10,19 +10,26 @@ export interface DashboardData {
     department?: string;
     campus?: string;
   };
+
   statistics: {
     key: string;
     label: string;
     value: number | string;
     description?: string;
   }[];
+
   tasks: {
     id: string;
     title: string;
     description: string;
     dueAt?: string;
-    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'URGENT';
+    status:
+      | 'PENDING'
+      | 'IN_PROGRESS'
+      | 'COMPLETED'
+      | 'URGENT';
   }[];
+
   activities: {
     id: string;
     action: string;
@@ -31,40 +38,32 @@ export interface DashboardData {
   }[];
 }
 
-export async function syncStaffServerSession(
-  role: StaffRole | 'UNCONFIGURED',
-  explicitSwitch = false
-): Promise<void> {
-  const res = await fetch('/api/staff/session', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role, explicitSwitch }),
-  });
-  if (!res.ok) {
-    throw new Error(`Session sync failed (${res.status})`);
-  }
+interface ApiResponse {
+  success: boolean;
+  data?: DashboardData;
+  error?: string;
 }
 
-export function useStaffDashboard(role: StaffRole | 'UNCONFIGURED') {
+export function useStaffDashboard(
+  role: StaffRole | 'UNCONFIGURED'
+) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
 
   const refetch = useCallback(() => {
-    setReloadNonce((n) => n + 1);
+    setReloadNonce((current) => current + 1);
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    async function load() {
+    async function loadDashboard() {
       if (role === 'UNCONFIGURED') {
         setData(null);
-        setError(null);
+        setError('Your staff account has not been configured.');
         setLoading(false);
-        await syncStaffServerSession('UNCONFIGURED').catch(() => {});
         return;
       }
 
@@ -72,28 +71,44 @@ export function useStaffDashboard(role: StaffRole | 'UNCONFIGURED') {
         setLoading(true);
         setError(null);
 
-        // Synchronize authenticated HttpOnly session cookie with selected staff perspective
-        await syncStaffServerSession(role);
+        const response = await fetch(
+          '/api/staff/dashboard/summary',
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
 
-        const response = await fetch('/api/staff/dashboard/summary', {
-          credentials: 'include',
-          signal: controller.signal,
-        });
+        const result =
+          (await response.json()) as ApiResponse;
 
-        const payload = await response.json().catch(() => null);
-        if (!response.ok || !payload?.success) {
+        if (!response.ok || !result.success || !result.data) {
           throw new Error(
-            payload?.error || `Failed to load dashboard (${response.status})`
+            result.error ??
+              `Unable to load dashboard (${response.status}).`
           );
         }
 
-        setData(payload.data as DashboardData);
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          setError(
-            err instanceof Error ? err.message : 'Unable to load dashboard data.'
-          );
+        // The authenticated server response is authoritative.
+        setData(result.data);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.name === 'AbortError'
+        ) {
+          return;
         }
+
+        setData(null);
+        setError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to load staff dashboard.'
+        );
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -101,9 +116,15 @@ export function useStaffDashboard(role: StaffRole | 'UNCONFIGURED') {
       }
     }
 
-    load();
+    void loadDashboard();
+
     return () => controller.abort();
   }, [role, reloadNonce]);
 
-  return { data, loading, error, refetch };
+  return {
+    data,
+    loading,
+    error,
+    refetch,
+  };
 }

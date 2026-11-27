@@ -1,13 +1,10 @@
 import type { Request, Response } from 'express';
-import { getDb } from '../../data/store.ts';
-import { clearSessionCookie, PORTAL_SESSION_COOKIE_NAME, setSessionCookie } from '../../middleware/auth.ts';
-import { ROLE_REGISTRATION_PERMISSIONS } from '../registration/registration.permissions.ts';
+import { clearSessionCookie } from '../../middleware/auth.ts';
 import {
   validateCampusCreate,
   validateDepartmentCreate,
   validatePaginationQuery,
   validateProfilePatch,
-  validateSessionSwitch,
   validateStaffAccessUpdate,
   validateStaffInvitation,
   validateStudentCreate,
@@ -19,58 +16,32 @@ import { staffService } from './staff.service.ts';
 
 export const staffController = {
   getSession(req: Request, res: Response): void {
-    res.json({
-      success: true,
-      data: req.staffUser ? staffService.getProfile(req.staffUser) : null,
-      permissions: req.staffUser?.permissions ?? [],
-      documentPermissions: req.staffUser?.documentPermissions ?? [],
-      registrationPermissions: req.staffUser?.registrationPermissions ?? [],
-    });
-  },
+    const staff = req.staffUser;
 
-  switchSession(req: Request, res: Response): void {
-    const parsed = validateSessionSwitch(req.body);
-    if (!parsed.ok) {
-      res.status(400).json({ success: false, error: parsed.error });
-      return;
-    }
-    if (req.body?.explicitSwitch) {
-      res.clearCookie(PORTAL_SESSION_COOKIE_NAME, { path: '/' });
-    }
-    if (parsed.data.role === 'UNCONFIGURED') {
-      setSessionCookie(res, 'usr-unconfigured', 'UNCONFIGURED');
-      res.json({
-        success: true,
-        data: { role: 'UNCONFIGURED', permissions: [], registrationPermissions: [] },
+    if (!staff) {
+      res.status(401).json({
+        success: false,
+        error: 'Staff authentication required.',
       });
       return;
     }
 
-    const db = getDb();
-    const account = db.staffAccounts.find(
-      (s) => s.role === parsed.data.role && s.status !== 'SUSPENDED'
-    );
-    if (!account) {
-      res.status(404).json({ success: false, error: 'Staff role account not found.' });
-      return;
-    }
-    setSessionCookie(res, account.id, account.role);
     res.json({
       success: true,
-      data: {
-        id: account.id,
-        fullName: account.fullName,
-        role: account.role,
-        permissions: account.permissions,
-        documentPermissions: account.documentPermissions,
-        registrationPermissions: [...(ROLE_REGISTRATION_PERMISSIONS[account.role] ?? [])],
-      },
+      data: staffService.getProfile(staff),
+      permissions: staff.permissions,
+      documentPermissions: staff.documentPermissions,
+      registrationPermissions: staff.registrationPermissions,
     });
   },
 
   logout(_req: Request, res: Response): void {
     clearSessionCookie(res);
-    res.json({ success: true });
+
+    res.json({
+      success: true,
+      message: 'Portal session cookies cleared.',
+    });
   },
 
   getMe(req: Request, res: Response): void {

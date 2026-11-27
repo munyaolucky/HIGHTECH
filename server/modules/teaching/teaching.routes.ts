@@ -43,6 +43,9 @@ function requireStudentPortalIdentity(req: Request): {
   fullName: string;
   actor: TeachingActor;
 } {
+  if (req.staffUser) {
+    throw new TeachingHttpError(403, 'Student self-service endpoints are restricted to student accounts.');
+  }
   if (!req.portalUser || !req.portalUser.registrationNumber) {
     throw new TeachingHttpError(
       401,
@@ -603,6 +606,37 @@ absenceRoutes.post(
     }
   }
 );
+
+/**
+ * Student academic self-service endpoints.
+ *
+ * Candidate identity is always resolved from the authenticated portal
+ * session. The client cannot choose a registration number.
+ */
+export const studentAcademicRoutes = Router();
+
+studentAcademicRoutes.get('/attendance', requirePortalAuth, (req, res) => {
+  try {
+    const { regNo, actor } = requireStudentPortalIdentity(req);
+    const attendance = teachingService.listMyAbsenceCases(regNo, actor);
+
+    res.json({
+      success: true,
+      data: {
+        studentRegNo: attendance.studentRegNo,
+        overallAttendancePct: attendance.overallAttendancePct,
+        minimumRequiredPct: attendance.minimumRequiredPct,
+        attendanceHistory: attendance.attendanceHistory,
+        activeQrSessions: attendance.activeQrSessions,
+        absenceCases: attendance.cases,
+        catchUpLessons: attendance.catchUpLessons,
+        alerts: attendance.alerts,
+      },
+    });
+  } catch (err) {
+    handleTeachingError(res, err);
+  }
+});
 
 // 3. /api/management/*
 export const managementRoutes = Router();

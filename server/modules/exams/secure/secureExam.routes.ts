@@ -1,4 +1,9 @@
-import { Router, type Request, type Response } from 'express';
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type Response,
+} from 'express';
 import {
   requireAuth,
   requirePermission,
@@ -25,27 +30,77 @@ function handleSecureExamError(res: Response, err: unknown): void {
   res.status(500).json({ success: false, error: message });
 }
 
-function resolveStudentIdentity(req: Request): {
+export function resolveStudentIdentity(req: Request): {
   studentId: string;
   studentRegNo: string;
   studentName: string;
 } {
-  if (req.portalUser) {
-    return {
-      studentId: req.portalUser.uid,
-      studentRegNo: req.portalUser.registrationNumber || req.portalUser.uid,
-      studentName: req.portalUser.fullName,
-    };
+  const portal = req.portalUser;
+
+  if (!portal) {
+    if (req.staffUser) {
+      throw new SecureExamHttpError(
+        403,
+        'Staff accounts cannot access student candidate sessions.'
+      );
+    }
+
+    throw new SecureExamHttpError(
+      401,
+      'Student portal authentication required.'
+    );
   }
-  if (req.staffUser) {
-    // Allows authenticated staff previews/testing when signed into staff sandbox
-    return {
-      studentId: req.staffUser.id,
-      studentRegNo: req.staffUser.employeeNumber,
-      studentName: req.staffUser.fullName,
-    };
+
+  if (portal.primaryRole.toUpperCase() !== 'STUDENT') {
+    throw new SecureExamHttpError(
+      403,
+      'Only registered student accounts can access candidate examination sessions.'
+    );
   }
-  throw new SecureExamHttpError(401, 'Authentication required.');
+
+  if (!portal.registrationNumber?.trim()) {
+    throw new SecureExamHttpError(
+      403,
+      'Your student account is not linked to an official registration number.'
+    );
+  }
+
+  if (!portal.uid?.trim()) {
+    throw new SecureExamHttpError(
+      403,
+      'Your student account has no valid institutional identity.'
+    );
+  }
+
+  return {
+    studentId: portal.uid,
+    studentRegNo: portal.registrationNumber.trim(),
+    studentName: portal.fullName,
+  };
+}
+
+function requireStudentCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    resolveStudentIdentity(req);
+    next();
+  } catch (error) {
+    if (error instanceof SecureExamHttpError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Unable to verify examination candidate identity.',
+    });
+  }
 }
 
 // ============================================================================
@@ -53,7 +108,7 @@ function resolveStudentIdentity(req: Request): {
 // ============================================================================
 export const studentSecureExamRoutes = Router();
 
-studentSecureExamRoutes.use(requirePortalAuth);
+studentSecureExamRoutes.use(requirePortalAuth, requireStudentCandidate);
 
 studentSecureExamRoutes.get('/exams', (req, res) => {
   try {

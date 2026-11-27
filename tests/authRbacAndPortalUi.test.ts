@@ -125,9 +125,11 @@ test('auth-utils enforces granular permissions and role membership checks', () =
   assert.equal(hasAnyUserRole(registrar, ['ADMIN', 'REGISTRAR']), true);
   assert.equal(hasAnyUserRole(registrar, ['FINANCE_OFFICER']), false);
 
-  const mergedLecturer = resolveStaffPermissionsForRole('LECTURER', ['staff.profile.view', 'results.manage']);
-  assert.equal(mergedLecturer.includes('staff.profile.view'), true);
-  assert.equal(mergedLecturer.includes('lecturer.classes.read'), true);
+  const resolvedLecturer = resolveStaffPermissionsForRole('LECTURER', ['staff.profile.view', 'results.manage']);
+  assert.equal(resolvedLecturer.includes('staff.profile.view'), true);
+  assert.equal(resolvedLecturer.includes('results.manage'), true);
+  assert.equal(resolvedLecturer.includes('lecturer.classes.read'), false);
+  assert.deepEqual(resolveStaffPermissionsForRole('LECTURER'), []);
 });
 
 test('PermissionGate and RoleGate guard unauthorized UI elements cleanly', () => {

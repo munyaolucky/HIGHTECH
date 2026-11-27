@@ -18,22 +18,27 @@ function handleFinanceError(res: Response, err: unknown): void {
 }
 
 function resolveStudentIdentity(req: Request): FinanceStudentIdentity {
-  if (req.portalUser) {
-    return {
-      studentId: req.portalUser.uid,
-      studentRegNo: req.portalUser.registrationNumber || 'HCA/STU/2026/001',
-      studentName: req.portalUser.fullName,
-    };
+  const portal = req.portalUser;
+
+  if (!portal || portal.primaryRole.toUpperCase() !== 'STUDENT') {
+    throw new FinanceHttpError(
+      403,
+      'Only the authenticated student account can access student financial records.'
+    );
   }
-  if (req.staffUser) {
-    // Authenticated staff previewing student portal defaults to sample student when not student role
-    return {
-      studentId: 'stu-sample-001',
-      studentRegNo: 'HCA/STU/2026/001',
-      studentName: 'Amina Wanjiku',
-    };
+
+  if (!portal.uid || !portal.registrationNumber) {
+    throw new FinanceHttpError(
+      403,
+      'Your account is not linked to a valid student registration number.'
+    );
   }
-  throw new FinanceHttpError(401, 'Authentication required.');
+
+  return {
+    studentId: portal.uid,
+    studentRegNo: portal.registrationNumber,
+    studentName: portal.fullName,
+  };
 }
 
 // ============================================================================

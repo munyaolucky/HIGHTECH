@@ -64,6 +64,7 @@ import {
 import ScrollView from '../../components/ScrollView';
 import { PortalConfirmDialog } from '../../components/ui/PortalUI';
 import { MobileCompanionTab } from './components/MobileStudentCompanion';
+import { useStudentMasterProfile } from './hooks/useStudentMasterProfile';
 import StudentAnalyticsRow from './components/StudentAnalyticsRow';
 import StudentAssistantWidget from './components/StudentAssistantWidget';
 import StudentSidebar from './components/StudentSidebar';
@@ -182,6 +183,15 @@ export default function StudentDashboard({
   const ctx = usePortalShellContext();
   const { theme, toggleTheme } = useTheme();
   const authCtx = useContext(AuthContext);
+  const {
+    profile: liveStudentProfile,
+    loading: studentProfileLoading,
+    error: studentProfileError,
+  } = useStudentMasterProfile(
+    authCtx?.user ?? null,
+    authCtx?.isAuthenticated ?? false,
+    authCtx?.isLoading ?? true
+  );
   const isDark = theme === 'dark';
   const [activePage, setActivePage] = useState<StudentPortalSection>(initialSection ?? 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -223,7 +233,60 @@ export default function StudentDashboard({
   }, [activeModal, mobileSheetOpen]);
 
   const state = studentPortalService.getState();
-  const profile = state.profile;
+
+  if (studentProfileLoading) {
+    return (
+      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1322] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center space-y-3">
+          <GraduationCap size={34} className="mx-auto text-[#1769AA]" />
+          <h2 className="text-lg font-bold text-[#102D50] dark:text-white">
+            Loading Student Portal
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Verifying your institutional student record...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!liveStudentProfile || studentProfileError) {
+    return (
+      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1322] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900 rounded-2xl p-6 space-y-4">
+          <ShieldCheck size={34} className="text-red-600" />
+          <h2 className="text-lg font-bold text-[#102D50] dark:text-white">
+            Student Record Verification Required
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {studentProfileError ?? 'Your student record could not be verified.'}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Your student dashboard will remain unavailable until your institutional account is correctly linked.
+          </p>
+          <button
+            type="button"
+            onClick={() => void authCtx?.refreshSession()}
+            className="w-full rounded-xl bg-[#102D50] hover:bg-[#1769AA] text-white p-3 font-bold text-sm transition-colors"
+          >
+            Verify Session Again
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              await authCtx?.signOut().catch(() => {});
+              onLogout?.();
+            }}
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 p-3 font-bold text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const profile = liveStudentProfile;
   const fin = studentPortalService.getFinancialSummary();
   const engState = engagementService.getState();
 

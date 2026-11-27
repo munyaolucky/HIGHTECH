@@ -148,6 +148,33 @@ export interface AttendanceSessionDTO {
   }>;
 }
 
+export interface StudentAcademicAttendanceRecord {
+  sessionId: string;
+  date: string;
+  unitCode: string;
+  unitTitle: string;
+  status: 'PRESENT' | 'LATE' | 'ABSENT' | 'EXCUSED';
+  method: string;
+  roomName: string;
+}
+
+export interface StudentAcademicAttendanceResponse {
+  studentRegNo: string;
+  overallAttendancePct: number;
+  minimumRequiredPct: number;
+  attendanceHistory: StudentAcademicAttendanceRecord[];
+  activeQrSessions: Array<{
+    sessionId: string;
+    unitCode: string;
+    unitTitle: string;
+    roomName: string;
+    startTime: string;
+  }>;
+  absenceCases: AbsenceCaseDTO[];
+  catchUpLessons: unknown[];
+  alerts: unknown[];
+}
+
 export interface AbsenceEvidenceMetaDTO {
   id: string;
   absenceCaseId: string;
@@ -380,20 +407,9 @@ async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const teachingModuleApi = {
-  // Ensure lecturer cookie session exists when running standalone /portal/lecturer
+  // Verify lecturer session via existing authenticated portal cookie (never forge staff session)
   async ensureLecturerSession(): Promise<void> {
-    try {
-      await apiJson('/api/teaching/summary');
-    } catch (err) {
-      if ((err as { status?: number }).status === 401) {
-        await fetch('/api/staff/session', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: 'LECTURER', explicitSwitch: false }),
-        });
-      }
-    }
+    await apiJson('/api/teaching/summary').catch(() => {});
   },
 
   getSummary: () => apiJson<any>('/api/teaching/summary'),
@@ -545,6 +561,8 @@ export const teachingModuleApi = {
 
   // Student Portal Self-Service
   getMyAbsenceCases: () => apiJson<any>('/api/absence/my-cases'),
+  getMyAcademicAttendance: () =>
+    apiJson<StudentAcademicAttendanceResponse>('/api/student/academic/attendance'),
   studentQrCheckIn: (qrToken: string) =>
     apiJson<any>('/api/absence/qr-checkin', { method: 'POST', body: JSON.stringify({ qrToken }) }),
   submitStudentExplanation: (caseId: string, category: string, reasonText: string) =>

@@ -172,9 +172,16 @@ router.get('/students', async (req, res) => {
     res.json({
       success: true,
       data: {
-        items: filtered.map((r) =>
-          sanitizeStudentRow(r, role, Boolean(portal?.pgUserId && r.userId === portal.pgUserId))
-        ),
+        items: filtered.map((record) => {
+          const isOwnProfile = Boolean(
+            (portal?.pgUserId && record.userId === portal.pgUserId) ||
+              (portal?.email &&
+                record.email.trim().toLowerCase() ===
+                  portal.email.trim().toLowerCase())
+          );
+
+          return sanitizeStudentRow(record, role, isOwnProfile);
+        }),
         stats,
         canCreate: SIS_CREATE_ROLES.has(role),
         canApproveChanges: SIS_APPROVE_ROLES.has(role),

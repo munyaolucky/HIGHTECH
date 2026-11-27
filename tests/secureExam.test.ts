@@ -81,6 +81,9 @@ const { createSessionToken, SESSION_COOKIE_NAME } = await import(
 const { STAFF_PERMISSIONS } = await import(
   '../server/modules/staff/staff.permissions.ts'
 );
+const { resolveStudentIdentity } = await import(
+  '../server/modules/exams/secure/secureExam.routes.ts'
+);
 const http = await import('node:http');
 const { WebSocket } = await import('ws');
 
@@ -754,5 +757,70 @@ test('Phase 10B supervisor time extension, session restoration, reports, SSE pub
   assert.ok(dashboardHtml.includes('Attendance &amp; Security Reports (CSV)'));
   assert.ok(dashboardHtml.includes('Supervisor Audit Trail'));
 });
+
+test('student examination identity accepts a registered student', () => {
+  const identity = resolveStudentIdentity({
+    portalUser: {
+      uid: 'student-001',
+      registrationNumber: 'HCA/STU/2026/001',
+      fullName: 'Test Student',
+      primaryRole: 'STUDENT',
+    },
+  } as never);
+
+  assert.deepEqual(identity, {
+    studentId: 'student-001',
+    studentRegNo: 'HCA/STU/2026/001',
+    studentName: 'Test Student',
+  });
+});
+
+test('staff cannot access student examination candidate identity', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        staffUser: {
+          id: 'staff-001',
+          employeeNumber: 'HCA/STAFF/2026/001',
+          fullName: 'Test Lecturer',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError && error.statusCode === 403
+  );
+});
+
+test('non-student portal roles cannot become examination candidates', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        portalUser: {
+          uid: 'staff-001',
+          registrationNumber: 'HCA/STAFF/2026/001',
+          fullName: 'Test Lecturer',
+          primaryRole: 'LECTURER',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError && error.statusCode === 403
+  );
+});
+
+test('student without registration number cannot start examination', () => {
+  assert.throws(
+    () =>
+      resolveStudentIdentity({
+        portalUser: {
+          uid: 'student-001',
+          registrationNumber: null,
+          fullName: 'Test Student',
+          primaryRole: 'STUDENT',
+        },
+      } as never),
+    (error: unknown) =>
+      error instanceof SecureExamHttpError && error.statusCode === 403
+  );
+});
+
 
 

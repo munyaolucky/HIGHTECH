@@ -70,7 +70,6 @@ import {
   X,
 } from 'lucide-react';
 import {
-  ALL_STAFF_ROLES,
   getStaffNavigation,
   hasStaffPermission,
   STAFF_ACCOUNTS,
@@ -149,7 +148,6 @@ interface Props {
   role: StaffRole | 'UNCONFIGURED';
   activePath: string;
   onNavigate: (path: string) => void;
-  onSwitchRole: (role: StaffRole | 'UNCONFIGURED') => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
   permissions: string[];
@@ -160,7 +158,6 @@ export default function StaffSidebar({
   role,
   activePath,
   onNavigate,
-  onSwitchRole,
   mobileOpen,
   onCloseMobile,
   permissions,
@@ -284,34 +281,12 @@ export default function StaffSidebar({
         </div>
 
         {!collapsed && (
-          <div className="border-b border-white/10 px-4 py-3.5 space-y-2.5">
+          <div className="border-b border-white/10 px-4 py-3.5">
             <div className="rounded-xl bg-white/10 p-3">
               <div className="text-[11px] text-blue-200">Signed-in staff role</div>
               <div className="mt-0.5 text-sm font-bold text-white truncate">
                 {role.replaceAll('_', ' ')}
               </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="staff-role-switcher"
-                className="block text-[11px] font-medium text-blue-200/90 mb-1"
-              >
-                Staff Role Perspective (RBAC)
-              </label>
-              <select
-                id="staff-role-switcher"
-                value={role}
-                onChange={(e) => onSwitchRole(e.target.value as StaffRole | 'UNCONFIGURED')}
-                className="w-full rounded-lg border border-white/20 bg-[#0b203a] px-2.5 py-2 text-xs font-semibold text-white focus:border-[#E8B44A] focus:ring-2 focus:ring-[#E8B44A]/30 cursor-pointer"
-              >
-                {ALL_STAFF_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r.replaceAll('_', ' ')}
-                  </option>
-                ))}
-                <option value="UNCONFIGURED">UNCONFIGURED ROLE (Test Access Boundary)</option>
-              </select>
             </div>
           </div>
         )}

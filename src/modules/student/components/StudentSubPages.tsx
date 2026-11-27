@@ -65,6 +65,11 @@ import type { ExamSession } from '../exams/secure/examTypes';
 import StudentDmsWorkspace from './StudentDmsWorkspace';
 import UniversalDocumentUploader from '../../documents/UniversalDocumentUploader';
 import AccountRoleWorkspace from '../../../components/portal/AccountRoleWorkspace';
+import {
+  getMyRegisteredUnits,
+  type StudentAcademicUnitsResponse,
+} from '../services/studentAcademicApi';
+import { downloadOfficialRegistrationPdf } from '../services/registrationPdf';
 
 interface StudentSubPagesProps {
   activeSection: StudentPortalSection;
@@ -402,6 +407,36 @@ export default function StudentSubPages({
   const [newPassword, setNewPassword] = useState('');
   const [guardianEmail, setGuardianEmail] = useState('');
   const [revokeGuardianTarget, setRevokeGuardianTarget] = useState<{ id: string; parentName: string } | null>(null);
+
+  // Official PostgreSQL Registered Units (Phase 2.3 / 2.4)
+  const [officialUnitsData, setOfficialUnitsData] = useState<StudentAcademicUnitsResponse | null>(null);
+  const [officialUnitsLoading, setOfficialUnitsLoading] = useState(false);
+  const [officialUnitsError, setOfficialUnitsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeSection !== 'course-registration') return;
+    let active = true;
+    setOfficialUnitsLoading(true);
+    setOfficialUnitsError(null);
+    getMyRegisteredUnits()
+      .then((data) => {
+        if (!active) return;
+        setOfficialUnitsData(data);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setOfficialUnitsData(null);
+        setOfficialUnitsError(
+          err instanceof Error ? err.message : 'Unable to load official registered units.'
+        );
+      })
+      .finally(() => {
+        if (active) setOfficialUnitsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeSection]);
 
   if (activeSection === 'dashboard') return null;
 
@@ -1046,40 +1081,146 @@ export default function StudentSubPages({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                Registered Units — {profile.academicYear} · {profile.semester}
-              </h3>
-              <span className="text-xs font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
-                {state.units.length} Active Units
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                  <tr>
-                    <th className="py-2.5 px-4 font-semibold">Code</th>
-                    <th className="py-2.5 px-4 font-semibold">Course Title</th>
-                    <th className="py-2.5 px-4 font-semibold">Lecturer</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Credits</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Attendance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {state.units.map((u) => (
-                    <tr key={u.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
-                      <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400 whitespace-nowrap">{u.code}</td>
-                      <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">{u.title}</td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{u.lecturerName}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">{u.credits}</td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
-                        {u.attendance}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {(() => {
+              const registrations = officialUnitsData?.registrations ?? [];
+              const officialApprovedUnits = registrations
+                .filter((registration) => registration.approvalStatus === 'APPROVED')
+                .flatMap((registration) =>
+                  registration.units.map((unit) => ({
+                    ...unit,
+                    academicYear: registration.academicYear,
+                    semesterName: registration.semesterName,
+                    intakeCode: registration.intakeCode,
+                    registrationId: registration.id,
+                    feeThresholdCleared: registration.feeThresholdCleared,
+                  }))
+                );
+              const pendingRegs = registrations.filter((r) => r.approvalStatus === 'PENDING');
+              const rejectedRegs = registrations.filter((r) => r.approvalStatus === 'REJECTED');
+              const totalApprovedCredits = officialApprovedUnits.reduce(
+                (sum, unit) => sum + unit.credits,
+                0
+              );
+
+              return (
+                <>
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        My Official Registered Units (Academic Registry)
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Confirmed approved units loaded directly from PostgreSQL registration records.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono tabular-nums text-emerald-700 dark:text-emerald-400 font-semibold">
+                        {officialApprovedUnits.length} Approved · {totalApprovedCredits} Credits
+                      </span>
+                      {officialApprovedUnits.length > 0 && officialUnitsData && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              const filename = downloadOfficialRegistrationPdf(officialUnitsData);
+                              onNotify(
+                                'ok',
+                                `Downloaded official registration status PDF (${filename}).`
+                              );
+                            } catch (err) {
+                              onNotify(
+                                'err',
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Unable to export official registration PDF.'
+                              );
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-[#092c60] hover:bg-[#061f46] text-white rounded-lg text-[11px] font-semibold inline-flex items-center gap-1"
+                        >
+                          <Download size={12} /> Official PDF
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {officialUnitsLoading ? (
+                    <div className="p-4">
+                      <SkeletonCardList items={2} columns={1} showMeta showAction={false} label="Loading official registered units..." />
+                    </div>
+                  ) : officialUnitsError ? (
+                    <div className="p-4 text-xs text-amber-800 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/30">
+                      {officialUnitsError}
+                    </div>
+                  ) : (
+                    <>
+                      {(pendingRegs.length > 0 || rejectedRegs.length > 0) && (
+                        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-3 text-[11px]">
+                          {pendingRegs.length > 0 && (
+                            <span className="text-amber-700 dark:text-amber-300 font-semibold">
+                              Pending Registrar approval: {pendingRegs.map((r) => `${r.intakeCode} (${r.totalCredits} Cr)`).join(', ')}
+                            </span>
+                          )}
+                          {rejectedRegs.length > 0 && (
+                            <span className="text-red-700 dark:text-red-400 font-semibold">
+                              Rejected submissions: {rejectedRegs.map((r) => r.intakeCode).join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {officialApprovedUnits.length === 0 ? (
+                        <div className="p-5 text-xs text-slate-600 dark:text-slate-300">
+                          No Registrar-approved academic units are recorded yet. Pending submissions appear only after official approval.
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+                              <tr>
+                                <th className="py-2.5 px-4 font-semibold">Code</th>
+                                <th className="py-2.5 px-4 font-semibold">Course Title</th>
+                                <th className="py-2.5 px-4 font-semibold">Academic Period</th>
+                                <th className="py-2.5 px-4 font-semibold text-right">Credits</th>
+                                <th className="py-2.5 px-4 font-semibold text-right">Clearance</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {officialApprovedUnits.map((u) => (
+                                <tr
+                                  key={`${u.registrationId}:${u.code}`}
+                                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                                >
+                                  <td className="py-3 px-4 font-mono font-bold text-[#102D50] dark:text-blue-400 whitespace-nowrap">
+                                    {u.code}
+                                  </td>
+                                  <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
+                                    {u.title}
+                                  </td>
+                                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                                    {u.academicYear} · {u.semesterName} ({u.intakeCode})
+                                  </td>
+                                  <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                                    {u.credits}
+                                  </td>
+                                  <td className="py-3 px-4 text-right font-semibold">
+                                    {u.feeThresholdCleared ? (
+                                      <span className="text-emerald-700 dark:text-emerald-400">Cleared</span>
+                                    ) : (
+                                      <span className="text-red-700 dark:text-red-400">Fee Hold</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <form

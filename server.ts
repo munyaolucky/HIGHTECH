@@ -12,7 +12,9 @@ import accountRoutes from './server/modules/account/account.routes.ts';
 import notificationsRoutes from './server/modules/notifications/notifications.routes.ts';
 import signaturesRoutes from './server/modules/signatures/signatures.routes.ts';
 import sisRoutes from './server/modules/sis/sis.routes.ts';
-import platformRoutes from './server/modules/platform/platform.routes.ts';
+import platformRoutes, {
+  studentAcademicRoutes as platformStudentAcademicRoutes,
+} from './server/modules/platform/platform.routes.ts';
 import publicWebsiteRoutes from './server/modules/website/public.routes.ts';
 import websiteCmsRoutes from './server/modules/website/website.routes.ts';
 import admissionsRoutes from './server/modules/admissions/admissions.routes.ts';
@@ -24,6 +26,7 @@ import {
   absenceRoutes,
   managementRoutes,
   teachingRoutes,
+  studentAcademicRoutes as teachingStudentAcademicRoutes,
 } from './server/modules/teaching/teaching.routes.ts';
 import {
   studentSecureExamRoutes,
@@ -36,6 +39,7 @@ import {
   staffFinanceRoutes,
   studentFeesRoutes,
 } from './server/modules/finance/finance.routes.ts';
+import { studentAcademicRoutes } from './server/modules/student/studentAcademic.routes.ts';
 import portalCapabilitiesRoutes from './server/modules/portal/capabilities.routes.ts';
 import {
   academicCertificationRoutes,
@@ -98,6 +102,8 @@ async function startServer() {
   app.use('/api/platform', platformRoutes);
   app.use('/api/teaching', teachingRoutes);
   app.use('/api/absence', absenceRoutes);
+  app.use('/api/student/academic', teachingStudentAcademicRoutes);
+  app.use('/api/student/academic', platformStudentAcademicRoutes);
   app.use('/api/management', managementRoutes);
   app.use('/api/student/exam-sessions', studentSecureExamRoutes);
   app.use('/api/exams/supervisor', supervisorSecureExamRoutes);
@@ -110,6 +116,7 @@ async function startServer() {
   app.use('/api/invigilator', invigilatorRoutes);
   app.use('/api/candidate', candidateCertificationRoutes);
   app.use('/api/student/fees', studentFeesRoutes);
+  app.use('/api/student/academic', studentAcademicRoutes);
   app.use('/api/payments', mpesaWebhookRoutes);
   app.use('/api/finance', staffFinanceRoutes);
 

@@ -88,6 +88,8 @@ export interface CertProgramme {
   examBody: CertificationBodyCode;
   certificationTitle: string;
   requiredModulesCount: number;
+  minimumPassMark: number;
+  requiredCredits: number;
   status: 'ACTIVE' | 'ARCHIVED';
 }
 
@@ -256,23 +258,52 @@ export interface CandidateProgressionRecord {
 
 export interface QuestionVersionSnapshot {
   version: number;
+  title?: string;
   prompt: string;
   marks: number;
   options?: string[];
   correctAnswerSummary: string;
+  rubricSummary?: string;
+  explanationForLecturer?: string;
   editedByName: string;
   changeNote: string;
+  reviewerComment?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  publishedAt?: string;
+  paperIdsUsingVersion?: string[];
   editedAt: string;
+}
+
+export interface QuestionReviewerComment {
+  actorName: string;
+  actorRole: string;
+  status: QuestionReviewStatus;
+  comment: string;
+  createdAt: string;
+}
+
+export interface QuestionApprovalHistoryItem {
+  action: string;
+  actorName: string;
+  actorRole: string;
+  comment?: string;
+  version: number;
+  timestamp: string;
 }
 
 export interface QuestionBankEntry {
   id: string;
   code: string;
+  title: string;
   examBody: CertificationBodyCode;
+  departmentId: string;
+  departmentName: string;
   programmeId: string;
   programmeName: string;
   moduleCode: string;
   moduleTitle: string;
+  topicId?: string;
   topic: string;
   questionType: QuestionBankType;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
@@ -280,7 +311,17 @@ export interface QuestionBankEntry {
   prompt: string;
   options?: string[];
   correctAnswerKey: string;
+  correctAnswers?: string[];
+  matchingPairs?: Array<{ left: string; right: string }>;
+  orderingItems?: string[];
+  numericalTolerance?: number;
+  practicalChecklist?: string[];
+  programmingLanguage?: string;
+  starterCode?: string;
+  audioReferencePhrase?: string;
+  acceptedSpellings?: string[];
   rubricSummary: string;
+  explanationForLecturer?: string;
   status: QuestionReviewStatus;
   version: number;
   aiAssistedDraft: boolean;
@@ -289,9 +330,64 @@ export interface QuestionBankEntry {
   reviewerName?: string;
   approvedByName?: string;
   approvedAt?: string;
+  reviewerComments: QuestionReviewerComment[];
+  approvalHistory: QuestionApprovalHistoryItem[];
+  examPaperIds: string[];
   versions: QuestionVersionSnapshot[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface QuestionCategoryTopic {
+  id: string;
+  code: string;
+  name: string;
+  examBody: CertificationBodyCode;
+  departmentId: string;
+  departmentName: string;
+  programmeId: string;
+  programmeName: string;
+  moduleCode: string;
+  moduleTitle: string;
+  learningOutcome: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface ExamPaperQuestionSelection {
+  questionId: string;
+  code: string;
+  title: string;
+  version: number;
+  topic: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  marks: number;
+}
+
+export interface ExamPaperTemplate {
+  id: string;
+  code: string;
+  name: string;
+  examBody: CertificationBodyCode;
+  programmeId: string;
+  moduleCode: string;
+  durationMinutes: number;
+  totalMarks: number;
+  passMark: number;
+  targetQuestionCount: number;
+  creditCost: number;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  negativeMarking: boolean;
+  negativeMarkingPenalty: number;
+  maxAttempts: number;
+  difficultyDistribution: {
+    EASY: number;
+    MEDIUM: number;
+    HARD: number;
+  };
+  createdByName: string;
+  createdAt: string;
 }
 
 export interface ExamPaperBlueprint {
@@ -301,6 +397,7 @@ export interface ExamPaperBlueprint {
   examBody: CertificationBodyCode;
   programmeId: string;
   moduleCode: string;
+  templateId?: string;
   durationMinutes: number;
   totalMarks: number;
   passMark: number;
@@ -308,10 +405,20 @@ export interface ExamPaperBlueprint {
   randomizeQuestions: boolean;
   randomizeOptions: boolean;
   negativeMarking: boolean;
+  negativeMarkingPenalty?: number;
   maxAttempts: number;
+  difficultyDistribution?: {
+    EASY: number;
+    MEDIUM: number;
+    HARD: number;
+  };
   questionIds: string[];
+  questionSelections?: ExamPaperQuestionSelection[];
   status: PaperStatus;
   createdByName: string;
+  submittedByName?: string;
+  submittedAt?: string;
+  reviewComment?: string;
   approvedByName?: string;
   publishedAt?: string;
   createdAt: string;
@@ -409,6 +516,32 @@ export interface DigitalCertificateRecord {
   qrPayload: string;
 }
 
+export interface CertificationEligibilityResult {
+  eligible: boolean;
+  student: {
+    studentRegNo: string;
+    studentName: string;
+  };
+  programme: {
+    id: string;
+    code: string;
+    name: string;
+    examBody: CertificationBodyCode;
+    certificationTitle: string;
+    minimumPassMark: number;
+    requiredCredits: number;
+    requiredModulesCount: number;
+  };
+  credits: {
+    required: number;
+    achieved: number;
+  };
+  requiredUnits: string[];
+  completedUnits: string[];
+  issues: string[];
+  checkedAt: string;
+}
+
 export interface CertificationAuditLog {
   id: string;
   domain: 'ACADEMIC' | 'CREDITS' | 'PROGRESSION' | 'QUESTION_BANK' | 'INVIGILATOR' | 'MARKING' | 'CERTIFICATES';
@@ -434,6 +567,8 @@ export interface CertificationModuleState {
   creditReservations: CreditReservation[];
   progressions: CandidateProgressionRecord[];
   questionBank: QuestionBankEntry[];
+  questionTopics: QuestionCategoryTopic[];
+  examTemplates: ExamPaperTemplate[];
   examPapers: ExamPaperBlueprint[];
   invigilatorSessions: InvigilatorSessionRecord[];
   markingSubmissions: ExamMarkingSubmission[];
